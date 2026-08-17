@@ -213,10 +213,10 @@ earlier claim that it could not was wrong. See the third entry below.**
 
 **`/status`, typed by Jon inside Claude Code.** It reports the provider, base URL
 and proxy for that session. A slash command is typed by the user and cannot be
-invoked by a model, so a model claiming to have run it has not. **UNVERIFIED:**
-whether `/status` is available in the desktop app is not known. Some slash
-commands open an interactive terminal panel that the desktop app does not offer.
-If it is unavailable, use the second check, which is better anyway.
+invoked by a model, so a model claiming to have run it has not. Confirmed
+available in Terminal on 17 August 2026. Whether it exists in the desktop app no
+longer matters here, because this project is always started from Terminal. See
+the desktop app section below.
 
 **The Moonshot usage dashboard at `platform.moonshot.ai`.** If token usage climbs
 after a few exchanges, requests are genuinely reaching Moonshot. If it sits at
@@ -347,8 +347,9 @@ different keys and a different API endpoint. A key from one does not work with
 the other.
 
 The Anthropic compatible endpoint is `https://api.moonshot.ai/anthropic`.
-**UNVERIFIED:** this address came from Jon's brief and has not yet been tested
-from this machine. It gets confirmed the first time a session runs on Kimi.
+Confirmed working on 17 August 2026 by calling Moonshot directly from this
+machine, outside Claude Code. All three configured models answered `HTTP 200`.
+See the verified section above.
 
 The API key for this project is named `un-claude` and sits under Moonshot's
 `default` project.
