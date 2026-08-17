@@ -208,7 +208,8 @@ apply everywhere, which is why one was never used.
 
 ### How to check which model a session is actually running
 
-**Two checks, and both belong to Jon. The model cannot perform either.**
+**Three checks. Two belong to Jon. The third the model can perform, and the
+earlier claim that it could not was wrong — see the third entry below.**
 
 **`/status`, typed by Jon inside Claude Code.** It reports the provider, base URL
 and proxy for that session. A slash command is typed by the user and cannot be
@@ -223,9 +224,88 @@ zero, they are not. **This is the check that cannot lie,** because the evidence
 comes from the provider being paid rather than from the tool making the claim.
 It is also the only one of the two Jon can perform without any terminal at all.
 
-**Asking the model what it is proves nothing.** It sits inside a harness full of
-Anthropic branding, reading a file called `CLAUDE.md`, and may sincerely answer
-that it is Claude. Self description reports instructions, not configuration.
+**The environment check, which the model can run.** This one command prints the
+address the session is actually pointed at:
+
+```bash
+echo "BASE_URL=[${ANTHROPIC_BASE_URL:-unset}] MODEL=[${ANTHROPIC_MODEL:-unset}]"
+```
+
+On a session correctly running Kimi this prints the Moonshot address. On a
+session running Claude it prints `https://api.anthropic.com`. **This is stronger
+than self description, because it reads configuration rather than instructions,
+and it costs one command.** It is still weaker than the dashboard: it reads the
+environment of a command the model ran, which is normally but not provably the
+same environment its own requests travel through. Use it as the fast check and
+the dashboard as the authority.
+
+**Asking the model what it is still proves nothing.** It sits inside a harness
+full of Anthropic branding, reading a file called `CLAUDE.md`, and may sincerely
+answer that it is Claude. Self description reports instructions, not
+configuration. The environment check above is not self description.
+
+---
+
+## Verified on 2026-08-17: the Kimi setup is correct, and it was still not running
+
+Confirmed by Jon's Moonshot dashboard reading zero, and independently by the
+environment check above returning `https://api.anthropic.com`. Two independent
+checks, same answer: **no session of this project had ever reached Moonshot.**
+
+### What was proved good, by direct test
+
+The key and address in `.claude/settings.local.json` were used to call Moonshot
+directly, going around Claude Code entirely. All three configured models
+answered `HTTP 200`, and `kimi-k2.7-code` returned the requested word. This
+retires three items previously marked UNVERIFIED in this runbook:
+
+| Previously unverified | Now |
+|---|---|
+| Whether `https://api.moonshot.ai/anthropic` is the right address | **Confirmed working** |
+| Whether the `un-claude` API key is valid | **Confirmed working** |
+| Whether `kimi-k3`, `kimi-k2.7-code`, `kimi-k2.6` are real model names | **All three confirmed real** |
+
+**Nothing in the configuration file is wrong.** Do not spend another session
+rewriting it, re-checking the key, or second-guessing the model names.
+
+### The trap: a correct configuration file is not an active one
+
+The whole failure was that **Claude Code never read the file.** The settings sat
+on disk, complete and correct, and the program ignored them.
+
+This is a distinct failure from the model picker trap recorded above, and it
+fails silently in the same way — everything looks configured, and nothing is.
+**"I checked the settings file and it is correct" is not evidence that a session
+is running on Kimi.** Only the dashboard and the environment check are.
+
+### The suspected cause: the desktop app
+
+Jon runs these sessions in the **Claude Code desktop app**, not by typing
+`claude` in Terminal. The desktop app signs in with an Anthropic account and
+appears to supply its own credentials and address, overriding the project's
+`env` block. The supporting detail is that `ANTHROPIC_BASE_URL` was not merely
+missing, it was actively set to `https://api.anthropic.com`. Something set it.
+
+**UNVERIFIED, and this is the open question:** whether the desktop app ignores
+the project `env` block by design, or whether it simply had not been restarted
+since the settings file was created. Test the cheap possibility first.
+
+1. **Fully quit the desktop app** — Cmd+Q, not just closing the window — reopen
+   it, start a session in this folder, exchange a few messages, and look at the
+   dashboard. Settings are read at startup, so an app running since before the
+   file existed would never have seen it.
+2. **If that fails, run `cd ~/un-claude && claude` in Terminal** and repeat. The
+   `env` override is a documented Claude Code CLI behaviour; the CLI is the
+   surface most likely to honour it.
+
+### A boundary consequence worth knowing
+
+The cause of this problem lives outside `~/un-claude`, in how the app launches
+and in global settings. `CLAUDE.md` section 3 forbids the model from reading
+anything outside this folder. **That rule is correct and should stay, but it
+means launch problems of this kind cannot be diagnosed from inside a session.**
+Expect to resolve them with Jon directly, using the checks above, rather than by
+having the model go looking.
 
 ---
 
