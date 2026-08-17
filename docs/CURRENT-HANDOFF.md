@@ -1,8 +1,11 @@
 # un-claude: Current Handoff
 
-**Date:** 17 August 2026, end of session 1
-**Status:** Setup complete. Kimi is configured. No product work has started.
-**Session 1 ran on Claude by design.** Session 2 is the first session on Kimi.
+**Date:** 17 August 2026, end of session 6
+**Status:** Setup complete and now genuinely running on Kimi. No product work has
+started.
+**Sessions 1 to 6 all ran on Claude.** Sessions 2 to 5 believed otherwise and
+were wrong. See section 0. If you are reading this in a Terminal session started
+with `claude` from `~/un-claude`, you are the first session actually on Kimi.
 
 **This file holds resumption context only.** It is rewritten wholesale at the end
 of every session. Nothing may live here as its only record. If something matters
@@ -15,35 +18,32 @@ beyond the next session, it belongs in `04-decision-log.md`,
 
 ### Due now, in this order
 
-**1. Confirm the configuration is actually live, then clear the `UNVERIFIED`
-marker in `07-runbook.md`.** The whole setup rests on one address,
-`https://api.moonshot.ai/anthropic`, which came from Jon's brief and had never
-been tested from this machine when it was written.
+**1. Confirm you are on Kimi before doing anything else.** Ask Jon to type
+`/status` and read back two lines. **Anthropic base URL** must say
+`api.moonshot.ai`. **Model** must say `kimi-k3`. If either says anything else,
+stop and say so. Nothing done in a session that is not on Kimi counts as work on
+this project.
 
-**You cannot verify this yourself.** Two checks exist and both belong to Jon:
+**Why this is item one.** Sessions 2 to 5 all ran in the Claude Code desktop app,
+which silently ignores this project's configuration and runs on Claude against
+Anthropic. Every one of those sessions could have reported that Kimi was
+configured, because it was, and the Moonshot dashboard read zero the whole time.
+Closed as decision 9 in `04` and row 9 in `06`.
 
-- **He types `/status`** in Claude Code, which reports the provider and base URL
-  in use. A slash command is typed by the user. A model cannot invoke one, so ask
-  him to run it rather than claiming to have run it. It may also be unavailable
-  in the desktop app, in which case use the second check.
-- **He opens his usage dashboard at `platform.moonshot.ai`.** If token usage is
-  climbing after a few exchanges, requests are genuinely reaching Moonshot. If it
-  sits at zero, they are not, whatever anything else reports. **This is the check
-  that cannot lie**, because it comes from the provider rather than from the tool
-  making the claim.
-
-**Do not try to settle this by describing yourself.** A model served through an
-Anthropic compatible endpoint sits inside a harness full of Anthropic branding
-and may sincerely report being Claude. Self description is not evidence about
-configuration. This is the same principle as `git` reporting a push it had in
-fact just performed: ask the service, not the tool.
+**The configuration itself is proved good and needs no further attention.** On 17
+August 2026 the endpoint, the API key and all three model names were tested by
+calling Moonshot directly, outside Claude Code. All returned `HTTP 200`. **Do not
+spend another session re checking the settings file.** The file was never the
+problem.
 
 **2. Say what is stale, wrong, or missing in these documents.** Jon asks for this
 in the first reply of every session and it is the only mechanism this project has
 for catching documentation rot. There is no automation at session boundaries.
 None at all.
 
-**3. Then wait.** Session 2 is Jon's to lead. See section 4.
+**3. Then get to section 4, which is the actual work.** Six sessions have
+produced a repository, a documentation system and a working Kimi configuration,
+and no specification for the tool. That is the gap.
 
 ### Done. Do not repeat, do not ask about.
 
@@ -129,7 +129,9 @@ Jon's decision, recorded as `04` entry 3.
 
 ## 4. Where to pick up
 
-**Session 2 is the build definition session, and Jon leads it.**
+**The next session is the build definition session, and Jon leads it. It has been
+the next session since session 1.** Nothing about the tool has been decided in
+six sessions. Everything so far has been setup, and setup is finished.
 
 He will bring references and examples and explain what the tool is meant to do.
 Right now the entire specification is one sentence: a small tool that rewrites AI
@@ -147,7 +149,7 @@ The two questions that need answers, in order:
    in the project. A humaniser with no agreed definition of success cannot be
    tested, tuned, or finished. Push on this one.
 
-The output of session 2 is a build specification, written to `docs/01-` or
+The output of that session is a build specification, written to `docs/01-` or
 similar, plus a working definition of good output. Both are durable documents,
 not handoff notes.
 
@@ -260,3 +262,15 @@ model selected from Moonshot's published list, Kimi configured project local
 only, global permission warning restored. Five commits, all pushed. Ran on Claude
 by design so that the rules governing this project were not written by the model
 they govern.
+
+**Sessions 2 to 5, 17 August 2026. Claude, believing they were Kimi.** Work of
+unrecorded scope, carried out in the Claude Code desktop app. Their commits are
+in the log. Treat their reasoning as sound and their premise as wrong: anything
+any of them said or implied about running on Kimi was false.
+
+**Session 6, 17 August 2026. Claude, and it said so.** Diagnosed the above.
+Established by two independent checks that no session had ever reached Moonshot,
+proved the configuration itself correct by calling Moonshot directly, established
+that the desktop app is the cause and that Terminal works, and closed the
+question. Decision 9, row 9 closed, runbook updated, no product work. **The
+project can now actually run on Kimi, and has still never been specified.**

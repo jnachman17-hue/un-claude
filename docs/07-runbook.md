@@ -209,7 +209,7 @@ apply everywhere, which is why one was never used.
 ### How to check which model a session is actually running
 
 **Three checks. Two belong to Jon. The third the model can perform, and the
-earlier claim that it could not was wrong — see the third entry below.**
+earlier claim that it could not was wrong. See the third entry below.**
 
 **`/status`, typed by Jon inside Claude Code.** It reports the provider, base URL
 and proxy for that session. A slash command is typed by the user and cannot be
@@ -274,11 +274,11 @@ The whole failure was that **Claude Code never read the file.** The settings sat
 on disk, complete and correct, and the program ignored them.
 
 This is a distinct failure from the model picker trap recorded above, and it
-fails silently in the same way — everything looks configured, and nothing is.
+fails silently in the same way. Everything looks configured, and nothing is.
 **"I checked the settings file and it is correct" is not evidence that a session
 is running on Kimi.** Only the dashboard and the environment check are.
 
-### The suspected cause: the desktop app
+### The cause, confirmed: the desktop app
 
 Jon runs these sessions in the **Claude Code desktop app**, not by typing
 `claude` in Terminal. The desktop app signs in with an Anthropic account and
@@ -286,17 +286,36 @@ appears to supply its own credentials and address, overriding the project's
 `env` block. The supporting detail is that `ANTHROPIC_BASE_URL` was not merely
 missing, it was actively set to `https://api.anthropic.com`. Something set it.
 
-**UNVERIFIED, and this is the open question:** whether the desktop app ignores
-the project `env` block by design, or whether it simply had not been restarted
-since the settings file was created. Test the cheap possibility first.
+**RESOLVED the same day.** Restarting the desktop app was tried first, on the
+theory that it had not restarted since the settings file was written. It made no
+difference. Running `claude` in a Terminal window from `~/un-claude` worked
+immediately. `/status` in that session reported:
 
-1. **Fully quit the desktop app** — Cmd+Q, not just closing the window — reopen
-   it, start a session in this folder, exchange a few messages, and look at the
-   dashboard. Settings are read at startup, so an app running since before the
-   file existed would never have seen it.
-2. **If that fails, run `cd ~/un-claude && claude` in Terminal** and repeat. The
-   `env` override is a documented Claude Code CLI behaviour; the CLI is the
-   surface most likely to honour it.
+```
+Anthropic base URL:  https://api.moonshot.ai/anthropic
+Model:               kimi-k3
+Setting sources:     User settings, Project local settings
+```
+
+**The rule: start this project with `cd ~/un-claude && claude` in Terminal.**
+The desktop app does not load the project `env` block and will run on Claude no
+matter what this repository says. Recorded as decision 9 in `04-decision-log.md`.
+
+### Starting a session, and the check that takes five seconds
+
+```bash
+cd ~/un-claude && claude
+```
+
+Then type `/status` and read two lines: **Anthropic base URL** must say
+`api.moonshot.ai`, and **Model** must say `kimi-k3`. If either says anything
+else, the session is not on Kimi and nothing it does counts as work on this
+project until that is fixed.
+
+`/status` is available in Terminal, which retires the UNVERIFIED note above about
+whether it exists. It reads configuration rather than asking the model what it
+is, so it is real evidence, but it is still Claude Code describing itself. The
+Moonshot dashboard remains the authority.
 
 ### A boundary consequence worth knowing
 
