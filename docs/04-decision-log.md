@@ -159,8 +159,9 @@ window from `~/un-claude`. The desktop app is not used for this project.
 
 **Reasoning.** The desktop app does not load the project's `env` block, so it
 silently ignores the Kimi configuration and runs on Claude against
-`api.anthropic.com`. Sessions 1 through 5 all ran this way, which is why the
-Moonshot dashboard read zero the entire time. The command line version loads the
+`api.anthropic.com`. Session 2 ran this way, which is why the Moonshot
+dashboard still read zero at the point it was checked. Session 1 ran on Claude by
+design, so session 2 was to be the first session on Kimi and silently was not. The command line version loads the
 same file correctly. Confirmed by `/status` in Terminal on 17 Aug 2026:
 
 ```

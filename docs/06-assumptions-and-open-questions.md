@@ -43,14 +43,14 @@ runs high, `kimi-k2.7-code` is the alternative and the change is one line in
 `.claude/settings.local.json`. That is a live option, not a closed one.
 
 **Row 9, whether the Claude Code desktop app can run this project on Kimi. Closed
-17 August 2026, session 6.** It cannot. The desktop app does not load the
+17 August 2026, session 2.** It cannot. The desktop app does not load the
 project's `env` block and runs on Claude regardless of what
 `.claude/settings.local.json` says. Running `claude` in Terminal from
 `~/un-claude` loads it correctly, confirmed by `/status` reporting the Moonshot
 base URL and `kimi-k3`. **This project is worked on in Terminal from now on.**
 Full reasoning in `04-decision-log.md` entry 9.
 
-**The part worth carrying forward:** sessions 1 to 5 all believed they were
-running on Kimi and none of them were. The repository said Kimi, the settings
-file said Kimi, and the dashboard said zero. A correct configuration file is not
-evidence of a loaded one.
+**The part worth carrying forward:** session 2 was meant to be the first session
+on Kimi and was not, and nothing in the project would have revealed that. The
+repository said Kimi, the settings file said Kimi, and the dashboard said zero. A
+correct configuration file is not evidence of a loaded one.

@@ -1,10 +1,10 @@
 # un-claude: Current Handoff
 
-**Date:** 17 August 2026, end of session 6
+**Date:** 17 August 2026, end of session 2
 **Status:** Setup complete and now genuinely running on Kimi. No product work has
 started.
-**Sessions 1 to 6 all ran on Claude.** Sessions 2 to 5 believed otherwise and
-were wrong. See section 0. If you are reading this in a Terminal session started
+**Sessions 1 and 2 both ran on Claude.** Session 1 did so by design. Session 2
+was meant to be the first session on Kimi and was not. See section 0. If you are reading this in a Terminal session started
 with `claude` from `~/un-claude`, you are the first session actually on Kimi.
 
 **This file holds resumption context only.** It is rewritten wholesale at the end
@@ -24,10 +24,10 @@ beyond the next session, it belongs in `04-decision-log.md`,
 stop and say so. Nothing done in a session that is not on Kimi counts as work on
 this project.
 
-**Why this is item one.** Sessions 2 to 5 all ran in the Claude Code desktop app,
-which silently ignores this project's configuration and runs on Claude against
-Anthropic. Every one of those sessions could have reported that Kimi was
-configured, because it was, and the Moonshot dashboard read zero the whole time.
+**Why this is item one.** Session 2 ran in the Claude Code desktop app, which
+silently ignores this project's configuration and runs on Claude against
+Anthropic. It could have reported all session that Kimi was configured, because
+it was, while the Moonshot dashboard read zero.
 Closed as decision 9 in `04` and row 9 in `06`.
 
 **The configuration itself is proved good and needs no further attention.** On 17
@@ -41,7 +41,7 @@ in the first reply of every session and it is the only mechanism this project ha
 for catching documentation rot. There is no automation at session boundaries.
 None at all.
 
-**3. Then get to section 4, which is the actual work.** Six sessions have
+**3. Then get to section 4, which is the actual work.** Two sessions have
 produced a repository, a documentation system and a working Kimi configuration,
 and no specification for the tool. That is the gap.
 
@@ -130,8 +130,9 @@ Jon's decision, recorded as `04` entry 3.
 ## 4. Where to pick up
 
 **The next session is the build definition session, and Jon leads it. It has been
-the next session since session 1.** Nothing about the tool has been decided in
-six sessions. Everything so far has been setup, and setup is finished.
+the next session since session 1.** Session 2 was supposed to be it and was spent
+entirely on the routing problem instead. Everything so far has been setup, and
+setup is now genuinely finished.
 
 He will bring references and examples and explain what the tool is meant to do.
 Right now the entire specification is one sentence: a small tool that rewrites AI
@@ -263,14 +264,17 @@ only, global permission warning restored. Five commits, all pushed. Ran on Claud
 by design so that the rules governing this project were not written by the model
 they govern.
 
-**Sessions 2 to 5, 17 August 2026. Claude, believing they were Kimi.** Work of
-unrecorded scope, carried out in the Claude Code desktop app. Their commits are
-in the log. Treat their reasoning as sound and their premise as wrong: anything
-any of them said or implied about running on Kimi was false.
-
-**Session 6, 17 August 2026. Claude, and it said so.** Diagnosed the above.
+**Session 2, 17 August 2026. Claude, in the desktop app, when it was meant to be
+the first session on Kimi.** Diagnosed exactly that.
 Established by two independent checks that no session had ever reached Moonshot,
 proved the configuration itself correct by calling Moonshot directly, established
 that the desktop app is the cause and that Terminal works, and closed the
 question. Decision 9, row 9 closed, runbook updated, no product work. **The
 project can now actually run on Kimi, and has still never been specified.**
+
+**A correction made inside session 2, recorded because it is the exact failure
+this project is built to catch.** That session first wrote "sessions 2 to 5" into
+three documents, having inferred four sessions that never happened from a single
+line in this file. Git showed seven commits in one twenty eight minute run, which
+is session 1 alone. Invented history is worse than missing history, because it
+reads as evidence. Check `git log` before writing about what past sessions did.
