@@ -39,6 +39,26 @@ commit is made, so there is nothing to rename yet. Two ways round it:
 This project used the first option, so `main` was the branch name from the root
 commit onward.
 
+**The first `git push -u origin main` printed `Everything up-to-date`,** which is
+what git says when there was nothing to send. That was misleading, not wrong
+about the outcome. Investigated on 17 August 2026 rather than assumed: GitHub's
+own API confirmed all three commits and all eight files were present, the reflog
+showed exactly one `update by push` event timestamped at the moment the command
+ran, `.git/hooks/` contained only inert `.sample` files, and no push
+configuration beyond `push.default simple` was set.
+
+**Conclusion: nothing on this machine pushes automatically.** The message is a
+quirk of this old git version reporting on the tracking setup phase rather than
+the transfer. Publishing remains a deliberate act.
+
+**The general lesson, which is the reason this is written down:** git's own
+report on what reached GitHub is not evidence. When it matters, ask GitHub:
+
+```
+gh api repos/jnachman17-hue/un-claude/commits --jq '.[] | .sha[0:7]'
+gh api repos/jnachman17-hue/un-claude/contents --jq '.[].path'
+```
+
 ---
 
 ## GitHub access
