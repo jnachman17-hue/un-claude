@@ -22,7 +22,7 @@ dormant until a condition is actually met.
 | 6 | Whether this documentation system actually works in practice | unknown | Assumed to work, because it works in the project it was adapted from | Untested here. The conventions were carried over from a different project with a different subject, and nothing in this repository has been exercised by a real working session yet | End of session 2. Judge on: did the right things get written to the right files at the moment they happened, was real output shown instead of asserted, did the boundary in `CLAUDE.md` section 3 hold up against actual work. If a convention got in the way, fix the convention |
 | 7 | Technology stack for the tool | technical | Not chosen | Depends entirely on item 3 | With item 3 |
 | 8 | Where the project folder lives on disk | cosmetic | `~/un-claude`, directly in the home folder rather than alongside Blotter in `Documents/GitHub/` | Reversible with a single command and the GitHub repository does not care. Not worth spending a decision on | If Jon finds it untidy. No other trigger |
-| 9 | Whether the Claude Code **desktop app** can run this project on Kimi at all | config | **Unknown, and it is the blocker.** The configuration is proven correct — key, address and all three model names tested working — but the desktop app ignored it and ran on Claude | The desktop app signs in with an Anthropic account and appears to supply its own credentials, overriding the project `env` block. Not established whether that is by design or whether the app simply had not been restarted since the settings file was written | **Immediately.** Two tests in `07-runbook.md`: fully quit and reopen the desktop app first, then Terminal if that fails. If neither works, the real decision is between running this project in Terminal and dropping the Kimi requirement — and that one is Jon's, not the model's |
+| 9 | ~~Whether the desktop app can run this project on Kimi~~ | config | **CLOSED 17 Aug 2026. It cannot. Use Terminal.** | See Closed section below | Closed |
 
 ---
 
@@ -41,3 +41,16 @@ mattered: every Kimi model recallable from training had been discontinued in May
 the same question as which models exist. If output quality disappoints or cost
 runs high, `kimi-k2.7-code` is the alternative and the change is one line in
 `.claude/settings.local.json`. That is a live option, not a closed one.
+
+**Row 9, whether the Claude Code desktop app can run this project on Kimi. Closed
+17 August 2026, session 6.** It cannot. The desktop app does not load the
+project's `env` block and runs on Claude regardless of what
+`.claude/settings.local.json` says. Running `claude` in Terminal from
+`~/un-claude` loads it correctly, confirmed by `/status` reporting the Moonshot
+base URL and `kimi-k3`. **This project is worked on in Terminal from now on.**
+Full reasoning in `04-decision-log.md` entry 9.
+
+**The part worth carrying forward:** sessions 1 to 5 all believed they were
+running on Kimi and none of them were. The repository said Kimi, the settings
+file said Kimi, and the dashboard said zero. A correct configuration file is not
+evidence of a loaded one.

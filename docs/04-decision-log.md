@@ -149,3 +149,40 @@ the machine, including Blotter. Jon approved it on that basis. It is the only
 change made outside `~/un-claude` in this session, and it added nothing: it
 removed one line. The global settings file was checked afterwards and confirmed
 to contain no model, endpoint or Moonshot configuration of any kind.
+
+---
+
+### 9. This project runs in Terminal, not the Claude Code desktop app
+
+**Ruling.** Sessions for un-claude are started by running `claude` in a Terminal
+window from `~/un-claude`. The desktop app is not used for this project.
+
+**Reasoning.** The desktop app does not load the project's `env` block, so it
+silently ignores the Kimi configuration and runs on Claude against
+`api.anthropic.com`. Sessions 1 through 5 all ran this way, which is why the
+Moonshot dashboard read zero the entire time. The command line version loads the
+same file correctly. Confirmed by `/status` in Terminal on 17 Aug 2026:
+
+```
+Anthropic base URL:  https://api.moonshot.ai/anthropic
+Model:               kimi-k3
+Setting sources:     User settings, Project local settings
+```
+
+**What was ruled out first.** The configuration itself was proved correct by
+calling Moonshot directly, outside Claude Code: the endpoint, the API key and all
+three model names returned `HTTP 200`. Nothing in
+`.claude/settings.local.json` needed changing, and nothing was changed. Quitting
+and reopening the desktop app was tried before Terminal, on the theory that it
+had not restarted since the settings file was written. It was not that.
+
+**The cost, and why it is accepted.** Jon has to open a Terminal window to work
+on this project, which is a real friction for someone who does not use one. It
+is accepted because the alternative is abandoning the premise of the project.
+Nothing else about how sessions work changes.
+
+**Standing consequence, and it is the important part.** A session running in the
+desktop app is running on Claude, no matter what this repository says. The model
+picker trap and this one share a shape: **the configuration being correct is not
+evidence that it is loaded.** Check `/status` at the start of any session where
+it matters.
