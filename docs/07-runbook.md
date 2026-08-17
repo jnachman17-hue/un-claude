@@ -172,11 +172,24 @@ apply everywhere, which is why one was never used.
 
 ### How to check which model a session is actually running
 
-Run `/status` inside Claude Code. It reports the provider, base URL and proxy in
-use for that session. This is the only trustworthy check. Asking the model what
-it is produces an answer shaped by its instructions rather than by its
-configuration, and a model served through an Anthropic compatible endpoint may
-well answer that it is Claude.
+**Two checks, and both belong to Jon. The model cannot perform either.**
+
+**`/status`, typed by Jon inside Claude Code.** It reports the provider, base URL
+and proxy for that session. A slash command is typed by the user and cannot be
+invoked by a model, so a model claiming to have run it has not. **UNVERIFIED:**
+whether `/status` is available in the desktop app is not known. Some slash
+commands open an interactive terminal panel that the desktop app does not offer.
+If it is unavailable, use the second check, which is better anyway.
+
+**The Moonshot usage dashboard at `platform.moonshot.ai`.** If token usage climbs
+after a few exchanges, requests are genuinely reaching Moonshot. If it sits at
+zero, they are not. **This is the check that cannot lie,** because the evidence
+comes from the provider being paid rather than from the tool making the claim.
+It is also the only one of the two Jon can perform without any terminal at all.
+
+**Asking the model what it is proves nothing.** It sits inside a harness full of
+Anthropic branding, reading a file called `CLAUDE.md`, and may sincerely answer
+that it is Claude. Self description reports instructions, not configuration.
 
 ---
 

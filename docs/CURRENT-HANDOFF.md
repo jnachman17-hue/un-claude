@@ -15,15 +15,28 @@ beyond the next session, it belongs in `04-decision-log.md`,
 
 ### Due now, in this order
 
-**1. Run `/status` and tell Jon exactly what it says about the provider and base
-URL.** The whole configuration rests on one address, `https://api.moonshot.ai/anthropic`,
-which came from Jon's own brief and has never been tested from this machine. It
-is marked `UNVERIFIED` in `07-runbook.md`. If `/status` shows Moonshot,
-**go and remove that `UNVERIFIED` marker**, because it has now been verified.
+**1. Confirm the configuration is actually live, then clear the `UNVERIFIED`
+marker in `07-runbook.md`.** The whole setup rests on one address,
+`https://api.moonshot.ai/anthropic`, which came from Jon's brief and had never
+been tested from this machine when it was written.
 
-Do not attempt to confirm this by asking the model what it is. A model served
-through an Anthropic compatible endpoint may answer that it is Claude. `/status`
-reports configuration. Self-description does not.
+**You cannot verify this yourself.** Two checks exist and both belong to Jon:
+
+- **He types `/status`** in Claude Code, which reports the provider and base URL
+  in use. A slash command is typed by the user. A model cannot invoke one, so ask
+  him to run it rather than claiming to have run it. It may also be unavailable
+  in the desktop app, in which case use the second check.
+- **He opens his usage dashboard at `platform.moonshot.ai`.** If token usage is
+  climbing after a few exchanges, requests are genuinely reaching Moonshot. If it
+  sits at zero, they are not, whatever anything else reports. **This is the check
+  that cannot lie**, because it comes from the provider rather than from the tool
+  making the claim.
+
+**Do not try to settle this by describing yourself.** A model served through an
+Anthropic compatible endpoint sits inside a harness full of Anthropic branding
+and may sincerely report being Claude. Self description is not evidence about
+configuration. This is the same principle as `git` reporting a push it had in
+fact just performed: ask the service, not the tool.
 
 **2. Say what is stale, wrong, or missing in these documents.** Jon asks for this
 in the first reply of every session and it is the only mechanism this project has
