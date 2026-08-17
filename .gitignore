@@ -1,0 +1,80 @@
+# ---------------------------------------------------------------------------
+# un-claude — .gitignore
+#
+# Anything matching a line in this file is invisible to git. It is never
+# committed and never pushed to GitHub. Everything else in this folder will be
+# committed once staged.
+#
+# Read this file before adding to it. The first block is load-bearing.
+# ---------------------------------------------------------------------------
+
+
+# --- SECRETS. Nothing in this block may ever reach GitHub. -----------------
+
+# Per-machine Claude Code settings. This is the file that holds the Moonshot
+# API key and points this project at Kimi. It is the single most important
+# line in this file. If this line is ever deleted, the next commit publishes
+# the key to GitHub.
+#
+# Consequence, recorded here on purpose: because this file is ignored, the
+# Kimi configuration does not travel with the repository. A fresh clone of
+# un-claude on another machine runs on Claude, not Kimi, until this file is
+# recreated by hand. That is the correct trade — a key must not leak — but it
+# is a trap if nobody wrote it down. It is written down.
+.claude/settings.local.json
+
+# Environment files in every common form. Real values live in these; only the
+# committed .env.example template carries variable names with empty values.
+.env
+.env.*
+!.env.example
+
+# Keys, certificates and credential files, matched by extension. Deliberately
+# broad. A false positive here costs nothing; a false negative leaks a secret.
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+
+
+# --- macOS clutter ----------------------------------------------------------
+
+# Finder writes these into every folder it displays. They are noise and they
+# are never wanted in a commit.
+.DS_Store
+**/.DS_Store
+
+
+# --- Dependencies and build output ------------------------------------------
+
+# The tech stack for this project is not chosen yet. These entries cover the
+# common cases in advance, so that a stray install command cannot dump tens of
+# thousands of machine-generated files into a commit. Stack-specific entries
+# get added when the stack is decided.
+node_modules/
+.next/
+dist/
+build/
+out/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+
+# --- Editor and machine-local state -----------------------------------------
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# --- Scratch ----------------------------------------------------------------
+
+# Working files that are not part of the durable record. If something in here
+# turns out to matter, it should be moved into the docs tree, not un-ignored.
+scratch/
+tmp/
