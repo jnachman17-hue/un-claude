@@ -69,6 +69,13 @@ None at all.
 - **No em dashes or en dashes,** in documents or in the tool's own output.
 - **Do not push to GitHub without Jon's word.** Committing locally is yours.
 - **This is not a test of you.** Nobody is scoring the model. Build the tool.
+- **If Jon mentions the model picker, warn him before he uses it.** It still
+  shows Anthropic model names in this project. Selecting from it overrides the
+  Kimi setting, and it writes the choice into his global settings, which changes
+  the default model in his other projects. It is the only route found so far by
+  which this project can affect anything outside this folder. Details and the
+  partial mitigation are in `07-runbook.md`. To change model, edit
+  `.claude/settings.local.json` and restart.
 
 ---
 

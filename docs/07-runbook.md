@@ -133,10 +133,15 @@ written into any file that git can see.
     "ANTHROPIC_BASE_URL": "https://api.moonshot.ai/anthropic",
     "ANTHROPIC_AUTH_TOKEN": "REDACTED, 51 characters, sk- prefix",
     "ANTHROPIC_MODEL": "kimi-k3",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kimi-k2.6"
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kimi-k2.6",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kimi-k2.7-code",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kimi-k3",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "kimi-k3"
   }
 }
 ```
+
+**The last three exist only as a safety net.** See the model picker section below.
 
 **There is no `permissions` block, deliberately.** Blotter accumulated an allow
 list over thirteen sessions of earned trust. This project starts at zero, so
@@ -159,6 +164,37 @@ asks Moonshot for a Claude model, which does not exist there.
 names.** The provider defines them, so any string is passed straight through. A
 typo in `kimi-k3` is not caught at startup. It fails on the first request with an
 error about the selected model.
+
+### The model picker is a trap in this project. Warn Jon if he reaches for it.
+
+Claude Code's model picker, reachable through `/model` or the control in the
+corner of the window, still displays Anthropic model names in this project. It
+looks completely ordinary. Selecting from it does two harmful things.
+
+**It overrides the Kimi setting.** The documented priority order for choosing a
+model is, highest first: `/model` during a session, then `--model` at launch,
+then the `ANTHROPIC_MODEL` environment variable, then the `model` field in a
+settings file. The picker sits above `ANTHROPIC_MODEL`, so a selection wins.
+Behind a custom `ANTHROPIC_BASE_URL` no validation happens, so a Claude model
+identifier is passed straight to Moonshot and fails on the next message with no
+warning at startup.
+
+**It writes to the global settings file.** `/model` saves the selection as the
+default for new sessions by writing the `model` field into user settings. A
+selection made inside this project therefore changes the default model in every
+other project on this machine, Blotter included. **This is a route by which this
+project can affect Blotter, and it is the only one found so far.** It does not
+carry Kimi across, but it does change something outside this folder.
+
+**Mitigation in place, and its limits.** `ANTHROPIC_DEFAULT_OPUS_MODEL`,
+`ANTHROPIC_DEFAULT_SONNET_MODEL` and `ANTHROPIC_DEFAULT_FABLE_MODEL` are set to
+Kimi models so that an accidental selection of a family alias lands somewhere
+that works rather than somewhere broken. **This does not make the picker safe.**
+It bounds one of the two problems and does nothing about the write to global
+settings, and it does not cover selecting a full Claude model name directly.
+
+**The rule: do not use the model picker in this project.** To change the model,
+edit `.claude/settings.local.json` and restart.
 
 ### Settings precedence, confirmed
 
