@@ -102,3 +102,50 @@ layer buys nothing and adds a place for a configuration mismatch to hide.
 stop. It kills all access immediately regardless of what is configured on the
 laptop, and requires no terminal commands. It is the one safety control Jon can
 operate entirely on his own.
+
+### 7. The model is `kimi-k3`, with `kimi-k2.6` for background work
+
+**Ruling.** `ANTHROPIC_MODEL` is set to `kimi-k3`.
+`ANTHROPIC_DEFAULT_HAIKU_MODEL` is set to `kimi-k2.6`.
+
+**Reasoning.** The obvious choice looked like `kimi-k2.7-code`, since the project
+builds software and that model is the dedicated coding model. That reasoning was
+rejected. The hard part of a text humanising tool is not the code, which will be
+simple: read text, call a model, return text. The hard part is judgment about
+writing, which is what Moonshot describes `kimi-k3` as being for, namely
+"software engineering, knowledge work, and deep reasoning." A coding specialist
+tuned for large codebases solves a problem this project does not have.
+
+The cost is that `kimi-k3` is the more expensive model per token. That is bounded
+by the spending limit Jon set in Moonshot's console, and the setting is one line
+to change if cost becomes a problem.
+
+`kimi-k2.6` handles background work: conversation summarising and other
+housekeeping the harness performs without being asked. A cheaper model is correct
+for that, and leaving it unset would have been worse than a cost problem. See the
+runbook.
+
+**How the model list was established.** By reading Moonshot's own documentation,
+not from memory. Every Kimi model this assistant could have named from training
+had been discontinued: the `kimi-k2` series was retired on 25 May 2026, as was
+K2.5. **Standing consequence: a model identifier produced from memory by any
+assistant should be treated as wrong until checked against the provider.**
+
+### 8. The global permission warning is restored
+
+**Ruling.** `"skipDangerousModePermissionPrompt": true` was removed from
+`~/.claude/settings.json`.
+
+**Reasoning.** That setting muted the confirmation screen Claude Code shows when
+it is launched with its permission system switched off. It does not turn
+permissions off by itself, it removes the last confirmation before they go off.
+Jon cannot evaluate a proposed shell command by reading it, so the permission
+prompt is one of very few safety mechanisms in this project that works without
+him understanding code. Muting the warning in front of it made no sense with an
+unfamiliar model about to be given shell access.
+
+**Scope note.** This is a global change and therefore affects every project on
+the machine, including Blotter. Jon approved it on that basis. It is the only
+change made outside `~/un-claude` in this session, and it added nothing: it
+removed one line. The global settings file was checked afterwards and confirmed
+to contain no model, endpoint or Moonshot configuration of any kind.

@@ -122,6 +122,62 @@ grep -n -i "ANTHROPIC" ~/.zshrc ~/.bash_profile ~/.bashrc ~/.zprofile ~/.profile
 
 Expected output is nothing at all.
 
+### The configuration actually in place
+
+Installed 17 August 2026. The token value is redacted here and must never be
+written into any file that git can see.
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.moonshot.ai/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "REDACTED, 51 characters, sk- prefix",
+    "ANTHROPIC_MODEL": "kimi-k3",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kimi-k2.6"
+  }
+}
+```
+
+**There is no `permissions` block, deliberately.** Blotter accumulated an allow
+list over thirteen sessions of earned trust. This project starts at zero, so
+every command prompts. Entries get added one at a time as they prove themselves,
+never copied across in bulk.
+
+### Three things confirmed from Claude Code's documentation, not from memory
+
+**`ANTHROPIC_SMALL_FAST_MODEL` is deprecated.** It has been replaced by
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`, which sets the model used for the `haiku` alias
+and for background functionality. Any guide or assistant recommending the old
+name is out of date.
+
+**Leaving the background model unset is a real failure, not a cost issue.**
+Claude Code performs housekeeping such as conversation summarising on its own. If
+that variable is unset while `ANTHROPIC_BASE_URL` points at Moonshot, the harness
+asks Moonshot for a Claude model, which does not exist there.
+
+**Behind a custom `ANTHROPIC_BASE_URL`, Claude Code does not validate model
+names.** The provider defines them, so any string is passed straight through. A
+typo in `kimi-k3` is not caught at startup. It fails on the first request with an
+error about the selected model.
+
+### Settings precedence, confirmed
+
+Highest to lowest: managed settings, command line arguments,
+`.claude/settings.local.json`, `.claude/settings.json`, then the global
+`~/.claude/settings.json`.
+
+**This is why the constraint works.** Project local settings override the global
+file, so Kimi applies to this project and nothing else. A shell export would
+apply everywhere, which is why one was never used.
+
+### How to check which model a session is actually running
+
+Run `/status` inside Claude Code. It reports the provider, base URL and proxy in
+use for that session. This is the only trustworthy check. Asking the model what
+it is produces an answer shaped by its instructions rather than by its
+configuration, and a model served through an Anthropic compatible endpoint may
+well answer that it is Claude.
+
 ---
 
 ## A global setting worth knowing about
