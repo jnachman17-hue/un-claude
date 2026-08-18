@@ -718,3 +718,70 @@ stops either track from committing the other's half finished work.
 from two chats and a decision being made in one that the other never learns.
 **Both tracks read `04-decision-log.md` and the other track's notes file before
 acting.**
+
+## 18 August 2026, session 4, Track A session A1
+
+**A note on where these are written.** `04` entry 25 says each track records
+rulings in its own notes file to stop two chats colliding in this one. **Entries
+26 and 27 are written here instead, deliberately.** They amend a numbered entry
+and they change what Track B builds, so leaving them in a side file would leave
+the numbered log wrong on a scope question. Track B had not begun editing when
+these were written, so there was nothing to collide with. **The rule stands for
+everything that does not amend a numbered entry.**
+
+### 26. PDF is dropped from version one and added later
+
+**Ruling.** Jon, this session: version one supports pasted text, PNG, JPG and
+Word documents. **PDF is deferred.**
+
+**Reasoning, and it is Jon's, not the assistant's.** He observed that AI tools
+rarely produce PDFs compared with other file types. **That is correct.** Image
+generators produce PNG and JPG, and those carry the provenance data. Chat tools
+produce text. A PDF is almost always something a person exported afterwards.
+
+**What dropping it unlocks, which is the part nobody saw coming.** The chain runs
+like this and it collapses the entire architecture problem:
+
+1. PDF cleaning needs `qpdf`, a separate program that rebuilds a PDF so that
+   deleted content cannot be recovered from it.
+2. Vercel can install Python packages but **cannot install separate programs like
+   `qpdf`**, so PDF and Vercel could not coexist.
+3. **No PDF means no `qpdf`. No `qpdf` means no separate programs at all.**
+4. The engine repository's core needs Python and nothing else for text, PNG, JPG
+   and Word documents. It says so in its own documentation.
+5. **So the engine runs on Vercel, in the same place as the site.**
+
+**What the assistant recommended, and why it was wrong.** Two options were put to
+Jon: a second hosting company running the repository, or writing the file
+handling from scratch in the site's own language. **Jon rejected both by asking a
+better question.** He wanted to lean on the repository as heavily as possible,
+which was the stated goal all along, and dropping one format achieved it where
+neither proposed option did.
+
+**What this amends.** Entry 24, which put PDF, DOCX, PNG and JPG in scope at
+launch. **Three of the four stand. PDF moves out.**
+
+**The cost, stated now rather than discovered later.** PDF is the format people
+send to clients and employers, so the case for it is real and will grow. Adding
+it later means either a second computer somewhere to run the PDF part, or writing
+the PDF rebuilding ourselves. **Both are real work. Both are cheaper to decide
+later than to guess at now.** Tracked as `06` row 26.
+
+### 27. The engine runs on Vercel, using the repository, in one place with the site
+
+**Ruling.** Follows directly from entry 26. The engine is
+`guillaumemeyer/watermarks-remover`, MIT licensed, running as Python on Vercel
+alongside the site. **One hosting company, one bill, no Docker, no second system
+to understand.**
+
+**What this closes.** `06` rows 19 and 25, the two questions Jon deliberately
+parked for a technical session. Both are answered.
+
+**What it costs on Jon's laptop: one install, not five.** Python 3.13, because the
+version macOS ships is 3.9 and the engine needs 3.10 or newer. **The laptop is the
+workshop, not the server.** Nothing users do ever touches it. It matters only so
+that work can be shown to Jon running rather than asserted, per `CLAUDE.md`
+section 4.
+
+**Not needed, and this is the whole gain:** Docker, `exiftool`, `c2patool`,
+`qpdf`, and a second hosting company.

@@ -67,13 +67,20 @@ second implementation of a settled thing.**
 **Goal.** Layers A and metadata working on real text and real files, reachable by
 the site over HTTP, with usage recorded.
 
+**Version one formats: pasted text, PNG, JPG, Word documents. PDF is deferred**,
+`04` entry 26, `06` row 26.
+
+**Blocked as of 18 August 2026 on one thing: Jon installing Python 3.13 on his
+laptop.** The laptop is the workshop, not the server. It is needed so work can be
+shown running rather than asserted.
+
 | Step | Detail |
 |---|---|
-| 1 | **Decide how the engine is deployed.** This is the substance of the session. See section 5 |
-| 2 | Bring in `guillaumemeyer/watermarks-remover`, in whole or in part. Jon has not ruled that it is copied wholesale, and wants the reasoning either way |
+| 1 | ~~Decide how the engine is deployed~~. **DONE. `04` entry 27:** Python on Vercel, same place as the site, using the repository. No Docker, no second host |
+| 2 | Bring in `guillaumemeyer/watermarks-remover`. **Ruled: used as the engine**, `04` entry 27 |
 | 3 | **Prove layer A on real text.** Show the actual characters found, named, counted and located |
-| 4 | **Prove metadata on a real PDF, DOCX, PNG and JPG.** Show what was in the file before and what is in it after |
-| 5 | **Resolve `qpdf` or prove the alternative.** Without it PDF cleaning leaves the original bytes recoverable, which is a broken promise rather than a limitation |
+| 4 | **Prove metadata on a real DOCX, PNG and JPG.** Show what was in the file before and what is in it after. **PDF is out of version one**, `04` entry 26 |
+| 5 | ~~Resolve `qpdf`~~. **Settled by `04` entries 26 and 27.** No PDF, so no `qpdf`, so no separate programs, so the engine runs on Vercel beside the site |
 | 6 | Define the HTTP contract the site calls. One shared definition, closed set of error messages, per the practice that survived from `04` entry 15 |
 | 7 | **Record usage from the first line:** words in, file size in, tokens for layer B. `04` entry 22 |
 
