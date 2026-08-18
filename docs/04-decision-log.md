@@ -806,9 +806,16 @@ Track B is paused. `apps/web` is no longer reserved, which matters because Verce
 requires the engine to live inside it. **If a second track ever restarts, entry 25
 is the starting point and this entry is the warning attached to it.**
 
-**Not lost, deliberately.** Track B reached a real design conclusion and Jon is
-not sure he agrees with it. **Recorded as `06` row 27 rather than left in a paused
-chat**, with a note that it must not be treated as settled.
+**Not lost, deliberately.** A live design argument was preserved as `06` row 27
+rather than left in a paused chat.
+
+**Correction, same session.** The first version of that row **had the two
+positions reversed**, describing the fixed checklist as Track B's idea that Jon
+doubted. **It is Jon's idea and he holds it.** Track B proposed showing what was
+removed; Jon rejected that because it creates a false success condition, and
+proposed showing everything checked instead. **The error came from reading a
+pasted fragment of another conversation as if the assistant's own summary of it
+were the record.** `06` row 27 is corrected and is the authority.
 
 **Also recorded from that exchange, because it is the clearest statement of the
 product's shape so far, and it is Jon's:** `/inspect` is the free hook and
