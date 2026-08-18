@@ -48,19 +48,20 @@ explicitly and cannot see it coming himself.
 
 ## 2. Formatting
 
-**No em dashes and no en dashes.** Not in documents, and not in any text the tool
-itself produces.
+**No em dashes and no en dashes.** In these documents, and in the words on the
+website: headings, subheadings, body copy, button labels, anything a visitor
+reads.
 
-**The reason was corrected 18 August 2026, session 4, and the correction matters
-because this project now sells precision about exactly this.** An em dash is
-**not** a watermark. It is a visible stylistic habit, common in machine written
-prose, that a reader may notice. A watermark is a deliberate hidden mark: an
-invisible character, a note inside a file, or a statistical pattern. The rule
-survives the rescope anyway, on a narrower and more honest reading: **a product
-that sells the removal of machine generated markers, whose own documents are full
-of the most widely recognised machine tell, is not credible.** It is a
-credibility rule, not a technical one. Do not let it drift back into implying
-that dashes are what the tool removes.
+**Scope corrected by Jon, 18 August 2026, session 4.** This is **his style
+preference for his own site and documents.** That is the whole of it.
+
+**It says nothing about the engine.** What the tool does to a user's text is a
+technical question decided on technical grounds. **Do not let this rule leak into
+the engine specification**, and do not let it become a reason to strip dashes
+from anyone's text. Earlier versions of this file justified the rule by claiming
+that removing such signals is what the project is for. That was wrong twice over:
+an em dash is not a watermark, and Jon's preference about his own copy is not a
+product requirement.
 
 **Documents should be glanceable.** Short sections. Tables wherever a table fits.
 
@@ -142,14 +143,15 @@ project and it is not "be more careful."** Jon cannot check a technical claim
 against the code, so a term used loosely becomes a fact in his head and then a
 fact in a document. **Define the term on first use in every session, not once,
 and prefer the plain word over the correct-sounding one.** The same failure
-produced "Kimi archaeology" in the same conversation, which was jargon for
-"the historical record of the Kimi setup" and had to be explained after the fact.
+happened twice in one conversation: the second time was an invented phrase for
+"the historical record of an abandoned setup", which meant nothing to Jon and had
+to be explained after the fact.
 
 **Reading a framing into a brief that was not in it.** *Session 1, 17 August
 2026.* The phrase "deliberate side by side test" in Jon's opening brief was read
-as meaning the purpose of the project was to benchmark Kimi against Claude. What
-he meant was "try this on something small rather than migrating a project I care
-about." The wrong framing was carried far enough to reach a draft of `CLAUDE.md`
-and an explicit question back to Jon before he corrected it. **The lesson:** when
+as meaning the purpose of the project was to benchmark one model against another.
+What he meant was "try this on something small rather than migrating a project I
+care about." The wrong framing was carried far enough to reach a draft of
+`CLAUDE.md` and an explicit question back to Jon before he corrected it. **The lesson:** when
 an interpretation of Jon's intent is going to shape a durable document, state the
 interpretation back to him in one sentence before building on it, not after.

@@ -88,10 +88,6 @@ read, and the output of any command you run, is transmitted to Anthropic as the
 API provider. That is an accepted trade for this project and it is a hard limit
 on what belongs in it.
 
-**Corrected 18 August 2026.** This paragraph named Moonshot until Kimi was
-retired. The provider changed. **The rules below did not, and do not relax.** A
-different third party is still a third party.
-
 **Never read, open, summarise, quote, or include:**
 
 - Any file outside `~/un-claude`. This project is self-contained by design.

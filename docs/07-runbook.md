@@ -10,10 +10,7 @@ Anything not yet verified is marked **UNVERIFIED** and must not be relied on.
 
 ## Emergency stop
 
-**Corrected 18 August 2026 when Kimi was retired. The old instruction below no
-longer works and would waste time in an actual emergency.**
-
-**What to do now, in order:**
+**What to do, in order:**
 
 1. **Close the terminal window, or the Claude Code window, running the session.**
    This stops the model mid task. Nothing further can be run.
@@ -21,15 +18,11 @@ longer works and would waste time in an actual emergency.**
    shown to Jon first. Denying it is the routine, non emergency version of the
    same control, and it is the one that matters most day to day.
 
-**There is no longer a single console switch.** The old stop was deleting the
-Moonshot API key, which killed all access instantly from a web page, with no
-terminal needed. That control is gone because Moonshot is no longer in the path,
-and nothing has replaced it exactly. **This is a real reduction in safety and it
-is recorded here rather than glossed over.**
-
-~~**Delete the API key in Moonshot's console.** Access dies immediately,
-regardless of what is configured on the laptop. No terminal commands are needed
-and Jon can do it alone.~~
+**There is no single console switch, and that is worth knowing rather than
+glossing over.** An earlier plan for this project used an outside model provider,
+where deleting one API key on a web page killed all access instantly with no
+terminal involved. That was the one safety control Jon could operate entirely
+alone. **It does not exist any more and nothing has replaced it exactly.**
 
 ---
 
@@ -92,10 +85,9 @@ to.
 ## The secret boundary, and how to re-check it
 
 `.claude/settings.local.json` is listed in `.gitignore` and therefore invisible to
-git. **It held the Moonshot API key when this project was going to run on Kimi.
-It holds nothing secret today, and the check below still matters,** because that
-file is where a key would land if one is ever added, and because a changed
-`.gitignore` is a known way for this protection to vanish silently.
+git. **It holds nothing secret today, and the check below still matters,** because
+that file is where an API key would land if one is ever added, and because a
+changed `.gitignore` is a known way for this protection to vanish silently.
 
 **This was verified rather than assumed** on 17 August 2026. A file containing a
 fake key was written to that path. `git check-ignore -v` reported that rule
@@ -114,41 +106,40 @@ is fixed.**
 
 ---
 
-## Two lessons from a setup that no longer exists
+## Three lessons from an abandoned setup
 
-**This project was originally going to be built on Kimi, a model from a company
-called Moonshot. That was abandoned on 18 August 2026,** decision 11. All the
-Kimi setup instructions that used to live here have been deleted, because a stale
-instruction is worse than no instruction and someone would eventually follow one.
+**Before this project ran on Claude, it was configured to run on an outside
+model provider. That plan was abandoned on 18 August 2026,** decision 11. All the
+setup instructions for it have been deleted, because a stale instruction is worse
+than no instruction and someone would eventually follow one. **The history is in
+the decision log, which is append only. It is not repeated here.**
 
-**Two lessons from it are general, have nothing to do with Kimi, and are the
-reason this section exists at all.**
+**Three lessons from it are general and are the reason this section exists.**
 
-**A correct configuration file is not a loaded one.** Session 2 was meant to be
-the first session running on Kimi and silently was not. The repository said Kimi,
-the settings file said Kimi, and the provider's own dashboard said zero usage.
-Nothing on the laptop revealed the gap. **Verify the running state, not the file
-on disk.** This applies today to anything configured and assumed: an environment
-variable on Vercel, a database setting, a deployment flag.
+**A correct configuration file is not a loaded one.** An entire session ran
+against the wrong model while every file on the laptop said otherwise. The
+repository said one thing, the settings file said the same thing, and the
+provider's own dashboard showed zero usage. Nothing local revealed the gap.
+**Verify the running state, not the file on disk.** This applies today to
+anything configured and assumed: an environment variable on Vercel, a database
+setting, a deployment flag.
 
 **Ask the service, not the tool.** When a claim matters, check it against the
 system that actually holds the truth, not against the thing that is supposed to
-be reporting it. The same session proved the configuration was fine by calling
-the provider directly, outside Claude Code, which is what located the real
-problem.
+be reporting it. Calling the provider directly, from outside the tool, is what
+located that problem after the tool's own reporting had hidden it.
 
-**A third, from the same period and recorded in `04` entry 7:** a model
-identifier produced from memory should be treated as wrong until checked against
-the provider. Every Kimi model the assistant could name from training had already
-been discontinued.
+**A model identifier produced from memory should be treated as wrong until
+checked against the provider.** Every model name the assistant could produce from
+training had already been discontinued. `04` entry 7.
 
 ---
 
 ## The boundary has a consequence worth knowing
 
-**Some problems cannot be diagnosed from inside a session at all.** The Kimi
-launch failure above is the worked example: its cause lived outside
-`~/un-claude`, in how the application started and in global settings.
+**Some problems cannot be diagnosed from inside a session at all.** The failure
+above is the worked example: its cause lived outside `~/un-claude`, in how the
+application started and in global settings.
 
 `CLAUDE.md` section 3 forbids the model from reading anything outside this
 folder. **That rule is correct and should stay, but the cost is real: a problem

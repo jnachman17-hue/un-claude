@@ -27,6 +27,7 @@ the Closed section with the reason, rather than deleted.
 | 20 | **The abuse surface that arrives with file upload** | risk | **Accepted, unmitigated.** Entry 24 puts uploads in scope for PDF, DOCX, PNG and JPG | Accepting files from strangers means size limits, temporary storage, and the possibility of hostile files. None of it exists. **The launch caps are the only defence and they are not a real one** | Before launch: a hard file size limit and a format allow list. Anything beyond that when the first abuse actually happens |
 | 21 | **Stripping C2PA may attract regulation** | legal | **Not a blocker and the build proceeds.** Recorded so it is not learned from a payment processor | C2PA is an industry provenance standard backed by large companies, and AI disclosure rules are moving, including EU AI Act obligations around labelling AI generated content. **Stripping it is legal today.** Whether it stays commercially safe is a different question and not one this project can answer from inside itself | Any of: a payment processor asks what the product does, a regulation naming provenance stripping is passed, or before Jon markets to customers outside the US |
 | 22 | **A how it works page, and a mission page** | scope | **Parked by Jon, session 4, as a side note rather than a request.** He wants a page explaining what watermarking is and how the tool removes it, with simple animations, and a separate page where he writes his own thoughts on why the product exists. **He said explicitly this may all fold into the landing page instead** | Not needed for launch and not yet designed. Recorded because a parked idea that is not written down is a lost one | When the landing page structure is designed, which is the session after launch at the earliest |
+| 23 | **What the product may honestly claim, now that layer A is known not to touch Claude's watermark** | scope | **Undecided and Jon has not yet ruled.** Working position: layer A is sold as removing invisible characters, which is true and provable, and never as removing Claude's watermark, which Anthropic's own documentation rules out | `docs/anthropic-watermarking-context.md` establishes that Anthropic adds no hidden characters. **A visitor arriving because they want Claude's watermark gone is not served by layer A at all**, and would be misled by copy implying otherwise. Jon has ruled that users are never misdirected, so this has to be settled deliberately rather than by whatever the headline ends up saying | **Before any landing page copy is written.** It is the first question that copy has to answer |
 | 13 | Auth errors show `<DefaultError />` to users | technical | **Broken and unfixed.** Confirmed live 18 Aug 2026 | A bug in MakerKit Lite, not in anything we wrote. Any Supabase error without a canned message renders a raw placeholder instead of a sentence. Only three errors are covered. Traced to `packages/features/auth/src/components/auth-error-alert.tsx` line 37 | **Now urgent rather than pending.** Launch is within days and real strangers will hit sign up. Fix before launch |
 | 1 | How isolated the runtime environment should be | risk | **Trigger fired 18 Aug 2026 and was not acted on.** Dependencies installed, code written and executed, a build ran. Jon present and approving each step. Position unchanged: plain local folder at `~/un-claude` | The control risk is real: the model decides what runs on the laptop and Jon cannot evaluate a command by reading it. Every isolation option adds machinery that would make a failure impossible for him to diagnose | **Raised again by the rescope:** the engine build will install Python packages and may run external tools. If that happens, the next step is a separate macOS user account, not Docker |
 | 5 | Whether `CLAUDE.md` section 3 is too strict | rule | **Trigger fired 17 Aug 2026 and the rule held. Stands unchanged.** Nothing outside `~/un-claude` gets read | It genuinely blocked a diagnosis once, and the diagnosis was completed another way, so the rule blocked nothing that mattered. Recorded in `07` | The **second** time it blocks something genuine. One clean stop is evidence the rule works. A pattern is evidence it is too tight |
@@ -78,11 +79,13 @@ left visible. **The failure it did not prevent is the more useful result:**
 index was treated as cleanup rather than as part of finishing the work. Recorded
 in that file.
 
-**Row 2, which Kimi model variant to configure. Closed 17 August 2026, then VOID
-18 August 2026** when Kimi was retired. `04` entry 11. The question no longer
-exists. **The lesson from it does and is kept in `07`:** a model identifier
-produced from memory should be treated as wrong until checked against the
-provider.
+**Rows 2 and 9 are VOID, not closed. 18 August 2026.** Both were about the
+outside model provider this project was originally going to be built on, which
+was abandoned by `04` entry 11. The questions no longer exist. **Row 9's rule
+that this project must be run from Terminal is void with them,** because its only
+reason was that the desktop app would not load that provider's settings. The
+desktop app is fine. **The lessons from both are kept in `07` without the
+history.**
 
 **Row 7, technology stack. Closed 18 August 2026, session 3.** MakerKit Lite,
 the free MIT licensed Next.js and Supabase starter kit. Vercel's
@@ -92,12 +95,3 @@ hand written login system. Full reasoning in `04` entry 14. **The known cost is
 that it has no billing.** That is row 10, and it is now urgent rather than
 future.
 
-**Row 9, whether the Claude Code desktop app can run this project on Kimi. Closed
-17 August 2026, then VOID 18 August 2026** with Kimi. **Its rule that this
-project must run in Terminal is void with it.** The desktop app is fine.
-
-**The part worth carrying forward from rows 2 and 9:** session 2 was meant to be
-the first session on Kimi and silently was not. The repository said Kimi, the
-settings file said Kimi, and the dashboard said zero. **A correct configuration
-file is not evidence of a loaded one.** That lesson has nothing to do with Kimi
-and is kept in `07`.

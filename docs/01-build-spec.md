@@ -46,6 +46,77 @@ the other two layers is the single easiest way to make this product dishonest.**
 
 ---
 
+## 2a. What the layers do NOT do, from Anthropic's own documentation
+
+**Source.** `docs/anthropic-watermarking-context.md`, added by Jon 18 August 2026.
+It is a technical primer on Anthropic's watermarking, compiled 17 August 2026,
+which tags every claim by confidence. The items below are the ones tagged
+`[ANTHROPIC]`, meaning stated directly by Anthropic in a primary source, and they
+constrain what this product may honestly claim.
+
+### Layer A does nothing against Claude's text watermark
+
+**Anthropic states directly that no hidden characters are added.** No zero width
+spaces, no homoglyphs, no Unicode tags, no steganographic insertion of any kind.
+The text watermark lives in **which words the model chose**, not in anything
+inserted between them.
+
+**So invisible character stripping and Claude's watermark are unrelated
+problems.** The primer says so explicitly about this exact category of tool.
+
+**Layer A is still worth building and still works.** It removes marks that other
+sources leave: other AI tools, copy and paste from web pages, editors, and export
+pipelines. Those characters are real, they are common, and finding them is
+provable. **What layer A must never claim is that it removes Claude's
+watermark**, because it does not and Anthropic has published the reason.
+
+### A rewrite performed by Claude re-applies the watermark
+
+**This is a hard engineering constraint on layer B, and it is easy to get wrong.**
+Any text fully regenerated through Claude is marked at full strength, regardless
+of what went in. **Paraphrasing Claude's output with Claude makes the situation
+worse, not better.** Layer B must run on a non-Claude model. This project is
+*built* with Claude Code, which is unrelated: that is the tool writing the
+software, not the engine processing user text.
+
+### Nobody can verify that a text watermark was removed. Including us
+
+No public detector exists. The key is symmetric and held only by Anthropic, and
+the primer argues it can never be published, because a key that detects can also
+forge. **Every present day claim about text watermark removal, from any tool, is
+currently unfalsifiable.** This is the sourced version of `04` entry 23 and it
+makes that ruling stronger rather than weaker.
+
+### The watermark is not evenly present in the first place
+
+Signal accumulates only where the model had genuine choice. **Strong** in
+discursive prose and in anything Claude translated. **Sparse** in factual
+statements. **Weak** in code, where it attaches mainly to comments. **Near zero**
+when Claude only proofread human writing. **Insufficient** in short passages.
+
+**A user pasting a short factual paragraph may have nothing to remove.** Saying
+so honestly is better product than pretending otherwise.
+
+### Metadata stripping works, and defeats something already fragile
+
+C2PA is signed metadata attached to generated files. It is verifiable by anyone
+with open tooling, which is exactly why it is the auditable half. Anthropic
+documents it as removable by re-saving or converting the file. **Layer A and
+metadata are the two layers that provably do what they say.**
+
+**The tension worth carrying into any copy we write:** the durable mark cannot be
+audited, and the auditable mark is not durable.
+
+### One conflict in the sources, unresolved
+
+The primer describes `guillaumemeyer/watermarks-remover` as early stage, single
+digit stars, v0.0.1. A direct check of the repository on 18 August 2026 returned
+14.4k stars and v0.5.0 with CI and 60+ tests. **The technical descriptions of the
+three layers match exactly in both. Only the maturity figures conflict.** Not
+resolved, and it does not need resolving until the engine session. `06` row 19.
+
+---
+
 ## 3. What is actually built right now
 
 **Honest summary: the plumbing is real and verified. The product is not.**

@@ -22,8 +22,7 @@ for the humanizer is scrapped and the product is being rebuilt from the ground
 up.** The engine does not exist yet. Billing does not exist yet. The landing page
 is still the starter kit's stock marketing page.
 
-**Which model runs this.** Claude, through Claude Code. Kimi was retired on 18
-August 2026 and is history. See `04` entry 11.
+**Which model runs this.** Claude, through Claude Code.
 
 ---
 
@@ -69,8 +68,8 @@ govern, it ambushes.
 **This file has now proved the point twice.**
 
 **18 August 2026, session 3.** It spent the whole session saying the project was
-in setup and running on Kimi, when the project had been rescoped and Kimi retired
-hours earlier.
+still in setup, hours after it had been rescoped and the model it named had been
+abandoned.
 
 **18 August 2026, session 4.** It spent the session describing an AI text
 humanizer, a product that had been abandoned in the same conversation that

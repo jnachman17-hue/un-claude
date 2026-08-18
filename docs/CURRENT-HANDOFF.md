@@ -146,8 +146,9 @@ pushes work. Without it, pushing this repository fails with a bare `HTTP 400`.
 **Session 1, 17 August 2026.** Setup. Repository, `CLAUDE.md`, the documentation
 system, secret boundary tested twice.
 
-**Session 2, 17 August 2026.** Diagnosed that no session had ever reached
-Moonshot despite a correct configuration file. No product work.
+**Session 2, 17 August 2026.** Diagnosed that no session had ever reached the
+model the project was configured for, despite a correct configuration file. No
+product work.
 
 **Session 3, 18 August 2026.** Merged MakerKit Lite, created Supabase, deployed
 to `un-claude.com`, tested sign up end to end, then built a humanizer interface
