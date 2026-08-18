@@ -785,3 +785,32 @@ section 4.
 
 **Not needed, and this is the whole gain:** Docker, `exiftool`, `c2patool`,
 `qpdf`, and a second hosting company.
+
+### 28. Track B is paused. Track A runs alone until the engine is finished
+
+**Ruling.** Jon, this session: "I'm pausing track B. We are going to only do track A
+until engine is done because decisions on each unique track have been fighting one
+another. No longer worry about file collision."
+
+**Reasoning, and it is worth stating because the two track idea was sound and still
+failed.** The tracks did not collide on files, which is what entry 25 was built to
+prevent. **They collided on decisions.** Track B was blocked on rulings that only
+Jon could give, reached for adjacent work to stay busy, and started building
+pricing and metering that belonged to neither its session nor anyone else's yet.
+Meanwhile Track A kept producing findings that changed what Track B should build.
+**Two chats asking one non technical person for decisions produced contention for
+him, not parallelism.**
+
+**What this supersedes.** Entry 25's file ownership rules are suspended while
+Track B is paused. `apps/web` is no longer reserved, which matters because Vercel
+requires the engine to live inside it. **If a second track ever restarts, entry 25
+is the starting point and this entry is the warning attached to it.**
+
+**Not lost, deliberately.** Track B reached a real design conclusion and Jon is
+not sure he agrees with it. **Recorded as `06` row 27 rather than left in a paused
+chat**, with a note that it must not be treated as settled.
+
+**Also recorded from that exchange, because it is the clearest statement of the
+product's shape so far, and it is Jon's:** `/inspect` is the free hook and
+`/clean` is the conversion event. **Paste, see your own text with every hidden
+character marked exactly where it sits, then press the button that removes them.**
