@@ -1,115 +1,141 @@
 # un-claude: Current Handoff
 
-**Date:** 18 August 2026, session 3
-**Status:** The product skeleton is installed and runs. The rewriting engine does
-not exist. Nothing is deployed.
+**Date:** 18 August 2026, end of session 3
+**Status:** The product shell is deployed and the humanizer interface works
+against a mocked engine. The real engine, billing, and the landing page do not
+exist.
+
+**Handing off to a fresh chat.** Jon paused building deliberately. This file is
+written for someone with no memory of the session.
 
 **This file holds resumption context only.** It is rewritten wholesale every
-session. Nothing may live here as its only record. If it matters beyond the next
-session it belongs in `04-decision-log.md`,
-`06-assumptions-and-open-questions.md`, or `07-runbook.md`.
+session. Nothing may live here as its only record. Durable things go in
+`04-decision-log.md`, `06-assumptions-and-open-questions.md`, `07-runbook.md`,
+or `01-build-spec.md`.
 
 ---
 
-## 0. What changed in session 3, and it is a lot
+## 0. Read this before acting on anything written earlier
 
-**Read this section before acting on anything written in an earlier session.**
-Three things were settled that make large parts of the older documents
-historical rather than operative.
+**Kimi is retired. This project runs on Claude through Claude Code.** Decision 11.
+Everything about Moonshot, `kimi-k3`, the model picker trap and the Terminal only
+rule is history, kept for the general lessons rather than as instructions.
 
-**Kimi is retired. This project is built with Claude Code on Claude.** Jon's
-instruction, decision 11. Everything about Moonshot, `kimi-k3`, the model picker
-trap and the Terminal only rule is now history. **It was kept, not deleted,**
-because two lessons in it are general and still true: a correct configuration
-file is not a loaded one, and ask the service rather than the tool.
+Three consequences that bite if missed:
 
-**Three consequences you must not miss:**
+- **`CLAUDE.md` section 3 was corrected.** Data goes to Anthropic, not Moonshot.
+  **The boundary rules did not relax.** Nothing outside `~/un-claude` gets read,
+  and `~/Documents/GitHub/Blotter-Claude` stays off limits.
+- **The emergency stop changed and is weaker.** Deleting the Moonshot key does
+  nothing now. Close the window, and deny the permission prompt. Recorded
+  honestly in `07` rather than glossed.
+- **The Terminal only rule is void.** Its sole reason was the Kimi settings.
 
-- **`CLAUDE.md` section 3 was corrected.** It said everything reaches Moonshot.
-  It now says Anthropic. **The boundary rules themselves did not relax.** Nothing
-  outside `~/un-claude` gets read, and `~/Documents/GitHub/Blotter-Claude` stays
-  off limits.
-- **The emergency stop changed and is weaker.** Deleting the Moonshot key no
-  longer does anything. There is no single console switch now. Close the window,
-  and deny the permission prompt. Recorded honestly in `07` rather than glossed.
-- **The Terminal only rule is void.** Its sole reason was that the desktop app
-  would not load the Kimi settings. The desktop app is fine now.
-
-**The project was rescoped.** It builds an AI text humanizer, sold as a product
-with accounts. **Removing Anthropic watermarks is explicitly not the goal and is
-not part of this project.** Decision 10. Jon owns the rewriting engine itself,
-meaning the model and prompting that do the humanizing. These sessions build the
-product around it.
-
-**The domain is `un-claude.net`,** owned by Jon. Decision 12.
+**The project was rescoped.** It builds an AI text humanizer sold as a product.
+**Removing Anthropic watermarks is explicitly not the goal.** Decision 10.
 
 ---
 
 ## 1. Where to pick up
 
-**The site runs locally right now:**
+**Jon's stated next steps, from his own roadmap, in his order:**
+
+1. **Redesign the landing page.** Modern dark mode SaaS aesthetic. He referenced
+   GPTZero and Hemingway Editor. **The GPTZero reference is about interaction
+   shape, one box in and one box out, not about positioning.** That was
+   misread once in session 3 and corrected by Jon. Do not re-read it as a
+   detection product.
+2. **Build a features section** covering natural rhythm restoration, removal of
+   robotic syntax, and sentence structure variation. **The metrics panel already
+   computes evidence for all three claims,** so the features section can point at
+   something real rather than asserting.
+3. **Put the tool on the public landing page.** Agreed model: the landing page
+   *is* the product, GPTZero style. A visitor uses it immediately, hits the free
+   word budget, and is asked to register. Build the editor once and wrap it
+   twice rather than building it again.
+
+**Do not start the rewriting engine.** It is Jon's separate workstream.
+Decision 15.
+
+---
+
+## 2. Run it
 
 ```bash
 cd ~/un-claude && pnpm dev
 ```
 
-Then open `http://localhost:3000`. It currently shows MakerKit's own marketing
-page, headline "Ship a SaaS faster than ever," because none of the content has
-been replaced yet.
+Then `http://localhost:3000`. **The humanizer is at `/home`, behind login.**
 
-**The obvious next step is deploying the placeholder to Vercel on
-`un-claude.net`.** That was Jon's stated Phase 1 and it is the only piece of it
-not yet done. **It needs two approvals from Jon before it can happen,** both
-under `CLAUDE.md` section 5, and neither has been given:
+**You cannot sign in locally.** Supabase requires email confirmation and the
+confirmation link goes to an address with no mail delivery. In session 3 the
+component was verified by mounting it briefly on a temporary public route, which
+was then deleted. If you need to see it again, do the same and delete it after.
 
-1. **Pushing to GitHub.** There are now 7 unpushed commits.
-2. **Publishing under his name.** A live site on his domain is publishing.
+`apps/web/.env.local` points local development at the **hosted** Supabase project
+using only the two public keys. The service role key is deliberately absent; it
+lives only in Vercel.
 
-**It also needs a hosted Supabase project,** which is a free account Jon creates,
-and which produces the keys the deployed site needs to run.
+**Docker is not installed,** so a local Supabase cannot run. `06` row 11.
 
 ---
 
-## 2. Do not repeat, do not ask about
+## 3. Verified working, with the evidence
 
-- MakerKit Lite is chosen and installed. **Do not relitigate the boilerplate.**
-  Vercel's `nextjs/saas-starter` was considered on Jon's own prompting and
-  rejected with reasoning in `04` entry 14.
-- Node, pnpm and the dependencies are installed and working. Nothing to set up.
-- The kit's `.mcp.json` was deleted deliberately. **If it reappears, delete it
-  again.** Reasoning in `07`.
-- The secret boundary was re-verified after the `.gitignore` merge.
-- Jon has parked landing page wording. Do not draft copy unprompted.
+Everything below was tested by doing it, not by inspection.
 
----
-
-## 3. The gap that actually matters
-
-**Two sessions of setup and one of infrastructure have produced no answer to the
-question that decides whether this product is any good.**
-
-`06` row 4: **what counts as good output.** It has been open since session 1. A
-humanizer with no agreed definition of success cannot be tested, tuned, or
-finished, and no amount of infrastructure substitutes for it.
-
-Jon owns the engine, so he may consider this his. **It still needs to exist as a
-written standard in this repository,** or nobody can tell whether a change made
-the tool better or worse.
-
-**Related and also open, as `06` row 12:** whether this is positioned as a
-writing quality tool or as an AI detector bypass. Jon parked the wording. The
-underlying fork is real, it changes the engine and the legal exposure, and it is
-recorded so it does not get decided silently by default.
+| Thing | Evidence |
+|---|---|
+| Site live on `un-claude.com` | HTTPS certificate issued by Let's Encrypt |
+| Email sign up | An account was actually created end to end |
+| Anonymous database access blocked | Live probes returned `42501 permission denied` for both read and write |
+| Humanize streaming, metrics, highlights, copy, word cap | Driven in a browser |
+| Every error path including mid stream failure | Forced with `?simulate=` and rendered correctly |
+| Type checking | 8 of 8 packages |
 
 ---
 
-## 4. Things that will bite you
+## 4. Do not repeat, do not ask about
 
-**Git on this machine is 2.23, from 2019.** Several modern commands do not exist.
-Workarounds in `07`.
+- **MakerKit Lite is chosen.** Do not relitigate the boilerplate. Vercel's
+  starter was considered on Jon's own prompting and rejected with reasoning in
+  `04` entry 14.
+- **Streaming is settled**, and the reason matters: a blocking client has to be
+  rebuilt later, not extended. Decision 15.
+- **Credits are priced in words, not tokens.** Decision 16.
+- **The free tier is a word budget, not a rewrite count.** Decision 16.
+- **Highlighting is sentence level, not word level.** Word level lights up the
+  whole output because a rewrite changes nearly every word. Decision 17.
+- The kit's `.mcp.json` was deleted deliberately. **If it reappears, delete it.**
+- Jon has parked landing page *wording*, but has now asked for the landing page
+  *design*. Those are different. Check before drafting copy.
+
+---
+
+## 5. The gap that outlives every session
+
+**`06` row 4: what counts as good output. Open since session 1.**
+
+Jon has heard the argument and deliberately deferred it to his own engine
+workstream, which is a decision rather than an oversight. **It still does not
+exist as a written standard in this repository,** and until it does, nobody can
+say whether a change to the engine made the product better or worse.
+
+Related and also open as `06` row 12: whether this is positioned as a writing
+quality tool or an AI detector bypass. Jon parked it. The fork is real, it
+changes the engine and the legal exposure, and it is recorded so it does not get
+decided silently by whatever prompt gets written first.
+
+---
+
+## 6. Things that will bite you
+
+**Read `apps/web/AGENTS.md` before writing Next.js code.** It warns this version
+differs from what a model remembers and points at bundled docs. The warning is
+real.
 
 **Stage by explicit path. Never `git add -A`, `git add .`, or `git commit -a`.**
-The kit added 389 files, so this rule now matters more than it did.
+The repository is now ~400 files.
 
 **Re-run the secret check after any change to `.gitignore`:**
 
@@ -117,52 +143,55 @@ The kit added 389 files, so this rule now matters more than it did.
 git check-ignore -v .claude/settings.local.json
 ```
 
-**Docker is not installed,** so accounts cannot be created or tested locally. The
-public site runs fine without it. `06` row 11.
+**`git config --local http.postBuffer 524288000` is already set** and is why
+pushes work. Without it, pushing this repository fails with a bare `HTTP 400`.
 
-**MakerKit Lite has no billing at all.** That was the known cost of choosing it.
-`06` row 10.
+**`tail` on a streaming response can lie.** A truncated stream mid recompile
+looked like a missing error frame for several minutes in session 3. Read the
+full output when debugging a stream.
 
-**There is no memory between sessions except these files.** If a session ends
-mid task this file will still describe the last clean state and will not know it
-is wrong. The true indicators are `git status` and `git log origin/main..main`.
+**The metrics are honest measurements, not decoration.** If the mock or the
+engine makes prose worse, the panel will say so. That is correct behaviour and
+not a bug to hide.
 
 ---
 
-## 5. How sessions work
+## 7. How sessions work
 
 **Jon is not a programmer.** He directs by describing outcomes and reviews by
 looking at the actual thing, never by reading code. For a text tool that means
 showing real input and real rewritten output, in full, in the session.
 
-**He wants pushback.** Agreeing with a bad plan and executing it well is a
-failure. Session 3 is the evidence this works: the two boilerplates he was handed
-both failed on inspection, one of them fatally, and checking rather than
-complying is what caught it.
+**He wants pushback.** Session 3 is the evidence it works: both boilerplates he
+was handed failed on inspection, one fatally on licensing, and the domain he
+named turned out not to be registered. Checking rather than complying caught all
+three.
 
 **He wants a recommendation, not a menu.**
 
-**Warn him before the context window fills.** He has asked for this explicitly
-and cannot see it coming.
+**Warn him before the context window fills.** He asks for this explicitly and
+cannot see it coming.
 
 **Bad news first, plainly, once.** No extended apology, no self criticism.
 
 ---
 
-## 6. Sessions so far
+## 8. Sessions so far
 
 **Session 1, 17 August 2026.** Setup. Repository, `CLAUDE.md`, the documentation
-system, secret boundary tested twice, Kimi configured. Five commits.
+system, secret boundary tested twice. Five commits.
 
-**Session 2, 17 August 2026.** Diagnosed that no session had ever actually
-reached Moonshot despite a correct configuration file. Established the desktop
-app as the cause. No product work.
+**Session 2, 17 August 2026.** Diagnosed that no session had ever reached
+Moonshot despite a correct configuration file. No product work.
 
-**Session 3, 18 August 2026. Claude.** The project was rescoped to an AI text
-humanizer and Kimi was retired. Researched the two boilerplates in Jon's brief:
-**Firestarta was found to have no licence file and to have been abandoned since
-March 2024, and its description in the brief was factually wrong about its own
-authentication stack.** Vercel's starter was raised by Jon on star count and
-rejected on evidence. MakerKit Lite was chosen, merged, installed and verified
-running. `CLAUDE.md` section 3 and the runbook's emergency stop were corrected
-because Kimi's retirement had made both false. Two commits.
+**Session 3, 18 August 2026.** The long one. Rescoped the project, retired Kimi,
+evaluated three starter kits and rejected two on evidence, merged MakerKit Lite,
+created Supabase, deployed to `un-claude.com`, tested sign up end to end, fixed a
+live Google sign in bug, then designed and built the humanizer interface against
+a mocked streaming engine. Twelve commits. **Tagged `session-3-end`.**
+
+**Three bugs were written and caught before shipping in the build half**, all
+invisible from the interface: a sentence splitter that would have shredded every
+sentence, a stream closed twice so its error frame never arrived, and a metrics
+panel reporting "no change" beside two visibly different numbers. Worth knowing
+that rate exists, because Jon cannot catch any of them by reading.

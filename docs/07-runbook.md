@@ -661,3 +661,76 @@ broken button in front of users.
 **Verified after deploying,** by fetching both live pages rather than assuming
 the deploy did what was intended: zero occurrences of the Google button on
 `/auth/sign-up` and `/auth/sign-in`, and all three pages returning HTTP 200.
+
+---
+
+## How to get back to an earlier state
+
+**Every commit is permanent and nothing is ever really lost.** Git keeps a full
+snapshot of the project at each commit, and each has an ID like `2895f5a`. The
+difficulty is not recovering a state, it is knowing which ID you want. That is
+what tags are for.
+
+### Tags: named bookmarks on a snapshot
+
+A **tag** is a permanent, human readable name pinned to one commit. Unlike a
+branch, it never moves. On GitHub it appears under the repository's **Tags**
+section, next to the branch selector.
+
+**Tags in this project:**
+
+| Tag | Commit | What it marks |
+|---|---|---|
+| `session-3-end` | `2895f5a` | 18 Aug 2026. Site deployed on `un-claude.com`, humanizer built against the mocked engine, before the handoff documents were rewritten |
+
+### Looking at an old state without changing anything
+
+**On GitHub, no terminal needed.** Open the repository, click the branch
+dropdown, choose the **Tags** tab, pick the tag. You are now browsing every file
+exactly as it was. **Nothing on the laptop changes.** There is a **Download ZIP**
+option under the green Code button if a copy is wanted.
+
+**On the laptop, temporarily:**
+
+```bash
+cd ~/un-claude && git checkout session-3-end
+```
+
+Every file becomes what it was at that moment. Git prints a warning about a
+"detached HEAD", which sounds alarming and is not: it means you are looking at a
+snapshot rather than standing on a branch. **Return to the present with:**
+
+```bash
+cd ~/un-claude && git checkout main
+```
+
+### Actually reverting to an old state
+
+**Two ways, and the difference matters.**
+
+**Undo specific commits, keeping the history.** This is the safe one. It creates
+a new commit that reverses the changes, so the record of what happened survives:
+
+```bash
+git revert <commit-id>
+```
+
+**Move the branch back, discarding what came after.** This throws work away and
+should only be run deliberately:
+
+```bash
+git reset --hard session-3-end
+```
+
+**`--hard` deletes uncommitted work with no warning and no undo.** Run
+`git status` first and confirm it prints nothing.
+
+### Making a new tag
+
+```bash
+git tag -a <name> -m "what this marks"
+git push origin <name>
+```
+
+**A tag only exists on GitHub once it is pushed.** A tag made locally and not
+pushed is invisible to everyone and gone if the laptop is lost.
