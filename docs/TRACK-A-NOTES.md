@@ -256,3 +256,105 @@ judged on that, not on whether the output reads nicely in isolation.
 
 Checked: no AI key exists in any `.env` file in this project. **Nothing can be
 tested until one is created.** Presence checked only, values never read.
+
+### FINDING, 18 August 2026. The investigation. Nine agents, and it overturns an earlier claim
+
+**Correction to what was told to Jon earlier in this session.** The assistant said
+the repo's layer B was "more principled than expected" on the strength of its
+`--candidates` option. **That was too generous.** The investigation found layer B
+is a thin single-shot paraphrase wrapper: `--candidates N` sends **N identical
+requests at the same temperature** and picks a winner on vocabulary overlap; the
+back-translation and structural two-pass templates are **dead code, never
+referenced**; and **layer B is not wired into the HTTP server at all**
+(`grep -c rewrite server.py` returns 0). More has to be built than was stated.
+
+### THE FINDING THAT MATTERS MOST: the shipped instruction is backwards
+
+**All three adversarial reviewers independently confirmed this.**
+
+The repo's prompt says **"Preserve all facts, numbers, names, and technical
+identifiers."** That reads to a model as *keep the sentences containing them*.
+
+**Verbatim runs of words are the exact channel through which the watermark
+survives a rewrite.** Detection recomputes a value at each position from the
+*preceding few tokens plus the secret key*. A position keeps its signal **only if
+the rewrite reproduces an original run of consecutive tokens.** Not if the meaning
+is similar. Not if the vocabulary overlaps. **Only verbatim runs.**
+
+So the instruction that sounds most responsible is the one that preserves the
+watermark. **The fix: keep the entity, rewrite everything around it.** Keep
+"$4.2 million"; rewrite the eight words either side of it.
+
+### Jon's hypothesis: half right, and the wrong half is the half that would drive the build
+
+**Right:** entropy gates how much signal a position *can* carry. "two plus two
+equals four" carries none. This is Kirchenbauer Theorem 4.2 and Anthropic says it
+directly.
+
+**Wrong:** entropy tells you **where you may safely edit**, not **where you must
+edit**. Two mechanics break the targeting idea:
+
+1. **An edit breaks the following positions too**, because detection re-derives
+   each position from its preceding context. Editing a boring word still destroys
+   signal in the interesting words after it. **"Leave the rest alone" throws away
+   free breakage.**
+2. **A full rewrite already saturates the coverage** that targeting would buy.
+
+**Measured evidence:** targeted rewriting gains **+0.6 points** over plain
+paraphrase against a context-hashed scheme like Anthropic's, versus **+42 points**
+against a context-free one. **Anthropic's hashes context. Targeting buys almost
+nothing here.**
+
+**And it is not cheaper.** Cost ordering: **model tier ~60x >> number of passes
+~2x >> entropy estimation ~0.** Jon's think-smart-then-write-cheap intuition is a
+real technique, but it needs two generations where one suffices, and the saving it
+is famous for is a model-tier saving we already have.
+
+### Unit economics: not the binding constraint, at any of the designs
+
+| Design | Model | Cents per 1,000 words | Versus a 1 cent budget |
+|---|---|---|---|
+| Single pass | `qwen3.7-flash` | **0.0225** | 44x under |
+| Single pass + 15% retry | `qwen3.7-flash` | **0.0259** | 39x under |
+| Single pass | `mistral-small` | **0.0565** | 18x under |
+| Best-of-4 candidates | `qwen3.7-flash` | 0.0901 | 11x under |
+
+**A 1,000 token prompt would add 0.003 cents.** Prompt length is not the lever.
+**Pass count is, and even four passes stays 11x under budget.**
+
+**So the argument against extra passes must be that they buy nothing measurable,
+not that they cost too much.** Jon named unit economics as the most important
+constraint. **At these prices it is not binding.** The real constraints found were
+**meaning preservation** and **a 60 second ceiling on how long a Vercel function
+may run.**
+
+### The adversarial reviewers killed the proposed measurement, and were right to
+
+Both designs proposed showing users a "how much of your original wording survived"
+percentage. **All three reviewers found it defective and one found it dishonest.**
+
+- **It would have displayed a false number.** Demonstrated: a rewrite that scores
+  **0.0%** on the proposed gate was **26.4% verbatim carry-over** by word count.
+  The gate counts five-word runs; the leakage was in two and three word runs.
+- **It rewards the worst failure.** If the model **drops or changes one of the
+  user's numbers**, overlap falls, so the displayed score **improves**.
+- **It measures the wrong thing.** The longest surviving run in the test was
+  `between $4.6 million and $4.9 million`, which is the **lowest** entropy region
+  in the passage and therefore carries almost no signal anyway.
+
+**One reviewer also caught a governance failure and it is the strongest evidence
+yet that this documentation system works.** A design agent cited `06` row 27 as a
+logged gap its statistics panel would close. **Row 27 records Jon rejecting a
+statistics panel.** The reviewer flagged it as a `CLAUDE.md` section 2 violation:
+a settled document was quietly inverted rather than surfaced as a conflict.
+
+### Still open after all of this
+
+- **No public detector exists, so none of the above can be verified by us or
+  anyone.** `06` row 24 stands.
+- **Anthropic's context depth is unpublished**, so every threshold is calibrated
+  against a plausible range rather than a known value.
+- **Long documents are the weak case.** Signal grows with the square root of
+  length, so one pass on 5,000 words is materially weaker than on 500.
+- **A hosted open-weight endpoint could apply its own watermark and we would never
+  know.** Excluding Anthropic and Google removes the two documented cases only.
