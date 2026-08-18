@@ -588,3 +588,49 @@ secret boundary was re-checked immediately afterwards,** because a changed
 ```
 
 Both protected.
+
+---
+
+## Sign up was tested end to end on the live site, 18 August 2026
+
+**It works.** A real account was created at `https://un-claude.com/auth/sign-up`
+and the site returned "We sent you a confirmation email." That exercises the
+whole chain: browser, Vercel, Supabase, database write, email dispatch.
+
+**A test account exists in the production database:**
+`verify-test@un-claude.com`, unconfirmed. **Delete it** in Supabase under
+Authentication, then Users. It is left recorded here rather than quietly removed
+because a stray account in a production database should never be a surprise.
+
+### Do not use `example.com` for test accounts
+
+The first attempt failed and the cause was the test address, not the app:
+
+```
+Email address "unclaude-verify-0818@example.com" is invalid
+```
+
+Supabase rejects known placeholder domains. **Use an address at `un-claude.com`
+instead.** The domain has no MX records, so nothing is delivered to a real
+person, and Supabase accepts it because the domain genuinely exists.
+
+### A real bug in the kit, found by that failure
+
+When Supabase returns an error the kit does not have a canned message for,
+**the user is shown the literal text `<DefaultError />`** instead of a readable
+sentence.
+
+The cause is in `packages/features/auth/src/components/auth-error-alert.tsx`
+around line 37. The component looks up a translation keyed by the raw error text,
+and when there is no match it falls back to `defaults={'<DefaultError />'}`,
+intended as a placeholder that gets swapped for a real component. **The swap is
+not happening, so the placeholder renders as visible text.**
+
+The proper message exists and is unused: `auth.errors.default` in
+`apps/web/i18n/messages/en/auth.json` line 72 reads "We have encountered an
+error. Please ensure you have a working internet connection and try again."
+
+**Only three errors have canned messages:** invalid credentials, already
+registered, and unconfirmed email. **Every other failure shows the placeholder,**
+including wrong email format, weak password, and rate limiting. This is a real
+user facing defect, not cosmetic. Logged as row 13 in `06`.
