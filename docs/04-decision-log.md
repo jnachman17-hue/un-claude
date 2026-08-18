@@ -671,3 +671,50 @@ for a tool that only rewrote pasted text and is wrong now.
 **What it brings with it, stated plainly rather than discovered later.** Accepting
 files from strangers means upload size limits, temporary storage, and a larger
 surface for abuse. Tracked in `06`.
+
+### 25. The build runs as two parallel tracks in one folder, with hard file ownership
+
+**Ruling.** Jon, this session: two chats run at once. **This chat is Track A, the
+engine. A separate new chat is Track B, the site.** Both work in `~/un-claude`.
+
+**Reasoning.** The engine and the site share almost no files. The engine is Python
+in its own folder. The site is TypeScript in `apps/web`. Running them in sequence
+would leave one idle while the other works, and Jon wants to sprint.
+
+**Why not separate folders or branches, which is the textbook answer.** Two chats
+in the same folder see the same files, so switching a git branch in one would pull
+the files out from under the other. Separate folders would put one track outside
+`~/un-claude`, which `CLAUDE.md` section 3 forbids. **One folder with hard file
+ownership is the arrangement that fits the constraints this project already has.**
+
+**The ownership split.**
+
+| Track A owns | Track B owns | Neither edits |
+|---|---|---|
+| `engine/` | `apps/web/`, `packages/` | `CLAUDE.md` |
+| `docs/TRACK-A-NOTES.md` | `docs/TRACK-B-NOTES.md` | `01`, `02`, `04`, `06`, `07` |
+| | `docs/03-track-b-brief.md` | `CURRENT-HANDOFF.md` |
+
+**How decisions get recorded without two chats fighting over one file.** Jon's
+rulings are written **at the moment they happen** into the track's own notes
+file, under a heading marked `DECISION`, in the same format `04` uses. **They are
+folded into `04-decision-log.md` at integration.** This keeps the live
+ratification rule in `05` section 5 intact without two sessions appending to the
+same file at the same time and producing a merge conflict Jon cannot read.
+
+**The staging rule this project already has is what makes this safe.**
+`CLAUDE.md` section 5 forbids `git add -A`, `git add .` and `git commit -a`, and
+requires staging by explicit path. **That rule was written for a different reason
+and happens to be the exact protection two parallel sessions need**, because it
+stops either track from committing the other's half finished work.
+
+**Two operational rules that follow.**
+
+- **Only Track B runs `pnpm dev`.** Two dev servers collide on port 3000.
+- **Two tracks maximum.** More than that and a bad merge gets past Jon, who
+  cannot read code to catch one.
+
+**The real risk, stated plainly, is not files.** It is Jon receiving questions
+from two chats and a decision being made in one that the other never learns.
+**Both tracks read `04-decision-log.md` and the other track's notes file before
+acting.**

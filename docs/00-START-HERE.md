@@ -32,14 +32,21 @@ is still the starter kit's stock marketing page.
 |---|---|---|
 | `CLAUDE.md` (repo root) | What the product is, precedence, the data boundary, the verification standard. Loads automatically every session | Rarely |
 | `docs/00-START-HERE.md` | This file. An index, nothing more | Rarely |
-| `docs/01-build-spec.md` | What is built, how it fits together, and the contract between interface and engine | When the architecture changes |
+| `docs/01-build-spec.md` | What is built, how it fits together, and what the layers do and do not do | When the architecture changes |
+| `docs/02-build-plan.md` | **The sequence.** Phases, sessions, what gates each one, and what each already knows | When a session passes its exit criteria |
+| `docs/03-track-b-brief.md` | The full briefing handed to the site track | Owned by Track B |
+| `docs/TRACK-A-NOTES.md` | Track A's live notes. Folded into the durable files at integration | Constantly, by Track A only |
+| `docs/TRACK-B-NOTES.md` | Track B's live notes. Folded into the durable files at integration | Constantly, by Track B only |
+| `docs/anthropic-watermarking-context.md` | Sourced primer on Anthropic's watermarking, added by Jon | Reference, not maintained here |
 | `docs/04-decision-log.md` | Every ruling Jon has made, with the reasoning. Append only | Whenever Jon rules |
 | `docs/05-working-agreement.md` | How we work together. The constitution | Rarely |
 | `docs/06-assumptions-and-open-questions.md` | The live list of what is undecided, and what would settle it | Constantly |
 | `docs/07-runbook.md` | Operational facts learned the hard way | When something is learned |
 | `docs/CURRENT-HANDOFF.md` | Where the last session stopped and where this one starts | Every session |
 
-Numbers 02 and 03 are still free for project content documents.
+**The build runs as two parallel tracks in one folder,** the engine and the site,
+with hard file ownership rules. `04` entry 25. **Read the ownership table before
+editing anything.**
 
 ---
 
@@ -47,10 +54,12 @@ Numbers 02 and 03 are still free for project content documents.
 
 1. `CLAUDE.md`
 2. `docs/CURRENT-HANDOFF.md`
-3. `docs/01-build-spec.md` if you are touching code
-4. `docs/04-decision-log.md`, most recent entries first
-5. `docs/06-assumptions-and-open-questions.md`
-6. Anything else the session's subject touches
+3. `docs/02-build-plan.md`, for what is next and what gates it
+4. `docs/01-build-spec.md` if you are touching code. **Section 2a especially**
+5. `docs/04-decision-log.md`, most recent entries first
+6. `docs/06-assumptions-and-open-questions.md`
+7. The other track's notes file, before acting
+8. Anything else the session's subject touches
 
 Jon usually pastes his own reading order at the top of a session, tailored to
 what that session is about. **His list wins over this one.**

@@ -5,6 +5,11 @@
 remover. **All documentation has been rewritten to match. No code has been
 touched yet.**
 
+**The build now runs as two parallel tracks in two chats, in this one folder.**
+Track A is the engine and owns `engine/`. Track B is the site and owns
+`apps/web/`. **Read `04` entry 25 for the file ownership rules before editing
+anything, and `02-build-plan.md` for the sequence.**
+
 **This file holds resumption context only.** It is rewritten wholesale every
 session. Nothing may live here as its only record. Durable things go in
 `04-decision-log.md`, `06-assumptions-and-open-questions.md`, `07-runbook.md`, or
@@ -41,23 +46,24 @@ metrics panel measuring sentence rhythm, it is history that was missed. Entries
 
 ## 1. Where to pick up
 
-**Nothing in the product is built. The next session builds it.** In order:
+**Nothing in the product is built. `02-build-plan.md` holds the whole sequence
+and every gate. The short version:**
 
-1. **Delete the humanizer code.** Four files, listed in `01-build-spec.md`
-   section 3 under "condemned but not yet deleted." Ruled scrapped, not yet
-   removed.
-2. **The engine technical session.** This is the first real conversation to have
-   and Jon has asked for it explicitly. Two questions, both in `06` row 19: how
-   much of `guillaumemeyer/watermarks-remover` to use, and how to connect a
-   Python engine to a TypeScript site. **Jon is not technical and has parked both
-   deliberately, leaning on you. Do not rule on them alone.**
-3. **Build the tool on the landing page.** Not behind login. `04` entry 20.
-4. **Fix the auth error bug before any stranger reaches sign up.** `06` row 13.
+| Session | Track | Gated on |
+|---|---|---|
+| **A1, engine foundation** | A | **Nothing. Start now** |
+| **A2, layer B** | A | A1 exits, model chosen |
+| **B1, design and copy** | B | Design direction from Jon, and `06` row 23 ruled |
+| **B2, the tool frame** | B | B1 approved, A1's contract defined |
 
-**Target: live within 24 hours, free, all three layers, no purchase flow.** `04`
-entry 22.
+Then integration, then pricing, then billing, then launch.
 
-**Billing starts in parallel, not after.** Jon's explicit instruction.
+**Nothing goes live until every layer works.** Jon ruled out an incremental
+launch so the site can be built with the finished product's theme, styling and
+wording from the start.
+
+**Billing work starts as early as it can**, but it is gated on pricing, which is
+gated on real usage data. `04` entry 22.
 
 ---
 
