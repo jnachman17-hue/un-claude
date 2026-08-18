@@ -1,25 +1,86 @@
 # un-claude: Build Specification
 
 What exists, how the pieces fit, and the contract between the interface and the
-rewriting engine. Written 18 August 2026 at the end of session 3.
+engine.
+
+**Rewritten 18 August 2026, session 4,** when the project was rescoped from an AI
+text humanizer to an AI watermark remover. `04` entries 18 to 24.
 
 **This describes what is actually built and verified,** not what is planned.
-Anything unbuilt is in the gaps section at the bottom, or in
-`06-assumptions-and-open-questions.md`.
+Anything unbuilt is in section 7 or in `06-assumptions-and-open-questions.md`.
 
 ---
 
 ## 1. The product, in one paragraph
 
-A user pastes machine written text into a box. The tool rewrites it so it reads
-naturally, and shows what changed and by how much. A signed out visitor gets a
-free budget of words. Past that they register and buy credits, priced in words.
-**Removing any provider's watermarks is explicitly not the goal.** See `04`
-entry 10.
+A user pastes text or uploads a file. The tool finds the marks that identify it
+as AI generated and removes them, then shows exactly what it found. **The tool
+sits on the public landing page and works without an account.** A visitor hits a
+free limit and is asked to register. There is no separate application behind the
+login: the same tool is built once and wrapped twice, with marketing underneath
+it for a stranger and a credit balance for a signed in user. `04` entry 20.
 
 ---
 
-## 2. The stack
+## 2. The three layers
+
+**This table is the product.** Everything else in this document follows from it.
+
+| Layer | What it removes | Where the mark hides | Pasted text | Files | Provable | Costs money to run |
+|---|---|---|---|---|---|---|
+| **A. Invisible characters** | Zero width characters, unusual spaces, direction marks, tag characters | Inside the text itself, between the visible words | **Yes** | Yes | **Yes** | **No** |
+| **Metadata** | C2PA provenance blocks, EXIF, XMP, generator and producer tags | Inside the file's wrapper, alongside the content rather than in it | **No** | **Yes** | **Yes** | Almost nothing |
+| **B. Statistical watermark** | Patterns in which words the model chose, removed by rewriting | In the word choices themselves | **Yes** | Yes | **No. Best effort** | **Yes, every run** |
+
+**Paste text and you get A and B. Upload a file and you get all three.**
+
+**Why metadata cannot work on pasted text.** Metadata lives in a file's wrapper,
+which is the part of a file that describes the file rather than being its
+content: who made it, with what tool, when. Pasted text has no wrapper. There is
+nothing there to strip. **This was got wrong once in session 4 and corrected by
+Jon**, and it is stated at length here because the mistake is easy to repeat.
+
+**Layer B is presented as best effort everywhere it appears.** In the interface,
+in marketing, and to users. `04` entry 23. **Presenting it with the confidence of
+the other two layers is the single easiest way to make this product dishonest.**
+
+---
+
+## 3. What is actually built right now
+
+**Honest summary: the plumbing is real and verified. The product is not.**
+
+### Verified working, by doing it rather than by inspection
+
+| Thing | Evidence |
+|---|---|
+| Site live on `un-claude.com` | HTTPS certificate issued by Let's Encrypt |
+| Email sign up | An account was actually created end to end |
+| Anonymous database access blocked | Live probes returned `42501 permission denied` for read and write |
+| Type checking | 8 of 8 packages |
+
+### Condemned but not yet deleted
+
+**These files still exist on disk.** They were built for the humanizer, they are
+ruled scrapped by `04` entry 21, and none of them has been removed yet. Saying
+otherwise would be reporting a step as done that was not done.
+
+| File | Why it goes |
+|---|---|
+| `apps/web/app/home/_components/humanizer.tsx` | The humanizer editor. Wrong product, and behind login, which is the wrong side of `04` entry 20 |
+| `apps/web/lib/text-analysis.ts` | Measures sentence length variation. **The wrong instrument, not stale wording.** A watermark remover does not improve rhythm |
+| `apps/web/app/api/humanize/route.ts` | A mock rewriter. No model call in it |
+| `apps/web/lib/humanize-contract.ts` | The old interface to engine boundary |
+
+### Kept, and untouched by the rescope
+
+Supabase authentication, the hosted database and its security migration, the
+Vercel deployment, `un-claude.com`, the monorepo layout, and MakerKit Lite as the
+base. **None of it cares what the product does.**
+
+---
+
+## 4. The stack
 
 | Layer | Choice | Version |
 |---|---|---|
@@ -31,150 +92,88 @@ entry 10.
 | Hosting | Vercel, production on `un-claude.com` | managed |
 | Monorepo | Turborepo with pnpm workspaces | 2.10.8 |
 | Base | MakerKit Lite, MIT licensed | 1.0.0 |
+| **Engine** | **Undecided.** Based on `guillaumemeyer/watermarks-remover`, MIT, Python | `06` row 19 |
 
-**This is a monorepo.** The Next.js application lives in `apps/web`. Shared code
-sits in `packages/` split across `ui`, `auth`, `supabase`, `features`, `i18n`,
-`next` and `shared`. Vercel's root directory is set to `apps/web`.
+**This is a monorepo,** meaning one repository holding the website and the shared
+code it uses, in separate folders. The Next.js application lives in `apps/web`.
+Shared code sits in `packages/`. Vercel's root directory is set to `apps/web`.
 
 **Read `apps/web/AGENTS.md` before writing Next.js code.** It warns that this
 version differs from what a model is likely to remember and points at bundled
 documentation in `apps/web/node_modules/next/dist/docs/`. That warning is real.
 
----
-
-## 3. What was built in session 3
-
-### `apps/web/lib/text-analysis.ts`
-
-Measures prose. Dependency free and deterministic, so the same numbers come out
-on the server and in the browser.
-
-**The headline metric is `variation`,** the spread of sentence lengths expressed
-as a percentage. Machine written prose holds one sentence length throughout, so
-a low score is the most recognisable tell, and raising it is what "natural
-rhythm" actually means.
-
-**Verified on real passages rather than asserted:** a machine sounding paragraph
-scores 24.5%, a human sounding paragraph of near identical word and sentence
-count scores 100.5%. The metric genuinely discriminates.
-
-Also produces word count, sentence count, average sentence length, and a Flesch
-Kincaid reading grade.
-
-**Word counting lives here and nowhere else,** deliberately. The number shown in
-the counter and the number a user is billed for must never be able to disagree.
-
-### `apps/web/lib/humanize-contract.ts`
-
-**The agreed boundary between the interface and the engine.** Both sides import
-it, so the interface cannot drift without the type check failing.
-
-- Request: `{ text: string, tone: 'neutral' | 'casual' | 'professional' | 'academic' }`
-- Response: a stream of newline delimited JSON frames
-- `MAX_WORDS_PER_REQUEST` is 5,000
-- `FREE_WORD_ALLOWANCE` is 500, **defined but not yet enforced**
-
-**Errors are a closed set of codes with written messages,** not an open string.
-This is deliberate: an open error string puts raw upstream text in front of a
-user, which is exactly the `<DefaultError />` defect found in the kit's own auth
-alert earlier the same day. See `06` row 13.
-
-### `apps/web/app/api/humanize/route.ts`
-
-**A MOCK. It contains no model call.** Replace `mockRewrite` when the real engine
-lands; nothing else in the file should need to change.
-
-Two properties worth preserving when it is replaced:
-
-**It streams.** A client written to await one complete JSON object has to be
-rebuilt when the engine later streams, because streaming changes the component's
-state model rather than adding to it. A real rewrite of a long document takes
-tens of seconds.
-
-**It is slow and can be forced to fail.** Default delay is eight seconds.
-`?delay=<ms>` overrides it and `?simulate=<code>` forces any error state,
-including one that dies partway through a stream. A fast, always successful mock
-produces an interface that only works on the happy path.
-
-### `apps/web/app/home/_components/humanizer.tsx`
-
-The editor. Split pane, tone selector, live word counter against the cap, Stop
-button, copy button, streaming output with a cursor, metrics panel showing before
-against after, and a sentence level highlight toggle where hovering a rewritten
-sentence reveals the original.
-
-Mounted at `/home`, which sits behind login.
+**The engine is Python and the site is TypeScript.** Those are different
+programming languages that do not run in the same place, so something has to
+bridge them. **Undecided and deliberately parked** for a technical session with
+Jon. `06` row 19.
 
 ---
 
-## 4. The response stream, precisely
+## 5. What is being built, and the two rules it must satisfy
 
-Frames arrive as one JSON object per line. Any number of `chunk` frames, then
-exactly one terminal frame which is either `result` or `error`.
+### Every operation records what it consumed, from the first line of code
 
-```
-{"type":"chunk","text":"Artificial "}
-{"type":"chunk","text":"intelligence "}
-{"type":"result","before":{...},"after":{...},"changes":[...],"wordsBilled":66}
-```
+Words in, file size in, and model tokens used for layer B. **Pricing is undecided
+and gets its own session, and that session cannot price from guesses.** `04`
+entry 22, `06` row 18. This is small to add now and impossible to backfill.
 
-**A stream that ends without a terminal frame is treated as a failure,** not as a
-success with missing data. Showing a half rewrite as though it were finished is
-worse than saying it broke.
+### Showing the marks is the product, not a feature of it
 
-**`changes` is an array of `{ original, rewritten }` sentence pairs.** It powers
-the highlight toggle. A single change can turn one sentence into two, so the
-client matches by containment rather than equality.
+The old humanizer had a real problem: after a rewrite the output looked similar
+to the input and the user could not see what they had paid for. **A watermark
+remover has the stronger version of the answer available to it.** The marks are
+countable. Show which characters were found, how many, and where. That is proof
+of work rather than criticism, which was Jon's own framing in `04` entry 17 and
+survives the code that carried it.
 
----
+### What does not need rebuilding
 
-## 5. Billing rules, decided and not yet built
+**Streaming.** The old tool showed results progressively as they arrived because
+a full rewrite takes tens of seconds. **Layers A and metadata finish in
+milliseconds.** Only layer B is slow. Most of the streaming machinery being
+thrown away does not need replacing, which is a real saving against the launch
+target.
 
-Full reasoning in `04` entry 16.
+### What does carry over
 
-- **Credits are priced in words,** not tokens. Nobody outside the industry knows
-  what a token is, and an unfamiliar unit costs conversions at the moment
-  someone is deciding to pay.
-- **Input words are billed, not output.** The price must be knowable before
-  committing, not discovered afterwards.
-- **A failed rewrite refunds.** One bad minute of infrastructure must not cost a
-  visitor their whole trial.
-- **Overflow rejects, never truncates.** Silently rewriting the first N words
-  hands someone a document that stops mid sentence, which reads as a broken
-  product rather than as a limit.
-- **A rewrite bills you twice.** The model charges for reading the input and
-  again for writing the output, so 1,000 words costs roughly 2,600 tokens. Set
-  margin against that number, not against the word count.
+A single shared file defining the boundary between interface and engine, with a
+**closed set of error messages** rather than raw upstream text shown to users. An
+open error string puts whatever the engine said in front of a stranger, which is
+exactly the `<DefaultError />` defect still open as `06` row 13.
 
 ---
 
-## 6. A constraint on the engine, found by accident and worth reading
+## 6. A finding that outlived the product it came from
 
-The first mock made the product **worse on its own headline metric.** Sentence
-variation went from 30.5% down to 18.9%.
+The humanizer's mock made the product **worse on its own headline metric.**
+Sentence variation fell from 30.5% to 18.9%.
 
-**The cause generalises beyond the mock.** Compressing every sentence pulls them
-all toward the same length, which makes the rhythm more uniform. That is the
-opposite of humanizing. Three strategies were measured rather than guessed, and
-compressing only alternate sentences fixed the direction by preserving contrast
-between long and short sentences.
+**The cause generalises and it now applies to layer B.** Compressing every
+sentence pulls them all toward the same length, which makes the rhythm more
+uniform, and uniformity is itself the machine tell. Three strategies were
+measured rather than guessed, and compressing only alternate sentences fixed the
+direction by preserving contrast between long and short sentences.
 
 **Any rewriter that uniformly shortens or uniformly smooths will degrade the
-exact quality it is selling.** That applies to a real model with a prompt just as
-much as it applied to a crude regular expression. The reasoning is preserved in a
-comment in the route so it outlives the mock.
+exact quality it is selling.** Layer B is a rewriter. This applies to it directly,
+and it applies to a real model with a prompt just as much as it applied to a
+crude pattern match.
 
 ---
 
 ## 7. What is not built
 
-| | Status | Where it is tracked |
+| | Status | Tracked in |
 |---|---|---|
-| The rewriting engine | Not started. Jon's workstream | `04` entry 15 |
-| Definition of good output | **Undefined since session 1** | `06` row 4 |
-| Billing and credits | Decided, not built | `06` row 10 |
-| Free allowance enforcement | Decided, not built. Needs per visitor accounting | `06` row 10 |
-| Landing page and features section | Still the kit's stock page | Next session |
-| The tool on the public page | Agreed model, not built | `04` entry 16 |
-| Auth error messages | Broken, shows `<DefaultError />` | `06` row 13 |
-| File upload | Out of scope for now | `04` entry 16 |
+| The engine, all three layers | **Not started.** Approach undecided | `06` row 19 |
+| Python to TypeScript bridge | **Not started.** Deliberately parked for a technical session | `06` row 19 |
+| The landing page | Still the starter kit's stock marketing page | `04` entry 20 |
+| The tool itself, in any form | **Not started.** The humanizer is scrapped and its replacement does not exist | `04` entry 21 |
+| File upload, PDF DOCX PNG JPG | Not started | `04` entry 24 |
+| Free tier limits and enforcement | Decided in principle, not built | `04` entry 22 |
+| Billing and credits | Not started. **Work begins immediately, in parallel with launch** | `06` row 10 |
+| Pricing | **Undecided. Gets its own session** | `06` row 18 |
+| Deleting the humanizer code | **Ruled, not done** | Section 3 above |
+| Auth error messages | Broken, shows `<DefaultError />`. **Urgent, strangers hit this at launch** | `06` row 13 |
+| How it works page, mission page | Parked by Jon as a side note | `06` row 22 |
+| Definition of good output for layer B | **Open since session 1** | `06` row 4 |

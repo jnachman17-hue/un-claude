@@ -192,12 +192,18 @@ it matters.
 
 ## 18 August 2026, session 3
 
-### 10. The project is rescoped: a general AI text humanizer, sold as a product
+### 10. ~~The project is rescoped: a general AI text humanizer, sold as a product~~
 
-**Ruling.** un-claude builds an AI text humanizer. A user pastes text in, the tool
+> **SUPERSEDED 18 August 2026 by entry 18, session 4.** The project is now an AI
+> watermark remover. The ruling below is reversed in full, including the sentence
+> saying watermark removal is not the goal. Left standing per the append only
+> rule. **The division of labour and the market framing here are also dead:** see
+> entries 18 and 19.
+
+~~**Ruling.** un-claude builds an AI text humanizer. A user pastes text in, the tool
 rewrites it so it reads naturally, with better flow and a more human tone. It is
 a web product with accounts, not a script. It is explicitly a competitor to the
-AI humanizer tools already on the market, not a novel category.
+AI humanizer tools already on the market, not a novel category.~~
 
 **Reasoning.** Jon, this session: the project "has morphed entirely." Two things
 are now off the table that earlier framing left open. **Removing Anthropic
@@ -367,12 +373,20 @@ append only rule, so that the error is visible rather than hidden.
 
 ## 18 August 2026, session 3, second half
 
-### 15. Frontend and engine are decoupled behind a mocked API contract
+### 15. ~~Frontend and engine are decoupled behind a mocked API contract~~
 
-**Ruling.** Jon's roadmap. The rewriting engine is a black box behind
+> **PARTLY SUPERSEDED 18 August 2026 by entries 19 and 21, session 4.** The
+> division of labour is dead: the engine is built here now, not in a separate
+> workstream. The mocked route and the humanizer contract are scrapped. **Two
+> things in this entry survive and were worth keeping:** a single shared file
+> defining the boundary between interface and engine, and a closed set of error
+> messages rather than raw upstream text shown to users. Streaming is no longer
+> load bearing, because only layer B is slow.
+
+~~**Ruling.** Jon's roadmap. The rewriting engine is a black box behind
 `/api/humanize`, taking `{ text, tone }` and returning rewritten text plus
 metrics. Jon owns the engine and its benchmarking in a separate workstream.
-These sessions build the product around it.
+These sessions build the product around it.~~
 
 **Reasoning.** Contract first with a mock is sound practice: it parallelises the
 two workstreams and forces the boundary to be explicit rather than emergent.
@@ -402,10 +416,19 @@ repeated.
 **The mock is slow and can be made to fail.** A fast, always successful mock
 produces an interface that only works on the happy path.
 
-### 16. The free tier is a word budget, not a rewrite count
+### 16. ~~The free tier is a word budget, not a rewrite count~~
 
-**Ruling.** A signed out visitor gets a budget of words, currently 500, spendable
-across any number of rewrites. Not one free rewrite.
+> **NUMBERS SUPERSEDED 18 August 2026 by entry 22, session 4. Mechanics survive.**
+> Still true: input is billed rather than output, a failure refunds, and overflow
+> rejects rather than truncating silently. **No longer true:** 500 free words, and
+> words as the single unit for everything. Those were priced against a tool that
+> called a model on every run. Layers A and metadata call no model and cost
+> almost nothing, and files are not measured in words at all. Unit pricing is
+> reopened in `06` and gets its own session. **Also dead:** the line below putting
+> file upload out of scope, reversed by entry 24.
+
+~~**Ruling.** A signed out visitor gets a budget of words, currently 500, spendable
+across any number of rewrites. Not one free rewrite.~~
 
 **Reasoning.** **Unit consistency.** Credits are priced in words, so a free tier
 priced in rewrites teaches one unit and then switches it at the moment someone is
@@ -428,10 +451,17 @@ never seen. Cost exposure is identical, since both are bounded by total words.
 **Not yet built.** Enforcement needs per visitor accounting, which arrives with
 credits. `06` row 10.
 
-### 17. The highlight toggle works at sentence level, with the original on hover
+### 17. ~~The highlight toggle works at sentence level, with the original on hover~~
 
-**Ruling.** Rewritten sentences are marked in the output, and hovering one shows
-the sentence it replaced.
+> **SUPERSEDED 18 August 2026 by entry 21, session 4.** The highlight toggle is
+> scrapped with the rest of the humanizer. **The reasoning underneath it is not
+> scrapped and transfers directly:** showing a user what changed is proof of work,
+> not criticism, and it is what stops a product looking like it did nothing. For a
+> watermark remover that becomes showing the actual marks found and removed, which
+> is a stronger version of the same idea because it is countable.
+
+~~**Ruling.** Rewritten sentences are marked in the output, and hovering one shows
+the sentence it replaced.~~
 
 **Reasoning.** The risk with a humanizer is that the output looks similar to the
 input and the user cannot see what they paid for. Word level diffing fails here
@@ -440,3 +470,204 @@ communicates nothing. Sentence level says something legible and true.
 
 **Jon's own framing is the useful one:** this is highlighting used as proof of
 work rather than as criticism, which is what separates it from Hemingway.
+
+---
+
+## 18 August 2026, session 4
+
+**Session 4 rescopes the project a second time.** Entries 18 to 24 were all ruled
+in one conversation, before any file was changed. Entries 10, 15, 16 and 17 are
+struck through above where they are now wrong.
+
+### 18. The project is rescoped: an AI watermark remover, not a humanizer
+
+**Ruling.** un-claude removes AI watermarks from text and files. A user pastes
+text or uploads a document, and the tool finds the marks that identify it as
+machine generated and removes them. It is still a web product with accounts and
+paid credits.
+
+**What an AI watermark is, in plain English.** When an AI tool writes text or
+makes an image, it can leave marks behind that say so. Some are characters you
+cannot see, sitting invisibly between the words. Some are hidden notes tucked
+inside the file itself. Some are patterns in which words the model chose. None of
+them are visible on the page, and most people have no idea they are carrying
+them.
+
+**The three layers, and this distinction is the product.**
+
+| Layer | What it removes | Where it hides | Works on pasted text |
+|---|---|---|---|
+| **A. Invisible characters** | Zero width characters, unusual spaces, direction marks, tag characters | Inside the text itself, between the visible words | **Yes** |
+| **Metadata** | C2PA provenance blocks, EXIF, XMP, generator tags | Inside the file's wrapper, not in the text | **No.** There is no file, so there is nothing to strip |
+| **B. Statistical watermark** | Patterns in word choice, removed by rewriting | In the word choices themselves | **Yes**, best effort only |
+
+**So: paste text and you get A and B. Upload a file and you get all three.**
+
+**Reasoning.** Jon, this session: the project has morphed from a humanizer into a
+watermark remover. He states the core mission as maintaining the dignity of human
+written work, on the grounds that AI knowledge is human knowledge, gathered from
+human writing. **He also said plainly that this framing is not a build input and
+does not need discussing further.** It is recorded because it is his stated
+reason, not because anything in the build follows from it.
+
+**A correction made in the same conversation, because it will otherwise spread.**
+The assistant used "metadata" loosely enough to imply that hidden characters in
+pasted text needed a file. They do not. Jon caught it. Layer A works on pasted
+text with no file involved, and the table above is the corrected version.
+
+**What this supersedes.** Entry 10, which ruled that the project builds a
+humanizer and that removing watermarks was explicitly not the goal. That entry is
+struck through above and stays on the page.
+
+### 19. There is no longer a division of labour. The engine is built here too
+
+**Ruling.** Jon, this session: "There will no longer be a division of labor. You
+will help me build the website and the engine now."
+
+**Reasoning.** Entry 15 split the work so that Jon owned the rewriting engine as a
+separate workstream and these sessions built the product around a mock, meaning a
+stand in that returns fake results so the interface can be built before the real
+thing exists. That split made sense when the engine was an unsolved problem about
+prompting a model. It does not survive the rescope: layers A and metadata are
+deterministic, meaning the same input always produces the same output with no
+model involved and no judgment call. That is an integration job, not a research
+one.
+
+**What this supersedes.** Entry 15's division of labour. The rest of entry 15,
+the contract first approach and the four things it settled, is judged separately
+below.
+
+### 20. The landing page is the product
+
+**Ruling.** The tool sits on the public landing page and works immediately,
+without an account. A visitor uses it, hits a free limit, and is asked to
+register. There is no separate application behind the login.
+
+**Jon's reasoning, in his own words.** Every tool in this category works this way.
+QuillBot, GPTZero and Grammarly all let you paste and see a result before signing
+up, then gate it. "If we build the editor only behind the login, the landing page
+becomes a page that describes a tool instead of being one, and you lose the
+strongest conversion mechanic this category has."
+
+**Built once, wrapped twice.** The tool is identical in both places. What differs
+is the frame around it. A stranger gets marketing underneath it and a signup
+prompt when the limit is reached. A signed in user gets their credit balance and
+history instead. The editor is built one time and wrapped in two shells.
+
+**Consequence for the current build.** The humanizer was built at `/home`, behind
+login, which is the opposite arrangement. It is being scrapped for other reasons
+anyway, per entry 21.
+
+### 21. Everything built for the humanizer is scrapped. The plumbing stays
+
+**Ruling.** Jon, this session: all humanizer code is scrapped, and the plumbing
+remains wherever it is applicable and useful.
+
+**What "plumbing" means here.** The parts of a website that have nothing to do
+with what the product does: signing up, signing in, storing users in a database,
+and getting the site onto the internet. All of it was verified working in session
+3 and none of it cares whether the product humanizes or removes watermarks.
+
+| Scrapped | Kept |
+|---|---|
+| `humanizer.tsx`, the editor | Supabase authentication, sign up and sign in |
+| `text-analysis.ts`, the metrics | The hosted database and its security migration |
+| `/api/humanize/route.ts`, the mock | The Vercel deployment and `un-claude.com` |
+| `humanize-contract.ts`, the boundary | The monorepo, meaning the folder structure holding the site and its shared code |
+| The metrics panel and highlight toggle | MakerKit Lite as the base |
+
+**Why the metrics had to go, and it is not a wording problem.** The panel measured
+sentence length variation, which was built to prove that a humanizer improved
+rhythm. A watermark remover does not improve rhythm. The panel is the wrong
+instrument, not stale copy. Its replacement is better: a count of what was found
+and removed is an objective fact, where prose quality never was.
+
+**One idea survives the code that carried it.** A single shared file defining the
+boundary between interface and engine, with a closed set of error messages rather
+than raw upstream text shown to users. That was good practice for reasons
+unrelated to the product, and it is rebuilt for the new engine.
+
+**A simplification that comes free.** Entry 15 made the tool stream, meaning show
+results progressively as they arrive rather than all at once, because a rewrite
+takes tens of seconds. Layers A and metadata finish in milliseconds. Only layer B
+is slow. Most of the streaming machinery being thrown away does not need
+rebuilding.
+
+### 22. Launch free with all three layers. No purchase flow at launch
+
+**Ruling.** All three layers ship together, free, with tight limits and no way to
+pay. Accounts exist. The credit wallet screen says credits are coming. **Work on
+billing starts immediately rather than after launch,** at Jon's explicit
+instruction.
+
+**Reasoning.** Jon wants this live within 24 hours. Billing is the one part that
+does not fit: MakerKit Lite has no payment code at all, verified three ways in
+entry 14, and building a payment system, a credit wallet and metering against it
+is multi day work where a bug takes real money from real people. Layer B on a
+small free allowance costs a few dollars in model calls, which is a cheap price
+for launching much sooner.
+
+**Jon's addition to the ruling.** Pricing is to be kept in mind from the start and
+billing brought online as fast as possible. It is not deferred, it is
+parallelised.
+
+**A consequence that must be built today, not later.** Pricing cannot be decided
+without usage data, and usage data only exists if it is recorded from the first
+line of code. **Every operation records what it consumed:** words in, file size
+in, and model tokens used for layer B. Without this, the pricing session prices
+from guesses.
+
+**What this supersedes.** The numbers in entry 16, not its mechanics. Input is
+still billed rather than output, a failure still refunds, and overflow still
+rejects rather than truncating. But 500 free words and words as the single unit
+were priced against a rewriter that calls a model every time. Layers A and
+metadata call no model and cost essentially nothing to run, so the economics are
+different in kind. Unit pricing is reopened in `06`.
+
+### 23. Verification splits in two, and the difference is stated openly
+
+**Ruling.** Layers A and metadata are verified by proof. Layer B is best effort,
+cannot be verified the same way, and is labelled as such everywhere it appears,
+including to users.
+
+**Reasoning.** This is `CLAUDE.md` section 4 applied to a product where two thirds
+of it can meet the standard and one third cannot.
+
+- **Layers A and metadata are deterministic.** The character was there, now it is
+  not. The provenance block was there, now it is not. That is a countable fact,
+  shown by displaying the actual marks found and the actual file before and
+  after. Jon can check it without reading code.
+- **Layer B cannot be proved.** The engine's own documentation calls it best
+  effort. Whether a statistical watermark was removed is not directly checkable,
+  and claiming otherwise would be the exact misdirection Jon has ruled out.
+
+**Jon's position, this session:** "For metadata and unicode, good output is
+deterministic I believe and we can test that. Layer B will be best effort and we
+can't verify I believe." Both readings are correct.
+
+**Consequence for the product, not only for the documents.** The interface must
+not present layer B's result with the same confidence as the other two. Honesty
+about the limits was Jon's explicit instruction: at no point will users be
+misdirected.
+
+**What this does to the oldest open question in the project.** `06` row 4, what
+counts as good output, has been open since session 1 and was called the hardest
+question here. It **narrows to layer B alone.** For layers A and metadata it is
+answered by definition. That is the single largest thing the rescope buys.
+
+### 24. File upload is in scope. Four formats at launch
+
+**Ruling.** Users can upload files. At launch: PDF, DOCX, PNG and JPG. Not every
+format the engine supports.
+
+**Reasoning.** Metadata cannot be stripped without a file, so "the metadata layer
+ships" and "users upload files" are the same decision rather than two. Four
+formats cover almost all real use and cut the work substantially, which matters
+against a 24 hour target.
+
+**What this reverses.** Entry 16 put file upload out of scope. That was correct
+for a tool that only rewrote pasted text and is wrong now.
+
+**What it brings with it, stated plainly rather than discovered later.** Accepting
+files from strangers means upload size limits, temporary storage, and a larger
+surface for abuse. Tracked in `06`.

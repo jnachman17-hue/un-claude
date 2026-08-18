@@ -49,9 +49,18 @@ explicitly and cannot see it coming himself.
 ## 2. Formatting
 
 **No em dashes and no en dashes.** Not in documents, and not in any text the tool
-itself produces. This matters more in this project than in most: the em dash is
-among the most reliable signals that a piece of text was written by a language
-model, and removing exactly those signals is what this project is for. A text humanizer that optimizes for natural style while its own documentation is full of tells is not credible.
+itself produces.
+
+**The reason was corrected 18 August 2026, session 4, and the correction matters
+because this project now sells precision about exactly this.** An em dash is
+**not** a watermark. It is a visible stylistic habit, common in machine written
+prose, that a reader may notice. A watermark is a deliberate hidden mark: an
+invisible character, a note inside a file, or a statistical pattern. The rule
+survives the rescope anyway, on a narrower and more honest reading: **a product
+that sells the removal of machine generated markers, whose own documents are full
+of the most widely recognised machine tell, is not credible.** It is a
+credibility rule, not a technical one. Do not let it drift back into implying
+that dashes are what the tool removes.
 
 **Documents should be glanceable.** Short sections. Tables wherever a table fits.
 
@@ -123,6 +132,18 @@ The routing table lives in section 6 of `CLAUDE.md`.
 
 This list starts nearly empty and grows. Every entry is here because it actually
 happened in this project, not because it seemed like a risk.
+
+**Using a technical word loosely in front of someone who cannot check it.**
+*Session 4, 18 August 2026.* The assistant used "metadata" broadly enough to
+imply that removing hidden characters from pasted text required uploading a file.
+It does not: that is layer A and it needs no file. Jon caught it by saying the
+statement did not match his understanding. **The lesson is specific to this
+project and it is not "be more careful."** Jon cannot check a technical claim
+against the code, so a term used loosely becomes a fact in his head and then a
+fact in a document. **Define the term on first use in every session, not once,
+and prefer the plain word over the correct-sounding one.** The same failure
+produced "Kimi archaeology" in the same conversation, which was jargon for
+"the historical record of the Kimi setup" and had to be explained after the fact.
 
 **Reading a framing into a brief that was not in it.** *Session 1, 17 August
 2026.* The phrase "deliberate side by side test" in Jon's opening brief was read
