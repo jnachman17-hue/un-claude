@@ -362,3 +362,81 @@ site had gone live on a domain nobody owned.
 
 **The original entry is left standing above** rather than edited, per the
 append only rule, so that the error is visible rather than hidden.
+
+---
+
+## 18 August 2026, session 3, second half
+
+### 15. Frontend and engine are decoupled behind a mocked API contract
+
+**Ruling.** Jon's roadmap. The rewriting engine is a black box behind
+`/api/humanize`, taking `{ text, tone }` and returning rewritten text plus
+metrics. Jon owns the engine and its benchmarking in a separate workstream.
+These sessions build the product around it.
+
+**Reasoning.** Contract first with a mock is sound practice: it parallelises the
+two workstreams and forces the boundary to be explicit rather than emergent.
+Jon acknowledged the evaluation argument from earlier this session and deferred
+it deliberately rather than by omission. **That is a decision, not a gap, and
+`06` row 4 stays open on his side of the line.**
+
+**Four things settled before building, three of which would have caused rework.**
+
+**Streaming, not blocking.** A client written to await one complete JSON object
+has to be rebuilt when the engine later needs to stream, because streaming
+changes the component's state model rather than adding to it. A real rewrite of
+a long document takes tens of seconds. The mock streams so the interface is
+built against the shape of reality.
+
+**Metrics are writing quality measures, not detection scores.** Jon's
+clarification closed this: the input is assumed to be machine written, so there
+is nothing to detect. **The GPTZero reference was about interaction shape, one
+box in and one box out, not about positioning.** That reading had been carried
+into an earlier concern in this session and was wrong.
+
+**A closed set of error codes with written messages.** An open error string puts
+raw upstream text in front of users, which is exactly the `<DefaultError />`
+defect found in the kit's auth alert hours earlier. Prevented rather than
+repeated.
+
+**The mock is slow and can be made to fail.** A fast, always successful mock
+produces an interface that only works on the happy path.
+
+### 16. The free tier is a word budget, not a rewrite count
+
+**Ruling.** A signed out visitor gets a budget of words, currently 500, spendable
+across any number of rewrites. Not one free rewrite.
+
+**Reasoning.** **Unit consistency.** Credits are priced in words, so a free tier
+priced in rewrites teaches one unit and then switches it at the moment someone is
+deciding to pay. It is also better product: a single rewrite means the trial gets
+burned on a throwaway test and the tone selector, a thing worth paying for, is
+never seen. Cost exposure is identical, since both are bounded by total words.
+
+**Mechanics settled with it, and they are not details.**
+
+- **Input words are billed, not output.** The price has to be known before
+  committing, not discovered afterwards.
+- **A failed rewrite refunds.** Otherwise one bad minute of infrastructure costs
+  a visitor their whole trial and they leave with a permanent opinion.
+- **Overflow rejects, never truncates.** Silently rewriting the first 500 words
+  hands someone a document that stops mid sentence, which reads as a broken
+  product rather than as a limit.
+- **Anonymous budgets are tracked by IP and are bypassable.** Stated plainly
+  rather than implied. The defence is keeping the number small.
+
+**Not yet built.** Enforcement needs per visitor accounting, which arrives with
+credits. `06` row 10.
+
+### 17. The highlight toggle works at sentence level, with the original on hover
+
+**Ruling.** Rewritten sentences are marked in the output, and hovering one shows
+the sentence it replaced.
+
+**Reasoning.** The risk with a humanizer is that the output looks similar to the
+input and the user cannot see what they paid for. Word level diffing fails here
+because a rewrite changes nearly every word, so the entire output lights up and
+communicates nothing. Sentence level says something legible and true.
+
+**Jon's own framing is the useful one:** this is highlighting used as proof of
+work rather than as criticism, which is what separates it from Hemingway.
