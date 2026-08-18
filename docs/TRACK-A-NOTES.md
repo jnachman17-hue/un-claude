@@ -196,3 +196,63 @@ the standalone editor skill and the pre-commit hooks, **neither of which was
 copied**, so they failed on missing files rather than on broken code. Removed so
 the suite is green and therefore worth believing. **If the engine is ever
 re-copied from upstream, delete these two again.**
+
+### FINDING, 18 August 2026, session A2. "Not Claude" is too narrow. The rule is "nothing that marks its output"
+
+Checked against current reporting and Anthropic's and OpenAI's own material, not
+recalled.
+
+| Vendor | Marks its text? | Usable for layer B |
+|---|---|---|
+| **Anthropic** | **Yes.** Every model launched on or after 2 Aug 2026, globally, no opt out | **No** |
+| **Google Gemini** | **Yes.** SynthID for generated text | **No** |
+| **OpenAI** | **Not as of Aug 2026.** Researched it, held it back | **Risky. See below** |
+| **Open weight models** run by a third party host | **No.** The weights do not mark, and the host is not applying one | **Yes** |
+
+**Jon's instruction was "not Claude." The real constraint is broader:** rewriting
+with any vendor that marks its output swaps one watermark for another and makes
+the product actively dishonest. **Gemini was not on Jon's list and is disqualified
+for exactly the same reason as Claude.**
+
+**OpenAI is the trap worth naming.** It does not mark text today, but it signed
+the EU code of practice attached to Article 50(2), which is a public commitment to
+machine-readable marking of synthetic output. **If OpenAI switches text marking on,
+a product built on it silently starts re-stamping every rewrite and nobody would
+notice**, because no detector exists to catch it.
+
+**Design consequence, and it is the important one.** **The model must be a single
+swappable setting, not something woven through the code**, and somebody must
+re-check the vendor list periodically. This is the same standing obligation as
+watching the engine repository for security fixes.
+
+### FINDING, 18 August 2026. Layer B costs almost nothing, which changes the question
+
+Read from Vercel AI Gateway's live model list, 229 language models with published
+prices. A 1,000 word rewrite pays for reading and writing, roughly 2,600 tokens.
+
+| Model | Per 1,000 words | Per 1,000 rewrites |
+|---|---|---|
+| `alibaba/qwen3.7-flash` | $0.00021 | **$0.21** |
+| `openai/gpt-oss-20b` | $0.00032 | **$0.33** |
+| `deepseek/deepseek-v4-flash` | $0.00051 | **$0.51** |
+| `mistral/mistral-small` | $0.00052 | **$0.52** |
+| `meta/llama-3.1-8b` | $0.00057 | **$0.57** |
+
+**A thousand people each pasting a thousand word essay costs under a dollar.**
+
+**So price is not the deciding factor and should not be treated as one.** Jon's
+criteria were capability, unit economics, and not local. **Unit economics is
+answered: they are all negligible and the spread between cheapest and dearest is
+about half a dollar per thousand uses.** The decision is entirely about which one
+rewrites well.
+
+**And "rewrites well" has a specific meaning here, already paid for in
+`01-build-spec.md` section 6:** a rewriter that uniformly shortens or uniformly
+smooths makes prose *more* machine-like, because uniformity is itself the tell.
+**Layer B can degrade the thing it sells.** Whichever model is chosen must be
+judged on that, not on whether the output reads nicely in isolation.
+
+### OPEN, 18 August 2026. Needs Jon: an AI Gateway key
+
+Checked: no AI key exists in any `.env` file in this project. **Nothing can be
+tested until one is created.** Presence checked only, values never read.
