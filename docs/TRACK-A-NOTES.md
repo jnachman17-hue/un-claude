@@ -21,17 +21,20 @@ so it can be filed correctly later.
 | 1. How the engine is deployed | **Done.** `04` entries 26 and 27 |
 | 2. Bring in the repository | **Done.** `engine/`, commit `f1ad185`. See `engine/PROVENANCE.md` |
 | 3. Prove layer A on real text | **Done.** Six planted characters found, named, removed, verified |
-| 4. Prove metadata on DOCX, PNG, JPG | **Partly.** Proven on a real Office document. PNG and JPG not yet tested on their own |
+| 4. Prove metadata on DOCX, PNG, JPG | **Done. All three.** Office document, PNG, JPEG. Each verified by reading the raw bytes |
 | 5. `qpdf` | **Gone with PDF.** `04` entry 26 |
 | 6. Define what the site calls | Not started |
 | 7. Usage recording | Not started |
 
-**Blocked on nothing. Next: PNG and JPG on their own, then the contract.**
+**Blocked on nothing. Next: step 6, the contract, which is what Track B waits on.**
 
-**One small future ask for Jon:** the upstream test suite in `engine/tests` needs
-`pytest`, which is a Python add-on and therefore an install. **Not needed to make
-the product work.** It is worth having before we ever change the engine's own
-code, so that we can tell whether we broke it. Not urgent.
+**Test suite is running.** `pytest` is installed in `engine/.venv`, a
+self-contained folder that changes nothing globally and is gitignored. **487
+pass, 1 skipped, none fail.** Run it with:
+
+```
+cd ~/un-claude/engine && .venv/bin/python -m pytest
+```
 
 ---
 
@@ -168,3 +171,28 @@ Worth recording as a pattern rather than three incidents.
 usually right and the harness around it is usually wrong,** because the subject
 matter is invisible characters and binary file internals, both of which are easy
 to mangle by accident. **Check the harness before believing a failure.**
+
+### FINDING, 18 August 2026. All three launch formats proven, byte verified
+
+| Format | Before | After | Picture or content intact |
+|---|---|---|---|
+| **Office document** | C2PA and AI metadata, naming OpenAI | Both absent | Workbook part byte identical |
+| **PNG** | `tEXt` chunk holding `c2pa`, `contentcredentials` | Chunk gone | Picture data byte identical |
+| **JPEG** | `APP1` XMP naming OpenAI and DALL-E | Gone, plus an `APP13` block | Picture data byte identical, still opens |
+
+**Every one checked by searching the raw bytes for the incriminating strings,
+not by asking the tool whether it had worked.**
+
+### RUNBOOK, 18 August 2026. `inspect_file.py` exits non-zero when it finds something
+
+Like a scanner, not like a failure. **Exit 1 means marks were found. Exit 0 means
+clean.** This broke a chained shell command during testing and it will matter for
+how the site calls the engine: **a non-zero exit here is a result, not an error.**
+
+### RUNBOOK, 18 August 2026. Two upstream test files were deleted, deliberately
+
+`tests/test_lightweight_skill.py` and `tests/test_precommit_hooks.py`. They test
+the standalone editor skill and the pre-commit hooks, **neither of which was
+copied**, so they failed on missing files rather than on broken code. Removed so
+the suite is green and therefore worth believing. **If the engine is ever
+re-copied from upstream, delete these two again.**
