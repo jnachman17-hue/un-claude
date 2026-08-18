@@ -14,8 +14,24 @@ so it can be filed correctly later.
 
 ## Status
 
-**Session A1 in progress.** Step 1, the deployment decision, is open and with Jon.
-Steps 2 onward are blocked on it.
+**Session A1 in progress. Steps 1, 2 and 3 done, step 4 mostly done.**
+
+| Step | State |
+|---|---|
+| 1. How the engine is deployed | **Done.** `04` entries 26 and 27 |
+| 2. Bring in the repository | **Done.** `engine/`, commit `f1ad185`. See `engine/PROVENANCE.md` |
+| 3. Prove layer A on real text | **Done.** Six planted characters found, named, removed, verified |
+| 4. Prove metadata on DOCX, PNG, JPG | **Partly.** Proven on a real Office document. PNG and JPG not yet tested on their own |
+| 5. `qpdf` | **Gone with PDF.** `04` entry 26 |
+| 6. Define what the site calls | Not started |
+| 7. Usage recording | Not started |
+
+**Blocked on nothing. Next: PNG and JPG on their own, then the contract.**
+
+**One small future ask for Jon:** the upstream test suite in `engine/tests` needs
+`pytest`, which is a Python add-on and therefore an install. **Not needed to make
+the product work.** It is worth having before we ever change the engine's own
+code, so that we can tell whether we broke it. Not urgent.
 
 ---
 
@@ -117,3 +133,38 @@ and an exact match against the sentence as intended.
 
 **This is the first evidence in the project that the product does anything at
 all**, and it needed no repository, no Docker, and no second hosting company.
+
+### FINDING, 18 August 2026. The engine works, verified independently
+
+**Layer A on real text.** Six invisible characters planted in an ordinary
+sentence. All six found and named with positions. Five deleted, one swapped for
+an ordinary space. Zero left afterwards and the sentence matched what was
+intended, exactly.
+
+**A real Office document, using the upstream fixture `sample_ai.xlsx`.** Before:
+C2PA present, AI metadata present, naming OpenAI as generator, plus an embedded
+image carrying content credentials. After: both absent.
+
+**Verified by reading the raw bytes, not by asking the tool whether it had
+succeeded.** Every incriminating string was searched for in the decompressed
+contents of every part of the file. All absent afterwards.
+
+**The document survived.** The workbook part came out **byte identical**. Only
+two parts were removed, and both were the ones carrying AI metadata. Everything
+else that changed, changed for a stated reason.
+
+### RUNBOOK, 18 August 2026. Three test failures in a row were the test, not the thing being tested
+
+Worth recording as a pattern rather than three incidents.
+
+1. Invisible characters destroyed by writing them through a shell command.
+2. A verification comparing two strings that had been normalised differently.
+3. A check for a part called `xl/worksheets/sheet1.xml` in a minimal fixture that
+   never had one, reported as "sheet data still present: False".
+4. Sending output to `/dev/null`, which fails because the engine writes safely via
+   a temporary file in the destination folder.
+
+**The lesson is specific and useful: in this project the tool under test is
+usually right and the harness around it is usually wrong,** because the subject
+matter is invisible characters and binary file internals, both of which are easy
+to mangle by accident. **Check the harness before believing a failure.**
