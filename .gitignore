@@ -105,3 +105,4 @@ yarn-error.log*
 .zed
 .contentlayer/
 .prds/
+.env*

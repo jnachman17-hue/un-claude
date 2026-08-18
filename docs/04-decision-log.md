@@ -334,3 +334,31 @@ which the rejected option was better.
 which pairs Supabase and Stripe but whose last substantive work was January 2025,
 and `ixartz/SaaS-Boilerplate`, which is well maintained but uses Clerk rather
 than Supabase for authentication.
+
+### 12a. Correction to decision 12: the domain is `un-claude.com`, not `.net`
+
+**What decision 12 recorded.** That Jon owns `un-claude.net`.
+
+**What is actually true.** He owns **`un-claude.com`**, registered 13 August 2026
+through Squarespace. **`un-claude.net` is not registered by anyone.** Verisign,
+the authoritative registry for `.net`, returns `No match for domain
+"UN-CLAUDE.NET"`.
+
+**How it was caught.** Not by asking. `un-claude.net` was added to the Vercel
+project on Jon's word, and a routine DNS check returned no nameservers at all,
+which is not what a working domain looks like. Querying the registry directly
+showed the domain did not exist. A check of the obvious variants found
+`un-claude.com` live on Squarespace's servers, created five days earlier. Jon
+confirmed.
+
+**The general lesson, and it is the same one this project keeps relearning.**
+`un-claude.net` was stated confidently and written into a durable document
+without being checked, because it came from Jon rather than from a model and
+therefore felt like a fact rather than a claim. **The precedence order in
+`CLAUDE.md` section 2 puts Jon's instructions first, and that is about authority
+over decisions, not about factual accuracy.** A checkable claim should be checked
+no matter who says it. Cost here was small. It would not have been small if the
+site had gone live on a domain nobody owned.
+
+**The original entry is left standing above** rather than edited, per the
+append only rule, so that the error is visible rather than hidden.

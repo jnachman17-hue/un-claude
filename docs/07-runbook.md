@@ -474,3 +474,117 @@ in it remain true and general, and are the reason none of it was deleted:
 **The Terminal rule is void.** Decision 9 required starting sessions from
 Terminal, purely because the desktop app would not load the Kimi settings. With
 Kimi gone that reason is gone, and the desktop app is fine.
+
+---
+
+## Pushing broke once the kit was added, and how it was fixed
+
+**18 August 2026.** The first push after MakerKit Lite went in failed:
+
+```
+error: RPC failed; HTTP 400 curl 22 The requested URL returned error: 400
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
+```
+
+**Nothing reached GitHub.** Confirmed by asking GitHub rather than believing git:
+`gh api` reported the latest commit as `f4ec3e8`, eight commits behind local.
+**Note that git printed `Everything up-to-date` immediately after failing,** which
+is the same misleading message documented earlier in this runbook. It means
+nothing either way.
+
+**The cause.** Git's default upload buffer is 1 MB. The repository is 3.3 MB now
+that the kit is in it. Git 2.23 from 2019 handles this badly against GitHub and
+fails with a bare HTTP 400 rather than anything descriptive.
+
+**The fix, applied to this repository only:**
+
+```bash
+git config --local http.postBuffer 524288000
+```
+
+**`--local` matters.** It writes to this project's own git config and not to the
+machine wide one, so no other project is affected. This was checked after
+setting it: local reads back the new value, global remains unset.
+
+The push then succeeded, `f4ec3e8..6739aa7`, verified against GitHub's API, with
+`.claude/` on GitHub containing only `launch.json` and not the settings file.
+
+**If a future push fails the same way,** this setting is already in place, so
+suspect something else. A large file is the next thing to look at.
+
+---
+
+## Deployment: Vercel and Supabase, set up 18 August 2026
+
+### What exists now
+
+| Thing | Value |
+|---|---|
+| Vercel project | `un-claude`, id `prj_NXNj8mndsVwoXWQ3xLF5XauXOxMF` |
+| Vercel team | `jnachman17-hues-projects` |
+| Live URL | `https://un-claude.vercel.app` |
+| Root directory | `apps/web`, set because this is a Turborepo monorepo |
+| Supabase project | `https://itdgggoxsoolbfiwujvt.supabase.co` |
+| Domain | `un-claude.com`. **Not `.net`, which is not registered.** See `04` entry 12a |
+
+**Verified live, not asserted.** `https://un-claude.vercel.app` returns HTTP 200,
+`/auth/sign-in` returns HTTP 200, and the home page renders.
+
+### The database security was tested against the live project
+
+Two probes were run against the real Supabase project using the public anon key,
+as an anonymous visitor would:
+
+```
+GET  /rest/v1/accounts  ->  {"code":"42501","message":"permission denied for schema public"}
+POST /rest/v1/accounts  ->  {"code":"42501","message":"permission denied for schema public"}
+```
+
+**Anonymous visitors can neither read nor write.** That error is stronger than
+Row Level Security. The migration revokes all privileges from everyone at lines
+27 to 63, then grants schema access back only to `authenticated` and
+`service_role` at lines 77 and 80. Row Level Security at line 124, with policies
+at 128 and 136, then restricts logged in users to their own row.
+
+**Re-run those two probes after any migration.** They are cheap and they test the
+real thing rather than the intention.
+
+### A Supabase SQL Editor warning that is safe to dismiss
+
+Pasting the migration triggers **"This query creates a table without enabling Row
+Level Security."** Supabase scans top to bottom and warns when it sees the table
+created, without reading ahead to line 124 where the migration enables it.
+
+**Click "Run without RLS".** The correct choice, because the file enables it
+itself. Clicking the green "Run and enable RLS" makes Supabase inject its own
+command for something the migration already handles, which is how a database
+drifts out of sync with its own migration files.
+
+### Environment variables
+
+Set on Vercel for Production:
+
+| Variable | Sensitivity |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Public |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public by design, ships inside the site's own code |
+| `NEXT_PUBLIC_SITE_URL` | Public |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret. Entered by Jon directly into Vercel.** Never in the chat, never in the repository |
+
+**The build succeeds without the service role key.** It is read at runtime by
+`packages/supabase/src/get-service-role-key.ts`, not at build time, so a missing
+one fails admin features rather than the deploy.
+
+### Vercel created a `.env.local` and edited `.gitignore`
+
+`vercel link` writes `.env.local` and appends `.env*` to `.gitignore`. **The
+secret boundary was re-checked immediately afterwards,** because a changed
+`.gitignore` is now a known way for the protection to vanish:
+
+```
+.gitignore:24:.claude/settings.local.json
+.gitignore:108:.env*	.env.local
+```
+
+Both protected.
