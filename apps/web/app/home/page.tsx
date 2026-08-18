@@ -1,14 +1,16 @@
 import { PageBody, PageHeader } from '@kit/ui/page';
 
-import { DashboardDemo } from '~/home/_components/dashboard-demo';
+import { Humanizer } from '~/home/_components/humanizer';
 
 export default function HomePage() {
   return (
     <>
-      <PageHeader description={'Your SaaS at a glance'} />
+      <PageHeader
+        description={'Paste a draft and rewrite it to read naturally'}
+      />
 
       <PageBody>
-        <DashboardDemo />
+        <Humanizer />
       </PageBody>
     </>
   );
