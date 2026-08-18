@@ -224,16 +224,16 @@ function FactorsTable({
               </TableCell>
 
               <TableCell>
-                <Badge className={cn('inline-flex uppercase', badgeExtras.info)}>
+                <Badge
+                  className={cn('inline-flex uppercase', badgeExtras.info)}
+                >
                   {factor.factor_type}
                 </Badge>
               </TableCell>
 
               <td>
                 <Badge
-                  variant={
-                    factor.status === 'verified' ? 'default' : 'outline'
-                  }
+                  variant={factor.status === 'verified' ? 'default' : 'outline'}
                   className={cn(
                     'inline-flex capitalize',
                     factor.status === 'verified' && badgeExtras.success,
