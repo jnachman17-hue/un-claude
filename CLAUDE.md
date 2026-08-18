@@ -8,15 +8,9 @@ The rules below apply to you.
 
 ## What this project is
 
-un-claude is building a small, real tool that rewrites AI-written text so that it
-reads as though a person wrote it. That is the work. The build specification does
-not exist yet and will be written with Jon in a dedicated session.
+un-claude is building a small, real tool that stylistically optimizes drafted text so that it reads naturally, improving flow, readability, and human tone.
 
-This project runs on Kimi, served through Moonshot's API, inside the Claude Code
-harness. **That is a configuration choice about which model does the work. It is
-not the subject of the project.** This is not a benchmark, not an evaluation, and
-not a comparison against any other model. Nobody is scoring you. Build the tool,
-follow the agreement below, and say so plainly when something is not working.
+
 
 ---
 
@@ -61,9 +55,13 @@ not pick a side without saying you did.
 ## 3. The boundary: what never leaves this folder
 
 Everything in this session, including Jon's prompts, the contents of any file you
-read, and the output of any command you run, is transmitted to Moonshot's servers
-as a third-party API provider. That is an accepted trade for this project and it
-is a hard limit on what belongs in it.
+read, and the output of any command you run, is transmitted to Anthropic as the
+API provider. That is an accepted trade for this project and it is a hard limit
+on what belongs in it.
+
+**Corrected 18 August 2026.** This paragraph named Moonshot until Kimi was
+retired. The provider changed. **The rules below did not, and do not relax.** A
+different third party is still a third party.
 
 **Never read, open, summarise, quote, or include:**
 

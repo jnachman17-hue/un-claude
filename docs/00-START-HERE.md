@@ -1,7 +1,6 @@
-# un-claude: Start Here
+**What this is.** A stylistic text humanizer that optimizes drafted text to improve flow, remove robotic phrasing, and maximize natural human tone.# un-claude: Start Here
 
-**What this is.** A small tool that rewrites AI-written text so that it reads as
-though a person wrote it.
+**What this is.** A stylistic text humanizer that optimizes drafted text to improve flow, remove robotic phrasing, and maximize natural human tone.
 
 **Current phase.** Setup. The repository, the working agreement and the
 continuity system exist. The build specification does not. Writing it with Jon is

@@ -10,13 +10,26 @@ Anything not yet verified is marked **UNVERIFIED** and must not be relied on.
 
 ## Emergency stop
 
-**Delete the API key in Moonshot's console.** Access dies immediately, regardless
-of what is configured on the laptop. No terminal commands are needed and Jon can
-do it alone.
+**Corrected 18 August 2026 when Kimi was retired. The old instruction below no
+longer works and would waste time in an actual emergency.**
 
-This is the only safety control in the project that does not depend on reading or
-understanding anything. If something is going wrong and it is not obvious what,
-this is the correct first move, and a new key takes a minute to create afterwards.
+**What to do now, in order:**
+
+1. **Close the terminal window, or the Claude Code window, running the session.**
+   This stops the model mid task. Nothing further can be run.
+2. **Say no to the permission prompt.** Every command a model wants to run is
+   shown to Jon first. Denying it is the routine, non emergency version of the
+   same control, and it is the one that matters most day to day.
+
+**There is no longer a single console switch.** The old stop was deleting the
+Moonshot API key, which killed all access instantly from a web page, with no
+terminal needed. That control is gone because Moonshot is no longer in the path,
+and nothing has replaced it exactly. **This is a real reduction in safety and it
+is recorded here rather than glossed over.**
+
+~~**Delete the API key in Moonshot's console.** Access dies immediately,
+regardless of what is configured on the laptop. No terminal commands are needed
+and Jon can do it alone.~~
 
 ---
 
@@ -356,3 +369,108 @@ The API key for this project is named `un-claude` and sits under Moonshot's
 
 Set a spending limit at `platform.moonshot.ai/console/limits`. This is
 pay as you go, not a subscription.
+
+---
+
+## The stack, installed 18 August 2026
+
+The product is built on **MakerKit Lite**, the free MIT licensed Next.js and
+Supabase starter kit, merged into the root of this repository. Reasoning and the
+rejected alternatives are in `04-decision-log.md` entry 14.
+
+### How to run the site locally
+
+```bash
+cd ~/un-claude && pnpm dev
+```
+
+Then open `http://localhost:3000`. **Verified working 18 August 2026.** Next.js
+reported `Ready in 307ms`, and the home page, the feature sections, the footer,
+the legal pages and the sign in screen all rendered.
+
+To stop it, press `Ctrl` and `C` in the terminal running it.
+
+### Docker is required for accounts, and is not installed
+
+Supabase runs locally inside Docker, which is a tool for running software in
+self contained boxes on your own machine. **Docker is not installed on this
+machine.** `docker --version` returns `command not found`.
+
+**What still works without it:** the entire public site. Home page, marketing
+sections, footer, legal pages, and the sign in and sign up screens all render.
+
+**What does not:** actually creating an account, signing in, or storing anything.
+Those need the database, and the database needs Docker.
+
+**This is not urgent.** Deploying a placeholder site to Vercel uses Supabase's
+hosted service, not the local one, so Docker is only needed for offline
+development. Installing it requires Jon's approval under `CLAUDE.md` section 5.
+
+### Versions confirmed at install time
+
+| | Version | Kit requires |
+|---|---|---|
+| Node | v24.15.0 | >= 22.13.0 |
+| pnpm | 11.20.0 | 11.18.0 |
+| Next.js | 16.3.0 | current stable is 16.3.1 |
+
+The install took 68 seconds and pulled 850 packages. The kit runs its own
+requirements check on install, and it passed.
+
+### Two things were changed in the downloaded kit, deliberately
+
+**`.mcp.json` was deleted.** The kit shipped a file that instructs Claude Code to
+automatically download and run `next-devtools-mcp@latest` from the internet at
+the start of every session, always fetching the newest version. Nothing in this
+project needs it, and an auto updating remote package that runs without being
+asked is exactly what `CLAUDE.md` section 5 exists to prevent. **If a future
+session finds this file has reappeared, delete it again.**
+
+**The `.gitignore` files were merged rather than replaced.** This project's own
+rules were kept as the priority, and only the kit's build artefact rules were
+appended. This mattered: the kit's `.gitignore` does not protect
+`.claude/settings.local.json`, so replacing ours with theirs would have silently
+exposed a secrets file.
+
+**The secret boundary was re-verified immediately after the merge,** not assumed:
+
+```
+$ git check-ignore -v .claude/settings.local.json
+.gitignore:24:.claude/settings.local.json	.claude/settings.local.json
+```
+
+**Re-run that check after any future change to `.gitignore`.** A starter kit
+overwriting it is now a known way for the protection to disappear.
+
+### The env files that arrived with the kit are not secrets
+
+`apps/web/.env.development` contains a Supabase URL and two long keys. They look
+alarming and are not. They are Supabase's published demo keys, identical on every
+local Supabase install worldwide, and they only unlock a database on
+`127.0.0.1`, meaning this laptop and nothing else. **Real keys, when the hosted
+Supabase project exists, go in `.env.local`, which is gitignored.**
+
+---
+
+## Kimi is retired. What that means for the sections above
+
+**As of 18 August 2026 this project is built with Claude Code on Claude.** Jon's
+instruction, decision 11 in `04-decision-log.md`.
+
+**The emergency stop has changed.** Deleting the Moonshot API key no longer stops
+anything, because Moonshot is no longer in the path. There is now no single
+console switch Jon can throw. **The working equivalents are closing the terminal
+window, and denying the permission prompt when a command is proposed.**
+
+**Everything above about Moonshot, the Kimi model names, the environment check
+and the model picker trap is kept as history, not as instructions.** Two lessons
+in it remain true and general, and are the reason none of it was deleted:
+
+- **A correct configuration file is not a loaded one.** Verify the running state,
+  not the file on disk.
+- **Ask the service, not the tool.** When a claim matters, check it against the
+  system that holds the truth.
+
+**The Terminal rule is void.** Decision 9 required starting sessions from
+Terminal, purely because the desktop app would not load the Kimi settings. With
+Kimi gone that reason is gone, and the desktop app is fine.

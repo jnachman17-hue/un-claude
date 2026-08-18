@@ -51,8 +51,7 @@ explicitly and cannot see it coming himself.
 **No em dashes and no en dashes.** Not in documents, and not in any text the tool
 itself produces. This matters more in this project than in most: the em dash is
 among the most reliable signals that a piece of text was written by a language
-model, and removing exactly those signals is what this project is for. A tool
-that humanises text while its own documentation is full of tells is not credible.
+model, and removing exactly those signals is what this project is for. A text humanizer that optimizes for natural style while its own documentation is full of tells is not credible.
 
 **Documents should be glanceable.** Short sections. Tables wherever a table fits.
 

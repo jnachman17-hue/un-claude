@@ -187,3 +187,150 @@ desktop app is running on Claude, no matter what this repository says. The model
 picker trap and this one share a shape: **the configuration being correct is not
 evidence that it is loaded.** Check `/status` at the start of any session where
 it matters.
+
+---
+
+## 18 August 2026, session 3
+
+### 10. The project is rescoped: a general AI text humanizer, sold as a product
+
+**Ruling.** un-claude builds an AI text humanizer. A user pastes text in, the tool
+rewrites it so it reads naturally, with better flow and a more human tone. It is
+a web product with accounts, not a script. It is explicitly a competitor to the
+AI humanizer tools already on the market, not a novel category.
+
+**Reasoning.** Jon, this session: the project "has morphed entirely." Two things
+are now off the table that earlier framing left open. **Removing Anthropic
+watermarks is not the goal and is not part of this project.** Neither is any
+other provider specific signal removal. The goal is stylistic quality: flow,
+readability, natural human tone.
+
+**Division of labour Jon set.** Jon owns the rewriting engine itself, meaning the
+model and the prompting that does the humanizing. The build work in these
+sessions is the product around it: the site, accounts, billing, the interface.
+
+**What this supersedes.** The one line description in `CLAUDE.md` and
+`00-START-HERE.md` was already edited to match before this entry was written.
+Row 3 in `06` moves from "undefined" to "defined at product level." Row 4, what
+counts as good output, is **still open and is still the hardest question here.**
+
+### 11. Kimi is retired. This project is built with Claude Code on Claude
+
+**Ruling.** Jon, this session, verbatim: "Ignore Kimi from here on forwards. We
+are using Claude code to build. We are not building with Kimi."
+
+**Reasoning.** Not recorded by Jon beyond the instruction itself. Sessions 2 and 3
+both demonstrated that the Kimi routing was fragile in practice: session 2 ran on
+Claude while believing it was on Kimi, and session 3 opened on Claude again.
+
+**What this supersedes, and it is a lot.** These are now historical rather than
+operative:
+
+- Decision 3, "the rulebook is written before Kimi is connected." The reason for
+  the sequencing is gone. The rulebook stands on its own merits.
+- Decision 7, the `kimi-k3` and `kimi-k2.6` model choice. Dead.
+- Decision 9, "this project runs in Terminal, not the desktop app." **The reason
+  for that rule was that the desktop app would not load the Kimi `env` block.
+  With Kimi gone, that reason is gone.** Terminal is no longer required.
+- Row 2 and row 9 in `06` were closed on Kimi grounds. Both are moot.
+- The Kimi sections of `07-runbook.md`, including the model picker trap, the
+  Moonshot endpoint notes and the environment check. **Kept, not deleted,**
+  because the general lessons in them are the valuable part and still true: a
+  correct configuration file is not a loaded one, and ask the service rather than
+  the tool.
+
+**The safety consequence, and it is the important one.** `CLAUDE.md` section 3
+stated that everything in a session reaches Moonshot's servers. **That sentence
+is now false**, and it is the single most safety relevant sentence in the
+repository, so it was corrected in the same session rather than left to drift.
+Data now goes to Anthropic. **The boundary rules themselves do not relax.**
+Nothing outside `~/un-claude` gets read, and `~/Documents/GitHub/Blotter-Claude`
+stays off limits. A different third party is still a third party.
+
+**The emergency stop changes.** Deleting the Moonshot API key is no longer the
+kill switch, because Moonshot is no longer in the path. Recorded in `07`.
+
+### 12. The domain is `un-claude.net`
+
+**Ruling.** Jon owns `un-claude.net` and the product ships there.
+
+**Consequence.** This is the first thing in the project that is public facing and
+carries Jon's name in the world. `CLAUDE.md` section 5 already requires his word
+before publishing anything under his name. Deploying to this domain is
+publishing.
+
+### 13. Landing page copy is deferred
+
+**Ruling.** Jon, this session: "We don't need to think about landing page wording
+yet." The open question about whether the product is positioned as a
+writing quality tool or as an AI detector bypass tool is parked, not answered.
+
+**Why it is written down anyway.** It is a real fork that changes the engine, the
+copy and the legal exposure, and parking it without recording it is how it gets
+silently decided by default. Added to `06` as a row with a trigger.
+
+### 14. The product is built on MakerKit Lite, not Vercel's SaaS starter
+
+**Ruling.** Clone MakerKit Lite, the free MIT licensed Next.js and Supabase
+starter kit, and merge it into the root of this repository. Approved by Jon and
+installed the same session.
+
+**What a starter kit is, in plain English.** A pre built skeleton of a website
+that already has the boring, security sensitive parts written: sign up, sign in,
+password reset, a settings page, a database connection. You delete the parts you
+do not want and build your product on top. It saves weeks, and every piece of it
+is code Jon cannot read, which is why the choice mattered.
+
+**The candidates, and why the two Jon was handed both failed on inspection.**
+
+Jon's brief named MakerKit Lite and Firestarta, and described both as free and
+open source.
+
+**Firestarta was rejected outright, on two independent grounds.** It has **no
+licence file at all**, meaning that under default copyright it is publicly
+visible but not legally free to use, and building a commercial product on it
+would be a genuine legal exposure. And it has been **abandoned since 3 March
+2024**, sitting on Next.js 14 when 16.3 is current. A third detail is worth
+recording because of what it says about the brief: Firestarta does not use
+Supabase authentication at all. Its dependencies are `next-auth` and `prisma`,
+with Supabase only as a database host. **The brief describing it as a Supabase
+authentication kit was simply wrong, and this was only caught by checking.**
+
+**Vercel's `nextjs/saas-starter` was considered seriously and rejected.** Jon
+raised it directly and reasonably, on the grounds that it has 16,000 GitHub stars
+against MakerKit Lite's 454. Three findings settled it:
+
+- Its `package.json` pins Next.js to `15.6.0-canary.59`. **A canary is an
+  unfinished nightly test build, not a release.** It was pinned there in December
+  2025 to patch a published security hole and has not moved since.
+- **Two commits in fourteen months, both emergency security patches.** It is kept
+  alive, not developed.
+- Its open issue list contains obvious misfiled noise, months old and untriaged.
+
+**On the star count, because the reasoning generalises.** Stars are a bookmark
+button and mostly measure marketing reach. Vercel's starter is featured in
+Vercel's own template gallery. MakerKit Lite is a free sample of a paid product.
+**The gap measures audience size, not quality or upkeep.** Stars do buy something
+real, namely more blog posts and more people hitting each bug first, and that was
+weighed. It did not outweigh an unmaintained project on an unfinished build.
+
+**The argument that actually decided it.** Vercel's starter writes its own login
+system by hand, signing its own session tokens and hashing its own passwords.
+MakerKit Lite uses Supabase Auth, a maintained service. **Jon cannot read code,
+so a hand written login is precisely the component he would be trusting most
+blindly, and it is the component where a mistake is a breach rather than a bug.**
+Handing that to a company that patches it is worth more here than it would be on
+a team that could audit it.
+
+**The cost, stated plainly rather than buried.** MakerKit Lite has **no billing
+of any kind.** No Stripe, verified three ways: the kit's own README lists
+payments as excluded, a code search returns zero results, and a full file listing
+turns up only a leftover translation file and an image. Vercel's starter has
+working checkout and subscription handling out of the box. **Billing is now a
+known future job rather than something inherited.** This is the one dimension on
+which the rejected option was better.
+
+**Rejected also, without deep investigation:** `KolbySisk/next-supabase-stripe-starter`,
+which pairs Supabase and Stripe but whose last substantive work was January 2025,
+and `ixartz/SaaS-Boilerplate`, which is well maintained but uses Clerk rather
+than Supabase for authentication.

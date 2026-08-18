@@ -1,280 +1,168 @@
 # un-claude: Current Handoff
 
-**Date:** 17 August 2026, end of session 2
-**Status:** Setup complete and now genuinely running on Kimi. No product work has
-started.
-**Sessions 1 and 2 both ran on Claude.** Session 1 did so by design. Session 2
-was meant to be the first session on Kimi and was not. See section 0. If you are reading this in a Terminal session started
-with `claude` from `~/un-claude`, you are the first session actually on Kimi.
+**Date:** 18 August 2026, session 3
+**Status:** The product skeleton is installed and runs. The rewriting engine does
+not exist. Nothing is deployed.
 
-**This file holds resumption context only.** It is rewritten wholesale at the end
-of every session. Nothing may live here as its only record. If something matters
-beyond the next session, it belongs in `04-decision-log.md`,
+**This file holds resumption context only.** It is rewritten wholesale every
+session. Nothing may live here as its only record. If it matters beyond the next
+session it belongs in `04-decision-log.md`,
 `06-assumptions-and-open-questions.md`, or `07-runbook.md`.
 
 ---
 
-## 0. Act on these before anything else
+## 0. What changed in session 3, and it is a lot
 
-### Due now, in this order
+**Read this section before acting on anything written in an earlier session.**
+Three things were settled that make large parts of the older documents
+historical rather than operative.
 
-**1. Confirm you are on Kimi before doing anything else.** Ask Jon to type
-`/status` and read back two lines. **Anthropic base URL** must say
-`api.moonshot.ai`. **Model** must say `kimi-k3`. If either says anything else,
-stop and say so. Nothing done in a session that is not on Kimi counts as work on
-this project.
+**Kimi is retired. This project is built with Claude Code on Claude.** Jon's
+instruction, decision 11. Everything about Moonshot, `kimi-k3`, the model picker
+trap and the Terminal only rule is now history. **It was kept, not deleted,**
+because two lessons in it are general and still true: a correct configuration
+file is not a loaded one, and ask the service rather than the tool.
 
-**Why this is item one.** Session 2 ran in the Claude Code desktop app, which
-silently ignores this project's configuration and runs on Claude against
-Anthropic. It could have reported all session that Kimi was configured, because
-it was, while the Moonshot dashboard read zero.
-Closed as decision 9 in `04` and row 9 in `06`.
+**Three consequences you must not miss:**
 
-**The configuration itself is proved good and needs no further attention.** On 17
-August 2026 the endpoint, the API key and all three model names were tested by
-calling Moonshot directly, outside Claude Code. All returned `HTTP 200`. **Do not
-spend another session re checking the settings file.** The file was never the
-problem.
+- **`CLAUDE.md` section 3 was corrected.** It said everything reaches Moonshot.
+  It now says Anthropic. **The boundary rules themselves did not relax.** Nothing
+  outside `~/un-claude` gets read, and `~/Documents/GitHub/Blotter-Claude` stays
+  off limits.
+- **The emergency stop changed and is weaker.** Deleting the Moonshot key no
+  longer does anything. There is no single console switch now. Close the window,
+  and deny the permission prompt. Recorded honestly in `07` rather than glossed.
+- **The Terminal only rule is void.** Its sole reason was that the desktop app
+  would not load the Kimi settings. The desktop app is fine now.
 
-**2. Say what is stale, wrong, or missing in these documents.** Jon asks for this
-in the first reply of every session and it is the only mechanism this project has
-for catching documentation rot. There is no automation at session boundaries.
-None at all.
+**The project was rescoped.** It builds an AI text humanizer, sold as a product
+with accounts. **Removing Anthropic watermarks is explicitly not the goal and is
+not part of this project.** Decision 10. Jon owns the rewriting engine itself,
+meaning the model and prompting that do the humanizing. These sessions build the
+product around it.
 
-**3. Then get to section 4, which is the actual work.** Two sessions have
-produced a repository, a documentation system and a working Kimi configuration,
-and no specification for the tool. That is the gap.
-
-### Done. Do not repeat, do not ask about.
-
-- The GitHub repository exists and is private. Do not offer to create one.
-- `.gitignore` is written and its protection of the API key was tested rather
-  than assumed, twice, once with the real file present. Do not re-derive it.
-- The model is chosen: `kimi-k3` main, `kimi-k2.6` background. Settled with
-  reasoning in `04` entry 7.
-- Plain local folder, not Docker, not cloud, not a separate user account. Settled
-  with a written revisit trigger in `06` row 1. **Do not raise container
-  isolation unprompted.**
-- The repository was built from scratch rather than copied from Blotter.
-- The global permission warning was restored. Settled in `04` entry 8.
-
-### Standing, and it governs everything
-
-- **Nothing outside `~/un-claude` gets read.** `~/Documents/GitHub/Blotter-Claude`
-  is named explicitly as off limits in `CLAUDE.md` section 3. It is a separate
-  live project.
-- **Show real output, never an assertion of correctness.** Jon cannot read code.
-  "It works" is worth nothing on its own.
-- **Stage by explicit path.** Never `git add -A`, `git add .`, `git commit -a`.
-- **No em dashes or en dashes,** in documents or in the tool's own output.
-- **Do not push to GitHub without Jon's word.** Committing locally is yours.
-- **This is not a test of you.** Nobody is scoring the model. Build the tool.
-- **If Jon mentions the model picker, warn him before he uses it.** It still
-  shows Anthropic model names in this project. Selecting from it overrides the
-  Kimi setting, and it writes the choice into his global settings, which changes
-  the default model in his other projects. It is the only route found so far by
-  which this project can affect anything outside this folder. Details and the
-  partial mitigation are in `07-runbook.md`. To change model, edit
-  `.claude/settings.local.json` and restart.
+**The domain is `un-claude.net`,** owned by Jon. Decision 12.
 
 ---
 
-## 1. Read these, in this order
+## 1. Where to pick up
 
-1. `CLAUDE.md`
-2. This file
-3. `docs/04-decision-log.md`
-4. `docs/06-assumptions-and-open-questions.md`
-5. `docs/05-working-agreement.md`
-6. `docs/07-runbook.md`
+**The site runs locally right now:**
 
-Jon usually pastes his own reading order at the top of a session. **His list wins
-over this one.**
+```bash
+cd ~/un-claude && pnpm dev
+```
 
----
+Then open `http://localhost:3000`. It currently shows MakerKit's own marketing
+page, headline "Ship a SaaS faster than ever," because none of the content has
+been replaced yet.
 
-## 2. The documentation system. Follow it or the next session loses the thread.
+**The obvious next step is deploying the placeholder to Vercel on
+`un-claude.net`.** That was Jon's stated Phase 1 and it is the only piece of it
+not yet done. **It needs two approvals from Jon before it can happen,** both
+under `CLAUDE.md` section 5, and neither has been given:
 
-| When you notice | Write it to | With |
-|---|---|---|
-| A ruling Jon has made | `04-decision-log.md` | the reasoning, not only the outcome |
-| A question that is open | `06-assumptions-and-open-questions.md` | a working position, why it is unresolved, and a trigger for revisiting |
-| An operational fact learned the hard way | `07-runbook.md` | what went wrong and what to do instead |
-| Where to pick up next | this file | rewritten at session end |
+1. **Pushing to GitHub.** There are now 7 unpushed commits.
+2. **Publishing under his name.** A live site on his domain is publishing.
 
-**At the moment it happens, not at the end of the session.** A session can end
-without warning and everything unwritten is lost.
+**It also needs a hosted Supabase project,** which is a free account Jon creates,
+and which produces the keys the deployed site needs to run.
 
 ---
 
-## 3. What session 1 shipped
+## 2. Do not repeat, do not ask about
 
-Setup only. No product work, by design.
-
-- Private repository at `jnachman17-hue/un-claude`, one remote, branch `main`,
-  five commits
-- `.gitignore`, with the API key protection verified under test
-- `CLAUDE.md`: precedence, the data boundary, the verification standard, the
-  staging rule, and a statement of what the project is
-- `docs/`: this file plus `00`, `04`, `05`, `06`, `07`
-- Kimi configured in `.claude/settings.local.json`, gitignored, project local
-  only. `kimi-k3` main, `kimi-k2.6` background
-- `skipDangerousModePermissionPrompt` removed from global settings
-
-**Everything above was written by Claude, deliberately, so that the rules
-governing this project were not authored by the model they govern.** That is
-Jon's decision, recorded as `04` entry 3.
+- MakerKit Lite is chosen and installed. **Do not relitigate the boilerplate.**
+  Vercel's `nextjs/saas-starter` was considered on Jon's own prompting and
+  rejected with reasoning in `04` entry 14.
+- Node, pnpm and the dependencies are installed and working. Nothing to set up.
+- The kit's `.mcp.json` was deleted deliberately. **If it reappears, delete it
+  again.** Reasoning in `07`.
+- The secret boundary was re-verified after the `.gitignore` merge.
+- Jon has parked landing page wording. Do not draft copy unprompted.
 
 ---
 
-## 4. Where to pick up
+## 3. The gap that actually matters
 
-**The next session is the build definition session, and Jon leads it. It has been
-the next session since session 1.** Session 2 was supposed to be it and was spent
-entirely on the routing problem instead. Everything so far has been setup, and
-setup is now genuinely finished.
+**Two sessions of setup and one of infrastructure have produced no answer to the
+question that decides whether this product is any good.**
 
-He will bring references and examples and explain what the tool is meant to do.
-Right now the entire specification is one sentence: a small tool that rewrites AI
-written text so that it reads as though a person wrote it. That is not enough to
-build from and it is not meant to be yet.
+`06` row 4: **what counts as good output.** It has been open since session 1. A
+humanizer with no agreed definition of success cannot be tested, tuned, or
+finished, and no amount of infrastructure substitutes for it.
 
-**Do not start writing code before that specification exists.** Do not propose an
-architecture, pick a language, or scaffold a project in the first reply. The
-useful thing to do is help Jon get specific.
+Jon owns the engine, so he may consider this his. **It still needs to exist as a
+written standard in this repository,** or nobody can tell whether a change made
+the tool better or worse.
 
-The two questions that need answers, in order:
-
-1. **What does the tool do, concretely?** Input, output, and where it runs.
-2. **What counts as good output?** This is row 4 in `06` and the hardest question
-   in the project. A humaniser with no agreed definition of success cannot be
-   tested, tuned, or finished. Push on this one.
-
-The output of that session is a build specification, written to `docs/01-` or
-similar, plus a working definition of good output. Both are durable documents,
-not handoff notes.
+**Related and also open, as `06` row 12:** whether this is positioned as a
+writing quality tool or as an AI detector bypass. Jon parked the wording. The
+underlying fork is real, it changes the engine and the legal exposure, and it is
+recorded so it does not get decided silently by default.
 
 ---
 
-## 5. Things that will bite you
+## 4. Things that will bite you
 
-**Git on this machine is version 2.23, from 2019.** Several modern commands do
-not exist. `git init -b main` fails. `git branch -M main` fails on an empty
-repository. Workarounds in `07-runbook.md`.
+**Git on this machine is 2.23, from 2019.** Several modern commands do not exist.
+Workarounds in `07`.
 
-**git's own report about GitHub is not evidence.** The first push printed
-`Everything up to date` for commits that had never been pushed. The end state was
-correct. When it matters, ask GitHub through `gh api`. See `07-runbook.md`.
+**Stage by explicit path. Never `git add -A`, `git add .`, or `git commit -a`.**
+The kit added 389 files, so this rule now matters more than it did.
 
-**There is no memory between sessions except these files.** No startup hook, no
-session log, no crash detection. If a session ends mid task this file will still
-describe the last clean state and will not know it is wrong. The true indicators
-are `git status` showing uncommitted work and `git log origin/main..main` showing
-unpushed commits.
+**Re-run the secret check after any change to `.gitignore`:**
 
-**The Kimi configuration is gitignored,** so it does not travel with the
-repository. A fresh clone on another machine runs on Claude.
+```bash
+git check-ignore -v .claude/settings.local.json
+```
 
-**There is no permissions allow list, deliberately.** Every command will prompt
-Jon. That is the intended state and not a misconfiguration to fix. Entries get
-added one at a time as they earn it.
+**Docker is not installed,** so accounts cannot be created or tested locally. The
+public site runs fine without it. `06` row 11.
 
----
+**MakerKit Lite has no billing at all.** That was the known cost of choosing it.
+`06` row 10.
 
-## 6. Verification that has earned its place
-
-Entries are added here only after an approach has actually caught or proved
-something. This is not a list of good intentions.
-
-**The secret boundary.** Tested, not asserted. A file with a fake key was written
-to `.claude/settings.local.json`, `git check-ignore -v` named the matching rule,
-`git status` confirmed git could not see it. Re-checked after the real key was
-installed. Command in `07-runbook.md`.
-
-**Ask the service, not the tool.** git reported a push as unnecessary when it had
-in fact just performed it. GitHub's API settled what was actually there. The
-general form: when a claim matters, check it against the system that holds the
-truth, not against the tool reporting on it.
-
-**Read the provider's documentation, never the model's memory.** Every Kimi model
-identifier recallable from training had been discontinued in May 2026, and
-`ANTHROPIC_SMALL_FAST_MODEL` had been deprecated in favour of
-`ANTHROPIC_DEFAULT_HAIKU_MODEL`. Both would have produced a broken configuration
-Jon had no way to diagnose.
+**There is no memory between sessions except these files.** If a session ends
+mid task this file will still describe the last clean state and will not know it
+is wrong. The true indicators are `git status` and `git log origin/main..main`.
 
 ---
 
-## 7. Decisions that are settled. Do not reopen without Jon.
+## 5. How sessions work
 
-Full reasoning for all eight is in `04-decision-log.md`.
-
-1. Local folder, not Docker, cloud, or a separate user account
-2. New repository from scratch, not copied from Blotter
-3. The rulebook was written by Claude before Kimi was connected
-4. **The project is not a model comparison.** Nobody is scoring you
-5. Documentation lives in a flat `docs/` folder
-6. One Moonshot API key named `un-claude` under the default project
-7. `kimi-k3` main, `kimi-k2.6` background
-8. The global permission warning is restored
-
----
-
-## 8. Open and waiting on Jon
-
-- **What the tool actually does**, in enough detail to build from. Session 2.
-- **What counts as good output.** The hardest question in this project.
-- Whether `CLAUDE.md` section 3, which bans reading any file outside this folder,
-  turns out to be too strict once building starts. Untested.
-
-Full rows with revisit triggers are in `06-assumptions-and-open-questions.md`.
-
----
-
-## 9. How sessions work
-
-**Jon is not a programmer.** He directs by describing outcomes. He reviews by
-looking at the actual thing, never by reading code and never by reading a
-description of the thing. For a text tool that means showing him real input text
-and real rewritten text, in full, in the session, so he can judge for himself.
+**Jon is not a programmer.** He directs by describing outcomes and reviews by
+looking at the actual thing, never by reading code. For a text tool that means
+showing real input and real rewritten output, in full, in the session.
 
 **He wants pushback.** Agreeing with a bad plan and executing it well is a
-failure. If a premise is wrong, say so before building on it. If an
-interpretation of his intent is about to shape a durable document, state the
-interpretation back to him in one sentence first. That specific mistake already
-happened once in session 1 and is logged in `05` section 6.
+failure. Session 3 is the evidence this works: the two boilerplates he was handed
+both failed on inspection, one of them fatally, and checking rather than
+complying is what caught it.
 
-**He wants a recommendation, not a menu.** Five options with no position taken is
-not help.
+**He wants a recommendation, not a menu.**
 
 **Warn him before the context window fills.** He has asked for this explicitly
-and cannot see it coming himself.
+and cannot see it coming.
 
-**Bad news first, plainly, once.** No extended apology and no self criticism.
-State it, fix it, move on.
+**Bad news first, plainly, once.** No extended apology, no self criticism.
 
 ---
 
-## 10. Sessions so far
+## 6. Sessions so far
 
-**Session 1, 17 August 2026. Claude.** Setup. Prerequisites checked, private
-repository created, secret boundary established and tested twice, `CLAUDE.md` and
-the full documentation system written, Moonshot account and key created by Jon,
-model selected from Moonshot's published list, Kimi configured project local
-only, global permission warning restored. Five commits, all pushed. Ran on Claude
-by design so that the rules governing this project were not written by the model
-they govern.
+**Session 1, 17 August 2026.** Setup. Repository, `CLAUDE.md`, the documentation
+system, secret boundary tested twice, Kimi configured. Five commits.
 
-**Session 2, 17 August 2026. Claude, in the desktop app, when it was meant to be
-the first session on Kimi.** Diagnosed exactly that.
-Established by two independent checks that no session had ever reached Moonshot,
-proved the configuration itself correct by calling Moonshot directly, established
-that the desktop app is the cause and that Terminal works, and closed the
-question. Decision 9, row 9 closed, runbook updated, no product work. **The
-project can now actually run on Kimi, and has still never been specified.**
+**Session 2, 17 August 2026.** Diagnosed that no session had ever actually
+reached Moonshot despite a correct configuration file. Established the desktop
+app as the cause. No product work.
 
-**A correction made inside session 2, recorded because it is the exact failure
-this project is built to catch.** That session first wrote "sessions 2 to 5" into
-three documents, having inferred four sessions that never happened from a single
-line in this file. Git showed seven commits in one twenty eight minute run, which
-is session 1 alone. Invented history is worse than missing history, because it
-reads as evidence. Check `git log` before writing about what past sessions did.
+**Session 3, 18 August 2026. Claude.** The project was rescoped to an AI text
+humanizer and Kimi was retired. Researched the two boilerplates in Jon's brief:
+**Firestarta was found to have no licence file and to have been abandoned since
+March 2024, and its description in the brief was factually wrong about its own
+authentication stack.** Vercel's starter was raised by Jon on star count and
+rejected on evidence. MakerKit Lite was chosen, merged, installed and verified
+running. `CLAUDE.md` section 3 and the runbook's emergency stop were corrected
+because Kimi's retirement had made both false. Two commits.
