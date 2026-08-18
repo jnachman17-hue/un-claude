@@ -634,3 +634,30 @@ error. Please ensure you have a working internet connection and try again."
 registered, and unconfirmed email. **Every other failure shows the placeholder,**
 including wrong email format, weak password, and rate limiting. This is a real
 user facing defect, not cosmetic. Logged as row 13 in `06`.
+
+### OAuth buttons: listing a provider does not configure it
+
+**18 August 2026.** Jon clicked "Sign in with Google" on the live site and got a
+raw JSON error in his face:
+
+```
+{"code":400,"error_code":"validation_failed",
+ "msg":"Unsupported provider: provider is not enabled"}
+```
+
+**The cause.** `apps/web/config/auth.config.ts` shipped with `oAuth: ['google']`.
+**That setting only draws the button.** Enabling the provider is a separate job
+in the Supabase console, under Authentication then Providers, and it was never
+done. The kit's own comment says so and is easy to miss.
+
+**Fixed by emptying the list,** not by configuring Google. Google OAuth needs a
+Google Cloud project, a consent screen and a verification review before public
+use. Email and password already works.
+
+**The general rule: `oAuth: []` stays empty until a provider is genuinely enabled
+in Supabase.** Adding a name to that array without doing the console work puts a
+broken button in front of users.
+
+**Verified after deploying,** by fetching both live pages rather than assuming
+the deploy did what was intended: zero occurrences of the Google button on
+`/auth/sign-up` and `/auth/sign-in`, and all three pages returning HTTP 200.
