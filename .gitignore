@@ -106,3 +106,8 @@ yarn-error.log*
 .contentlayer/
 .prds/
 .env*
+
+# Engine: local Python packages and caches, never committed
+engine/.venv/
+__pycache__/
+*.pyc
