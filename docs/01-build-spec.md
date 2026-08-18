@@ -81,11 +81,32 @@ software, not the engine processing user text.
 
 ### Nobody can verify that a text watermark was removed. Including us
 
-No public detector exists. The key is symmetric and held only by Anthropic, and
-the primer argues it can never be published, because a key that detects can also
-forge. **Every present day claim about text watermark removal, from any tool, is
-currently unfalsifiable.** This is the sourced version of `04` entry 23 and it
-makes that ruling stronger rather than weaker.
+No public detector exists **today**. **Every present day claim about text
+watermark removal, from any tool, is currently unfalsifiable.** This is the
+sourced version of `04` entry 23.
+
+**Correction to the primer, 18 August 2026. Jon was right and the primer is stale
+on this point.** It argued the key can never be published and that detection is
+therefore permanently gated. **Anthropic confirmed on 12 August 2026 that a
+publicly callable detection API is in development,** and Anthropic's own help
+page says they are "working to enable users and other third parties to detect
+Claude's embedded watermarks." No ship date, no access model, no pricing, and no
+terms published.
+
+**The primer's underlying argument is not wrong, it is unresolved.** A symmetric
+key still cannot be handed out, so a detection API means querying Anthropic and
+trusting the answer rather than verifying independently. And the primer predicted
+the exact problem a removal tool creates: **a detector queried repeatedly in a
+before and after pattern is an evasion oracle**, which is the pattern Anthropic
+would be expected to build abuse controls against.
+
+**Working position: plan for layer B being unverifiable. Treat the detector as
+upside if it ships with terms we can actually use, not as the plan.** Confirming
+whether those terms permit this use is a task, not an assumption. `06` row 24.
+
+**Also updated by the same check:** Claude models launched on or after 2 August
+2026 carry the mark, and it is applied globally. The primer said no current model
+was confirmed marked.
 
 ### The watermark is not evenly present in the first place
 
@@ -97,6 +118,21 @@ when Claude only proofread human writing. **Insufficient** in short passages.
 **A user pasting a short factual paragraph may have nothing to remove.** Saying
 so honestly is better product than pretending otherwise.
 
+### Layer A on an Anthropic file finds nothing Anthropic put there
+
+**A correction worth stating precisely, because the layers are easy to mix up.**
+An Anthropic generated file does carry a removable mark, and removing it is a
+real capability this product will have. **But it is the metadata layer that
+removes it, not layer A.** The mark on the file is C2PA signed provenance sitting
+in the file's wrapper. Layer A looks for invisible characters in text, and
+Anthropic adds none, so on a Claude generated file layer A finds nothing Claude
+left behind.
+
+**Layer A still earns its place on files**, because a file's text may have been
+pasted from a web page or produced by a different AI tool, and those sources do
+insert characters. **The claim to be careful with is attribution:** "we remove
+Claude's mark from your files" is true, and it is true because of metadata.
+
 ### Metadata stripping works, and defeats something already fragile
 
 C2PA is signed metadata attached to generated files. It is verifiable by anyone
@@ -106,6 +142,36 @@ metadata are the two layers that provably do what they say.**
 
 **The tension worth carrying into any copy we write:** the durable mark cannot be
 audited, and the auditable mark is not durable.
+
+### What the engine repository actually does, checked 18 August 2026
+
+Read directly from the repository rather than assumed. **Three findings that
+shape the engine session.**
+
+**Layer B does nothing out of the box.** Its default backend is `print-prompt`,
+which prints the rewrite prompt and calls no model at all. Real backends are
+`ollama`, meaning a model running locally, and `openai-compatible`, meaning any
+API speaking that format. **A model has to be chosen and wired up. It is not
+included.**
+
+**The repository already knows about re-stamping.** It states: prefer a non
+origin model for layer B, and do not rewrite Claude text with Claude if you are
+trying to avoid re-stamping. Jon assumed this was handled and it is.
+
+**PDF cleaning does not properly work without `qpdf`, and that is a system
+program rather than Python code.** The repository states that without it, PDF
+cleaning is incremental and **the original metadata bytes remain recoverable**,
+which means the file still carries what we said we removed. It also names
+`exiftool` and `c2patool` as optional helpers, and says all three come
+preinstalled in its Docker image.
+
+**Why that last one matters more than it looks.** The core Python needs version
+3.10 and nothing else, which would sit comfortably on Vercel. **The system
+programs are the problem, and PDF is one of the four launch formats.** The
+repository's own answer is a Docker container, which is a different way of
+running software than the rest of this project uses. **This is the real content
+of the engine session** and it is why that session is scheduled before anything
+depends on it. `06` row 19.
 
 ### One conflict in the sources, unresolved
 
