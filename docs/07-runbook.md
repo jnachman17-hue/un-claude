@@ -942,3 +942,194 @@ colour = (observed - 255 * (1 - alpha/255)) / (alpha/255)
 
 That recovers the original colour and coverage of art drawn over white, which is
 why TechCrunch's green survived as green.
+
+---
+
+## The legal pages expire. Exactly which lines, and when
+
+**19 August 2026, session 6.** The privacy policy, terms of service and cookie
+policy were written to be true of the code as it stood that day. **Two planned
+changes each falsify a published sentence.** This section exists so nobody has to
+work out which ones.
+
+**Why it matters more than tidiness.** A privacy policy claiming "we run no
+tracking" while running tracking is a false statement in a legal document. It is
+also one of the documented ways a Google brand verification is revoked after being
+granted. **The edit ships in the same deployment as the feature, never after it.**
+
+### When analytics is added
+
+| Page | Section | What changes |
+|---|---|---|
+| Privacy policy | The short version | "We run no advertising or tracking" — name the tool and what it measures |
+| Privacy policy | Cookies and browser storage | Add the analytics entry, and say whether it sets cookies |
+| Privacy policy | Who else is involved | Add the analytics provider as a row |
+| Cookie policy | Opening line | Rewrite the "no advertising or tracking cookies" claim |
+| Cookie policy | Whole page | **Add a consent banner if, and only if, the tool sets cookies** |
+
+**Pick the tool with this in mind rather than on features.** The site currently
+sets no tracking cookies, so it needs no consent banner and has none. **Google
+Analytics ends that and creates an EU and UK banner obligation.** A cookieless
+tool such as Plausible or Fathom preserves the property and costs one line of
+policy instead of a consent system.
+
+### When payments are added
+
+| Page | Section | What changes |
+|---|---|---|
+| Terms | Payment | Replace "currently free and no payment method is collected" with real billing, refund and cancellation terms |
+| Privacy policy | What we store if you create an account | Add billing data |
+| Privacy policy | Who else is involved | Add the payment processor as a row |
+| Terms | New section | **Governing law.** Omitted deliberately because there is no entity, `04` entry 54. There will likely be one by then |
+
+### The check that catches this if the tables are missed
+
+The claims are all falsifiable from the repository. Before any deploy that adds a
+third party, run this and confirm every name it prints is listed in the privacy
+policy's "Who else is involved" table:
+
+```
+grep -rniE "analytics|gtag|posthog|plausible|fathom|stripe|sentry|@vercel/analytics" apps/web/app apps/web/components apps/web/package.json | grep -v node_modules
+```
+
+**On 19 August 2026 that command returned nothing but a prose comment in
+`mission/page.tsx`**, which is how the "no analytics or trackers of any kind"
+claim was verified rather than assumed. **If it starts printing real imports, the
+policy is out of date.**
+
+---
+
+## DNS for un-claude.com is at Squarespace, not Vercel
+
+**19 August 2026, session 6.** Found by lookup when Google Search Console needed a
+verification record, and worth writing down because the obvious guess is wrong.
+
+**The site is hosted on Vercel. The DNS is not.** The nameservers are
+`nsc1` through `nsc4.squarespacedns.com`, almost certainly because Squarespace
+bought Google Domains. **Any DNS change — verification records, mail, a future
+`auth.un-claude.com` for the Supabase custom domain fallback in `06` row 41 — is
+made in Squarespace under Domains, then the domain, then DNS, in the section
+called Custom Records.**
+
+**Records live on the domain as of that date:**
+
+```
+"google-site-verification=Tew_u-su6QILD4-YST8-BxeGHZe9THkjBNaIqY6Ugj0"
+"v=spf1 -all"
+```
+
+The first proves domain ownership to Google and is what unlocks OAuth brand
+verification. **The second says the domain sends no mail. Leave it alone** unless
+sending mail is deliberately set up, and understand it must change first if it is.
+
+**Check whether a DNS change has actually published, before clicking Verify
+anywhere.** Pressing a verify button too early fails in a way that looks identical
+to having entered the record wrongly, which sends people back to re-do correct
+work:
+
+```
+dig +short TXT un-claude.com @8.8.8.8
+```
+
+**Search Console ownership was verified on 19 August 2026** against the Google
+account that owns the Cloud project. **That pairing matters: verification is tied
+to the account that performed it, and Google Cloud cannot see a domain verified by
+a different account.**
+
+---
+
+## Two Google console facts that look like problems and are not
+
+**19 August 2026, session 6.** Both cost time while setting up Google sign in.
+
+### The Supabase domain in Authorized domains cannot be deleted, and must not be
+
+The Branding page lists **two** authorized domains, not one:
+
+```
+un-claude.com
+itdgggoxsoolbfiwujvt.supabase.co
+```
+
+**Google added the second one itself**, because the OAuth client's redirect URI
+points at it. Trying to delete it produces a tooltip saying the domain is in use
+by a client URI and credentials must be updated first. **That is an explanation,
+not an error.** The redirect URI has to stay, because it is how Supabase sign in
+works, so the domain stays with it. **Every site using Supabase for Google sign in
+has this exact pair. Leave both.**
+
+### The app name must track the site's own name, in both directions
+
+The consent screen name is checked against the name on the home page. The
+documented rejection is *"the app name shown on your OAuth consent screen does not
+match the app name on your home page"*, and it is automated, instant, and offers
+no email thread to argue.
+
+**On 19 August 2026 the live site wrote its own name as `un-claude` in all five
+places it appears, and in the page title. The Google app name was set to match.**
+
+**Jon intends to restyle it as `Un-Claude` at some point.** When that happens:
+
+- **Change the site and the Google app name in the same stretch of work.** Never
+  one without the other. The gap between them is the exact thing the checker
+  measures, and capitalisation is the easiest kind of gap to open by accident.
+- **A name change re-runs brand verification.** It is a cycle, not a free edit.
+  Do it once, after the name is decided, not while deciding.
+- Whether Google's matching is case-insensitive is **unverified**. Do not rely on
+  it either way.
+
+---
+
+## Google brand verification: two buttons, two pages, and a moving site
+
+**19 August 2026, session 6.** Each of these cost a cycle. Written so the next
+branding change — a logo, or the rename to `Un-Claude` — takes one attempt.
+
+### Publishing the app is not publishing the branding
+
+Three separate actions, easily mistaken for one:
+
+| Where | Button | What it does |
+|---|---|---|
+| Audience page | `Publish app` | Lets any Google user sign in. **Does not touch branding** |
+| Branding page | `Verify Branding` | Starts the automated brand check |
+| Branding page | `Publish branding` | **Makes the verified name and logo actually appear.** Nothing changes for users until this is pressed |
+
+**Until the branding is published it sits as "Draft Branding" and the consent
+screen shows the bare redirect domain**, which is `itdgggoxsoolbfiwujvt.supabase.co`
+here and looks like a fault. It is not one.
+
+### Never verify while the site is being deployed
+
+**The first attempt failed with "your privacy policy URL is unresponsive." The URL
+was correct.** The parallel session had rebuilt the site four times in ninety
+minutes, and Google crawled during one of those windows. Prerendered pages are
+regenerated on deploy and a crawler can land on one that is not ready.
+
+**Before clicking `Verify Branding`, confirm nothing is deploying.** The site
+reports its own build at `/version`. This watches the build id and all three URLs
+Google crawls, and prints whether anything moved:
+
+```
+for i in $(seq 1 10); do
+  printf "%s home=%s privacy=%s terms=%s build=%s\n" "$(date +%H:%M:%S)" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://un-claude.com/)" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://un-claude.com/privacy-policy)" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://un-claude.com/terms-of-service)" \
+    "$(curl -s https://un-claude.com/version | cut -c1-7)"
+  sleep 8
+done
+```
+
+Ten identical lines means it is safe to verify. **A changing build id means a
+deploy is in flight and the attempt will be wasted.**
+
+### What a branding change costs later
+
+**Any change to the name, logo, home page, privacy policy URL or authorized domains
+re-runs verification.** It is the same automated check, typically minutes, and it
+escalates to manual review — Google's figure is two to three business days — only
+when the automated pass cannot decide.
+
+**So a logo is not free but it is not a multi-day commitment either.** Make the
+change once, when the artwork is final, with the site stable, and expect a re-run.

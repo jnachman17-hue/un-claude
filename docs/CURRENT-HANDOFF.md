@@ -33,15 +33,19 @@ publication logo files, which need his approval under `06` row 34.
 
 ## 0a. Open before launch, carried from session 6
 
-**One item is parked and must not reach launch unnoticed.** Google sign in works,
-but Google's consent screen names our Supabase address, `itdgggoxsoolbfiwujvt.supabase.co`,
-where it should name the product. **Jon saw it, said he does not like it, and
-ruled ship anyway for now.**
+**Google sign in is live and branded, closed 19 Aug 2026.** The consent screen reads "Sign in to continue to un-claude" and `oAuth: ['google']` is back in
+`auth.config.ts`. `04` entry 55 has what actually blocked it, and `07` has the two
+constraints that survive: the app name must track the site's name, and any
+branding change re-runs verification. **Nothing was purchased.**
 
-**It is not fixed by making a logo, and reaching for one is the trap.** The fix is
-Supabase's custom domain add-on, $10 a month, which moves the callback to
-`auth.un-claude.com`. Reasoning in `04` entry 45, and the row that owns it is
-**`06` row 41, trigger: before deployment.**
+**Second item, and it has a deadline nobody will notice passing.** The three legal
+pages — privacy, terms, cookies — were live as the starter kit's stub until session
+6 and are now written truthfully. **They stop being true the moment analytics or
+payments arrive, and both are planned.** A policy claiming "we run no tracking"
+while tracking is a false statement in a legal document and a documented way to
+lose a granted Google verification. **The exact lines to change are tabulated in
+`07`, "The legal pages expire".** Owned by **`06` row 46**. `04` entry 54 has the
+four rulings behind the text.
 
 ---
 
@@ -54,7 +58,7 @@ Supabase's custom domain add-on, $10 a month, which moves the callback to
 | 3 | **`apps/web/engine/ENGINE.md` section 2** | **What each layer actually does and what it must never claim.** You cannot write a word of copy without it |
 | 4 | `apps/web/engine/API.md` | How to call the engine |
 | 5 | `docs/04-decision-log.md` entries **20, 27, 33, 34, 35** | The design direction, the marquee, and what layer A may claim |
-| 6 | `docs/06-assumptions-and-open-questions.md` rows **23, 27, 30 to 36** | Everything parked for you |
+| 6 | `docs/06-assumptions-and-open-questions.md` rows **23, 27, 30 to 36**, and **41 and 46** | Everything parked for you. **41 and 46 are the two that must close before launch:** the Google consent screen, and the legal pages that expire when analytics or payments ship |
 | 7 | `apps/web/AGENTS.md` | **Before writing any Next.js code.** This version differs from what a model remembers |
 
 ---

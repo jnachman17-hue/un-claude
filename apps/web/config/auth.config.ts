@@ -28,10 +28,12 @@ const authConfig = AuthConfigSchema.parse({
   providers: {
     password: process.env.NEXT_PUBLIC_AUTH_PASSWORD === 'true',
     magicLink: process.env.NEXT_PUBLIC_AUTH_MAGIC_LINK === 'true',
-    // Empty until a provider is actually enabled in the Supabase console.
-    // Listing one here only renders its button; it does not configure it, and
-    // an unconfigured provider fails with a raw JSON error in the user's face.
-    oAuth: [],
+    // Google is genuinely enabled: Supabase provider configured, Google Cloud app
+    // published, brand verification passed 19 Aug 2026. 04 entry 55.
+    // The rule still stands for any provider added later: listing one here only
+    // renders its button, it does not configure it, and an unconfigured provider
+    // fails with a raw JSON error in the user's face. 07, "OAuth buttons".
+    oAuth: ['google'],
   },
 } satisfies z.infer<typeof AuthConfigSchema>);
 

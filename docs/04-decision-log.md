@@ -1244,51 +1244,6 @@ control and should not be relied on once there is a reason to visit.**
 wording replaced, longest surviving run 5 words, 11 of 11 figures kept, length
 unchanged at 105 words.
 
-### 46. Correcting entry 45 within the hour. The consent screen is fixable, free, and before launch
-
-**This entry exists because entry 45 is wrong on its central point and the log is
-append only.** Read 45 with this attached to it.
-
-**What 45 got wrong.** It said branding could not be fixed while the callback sits
-on `itdgggoxsoolbfiwujvt.supabase.co`, because Google demands Search Console proof
-of ownership for every domain in the configuration including the redirect URI, and
-that Supabase's $10 a month custom domain was therefore the only unlock. **It
-presented that as near certain. It was over-read from a single documentation page
-and it is not what happens in practice.**
-
-**Jon rejected it on sight and his reasoning was better than the source.** A very
-large number of small sites run Google sign in through Supabase and do display
-their own name and logo. If the redirect host genuinely gated branding, none of
-them could. **That is decisive, and it is a good example of a plain argument from
-observed reality beating a model's reading of a document.**
-
-**What is actually happening, and it is simpler.** Google shows an app's name and
-logo only once the brand is verified, and shows the bare domain until then. **Brand
-verification does not start until the app is published to production.** un-claude
-is still in Testing. **Nothing is broken and nothing has been refused. The step has
-not been taken yet.**
-
-**The free path, in order:** verify `un-claude.com` in Google Search Console,
-publish the app on the Audience page, let the automated brand check run. Google's
-stated time for that check is minutes.
-
-**One real risk survives, in a much smaller form, and is worth keeping.** Google's
-developer forums carry a documented failure where an unverified app's consent
-screen falls back to the redirect host, and Google's own automated checker then
-compares that fallback against the homepage and rejects with *"the app name shown
-on your OAuth consent screen does not match the app name on your home page"* — with
-no email thread offered to argue it. **It is a flaw in Google's checker that lands
-on hosted auth providers. It is not a rule against them, and it does not always
-fire.**
-
-**So the ruling changes.** Entry 45 accepted an unbranded consent screen as the
-shipping state. **Jon has since ruled the opposite: we do not go live to the public
-with sign in looking like that.** Branding is worked in parallel with the button,
-not after launch.
-
-**And the $10 add-on is demoted from unlock to escape hatch.** Buy it only if the
-automated check returns that specific name-mismatch rejection. Not before.
-
 ### 50. Products are named first, companies second
 
 **Ruling.** Jon raised the question and it is a real one: the table listed
@@ -1338,3 +1293,147 @@ caveat is cut from the table, where it was detail nobody needed. **And a vendor
 that has signed the European code but not shipped is described as committed and
 coming rather than unconfirmed**, which is both better marketing and more
 accurate, since a signed commitment is a fact rather than an absence.
+
+### 53. Correcting entry 45 within the hour. The consent screen is fixable, free, and before launch
+
+**This entry exists because entry 45 is wrong on its central point and the log is
+append only.** Read 45 with this attached to it.
+
+**What 45 got wrong.** It said branding could not be fixed while the callback sits
+on `itdgggoxsoolbfiwujvt.supabase.co`, because Google demands Search Console proof
+of ownership for every domain in the configuration including the redirect URI, and
+that Supabase's $10 a month custom domain was therefore the only unlock. **It
+presented that as near certain. It was over-read from a single documentation page
+and it is not what happens in practice.**
+
+**Jon rejected it on sight and his reasoning was better than the source.** A very
+large number of small sites run Google sign in through Supabase and do display
+their own name and logo. If the redirect host genuinely gated branding, none of
+them could. **That is decisive, and it is a good example of a plain argument from
+observed reality beating a model's reading of a document.**
+
+**What is actually happening, and it is simpler.** Google shows an app's name and
+logo only once the brand is verified, and shows the bare domain until then. **Brand
+verification does not start until the app is published to production.** un-claude
+is still in Testing. **Nothing is broken and nothing has been refused. The step has
+not been taken yet.**
+
+**The free path, in order:** verify `un-claude.com` in Google Search Console,
+publish the app on the Audience page, let the automated brand check run. Google's
+stated time for that check is minutes.
+
+**One real risk survives, in a much smaller form, and is worth keeping.** Google's
+developer forums carry a documented failure where an unverified app's consent
+screen falls back to the redirect host, and Google's own automated checker then
+compares that fallback against the homepage and rejects with *"the app name shown
+on your OAuth consent screen does not match the app name on your home page"* — with
+no email thread offered to argue it. **It is a flaw in Google's checker that lands
+on hosted auth providers. It is not a rule against them, and it does not always
+fire.**
+
+**So the ruling changes.** Entry 45 accepted an unbranded consent screen as the
+shipping state. **Jon has since ruled the opposite: we do not go live to the public
+with sign in looking like that.** Branding is worked in parallel with the button,
+not after launch.
+
+**And the $10 add-on is demoted from unlock to escape hatch.** Buy it only if the
+automated check returns that specific name-mismatch rejection. Not before.
+
+
+### 54. The three legal pages are written, and four things about them are Jon's rulings
+
+**Context.** All three legal pages were shipped as the starter kit's stub and were
+live to the public that way. **The privacy policy page read "Your terms of service
+content here"** — the kit's own copy-paste error, so the privacy policy did not
+even claim to be a privacy policy. Found while checking whether Google's brand
+verification would pass. It would not have.
+
+**They were drafted from the code rather than from a template.** What the engine
+actually does with submitted content was read out of `clean.py`, the API routes,
+the Supabase schema and `free-uses.ts`, so every claim in them is checkable
+against the repository. The findings that shaped the text:
+
+- **Nothing submitted is retained.** No table holds it. Uploaded files exist as an
+  ephemeral temp file for the length of one request.
+- **Layer B is the single exception and had to be disclosed.** Text goes to
+  `mistral/mistral-small` through Vercel AI Gateway. Layer B is live in production,
+  entry 49, so this is a present fact and not a future one.
+- **There are no analytics or trackers of any kind.** Verified by search, not assumed.
+- **Account data is three fields:** name, email, picture URL.
+
+**Worth keeping for positioning: GPTZero retains submitted text by default and
+reserves the right to use it to improve their models.** We retain nothing. That is
+a real difference and it is now the first line of the privacy policy.
+
+**Jon's four rulings.**
+
+1. **Contact address is `unclaudeapp@gmail.com`.**
+2. **No governing law clause, because there is no company and no entity.** Normal
+   for a solo operator. **The consequence, recorded once because it is the reason
+   people incorporate before taking money: "we" in these documents is Jon
+   personally, so liability runs to him rather than to an entity.** Revisit with
+   payments.
+3. **Minimum age 18.** Sidesteps the child-privacy regime entirely, and this
+   product has an obviously student-adjacent audience.
+4. **Acceptable use prohibits deceiving a school, employer, publisher or client,
+   and the tool is for the user's own writing and own files.**
+
+**One drafting decision inside ruling 4, because it is the part that will be read
+adversarially.** The section names the legitimate uses **first** — hidden data in
+your own files, invisible characters breaking formatting, unreliable detectors
+flagging human writing — and the prohibition second. **A watermark remover whose
+terms only say "do not deceive anyone" invites the question of what is left, and
+reads as a wink.** Naming the real uses makes the prohibition credible rather than
+decorative. Google's reviewer reads the whole page, and so will journalists.
+
+**Not restricted to non-commercial use, deliberately, against a literal reading of
+Jon's "personal use".** A non-commercial clause would block a freelancer cleaning
+their own client work and would contradict paid plans. Written as *your own writing
+and your own files*, which is the restriction that carries the meaning.
+
+**These pages have an expiry date and it is already known.** See `06` row 46 and
+the line-by-line table in `07`.
+
+### 55. Google sign in is live and branded. What actually blocked it was mundane
+
+**19 August 2026, session 6.** The consent screen now reads **"Sign in to continue
+to un-claude"**, confirmed by Jon in a clean incognito window. `oAuth: ['google']`
+is back in `auth.config.ts` for the first time since it was emptied, and this time
+the provider behind it is genuinely configured.
+
+**Entry 45 and `06` row 41 both said this needed Supabase's $10 custom domain add-on.
+It did not. Nothing was purchased. That row closes on a free path.**
+
+**What actually blocked it, in the order the blocks were found.**
+
+1. **The Google app was never published.** Brand verification does not begin while
+   an app is in Testing, and until a brand is verified Google shows the bare
+   redirect domain. Nothing had been refused; a step had not been taken.
+2. **Publishing the app is not publishing the branding.** Two separate actions in
+   two places. **Branding sits as "Draft Branding" until `Verify Branding` is
+   clicked on the Branding page, and stays invisible to users until `Publish
+   branding` is clicked after it passes.** The Audience page's `Publish app` does
+   neither. This cost a full cycle.
+3. **The first verification attempt failed on "your privacy policy URL is
+   unresponsive."** The URL was correct. The site had been rebuilt four times in
+   ninety minutes by the parallel session, and the legal pages did not exist in
+   real form until 12:23. Google crawled a moving target.
+
+**The fix for 3 was to stop moving and re-run.** The parallel session paused, the
+live build id and all three crawlable URLs were watched for ninety seconds and did
+not change, and the retry passed.
+
+**The claim in entry 45 that this whole area is gated by Search Console ownership
+of `supabase.co` is now settled as wrong, on evidence rather than argument.** Jon
+rejected it when it was made, reasoning that a very large number of small sites run
+Google sign in through Supabase and do show their own name. **He was right.** The
+authorized domains list still contains `itdgggoxsoolbfiwujvt.supabase.co`, it still
+cannot be deleted, and verification passed anyway.
+
+**Two facts that survive as constraints, recorded in `07`:**
+
+- **The Google app name must track the site's own name.** Both currently read
+  `un-claude`. Jon intends `Un-Claude` eventually; the two must change together.
+- **Any branding change re-runs verification.** That is the cost of adding a logo
+  later, and it is a re-run of the same automated check rather than a new manual
+  review. Manual review only happens if the automated check cannot decide.
