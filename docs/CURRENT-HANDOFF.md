@@ -11,6 +11,40 @@ session. Durable things live in `04-decision-log.md`,
 
 ---
 
+## 0. Session 5 built the site. What is done and what Jon still wants
+
+**Live and verified:** the landing page is the tool. Scan, sanitise, layer B
+rewrite, receipts, file upload with provenance removal, and a paywall that fires
+without calling the engine. Four pages: landing, how it works, capabilities, and a
+mission page waiting for Jon's words. The engine is locked behind `UC_ENGINE_KEY`.
+
+**`UC_ENGINE_KEY` is still not set on Vercel, so the production engine refuses
+every request.** That is the fail-closed guard working. Jon has the key.
+
+**A severe engine bug was found and fixed:** every rewrite under about 350 words
+crashed, which is nearly every paste a visitor makes. `06` row 42.
+
+**Jon's review notes are in `06`, at the end.** The struck ones are done. Still
+open: the findings panel needs to be readable in five seconds, the key diagram
+needs to be more digestible, a sourced readership figure for the marquee, and real
+publication logo files, which need his approval under `06` row 34.
+
+---
+
+## 0a. Open before launch, carried from session 6
+
+**One item is parked and must not reach launch unnoticed.** Google sign in works,
+but Google's consent screen names our Supabase address, `itdgggoxsoolbfiwujvt.supabase.co`,
+where it should name the product. **Jon saw it, said he does not like it, and
+ruled ship anyway for now.**
+
+**It is not fixed by making a logo, and reaching for one is the trap.** The fix is
+Supabase's custom domain add-on, $10 a month, which moves the callback to
+`auth.un-claude.com`. Reasoning in `04` entry 45, and the row that owns it is
+**`06` row 41, trigger: before deployment.**
+
+---
+
 ## 0. Read these before doing anything
 
 | Order | File | Why |
