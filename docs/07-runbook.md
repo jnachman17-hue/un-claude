@@ -610,3 +610,91 @@ know the answer.**
 command.** Build them from their code numbers. In Python that means the escape
 form. The same applies in TypeScript, so **the site track needs this before it
 writes a single test or sample.**
+
+---
+
+## The site build, session 5
+
+### The engine is locked, and how to prove it
+
+Both endpoints now require an `x-uc-key` header matching `UC_ENGINE_KEY`.
+**The check fails closed in production:** if the variable is missing on Vercel,
+every request is refused rather than allowed. That is deliberate, and it is this
+runbook's own lesson applied, that a correct configuration file is not a loaded
+one.
+
+**Proving the lock from outside, which is the only proof that counts:**
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://un-claude.com/api/scan \
+  -H "Content-Type: application/json" -d '{"file":"dGVzdA==","name":"paste.txt"}'
+```
+
+**401 means locked. 200 means the lock is off and something is wrong.**
+
+**The browser must never call the engine directly.** It calls `/api/tool/scan`
+and `/api/tool/clean` on our own site, and those handlers attach the key server
+side. The variable has no `NEXT_PUBLIC_` prefix, which is what stops Next.js
+shipping it to a browser. **If a component ever fetches `/api/scan` from the
+client, the key has to travel with it and the whole lock is undone.**
+
+### The two deployments answer on different paths
+
+**This is not documented anywhere else and `API.md` gets it wrong.**
+
+| Where | Scan | Clean |
+|---|---|---|
+| **Production**, the Vercel functions in `apps/web/api` | `/api/scan` | `/api/clean` |
+| **Local**, the engine's own server | `/inspect` | `/clean` |
+
+`API.md` section 1 documents only `/inspect` and presents it as the contract.
+`API.md` section 6 also gives a local run command pointing at
+`engine/service/scripts/server.py`, **which does not exist.** The working one is
+in `ENGINE.md` section 11:
+
+```bash
+cd ~/un-claude/apps/web/engine && python3 server.py --port 8765
+```
+
+Both paths are environment variables (`UC_ENGINE_SCAN_PATH`,
+`UC_ENGINE_CLEAN_PATH`) so neither is hardcoded in a component.
+
+### The invisible character trap caught this project a third time
+
+**Writing the sample text through a shell heredoc destroyed the escape
+sequences,** turning ` ` into a literal invisible character sitting in the
+source file. It was caught immediately, by checking the file for literals rather
+than trusting it, and the file was rewritten through Python so the **escape
+sequences** land in it as text.
+
+**The check that catches it, run it after writing any file containing these:**
+
+```bash
+python3 -c "
+raw = open('PATH').read()
+print([hex(ord(c)) for c in raw if ord(c) in (0x202F,0x200B,0x00A0,0xFEFF)] or 'clean')"
+```
+
+**Expected output is `clean`.** Anything else means literal invisible characters
+are in the source and the escapes were eaten.
+
+### Simple Icons has no OpenAI mark
+
+Checked 19 August 2026. `anthropic`, `googlegemini`, `githubcopilot`, `meta`,
+`mistralai`, `perplexity` and `deepseek` all return 200. **`openai` returns 404,
+along with every variant tried.** It was removed, which is itself a signal about
+how that trademark is enforced.
+
+**Consequence:** the "which AI wrote this" selector ships with names and no
+logos, because a logo row missing the second most important brand looks broken.
+`06` row 34 requires Jon's approval before any logo file is fetched anyway.
+
+### The Browser preview pane stops painting
+
+**It renders blank while reporting correct geometry.** Screenshots came back with
+the tool missing while the DOM reported the element present, positioned, and at
+full opacity, and `get_page_text` returned all of its content correctly.
+
+**Do not diagnose a layout bug from a blank screenshot.** Measure the DOM first.
+The mobile layout in this session was verified by measurement, not by eye, and
+that was recorded as such rather than claimed as a visual check.
