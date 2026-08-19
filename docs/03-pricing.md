@@ -34,6 +34,23 @@ question.
 found this session while establishing what can be metered. **Reported, not
 fixed. This session does not edit code.**
 
+> **CORRECTION, 19 August 2026, session 7, Track 1. Three of the four items in
+> this section are stale, all in the harmless direction. Corrected rather than
+> deleted, because the arithmetic downstream of them is still sound.**
+>
+> - **2a is fixed.** `UC_ENGINE_KEY` is set. The engine is locked to our own site
+>   and was verified from outside. It is not returning 401 to every call.
+> - **2b is fixed.** The crash on inputs under about 350 words was found and
+>   fixed in session 5.
+> - **Section 14 item 5 says `06` row 37 does not exist. It exists now** and
+>   carries the free-allowance question.
+> - **2c and 2d still stand.** `UC_LAYER_B_RETRIES` is still unset, so the
+>   default of 8 is still live, and `accounts.public_data` is still user-writable
+>   and still the one place a credit balance cannot go.
+>
+> **Nothing in sections 3 to 6 changes.** The model cost was measured directly
+> against the gateway and does not depend on any of the above.
+
 ### 2a. The engine is almost certainly returning 401 to every call
 
 `apps/web/api/_shared.py` requires a shared password in `UC_ENGINE_KEY` and

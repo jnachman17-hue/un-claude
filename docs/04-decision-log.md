@@ -1479,3 +1479,74 @@ early signal that a session has misunderstood its brief is what it says back. **
 session that has misread its scope will edit another track's files**, which is the
 specific damage this arrangement introduces. Catching it in the first message costs
 one paragraph; catching it later costs a merge conflict in a live repository.
+
+---
+
+## 19 August 2026, session 7. Track 1, billing
+
+### 58. [T1] The project stays on Vercel Hobby until Vercel objects
+
+**Ruling.** Jon, told the constraint first. **"If Vercel doesn't stop me we will
+continue on hobby. If they do we will upgrade."**
+
+**What he was told before deciding.** Vercel's Hobby plan restricts the plan to
+non-commercial personal use, and a project taking payments is commercial by any
+reading of it. Pro is $20 a month for one seat, $240 a year, and break-even
+against the recommended entry pack is about three sales a month.
+
+**The part of the risk worth recording, because it is not a billing risk.** The
+failure mode is not a surprise invoice. It is Vercel suspending the deployment,
+and `un-claude.com` going dark on the day it starts making money, with recovery
+gated on a support queue rather than on a button. **That is the trade Jon is
+knowingly taking**, and it is cheap to reverse the moment there is revenue.
+
+**Recorded so the reversal is not a fresh decision:** upgrade to Pro at the first
+sign of any Vercel notice, or at the first month with meaningful revenue,
+whichever is first. `06` row 51 closes with this.
+
+### 59. [T1] Usage and revenue tracking is a launch requirement, not a follow-up
+
+**Ruling.** Jon, this session. **The V1 price ships without data, and the system
+that collects the data ships with it.** He also asked for an internal dashboard so
+pricing can be watched and corrected once real visitors and real charges exist.
+
+**His words:** "we must build a system that can actually track this on the back
+end and maybe even set up an internal dashboard for us to be able to view all
+this so once we start getting real visitors and charges, we can track our pricing
+internally to ensure we are optimizing pricing. We will still create our V1
+pricing before these because we need to start charging users before we have
+data."
+
+**Why this is a ruling and not a task.** `06` row 48 records that
+`usage_record()` has never recorded words, tokens or retries, that `04` entry 22
+promised exactly those, and that **it cannot be backfilled**. The same mistake
+made twice would mean pricing V2 from guesses as well. **Every day the fix is not
+in is a day of evidence permanently lost.**
+
+**What it has to capture, stated now so it is not rediscovered later:** words in,
+credits charged, credits refunded, which layers ran, model retries, wall time,
+and the Stripe event that paid for it. **The link between a charge and what it
+bought is the whole point** — usage without revenue attached cannot answer a
+pricing question.
+
+**Ownership is not settled and must not be assumed.** The `usage_record()` fix is
+`06` row 48 and belongs to **Track 3**. The ledger and everything revenue-side is
+Track 1. **An internal dashboard is closest to Track 4, "analytics and admin",
+and Jon should say which session builds it** rather than two sessions building
+half each.
+
+### 60. [T1] The pricing decision does not wait for usage data
+
+**Ruling.** Jon, this session, after being told the trigger on `06` row 48 says
+the usage fix "should come BEFORE the pricing decision rather than after."
+**"We will still create our V1 pricing before these because we need to start
+charging users before we have data."**
+
+**Reasoning, and it is the reason the trigger was wrong rather than merely
+inconvenient.** The fix records nothing historical. It begins collecting from the
+moment it ships, against a site with almost no traffic, so waiting would have
+blocked the decision for weeks on evidence that does not yet exist in either
+case. **The recommendation in `03-pricing.md` never rested on usage data anyway:**
+it rests on the model bill measured directly against the gateway and on
+competitors' published prices. **Row 48's trigger is overruled, and row 48 itself
+stands** — the fix is still urgent, for V2 rather than V1.
