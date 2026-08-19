@@ -1381,3 +1381,47 @@ alive first:**
 
 **`phase` must not be `scanning` and `hydrated` must be `true`.** Anything read
 before that is a reading of the server's HTML, not of the running product.
+
+### The landing page does not hydrate on a local machine, and it is not your change
+
+**19 August 2026, session 7.** Cost most of a verification budget. Written so the
+next session spends none.
+
+**The workbench never comes alive locally.** It sits inside an unresolved React
+streaming container, `<div id="S:0">`, never gains a `__reactFiber` key, never
+fires its opening scan, and ignores every click. The body and the site header
+hydrate normally around it.
+
+**It is not caused by whatever you just edited.** Established by stashing this
+session's changes and reloading: identical behaviour. It reproduces on a fresh
+`next dev` AND on a local production build served with `next start`. There is no
+compile error, no console error, and no failed network request.
+
+**The live site is unaffected** and resolves the same container within a few
+seconds.
+
+**Leading suspicion, unproven:** local Supabase is not running, `06` row 11, and
+something in that subtree waits on a session that never arrives. `.env.local`
+points at the real hosted Supabase rather than at localhost, so it is not simply
+an unreachable address.
+
+**What to do instead of chasing it.** Verify client-side logic by compiling the
+module on its own and driving it in Node:
+
+```bash
+./node_modules/.bin/tsc apps/web/lib/analytics/events.ts --ignoreConfig \
+  --module commonjs --target es2020 --lib es2020,dom --outDir <scratch>/build --skipLibCheck
+```
+
+Then `require` the result, stub whatever global it talks to, and print what it
+produced. That is how the analytics events were proven without a working browser
+page. **`--ignoreConfig` is required**: naming a file on the command line while a
+`tsconfig.json` exists is an error without it.
+
+### Next 16 refuses a second dev server, and tells you where the first one logs
+
+`next dev` exits with code 1 and prints the running server's PID and its log path,
+which is `apps/web/.next/dev/logs/next-development.log`. **Read that file rather
+than guessing** — it carries both server and browser errors with timestamps, and
+it is the only way to see a compile failure belonging to a session that is not
+yours. Historical errors stay in it, so check the timestamps before believing one.

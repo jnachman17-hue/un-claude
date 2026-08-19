@@ -1711,3 +1711,85 @@ Stripe's. `06` row 61 holds the detail and the revisit trigger.
 
 **Nobody in this project is qualified to advise on tax and none of the above is
 advice.**
+
+### 66. [T4] Measure the funnel by naming the moments, not by watching the DOM
+
+**Decision.** Seventeen named events, called explicitly from the places where the
+things happen, defined in one file, `apps/web/lib/analytics/events.ts`.
+
+**The alternative that was rejected, and it was tempting.** `workbench.tsx`
+carries a `data-phase` attribute whose own comment says it exists so the tool's
+state can be read "from outside it". An observer watching that attribute could
+have produced most of these events without touching the workbench at all, which
+would have kept Track 4 inside its own file ownership.
+
+**It was rejected because it would work and then quietly stop working.** A watcher
+reading state out of the DOM breaks silently the first time a phase is renamed,
+and Track 3 was editing that exact file the same week. **This project's runbook is
+already a list of checks that passed while being wrong.** Adding a measurement
+that fails without saying so was the one thing not worth the convenience.
+
+**Jon lifted the file-ownership constraint for this session** rather than accept
+the fragile version.
+
+### 67. [T4] The visitor's content never becomes an event property, and the module
+enforces it rather than the call sites
+
+**Decision.** The rule is not a convention to be remembered. It is built into the
+shape of `events.ts`: the exported functions take counts, flags and fixed choices.
+The only free string that enters is a filename, and it is never sent — it is
+reduced to an extension from a fixed vocabulary, or to `other`.
+
+**Three consequences that look like over-caution and are not.**
+
+**Sizes and durations are bucketed.** An exact character count is not content, but
+the same document reappearing is identifiable by its exact length. A range answers
+the only question worth asking of it, which is whether the funnel breaks on long
+documents, and identifies nobody.
+
+**The engine's own failure message is not sent.** It is our own copy today. It is
+also built at the far end from a payload containing the visitor's document, and
+the first time somebody interpolates a filename into an error string, content
+starts flowing to a third party silently. A fixed set of properties cannot develop
+that fault later.
+
+**Proof, because an assertion is worth nothing here.** Every event was driven with
+a confidential filename and a real sentence, then all sixteen fragments of them
+were searched for across the seventeen resulting payloads. None appeared. With
+PostHog absent, which is every local machine and every visitor running a blocker,
+every call is silent rather than throwing.
+
+### 68. [T4] No `signup_completed`, and `identify()` is never called
+
+**Decision.** Both are deliberately absent, and the reasoning is written at the
+top of `events.ts` so nobody adds them back believing they were forgotten.
+
+**`signup_completed` cannot exist honestly.** PostHog stores nothing on the
+device, so the visitor's id lives in memory and dies with the page. Both ways of
+finishing a sign-up leave the site entirely — Google's consent screen, or a
+confirmation link in an email — so whoever returns is a new person. An event fired
+on arrival would sit in a funnel chart looking like a step and would be two
+unrelated numbers. **How many accounts were created is a database question, not an
+analytics one.**
+
+**`identify()` was rejected on cost.** It would attach a real account id to the
+analytics record, which is a new category of personal data in the privacy policy,
+and it still would not join the anonymous half of the funnel to the signed-in
+half, because the anonymous id was already gone. A real cost for no gain.
+
+### 69. [T4] The policy rewrite is handed over as text rather than shipped in the
+same commit
+
+**Ruling.** Jon, 19 August 2026. Policy changes go to a separate session; this
+session writes the replacement wording and does not touch the legal pages.
+
+**This overrides the standing rule** in `CLAUDE.md`, `06` row 46 and
+`TRACK-4-ANALYTICS.md` that the policy edit ships in the same commit as the change
+that makes it necessary. Jon's explicit instruction is the higher authority,
+`CLAUDE.md` section 2, and this entry exists so the exception is visible as a
+decision rather than looking like the rule was forgotten.
+
+**The wording is in `docs/POLICY-CHANGES-PENDING.md` and it is OUTSTANDING.**
+Until it is applied the published privacy policy describes less measurement than
+actually happens. Nothing in it becomes false — no new company, no device storage,
+no content — but it is incomplete.
