@@ -174,21 +174,36 @@ that only our own site can call it.
 
 ---
 
-## 7. Usage recording, which Track B must not build
+## 7. Usage recording
 
-**The engine already returns the numbers pricing will need**, and Track A wires
-the recording. Track B does not.
+**Rewritten 19 August 2026.** This section used to talk about "Track A" and
+"Track B", which was the two-track vocabulary from before the work split into
+four. Work is now owned by the four tracks in `docs/TRACK-RULES.md`. **Recording
+belongs to Track 3. The credit ledger and pricing belong to Track 1.**
+
+`usage_record()` in `apps/web/api/_shared.py` runs on every request, on the
+failure path as well as the success path, and does two things: it returns a small
+public block that goes into the HTTP response, and it writes the full record to
+the server log as one line tagged `UC_USAGE`.
 
 | Number | Where it comes from |
 |---|---|
-| Size of text in | `report.length` or `stats.input_length` |
 | Size of file in | The bytes sent |
+| Words in, words out | Counted with `len(text.split())`, the same rule the length guard uses, so the two are comparable. `null` on anything that is not text |
 | How much was found | `suspicious_total`, `removed_count`, `replaced_count` |
-| Layer B model cost | Not built yet. Session A2 |
+| Chunks, attempts, retries, model calls | `report.layer_b.usage`. **Attempts and calls are different:** an attempt that never reaches the model is not a billed call |
+| Tokens and cost | `report.layer_b.usage`. `cost_usd` is the AI Gateway's own figure in US dollars, not our arithmetic on a token count |
 
-**Track B's job on this is different and comes later, in B2:** enforcing the free
-cap and showing a balance. **Not metering, and not pricing.** Pricing is
-undecided and has its own session. `06` row 18.
+**Tokens and cost are deliberately NOT in the HTTP response.** They are our unit
+economics and the site is public. They go to the log only.
+
+**A failed layer B run reports its cost too**, because it is the most expensive
+thing this engine can do: every chunk retries up to eight times and every attempt
+is billed. The figures are attached to the error rather than lost with it.
+
+**This is a log line and not a database.** Vercel keeps runtime logs for a short
+window. The durable ledger needs a migration, which belongs to Track 1. `06`
+row 64.
 
 ---
 
@@ -309,9 +324,17 @@ is also what a completely broken engine looks like.
 
 ## 12. Two payload facts this document gets wrong elsewhere
 
-**`words_in` and `words_out` are absent on single-chunk documents**, which is
-anything under roughly 350 words and therefore most pastes. Section 9 presents
-them as always returned. The site computes its own word counts.
+**`words_in` and `words_out` USED TO BE absent on single-chunk documents**, which
+is anything under roughly 350 words and therefore most pastes. Section 9 presented
+them as always returned, and it was wrong for the common case rather than the rare
+one. **Corrected in the engine on 19 August 2026 rather than in this document:**
+they are now returned on both paths, because the usage record needs them on
+exactly the short pastes that were missing them. The site still computes its own
+word counts and does not depend on these.
+
+**A third payload fact, added 19 August 2026.** `report.layer_b.usage` carries
+what the run consumed: `chunks`, `attempts`, `retries`, `model_calls`,
+`prompt_tokens`, `completion_tokens`, `total_tokens` and `cost_usd`. Section 7.
 
 **The clean report has two different shapes.** Text returns `report.stats` with
 `removed_count` and `replaced_count`. A file returns `report.actions`, `bytes_in`,

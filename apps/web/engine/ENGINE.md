@@ -180,6 +180,15 @@ to `RETRIES` times, naming them back to the model, and **keeps the best attempt
 rather than discarding it.** Anything still unproven at the end is returned as
 `figures_to_check` for the user to verify.
 
+**The fact guard counted compound numbers twice, and it was found on 19 August
+2026.** An earlier repair taught it that `thirty-four` is 34 rather than 30 and 4.
+**The repair added 34 and left 30 and 4 in the set**, so a source saying
+`thirty-four` demanded a 30 in the output, and an output written as `34` looked
+like a dropped figure. Every compound word from twenty-one to ninety-nine forced
+a retry. Measured on one 674 word document: **ten model calls where three were
+needed, 38.4 seconds against a 60 second ceiling, and four times the documented
+cost per thousand words.** After the fix, four to five calls. `07-runbook.md`.
+
 **Why the fact guard is advisory, and this is the single most important thing in
 this file.** It used to reject the whole document if any chunk dropped a number.
 **That is arithmetic suicide.** Fifteen chunks at 95% each survive together only
@@ -313,6 +322,7 @@ is why it is the paid tier.
 | Metadata on Office, PNG, JPEG | Marks present before, absent after, **verified against raw bytes**, content byte identical |
 | Layer B on short text | 38/38 numbers, 17/17 names, 10.8% surviving runs, 6.9s |
 | **Layer B on long documents** | **Five of five: 1,260 to 5,047 words, every number intact, 94 to 100% of length, worst case 22s** |
+| **What a run costs, per run** | Words, tokens, retries, chunks, model calls and the gateway's own dollar figure, captured on every request since 19 Aug 2026. `06` row 48 |
 
 ### Not proven, and should not be claimed
 
@@ -331,13 +341,17 @@ is why it is the paid tier.
 | Limit | Detail |
 |---|---|
 | **Non-deterministic** | Same input twice gives different output. One live run returned 205 of 206 numbers where another returned 206. This is why `figures_to_check` exists |
-| **60 second ceiling** | A document beyond roughly 8,000 words would need more workers or a different approach |
+| **60 second ceiling** | A document beyond roughly 8,000 words would need more workers or a different approach. **Length is not the only way to reach it:** a number-dense 674 word document took 38.4 seconds, because retries follow figures rather than words. `06` row 66 |
 | **5 MB upload cap** | In `_shared.py` |
 | **No fact check on names** | Only numbers are guarded. A dropped or altered name is not caught |
 | **Provider watermarking** | If our chosen host starts marking output we would not know |
 
 **Improvements worth making, in order:**
 
+0. **A time budget on retries, not only a count.** The retry ceiling is 8 per
+   chunk and the function ceiling is 60 seconds. Nothing connects them, so a
+   number-dense document can spend its whole budget retrying and time out with
+   nothing to show. `06` row 66.
 1. **Guard names as well as numbers.** Same mechanism, free to compute.
 2. **Surface `figures_to_check` in the interface.** It is returned and currently
    unused. It is the honest half of Jon's checklist panel design.
