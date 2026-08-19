@@ -821,3 +821,165 @@ were the record.** `06` row 27 is corrected and is the authority.
 product's shape so far, and it is Jon's:** `/inspect` is the free hook and
 `/clean` is the conversion event. **Paste, see your own text with every hidden
 character marked exactly where it sits, then press the button that removes them.**
+
+## 19 August 2026, end of session 4. Folded in from the track notes
+
+**Entries 29 to 35 were recorded live in the two track notes files during the
+session, per `04` entry 25, and are filed here at integration. **Those files no
+longer exist and this log is now the record.** References to them elsewhere in
+this log are historical.**
+
+### 29. The model for layer B must not be one that watermarks its own output
+
+**Ruling.** Layer B runs on `mistral/mistral-small` through Vercel AI Gateway.
+**The constraint is broader than Jon's instruction of "not Claude."**
+
+**Reasoning.** Jon said not to rewrite with Claude, because a rewrite by Claude
+re-applies the watermark at full strength. **That is correct and it is not the
+whole rule. Google Gemini also watermarks its text**, using SynthID, and was not
+on Jon's list. Any vendor that marks its own output would swap one mark for
+another and make the product actively dishonest.
+
+**OpenAI is the trap worth naming.** It does not mark text as of August 2026, but
+it signed the EU code of practice attached to Article 50(2), a public commitment
+to machine-readable marking. **If it switches on, a product built on it silently
+re-stamps every rewrite and nobody would notice, because no detector exists.**
+
+**Consequence that is now built in:** the model is a single environment variable.
+Swapping it is a settings change. **Somebody must re-check the vendor list
+periodically, and nothing will remind them.**
+
+**Why this model and not a better one.** Measured across five open-weight models on
+real text. **Cost is not the deciding factor:** the dearest was a quarter of a cent
+per thousand words. `qwen3.7-flash` produced the least surviving wording and takes
+**47 to 95 seconds**, because it writes ten thousand tokens of hidden reasoning to
+produce five hundred visible words. **Vercel kills any function at 60 seconds, so
+it cannot be used at all.** `gpt-oss-20b` returned an **empty answer** on the
+full prompt. `mistral-small` runs in 6 to 7 seconds with the best fact retention.
+
+### 30. A rewrite under 70% of its input length is a failure, not a short answer
+
+**Ruling.** Jon, verbatim: "If any rewrite comes back under 70% its input length I
+think it should be considered a fail or an error. That makes no sense we aren't a
+synthesizser we are a watermarker remover trying to preserve all else where
+possible."
+
+**Reasoning is the product definition rather than a tuning choice.** This tool
+removes marks and preserves everything else. A rewrite returning two thirds of a
+document has not done the job whatever it did to the watermark.
+
+**It reinforces entry 22's surviving mechanic:** overflow rejects, never truncates.
+
+### 31. The fact guard reports rather than rejects. The length guard still rejects
+
+**Ruling.** Two guards, behaving differently on purpose.
+
+- **Length: a hard rejection.** Under 70% and the request fails. **A truncated
+  document is useless to anybody.**
+- **Facts: advisory.** Numbers are compared by value, missing ones are named back
+  to the model on retry, the best attempt is kept rather than discarded, and
+  anything still unproven is returned as `figures_to_check`.
+
+**Reasoning, and it is the most important correction of the session.** The fact
+guard originally rejected the whole document if any chunk dropped a number.
+**That is arithmetic suicide.** Fifteen chunks at 95% each survive together only
+**46%** of the time, which is exactly the observed half-of-documents failure rate.
+**The rewrites were fine. The all-or-nothing verdict was throwing them away.**
+
+**Measured after the change: five documents of five, 1,260 to 5,047 words, every
+number intact, 94 to 100% of length preserved, worst case 22 seconds.**
+
+**Jon refused a handoff that would have shipped this broken**, and was right to.
+
+### 32. The em dash rule does not govern the engine's output
+
+**Ruling.** Jon, this session, overturning a rule the assistant had added: the
+model may use em dashes in a user's rewritten text.
+
+**Reasoning, in his framing:** "We aren't making this appear as un-ai generated
+output, we simply want to clean it of any watermarks."
+
+**What this corrects.** The assistant added a prompt rule forbidding em dashes on
+the grounds that they are a recognisable machine tell. **That was the old
+humanizer scope creeping back into a watermark remover.** Jon's no-dash rule,
+`05` section 2, governs his own copy and documents. It says nothing about what the
+tool does to a user's text.
+
+### 33. Design direction for the site: light, serious, tool above the fold
+
+**Ruling.** Jon, giving Track B the direction its session was gated on.
+
+| Question | Ruling |
+|---|---|
+| Light or dark | **Light** |
+| Feel | **Serious, with some visuals.** Not bare |
+| Structure | **What it does explained up top, tool immediately usable beside it, both above the fold** |
+
+**His references, in his own words.**
+
+- **`gptzero.me`, the structural reference.** Explains what it does up top with
+  some stats, the tool sits on the right and is usable the moment the page opens,
+  and it is light.
+- **`humanizeai.pro`, the cleanliness reference.** Very clean and simple. **His own
+  criticism: a tad too simple, not enough colour, visuals, icons or animation.**
+  The floor for tidiness, not the target for richness.
+- **`deepai.org`, rejected.** Too techy and too dark.
+- **`rareui.com`, for components.** Look here before inventing one.
+
+**How to read them together.** Layout from GPTZero, tidiness from humanizeai.pro,
+more visual interest than humanizeai.pro has, nothing from deepai.org.
+
+**Jon has said he will supply further references for theme alone**, which will not
+be AI detector sites.
+
+### 34. A publication marquee goes below the tool, and one operational rule keeps it honest
+
+**Ruling.** Jon. An infinite loop strip of major publication logos, **below the
+tool**, each logo **linking to that publication's own article about the Anthropic
+watermark**, with a caption at the top left about the problem. Minimal text. Jon
+finds the articles.
+
+**Why it earns its place, his framing.** It shows the scale of the story the
+product exists to answer, and the caption carries the explanation in very few
+words.
+
+**The rule that keeps it legal and honest, and it is operational rather than an
+argument: a logo goes in only if it links to a real article from that outlet about
+the watermark. No article, no logo.**
+
+**The caption is not decoration and is not optional.** It must make clear the strip
+is about **the watermark story, not about un-claude**. Without it, publication
+logos below our own tool read as "as seen in", which would be false. **GPTZero's
+unlabelled strip is honest for them because those outlets covered them. Nobody has
+covered un-claude.**
+
+**A correction to Jon's premise, established by research and recorded so the
+roster is not built on it.** He said basically every major publication covered it.
+**Found:** TechCrunch, Forbes, Fortune, Euronews, Global News, BleepingComputer,
+Search Engine Land, Interesting Engineering. **Not found:** New York Times, Wall
+Street Journal, BBC, Guardian, Washington Post, Reuters, WIRED, Ars Technica, The
+Verge. **Real and broad tech press with two business names and a European
+broadcaster. Not the NYT and BBC set GPTZero shows.**
+
+### 35. What layer A actually defends against, and what it must never claim
+
+**Ruling.** Researched at Jon's instruction because it decides what the site may
+say.
+
+**Layer A does not remove any provider's deliberate watermark.** Anthropic states
+directly that no hidden characters are added to Claude's text.
+
+**What it does defend against is real, present and catches people today.** In 2025
+the team at Rumi found newer ChatGPT models emitting narrow no-break spaces,
+`U+202F`, in longer responses, identical in appearance to ordinary spaces.
+**OpenAI denied it was deliberate**, calling it a quirk of large-scale
+reinforcement learning, and independent analysis agrees.
+
+**Consequence for copy: layer A removes a real tell, not a watermark, and the site
+must not call it one.** This is the sourced version of the working position in
+`06` row 23.
+
+**Separately established, and it is the strongest provable claim the product has:**
+every major hosted AI provider except Grok and Midjourney marks its generated
+files, they have converged on C2PA, and **that standard is removable by design.**
+Full table in `apps/web/engine/ENGINE.md` section 2.

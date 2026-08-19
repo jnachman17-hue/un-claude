@@ -20,14 +20,20 @@ launch: the site is built with the theme, styling and wording of the finished
 product from the start, so it can headline what the product actually does rather
 than what shipped first.
 
-| Phase | What | Runs |
+| Phase | What | State |
 |---|---|---|
 | **0** | Documentation rescoped to a watermark remover | **Done, session 4** |
-| **1** | **Two parallel tracks.** Engine and site, built at the same time | **Next** |
-| **2** | Integration. The site calls the real engine end to end | After both track 1 sessions |
-| **3** | Pricing and unit economics | Needs real usage data from phase 2 |
+| **1a** | **The engine. All three layers, deployed and verified live** | **DONE, 19 August 2026** |
+| **1b** | **The site.** Landing page, the tool interface, free tier | **NEXT. Nothing built** |
+| **2** | Integration. The site calling the real engine | After 1b |
+| **3** | Pricing and unit economics | Its own session. Real cost numbers now exist |
 | **4** | Billing. Stripe, credit wallet, metering | Needs phase 3 |
 | **5** | Launch | Needs all of the above |
+
+**The two-track experiment is over.** `04` entry 28: Track B was paused because
+the tracks collided on decisions rather than on files, and two chats asking one
+non-technical person for rulings produced contention rather than parallelism.
+**One track from here.**
 
 **Phase 1 is two tracks running simultaneously in two chats.** Track A is the
 engine and owns `engine/`. Track B is the site and owns `apps/web/`. The full

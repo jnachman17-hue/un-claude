@@ -191,18 +191,24 @@ undecided and has its own session. `06` row 18.
 { "file": "<base64>", "name": "paste.txt", "options": { "layer_b": true } }
 ```
 
-**Leave it out and nothing changes:** layer A only, instant, no model call, no
-cost. **That is the free path a signed out visitor gets.**
+**Leave it out and nothing changes:** layer A and metadata only, about 40
+milliseconds, no model call, no cost. **That is the free path a signed out
+visitor gets.**
 
-**Turn it on** and the text is rewritten first, then layer A runs on the result.
-Measured end to end through the server: **6.4 seconds for 566 words.**
+**Turn it on** and the text is chunked, rewritten in parallel, reassembled, and
+then layer A runs over the result to catch anything the rewriting model
+introduced. **Measured live: 6 seconds for 500 words, 22 seconds for 5,000.**
 
-The response gains a `layer_b` block inside `report`:
+### What comes back
 
 ```json
 "layer_b": {
   "model": "mistral/mistral-small",
-  "mode": "rewritten",
+  "chunks": 15,
+  "parallel": true,
+  "words_in": 5047,
+  "words_out": 5036,
+  "figures_to_check": [],
   "verified": false,
   "note": "Layer B is best effort. No public detector exists for any vendor's
            text watermark, so nobody can verify removal, including us."
@@ -210,19 +216,47 @@ The response gains a `layer_b` block inside `report`:
 ```
 
 **`verified` is always `false` and the note always ships.** `04` entry 23. The
-interface must not present a layer B result with the confidence of the other two.
+interface must not present a layer B result with the confidence of the other two
+layers.
 
-### Configured entirely by environment variable
+**`figures_to_check` is the field Track B needs and it is currently unused.** It
+lists any number the engine could not prove survived. **It is usually empty**, and
+across the five document final test it was empty every time. **When it is not
+empty, those figures must be shown to the user**, because a rewrite that quietly
+alters a figure is the failure that actually harms somebody. This is the honest
+half of the checklist panel in `06` row 27.
 
-| Variable | Value in use |
-|---|---|
-| `WATERMARKS_REWRITE_BACKEND` | `openai-compatible` |
-| `WATERMARKS_REWRITE_BASE_URL` | `https://ai-gateway.vercel.sh` (no `/v1`, the code appends it) |
-| `WATERMARKS_REWRITE_MODEL` | `mistral/mistral-small` |
-| `WATERMARKS_REWRITE_API_KEY` | **Secret.** Never in the repository |
+### Failures
 
-**The model is one setting, deliberately.** If a vendor starts watermarking its
-own output, swapping it is a one line change. `06` row 29.
+`ok` is still the only thing to branch on. Two distinct layer B failures exist and
+they mean different things:
+
+| Code | Meaning | What to tell the user |
+|---|---|---|
+| `layer_b_failed` with `truncated` | The rewrite came back under 70% of the input length and was **rejected rather than returned** | The rewrite was cut short. Nothing was charged. Try again |
+| `layer_b_failed` otherwise | The model or network failed after retries | Nothing was charged. Try again |
+
+**A truncated document is refused outright. A document with figures to check is
+returned with the list.** That distinction is deliberate: a truncated document is
+useless, a document with two figures flagged is not.
+
+### Configuration
+
+Everything is an environment variable and nothing needs a code change. **The full
+table is in `ENGINE.md` section 6.** The two that matter most:
+
+- **`WATERMARKS_REWRITE_BASE_URL` takes no `/v1`.** The code appends it.
+- **`UC_LAYER_B_WORKERS` must not drop below 8** in production. At 3 a 5,047 word
+  document took 56.2 seconds against Vercel's 60 second ceiling.
 
 **It must never be an Anthropic or Google model.** Rewriting Claude text with
 Claude re-applies the watermark at full strength rather than removing it.
+
+---
+
+## 10. Read this too
+
+**`ENGINE.md`** is the complete reference: how each layer works, what it may and
+may not claim, why the model was chosen, what has been proven and what has not,
+and the known limits. **If you are about to write copy about what this product
+does, read section 2 of it first.**

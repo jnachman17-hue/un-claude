@@ -534,3 +534,79 @@ git push origin <name>
 
 **A tag only exists on GitHub once it is pushed.** A tag made locally and not
 pushed is invisible to everyone and gone if the laptop is lost.
+
+---
+
+## The engine, and four things that will waste an hour each
+
+**Added 19 August 2026. Full detail in `apps/web/engine/ENGINE.md`.**
+
+### A healthy site does not mean a working deployment
+
+**On 18 August 2026, `un-claude.com` returned HTTP 200 all day while fourteen
+consecutive deployments failed.** It was serving a stale build from before the
+failures started. Every commit pushed that day deployed nothing.
+
+**Cause:** `vercel link` had appended `.env*` to `.gitignore`, silently blocking
+`apps/web/.env`, which holds fourteen non-secret settings the build requires.
+
+**The standing check.** After any push that matters:
+
+```bash
+npx vercel@latest ls | head -3
+```
+
+**Look for `Ready`, not for the site answering.** `curl` returning 200 proves a
+server is alive, not that your code is on it. **This project has now learned that
+lesson three times in three disguises:** a correct config file that was never
+loaded, a domain that was never registered, and a deploy pipeline dead for hours
+behind a healthy front page.
+
+### Vercel does not put a Python function's own folder on the import path
+
+A function importing a file sitting right beside it fails in production with
+`ModuleNotFoundError` while working perfectly locally. **Both functions in
+`apps/web/api/` add their own directory and the engine directory to `sys.path`
+explicitly, before any local import. Do not remove those lines.**
+
+**Related:** the scan endpoint is called `scan.py` and not `inspect.py` on purpose.
+`inspect.py` would shadow Python's built-in `inspect` module, which the engine's
+own code imports.
+
+### AI Gateway: a card is not credits
+
+**Adding a payment card unlocks access. Gateway credits are a separate purchase.**
+A card alone leaves the account on free credit, and **free credit is rate limited
+per model regardless of balance.**
+
+Verified the hard way: with $4.99 of free credit and $0.0135 spent, six concurrent
+requests failed, three failed, one at a time with five retries failed, and
+eventually **a five word request returned 429.**
+
+**Check the real balance rather than the dashboard:**
+
+```bash
+curl https://ai-gateway.vercel.sh/v1/credits -H "Authorization: Bearer $KEY"
+```
+
+### In this project the harness is the likely defect
+
+**Eight times in one session a test failed and the fault was the measurement, not
+the thing measured.** Invisible characters destroyed by writing them through a
+shell command. Two mis-built string comparisons. A check for a file that never
+existed. Output sent to `/dev/null`, which fails because the engine writes safely
+via a temporary file in the destination folder. Exact-string fact matching that
+flagged `thirty-four percent` against `34 percent`. Name matching that failed when
+a model shortened `Bergstrom Manufacturing` to `Bergstrom`. And a number extractor
+reading `thirty-four` as 30 and 4, which rejected six chunks in eight on entirely
+false grounds and nearly got the engine declared broken.
+
+**The rule: the subject matter here is invisible characters, binary file internals
+and numbers written two ways. All three are trivially easy to compare wrongly.
+Before believing a failure, prove the check itself on a case where you already
+know the answer.**
+
+**And specifically: never write invisible characters into a file through a shell
+command.** Build them from their code numbers. In Python that means the escape
+form. The same applies in TypeScript, so **the site track needs this before it
+writes a single test or sample.**

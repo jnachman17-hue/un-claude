@@ -1,182 +1,245 @@
 # un-claude: Current Handoff
 
-**Date:** 18 August 2026, session 4
-**Status:** The project was rescoped from an AI text humanizer to an AI watermark
-remover. **All documentation has been rewritten to match. No code has been
-touched yet.**
-
-**The build now runs as two parallel tracks in two chats, in this one folder.**
-Track A is the engine and owns `engine/`. Track B is the site and owns
-`apps/web/`. **Read `04` entry 25 for the file ownership rules before editing
-anything, and `02-build-plan.md` for the sequence.**
+**Date:** 19 August 2026, end of session 4
+**Status:** **The engine is finished and live on `un-claude.com`. The site does not
+exist.** Your job is the site.
 
 **This file holds resumption context only.** It is rewritten wholesale every
-session. Nothing may live here as its only record. Durable things go in
-`04-decision-log.md`, `06-assumptions-and-open-questions.md`, `07-runbook.md`, or
-`01-build-spec.md`.
+session. Durable things live in `04-decision-log.md`,
+`06-assumptions-and-open-questions.md`, `07-runbook.md`, `01-build-spec.md`, and
+`apps/web/engine/ENGINE.md`.
 
 ---
 
-## 0. Read this before acting on anything written earlier
+## 0. Read these before doing anything
 
-**The project is an AI watermark remover.** A user pastes text or uploads a file,
-and the tool finds the marks identifying it as AI generated and removes them.
-`04` entry 18.
-
-**Three layers, and the differences between them decide everything:**
-
-| Layer | Pasted text | Files | Provable | Costs money to run |
-|---|---|---|---|---|
-| **A. Invisible characters** | **Yes** | Yes | **Yes** | No |
-| **Metadata** | **No** | **Yes** | **Yes** | Almost nothing |
-| **B. Statistical watermark** | **Yes** | Yes | **No. Best effort** | **Yes, every run** |
-
-**Paste text and you get A and B. Upload a file and you get all three.**
-
-**Layer B is labelled best effort everywhere, including to users.** `04` entry 23.
-Presenting it with the confidence of the other two layers is the fastest way to
-make this product dishonest, and Jon has ruled that users are never misdirected.
-
-**It was an AI text humanizer until this session.** If you find anything
-describing a humanizer, a rewriting engine owned as a separate workstream, or a
-metrics panel measuring sentence rhythm, it is history that was missed. Entries
-10, 15, 16 and 17 in `04` are struck through and superseded by 18 to 24.
-
----
-
-## 1. Where to pick up
-
-**Nothing in the product is built. `02-build-plan.md` holds the whole sequence
-and every gate. The short version:**
-
-| Session | Track | Gated on |
+| Order | File | Why |
 |---|---|---|
-| **A1, engine foundation** | A | **Nothing. Start now** |
-| **A2, layer B** | A | A1 exits, model chosen |
-| **B1, design and copy** | B | Design direction from Jon, and `06` row 23 ruled |
-| **B2, the tool frame** | B | B1 approved, A1's contract defined |
-
-Then integration, then pricing, then billing, then launch.
-
-**Nothing goes live until every layer works.** Jon ruled out an incremental
-launch so the site can be built with the finished product's theme, styling and
-wording from the start.
-
-**Billing work starts as early as it can**, but it is gated on pricing, which is
-gated on real usage data. `04` entry 22.
+| 1 | `CLAUDE.md` | The rules. Jon is not a programmer, he cannot review code, and an assertion that something works carries no weight |
+| 2 | This file | |
+| 3 | **`apps/web/engine/ENGINE.md` section 2** | **What each layer actually does and what it must never claim.** You cannot write a word of copy without it |
+| 4 | `apps/web/engine/API.md` | How to call the engine |
+| 5 | `docs/04-decision-log.md` entries **20, 27, 33, 34, 35** | The design direction, the marquee, and what layer A may claim |
+| 6 | `docs/06-assumptions-and-open-questions.md` rows **23, 27, 30 to 36** | Everything parked for you |
+| 7 | `apps/web/AGENTS.md` | **Before writing any Next.js code.** This version differs from what a model remembers |
 
 ---
 
-## 2. Two things that must be built in from the start
+## 1. What exists
 
-**Every operation records what it consumed.** Words in, file size in, model
-tokens used for layer B. Pricing is undecided and gets its own session, and that
-session cannot price from guesses. Small now, impossible to backfill. `04` entry
-22.
+**The engine, finished and verified live.** Two endpoints on `un-claude.com`:
 
-**Showing the marks is the product.** Which characters were found, how many,
-where. It is countable, which is exactly what the old humanizer could never do.
+| Call | What it does | Time | Cost |
+|---|---|---|---|
+| `POST /api/scan` | Says what is hidden, with **exact character positions** | ~40ms | **Free** |
+| `POST /api/clean` | Removes it | ~40ms | **Free** |
+| `POST /api/clean` with `{"options":{"layer_b":true}}` | Also rewrites the text | 6s at 500 words, 22s at 5,000 | ~0.06 cents per 1,000 words |
+
+**Proven live:** five documents from 1,260 to 5,047 words, every number intact, 94
+to 100% of length preserved.
+
+**The site: nothing.** `un-claude.com` still serves the starter kit's stock
+marketing page, headline "Ship a SaaS faster than ever", hardcoded in
+`apps/web/app/(marketing)/page.tsx`. **No environment variable touches it.**
 
 ---
 
-## 3. Run it
+## 2. What you are building
+
+**The landing page IS the product.** `04` entry 20, in Jon's words:
+
+> Every tool in this category lets you paste text and see a result before signing
+> up, then gates it. QuillBot, GPTZero, Grammarly all work this way. The tool is
+> the landing page. You arrive, there is a box, you try it, and you hit a limit
+> that asks you to register.
+
+**Built once, wrapped twice.** Identical tool signed in or out. A stranger gets
+marketing underneath and a signup prompt at the limit; a signed-in user gets their
+credit balance instead. **No separate application behind the login.**
+
+**Jon's own framing of the funnel:** `/api/scan` is the free hook, `/api/clean` is
+the conversion event. **Paste, see your own text with every hidden character
+marked exactly where it sits, then press the button that removes them.**
+
+---
+
+## 3. The design direction, already given
+
+`04` entry 33. **Do not ask for this again, he has answered it.**
+
+| Question | Ruling |
+|---|---|
+| Light or dark | **Light** |
+| Feel | **Serious, with some visuals.** Not bare |
+| Structure | **What it does explained up top, tool immediately usable beside it, both above the fold** |
+
+**His references, in his own words.**
+
+- **`gptzero.me`, the structural reference.** Explains what it does up top with
+  stats, tool on the right usable immediately, light.
+- **`humanizeai.pro`, the cleanliness reference.** **His criticism: a tad too
+  simple, not enough colour, visuals, icons or animation.** The floor for
+  tidiness, not the target for richness.
+- **`deepai.org`, rejected.** Too techy, too dark.
+- **`rareui.com`, for components.** Look here before inventing one.
+
+**Layout from GPTZero, tidiness from humanizeai.pro, more visual interest than
+humanizeai.pro has, nothing from deepai.org.** He has said more theme references
+will follow.
+
+**One thing GPTZero does that we cannot copy:** credibility statistics at the top.
+**We have none, because nobody has used this yet.**
+
+---
+
+## 4. The publication marquee, ruled in
+
+`04` entry 34. An infinite loop strip of publication logos **below the tool**, each
+**linking to that outlet's own article about the Anthropic watermark**, caption top
+left. Minimal text. **Jon finds the articles.**
+
+**The rule that keeps it honest is operational, not an argument: a logo goes in
+only if it links to a real article from that outlet about the watermark. No
+article, no logo.**
+
+**The caption is not optional.** It must make clear the strip is about the
+watermark story and **not about un-claude**. Publication logos below our own tool,
+unlabelled, read as "as seen in", which would be false. **Nobody has covered
+un-claude.**
+
+**Recommended caption, put to Jon and not yet answered:**
+
+> AI tools now mark what they make. Invisibly, and without telling you.
+> The story, as covered by:
+
+**This is the one piece of copy not blocked by `06` row 23**, because it makes no
+claim about what un-claude does.
+
+**A correction to Jon's premise, so the roster is not built on it.** He believed
+basically every major publication covered it. **Found:** TechCrunch, Forbes,
+Fortune, Euronews, Global News, BleepingComputer, Search Engine Land, Interesting
+Engineering. **Not found:** New York Times, Wall Street Journal, BBC, Guardian,
+Washington Post, Reuters, WIRED, Ars Technica, The Verge.
+
+**Two craft points**, both from GPTZero's own implementation which handles this
+correctly: **the loop pauses on hover** so a logo can be clicked, and it must
+respect the reduced-motion setting.
+
+**Logo files need Jon's approval before they arrive.** `06` row 34.
+
+---
+
+## 5. What you may and may not claim. Read this twice
+
+**This is the part where a careless sentence makes the product dishonest.**
+
+**Layer A does NOT remove Claude's or Gemini's watermark.** Anthropic states
+directly that no hidden characters are added to its text. **Layer A removes a
+real, present tell that catches people today** (a documented ChatGPT quirk
+emitting narrow no-break spaces, which **OpenAI denied was deliberate**), **but it
+is not a watermark and the site must not call it one.** `04` entry 35.
+
+**The strongest provable claim in the product is the file side.** Every major
+hosted provider except Grok and Midjourney marks generated files with C2PA, they
+have converged on one standard, and **that standard is removable by design.** Full
+table in `ENGINE.md` section 2.
+
+**Layer B cannot be verified by anyone, including us.** No public detector exists.
+Every response carries `verified: false` and a note saying so. **Presenting layer B
+with the confidence of the other two layers is the fastest way to make this
+product dishonest**, and Jon has ruled that users are never misdirected.
+
+**Do not claim Office documents yet.** The proof used a test fixture, not a real
+AI-produced document. `06` row 31.
+
+**`06` row 23, what the site claims overall, is still formally open and Jon has not
+ruled on it. Put it to him before writing a headline.**
+
+---
+
+## 6. The results panel: Jon's design, and it is not a toss-up
+
+`06` row 27. **Track B proposed showing statistics of what was removed. Jon
+rejected that** and specified the alternative himself.
+
+**Show everything scanned for, every time.** A fixed list of checks, each line
+resolving to a tick or a cross, with anything found highlighted as removed.
+
+**His reasoning, which anyone reopening this must answer first: a removals-only
+panel creates a false success condition.** There are many correct cases with
+nothing to show. **Layer B leaves no visible trace at all**, so the one layer that
+costs money per run would display nothing every time. And a user may paste text
+that was never AI generated, where finding nothing is the right answer. **In both,
+a working product looks broken.**
+
+**The engine returns `figures_to_check` and it is currently unused.** It lists any
+number the rewrite could not prove survived. **Usually empty.** When it is not, it
+belongs on that panel, because a rewrite quietly altering a figure is the failure
+that actually harms somebody.
+
+---
+
+## 7. Run it
 
 ```bash
 cd ~/un-claude && pnpm dev
 ```
 
-Then `http://localhost:3000`.
-
-**You cannot sign in locally.** Supabase requires email confirmation and the
-confirmation link goes to an address with no mail delivery. **Docker is not
-installed**, so a local Supabase cannot run. `06` row 11.
-
-`apps/web/.env.local` points local development at the **hosted** Supabase project
-using only the two public keys. The service role key is deliberately absent and
-lives only in Vercel.
-
----
-
-## 4. Verified working, with the evidence
-
-| Thing | Evidence |
-|---|---|
-| Site live on `un-claude.com` | HTTPS certificate issued by Let's Encrypt |
-| Email sign up | An account was actually created end to end |
-| Anonymous database access blocked | Live probes returned `42501 permission denied`, read and write |
-| Type checking | 8 of 8 packages |
-
-**Everything else that session 3 verified was the humanizer and is being deleted.**
-
----
-
-## 5. Do not relitigate
-
-- **MakerKit Lite is the base.** Vercel's starter was considered on Jon's own
-  prompting and rejected with reasoning. `04` entry 14.
-- **The landing page is the product.** `04` entry 20. Jon's reasoning is recorded
-  in his own words there.
-- **The engine is built here now.** There is no division of labour any more.
-  `04` entry 19.
-- **Launch is free with no purchase flow.** `04` entry 22.
-- **The domain question is parked in Jon's head, deliberately not in these
-  files.** Do not raise it and do not write it down.
-- The kit's `.mcp.json` was deleted deliberately. **If it reappears, delete it.**
-
----
-
-## 6. Things that will bite you
-
-**Read `apps/web/AGENTS.md` before writing Next.js code.** It warns this version
-differs from what a model remembers and points at bundled docs. The warning is
-real.
-
-**Stage by explicit path. Never `git add -A`, `git add .`, or `git commit -a`.**
-The repository is ~400 files.
-
-**Re-run the secret check after any change to `.gitignore`:**
+**A local production build fails on a placeholder site URL and it is not your
+change.** See `07-runbook.md`. To build locally:
 
 ```bash
-git check-ignore -v .claude/settings.local.json
+cd ~/un-claude/apps/web && NEXT_PUBLIC_SITE_URL=https://un-claude.com pnpm run build
 ```
 
-**`git config --local http.postBuffer 524288000` is already set** and is why
-pushes work. Without it, pushing this repository fails with a bare `HTTP 400`.
-
-**Pushing to GitHub is Jon's call.** Committing locally is not.
+**You cannot sign in locally.** Supabase needs email confirmation and Docker is
+not installed. `06` row 11.
 
 ---
 
-## 7. Sessions so far
+## 8. Things that will bite you
 
-**Session 1, 17 August 2026.** Setup. Repository, `CLAUDE.md`, the documentation
-system, secret boundary tested twice.
+**Never write invisible characters into a file through a shell command.** They get
+destroyed silently and it looks like a broken detector. Build them from code
+numbers. **This caught the last session twice in ten minutes and the whole product
+is about invisible characters.**
 
-**Session 2, 17 August 2026.** Diagnosed that no session had ever reached the
-model the project was configured for, despite a correct configuration file. No
-product work.
+**In this project the harness is usually the defect, not the thing being tested.**
+Eight measurement errors in one session. `07-runbook.md` has the list.
 
-**Session 3, 18 August 2026.** Merged MakerKit Lite, created Supabase, deployed
-to `un-claude.com`, tested sign up end to end, then built a humanizer interface
-against a mocked engine. Twelve commits. Tagged `session-3-end`.
+**Check deployments actually succeeded.** `npx vercel@latest ls | head -3` and look
+for `Ready`. **A site returning HTTP 200 proves a server is alive, not that your
+code is on it.** Fourteen consecutive deployments failed while the site answered
+normally.
 
-**Session 4, 18 August 2026.** Rescoped to a watermark remover. Seven rulings,
-entries 18 to 24, taken before any file was edited. Every document rewritten.
-**Two errors were caught in the existing documents while doing it:** the runbook
-claimed a global safety warning was muted when decision 8 had restored it, and
-`00-START-HERE.md` had gone stale for the second time in two days. Both are
-corrected in place with the correction visible.
+**Stage by explicit path. Never `git add -A`, `git add .`, or `git commit -a`.**
+
+**Pushing to GitHub is fine. Publishing anything under Jon's name needs his word.**
 
 ---
 
-## 8. The one thing that did not get easier
+## 9. What is NOT your job
 
-**`06` row 4, what counts as good output, is open since session 1 and survives
-the rescope.** It shrank a lot: for layers A and metadata it is now answered by
-definition, because the mark was there and now it is not, and that is countable.
+- **Pricing.** Undecided, its own session, real cost numbers now exist. `06` row 18
+- **Billing.** `06` row 10
+- **Usage recording.** The engine already does it, every response carries it
+- **The engine.** It is finished. If it is wrong, report it rather than editing it
 
-**For layer B it is untouched and there is no test that can be written for it.**
-That is the whole reason entry 23 requires layer B to be labelled unverified
-rather than measured. **If a future session finds itself wanting to put a
-confidence score on layer B, that is this question resurfacing, and the answer is
-still no.**
+---
+
+## 10. Sessions so far
+
+**Session 1, 17 Aug.** Repository, `CLAUDE.md`, the documentation system.
+
+**Session 2, 17 Aug.** Diagnosed that no session had reached the configured model.
+
+**Session 3, 18 Aug.** MakerKit Lite, Supabase, deployed to `un-claude.com`, built
+a humanizer against a mocked engine.
+
+**Session 4, 18 to 19 Aug. The long one.** Rescoped from humanizer to watermark
+remover. Vendored and proved the engine. Built and validated our own layer B
+prompt against the upstream one across five models. Deployed all three layers
+live. Found and fixed silent truncation on long documents. Ran a nine-agent
+investigation into how the watermark actually works. **Eighteen decisions, entries
+18 to 35.** Also found that the site had not deployed successfully in over three
+hours while appearing healthy.

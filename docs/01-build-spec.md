@@ -185,37 +185,36 @@ resolved, and it does not need resolving until the engine session. `06` row 19.
 
 ## 3. What is actually built right now
 
-**Honest summary: the plumbing is real and verified. The product is not.**
+**The engine is finished and live. The site is not built at all.**
 
-### Verified working, by doing it rather than by inspection
+### The engine, done and verified on `un-claude.com`
 
-| Thing | Evidence |
-|---|---|
-| Site live on `un-claude.com` | HTTPS certificate issued by Let's Encrypt |
-| Email sign up | An account was actually created end to end |
-| Anonymous database access blocked | Live probes returned `42501 permission denied` for read and write |
-| Type checking | 8 of 8 packages |
+| Layer | State | Evidence |
+|---|---|---|
+| **A, invisible characters** | **Live** | 6 planted characters found, named, located, removed, none left. ~40ms |
+| **Metadata, files** | **Live** | Office document, PNG, JPEG. Marks present before, absent after, **verified against raw bytes.** Content byte identical |
+| **B, statistical watermark** | **Live** | **Five documents of five, 1,260 to 5,047 words, every number intact, 94 to 100% of length, worst case 22 seconds** |
 
-### Condemned but not yet deleted
+**Two endpoints:** `POST /api/scan` says what is hidden, `POST /api/clean` removes
+it. Layer B is one option on the second. **Full detail in
+`apps/web/engine/ENGINE.md` and `apps/web/engine/API.md`.**
 
-**These files still exist on disk.** They were built for the humanizer, they are
-ruled scrapped by `04` entry 21, and none of them has been removed yet. Saying
-otherwise would be reporting a step as done that was not done.
+**Costs:** scan and clean without layer B are free and instant, no model call.
+Layer B is about **0.06 cents per thousand words.**
 
-| File | Why it goes |
-|---|---|
-| `apps/web/app/home/_components/humanizer.tsx` | The humanizer editor. Wrong product, and behind login, which is the wrong side of `04` entry 20 |
-| `apps/web/lib/text-analysis.ts` | Measures sentence length variation. **The wrong instrument, not stale wording.** A watermark remover does not improve rhythm |
-| `apps/web/app/api/humanize/route.ts` | A mock rewriter. No model call in it |
-| `apps/web/lib/humanize-contract.ts` | The old interface to engine boundary |
+**Every response carries a usage record** and layer B carries `verified: false`
+plus a note that nobody can verify removal. `04` entry 23.
 
-### Kept, and untouched by the rescope
+### The site: nothing exists
 
-Supabase authentication, the hosted database and its security migration, the
-Vercel deployment, `un-claude.com`, the monorepo layout, and MakerKit Lite as the
-base. **None of it cares what the product does.**
+The landing page is still the starter kit's stock marketing page, headline "Ship a
+SaaS faster than ever", hardcoded in `apps/web/app/(marketing)/page.tsx`. **No
+environment variable touches it. It needs replacing by hand.**
 
----
+### Deleted, as ruled
+
+The humanizer editor, the mock route, the text analysis and the old contract are
+gone. `04` entry 21.
 
 ## 4. The stack
 
@@ -302,15 +301,28 @@ crude pattern match.
 
 | | Status | Tracked in |
 |---|---|---|
-| The engine, all three layers | **Not started.** Approach undecided | `06` row 19 |
-| Python to TypeScript bridge | **Not started.** Deliberately parked for a technical session | `06` row 19 |
-| The landing page | Still the starter kit's stock marketing page | `04` entry 20 |
-| The tool itself, in any form | **Not started.** The humanizer is scrapped and its replacement does not exist | `04` entry 21 |
-| File upload, PDF DOCX PNG JPG | Not started | `04` entry 24 |
+| **The landing page** | **Nothing exists.** Still the kit's stock page | `04` entries 20, 33, 34 |
+| **The tool interface** | **Nothing exists.** The engine behind it is finished | `apps/web/engine/API.md` |
 | Free tier limits and enforcement | Decided in principle, not built | `04` entry 22 |
-| Billing and credits | Not started. **Work begins immediately, in parallel with launch** | `06` row 10 |
-| Pricing | **Undecided. Gets its own session** | `06` row 18 |
-| Deleting the humanizer code | **Ruled, not done** | Section 3 above |
-| Auth error messages | Broken, shows `<DefaultError />`. **Urgent, strangers hit this at launch** | `06` row 13 |
-| How it works page, mission page | Parked by Jon as a side note | `06` row 22 |
-| Definition of good output for layer B | **Open since session 1** | `06` row 4 |
+| Billing and credits | Not started. The kit ships none | `06` row 10 |
+| Pricing | **Undecided. Gets its own session**, and now has real cost numbers to work from | `06` row 18 |
+| PDF | **Out of version one** | `06` row 26 |
+| Guarding names as well as numbers | Not built. Same mechanism, free to compute | `ENGINE.md` section 10 |
+| Surfacing `figures_to_check` | **Returned by the engine and currently unused** | `06` row 27 |
+| A repeatable test suite | Not built | `06` row 36 |
+| Auth error messages | Broken, shows `<DefaultError />`. **Strangers hit this at launch** | `06` row 13 |
+| How it works page, mission page | Parked by Jon | `06` row 22 |
+
+---
+
+## 8. Where to read what
+
+| Question | File |
+|---|---|
+| **How does the engine work, what can it prove, where does it stop** | `apps/web/engine/ENGINE.md` |
+| **How do I call it** | `apps/web/engine/API.md` |
+| Where did the engine code come from, what does the licence require | `apps/web/engine/PROVENANCE.md` |
+| Why was something decided | `docs/04-decision-log.md` |
+| What is still undecided | `docs/06-assumptions-and-open-questions.md` |
+| How do I run, deploy, or avoid a known trap | `docs/07-runbook.md` |
+| What happens next | `docs/02-build-plan.md` and `docs/CURRENT-HANDOFF.md` |

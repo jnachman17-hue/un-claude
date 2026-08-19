@@ -16,11 +16,11 @@ date. **Assume anything in these documents describing a humanizer is history**
 unless it has been rewritten since. See `04-decision-log.md` entries 18 to 24,
 which supersede entries 10, 15, 16 and 17.
 
-**Current phase.** The site shell is live at
-[un-claude.com](https://un-claude.com) with working sign up. **Everything built
-for the humanizer is scrapped and the product is being rebuilt from the ground
-up.** The engine does not exist yet. Billing does not exist yet. The landing page
-is still the starter kit's stock marketing page.
+**Current phase.** **The engine is finished and live** on
+[un-claude.com](https://un-claude.com), all three layers, verified on documents up
+to 5,047 words. **The site does not exist:** the landing page is still the starter
+kit's stock marketing page and the tool has no interface. Billing does not exist.
+Pricing is undecided.
 
 **Which model runs this.** Claude, through Claude Code.
 
@@ -34,19 +34,20 @@ is still the starter kit's stock marketing page.
 | `docs/00-START-HERE.md` | This file. An index, nothing more | Rarely |
 | `docs/01-build-spec.md` | What is built, how it fits together, and what the layers do and do not do | When the architecture changes |
 | `docs/02-build-plan.md` | **The sequence.** Phases, sessions, what gates each one, and what each already knows | When a session passes its exit criteria |
-| `docs/03-track-b-brief.md` | The full briefing handed to the site track | Owned by Track B |
-| `docs/TRACK-A-NOTES.md` | Track A's live notes. Folded into the durable files at integration | Constantly, by Track A only |
-| `docs/TRACK-B-NOTES.md` | Track B's live notes. Folded into the durable files at integration | Constantly, by Track B only |
 | `docs/anthropic-watermarking-context.md` | Sourced primer on Anthropic's watermarking, added by Jon | Reference, not maintained here |
+| **`apps/web/engine/ENGINE.md`** | **How the engine works, what it can prove, where it stops.** The complete reference | When the engine changes |
+| **`apps/web/engine/API.md`** | **How to call the engine.** The contract the site builds against | When the contract changes |
+| `apps/web/engine/PROVENANCE.md` | Where the engine code came from and what its licence requires | Rarely |
 | `docs/04-decision-log.md` | Every ruling Jon has made, with the reasoning. Append only | Whenever Jon rules |
 | `docs/05-working-agreement.md` | How we work together. The constitution | Rarely |
 | `docs/06-assumptions-and-open-questions.md` | The live list of what is undecided, and what would settle it | Constantly |
 | `docs/07-runbook.md` | Operational facts learned the hard way | When something is learned |
 | `docs/CURRENT-HANDOFF.md` | Where the last session stopped and where this one starts | Every session |
 
-**The build runs as two parallel tracks in one folder,** the engine and the site,
-with hard file ownership rules. `04` entry 25. **Read the ownership table before
-editing anything.**
+**The two-track experiment is over and there is one track now.** `04` entry 28:
+the tracks collided on decisions rather than files, and two chats asking one
+non-technical person for rulings produced contention rather than parallelism.
+Both track notes files were folded into the durable documents and deleted.
 
 ---
 
@@ -54,8 +55,10 @@ editing anything.**
 
 1. `CLAUDE.md`
 2. `docs/CURRENT-HANDOFF.md`
-3. `docs/02-build-plan.md`, for what is next and what gates it
-4. `docs/01-build-spec.md` if you are touching code. **Section 2a especially**
+3. **`apps/web/engine/ENGINE.md` if you are going anywhere near the product's
+   claims.** Section 2 decides what may honestly be said
+4. `docs/02-build-plan.md`, for what is next and what gates it
+5. `docs/01-build-spec.md` if you are touching code
 5. `docs/04-decision-log.md`, most recent entries first
 6. `docs/06-assumptions-and-open-questions.md`
 7. The other track's notes file, before acting
