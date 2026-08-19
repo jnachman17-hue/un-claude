@@ -1972,3 +1972,38 @@ like an image — a flat credit, because that is what it costs and what it gets 
 **or** the engine is changed so containers do get the rewrite, which is a larger
 piece of work and the only option that matches what the interface currently
 promises. **Not decided here.** `06` row 74.
+
+### 70. [T1] Un-Claude, in Claude's orange, and clarity outranks everything until further notice
+
+**Rulings, Jon, 19 August 2026.**
+
+**The name is `Un-Claude`.** Capital U, capital C, hyphenated. **Applied
+retrospectively across the whole site and forward from here.** The domain, the
+package names and every identifier stay lowercase; this is the display name only.
+
+**The gradient moves from white-yellow to white-orange, keyed to Claude's own
+orange**, applied universally. The point is that the product reads as belonging
+to the thing it is named after.
+
+**"Sanitise" stays.** Jon's reasoning, and it is the honest one: **"remove
+watermark" would be untrue**, because for layer B nobody can say the watermark
+was removed. Sanitise claims the work, not the outcome.
+
+**Clarity and intuitiveness outrank everything else right now, including
+reversibility.** His words: "I might have you revert later but clarity and
+intuitiveness and UI over everything right now." **He also granted latitude:**
+new sections, callouts, popups, anything that makes it clearer, and explicit
+permission to be creative.
+
+**Wording is deliberately NOT being polished yet.** He calls the current copy
+abysmal and wants function and layout fixed first, then he will get nitpicky on
+words. **So do not spend passes on sentences that a layout change will delete.**
+
+**One thing that must not get buried:** the producer name. When the scan
+identifies what made a file, **"made by Stability AI" is a headline finding, not
+a footnote** — it is the moment a visitor sees the product work.
+
+**Mobile is now a first-class constraint, not a later pass.** Jon opened the site
+on a phone for the first time this session and calls it abysmal. **Traffic is
+expected from TikTok**, so the likeliest visitor is on a phone. Nothing in this
+list is finished until it is right on a small screen.
