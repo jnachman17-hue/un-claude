@@ -33,7 +33,7 @@ import Script from 'next/script';
  * change in the same commit, and the site needs a consent banner. 06 row 46.
  */
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
+const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 
 export function AnalyticsProvider() {
   // No key means no analytics and no script tag. Local development and any
