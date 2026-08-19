@@ -60,7 +60,6 @@ the Closed section with the reason, rather than deleted.
 | 58 | **No rate limiting anywhere beyond the shared key** | risk | **None.** The engine trusts anything holding `UC_ENGINE_KEY`, which is the site itself | Any visitor can drive the site's own routes as fast as they like. Combined with row 47 this is the real exposure surface | **TRACK 3, before marketing traffic** |
 | 59 | **Landing page work Jon has asked for and not received** | cosmetic | **Open list, his words:** findings panel not readable in five seconds; key diagram animated but not more digestible; readership figure for the marquee **deliberately not invented and still unsourced**; his own marquee caption; mission page content; a logo beside the un-claude wordmark; social links with no handles supplied; no pricing page in the nav; Stable Diffusion showing Stability AI's mark | Each is small. Collectively they are the difference between a working prototype and something to send traffic at | **TRACK 2** |
 | 60 | **The rename to Un-Claude, and the Google logo** | scope | **Parked.** Google branding is verified and published as it stands | **The site's own name and the Google app name must change together**, because the gap between them is what Google's checker measures. The logo is cheap now the hard part is done, but a change re-runs the check and a failure leaves the app unbranded until it is sorted. **Do it once with final artwork, and not immediately before wanting traffic** | **TRACK 4** |
-| 13 | Auth errors show `<DefaultError />` to users | technical | **BROKEN AND NOW ON THE CRITICAL PATH.** Confirmed live 18 Aug 2026 and still unfixed. **Google sign-in went live 19 Aug 2026, so strangers now hit this** | A bug in MakerKit Lite, not in anything we wrote. Any Supabase error without a canned message renders the literal text `<DefaultError />`. Only three errors are covered: invalid credentials, already registered, unconfirmed email. **Every other failure, including wrong email format, weak password and rate limiting, shows the placeholder.** Traced to `packages/features/auth/src/components/auth-error-alert.tsx` line 37 | **TRACK 3, and it is the most visible defect in the product.** Sign-in is live |
 | 1 | How isolated the runtime environment should be | risk | **Trigger fired 18 Aug 2026 and was not acted on.** Dependencies installed, code written and executed, a build ran. Jon present and approving each step. Position unchanged: plain local folder at `~/un-claude` | The control risk is real: the model decides what runs on the laptop and Jon cannot evaluate a command by reading it. Every isolation option adds machinery that would make a failure impossible for him to diagnose | **Raised again by the rescope:** the engine build will install Python packages and may run external tools. If that happens, the next step is a separate macOS user account, not Docker |
 | 5 | Whether `CLAUDE.md` section 3 is too strict | rule | **Trigger fired 17 Aug 2026 and the rule held. Stands unchanged.** Nothing outside `~/un-claude` gets read | It genuinely blocked a diagnosis once, and the diagnosis was completed another way, so the rule blocked nothing that mattered. Recorded in `07` | The **second** time it blocks something genuine. One clean stop is evidence the rule works. A pattern is evidence it is too tight |
 | 11 | Docker is not installed, so accounts cannot be tested offline | technical | Public site runs fine without it. Sign in and sign up render locally but cannot authenticate | Supabase runs locally inside Docker. Installing it needs Jon's approval under `CLAUDE.md` section 5 | The first time work requires a real local account, or the first database change |
@@ -181,6 +180,34 @@ limits and no way to pay, nothing anywhere enforced signing in, and layer B is
 reachable today without an account. **The comment was made true by removing it,
 not by building the rule it described.** Whether layer B should require an account
 is a live question and it is row 47, which is still open.
+
+**Row 13, auth errors showing the literal text `<DefaultError />`. CLOSED 19
+August 2026, TRACK 3.** Reproduced first, against the live site's own Supabase,
+before anything was changed: a sign-up at a domain Supabase rejects produced, in
+the alert a user reads, `Sorry, we could not authenticate you` followed by
+`<DefaultError />`.
+
+**The fix is a chain whose last link cannot fail.** The exact key first, which
+keeps the three messages that already worked. Then a closed list of patterns,
+because some Supabase errors carry a variable inside the sentence and can never
+match a fixed key: the rate limit message names a number of seconds, and the
+invalid-address message quotes the address the user typed back at them, which is
+its own reason never to show upstream text. Then the general message. Then, if
+even that is missing, a plain English sentence written into the component. **The
+fallback itself was the thing that broke last time, so the bottom of the chain
+now depends on nothing.**
+
+**Five messages were added for failures that had none:** invalid email, weak
+password, rate limited, provider not enabled, signups disabled. The fourth is the
+error Jon hit on the Google button before the provider was configured.
+
+**One part is proven and one part is not, and the difference matters.** The
+placeholder is gone: verified live, and the three previously working messages
+still work. **The five new messages have not been seen rendering in a browser**
+— the only dev server on the machine belongs to a parallel session and its
+message bundle predates the change, and Next.js 16 refuses a second dev server
+for the same directory. They are proven against the real regexes and the real
+message file, not through next-intl's loader. **Confirm on the first deploy.**
 
 ---
 
