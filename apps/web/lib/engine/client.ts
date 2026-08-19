@@ -1,0 +1,110 @@
+/**
+ * The only place in the site that talks to the engine.
+ *
+ * SERVER ONLY. This module reads UC_ENGINE_KEY, the shared password the engine
+ * refuses to work without. The variable is deliberately NOT prefixed with
+ * NEXT_PUBLIC_, which is what guarantees Next.js never ships it to a browser.
+ *
+ * The rule this exists to enforce: the browser NEVER calls the engine directly.
+ * Browser -> our own route handler -> engine. If a component ever fetches
+ * /api/scan or /api/clean from the client, the key has to travel with it and the
+ * whole lock is undone.
+ */
+import type { CleanResult, EngineFailure, EngineResult, ScanResult } from './types';
+
+/**
+ * Where the engine lives. Defaults to production, which is where it actually
+ * runs. Local Next development therefore talks to the live engine: scanning is
+ * free and instant, so this costs nothing and needs no local Python.
+ */
+const ENGINE_URL = process.env.UC_ENGINE_URL ?? 'https://un-claude.com';
+const ENGINE_KEY = process.env.UC_ENGINE_KEY ?? '';
+
+/**
+ * Our own messages, a closed set. Raw upstream error text is never shown to a
+ * user, which is the practice from 04 entry 15 and the fix for the defect open
+ * as 06 row 13.
+ */
+const MESSAGES: Record<string, string> = {
+  bad_json: 'That request could not be read. Please try again.',
+  no_file: 'Nothing was sent. Paste some text or choose a file.',
+  bad_base64: 'That file could not be read.',
+  too_large: 'That file is larger than 5 MB. Try a smaller one.',
+  bad_format: 'That file type is not supported. Use text, a Word document, PNG or JPG.',
+  layer_b_failed: 'The rewrite could not be completed. Nothing was charged. Please try again.',
+  engine_error: 'Something went wrong. Nothing was charged.',
+  unauthorised: 'Something went wrong. Nothing was charged.',
+  unreachable: 'We could not reach the service. Please try again in a moment.',
+  misconfigured: 'The service is not available right now.',
+};
+
+function failure(code: string): EngineFailure {
+  return {
+    ok: false,
+    code,
+    message: MESSAGES[code] ?? 'Something went wrong. Nothing was charged.',
+  };
+}
+
+/** Turn any text or file into the shape the engine takes. API.md section 2. */
+export function toPayload(bytes: Uint8Array, name: string) {
+  return { file: Buffer.from(bytes).toString('base64'), name };
+}
+
+export function textToPayload(text: string) {
+  return toPayload(new TextEncoder().encode(text), 'paste.txt');
+}
+
+async function call<T>(path: string, body: unknown, timeoutMs: number): Promise<EngineResult<T>> {
+  // Fail loudly rather than silently calling an unlocked endpoint. A missing key
+  // in production is a configuration failure, not something to work around.
+  if (!ENGINE_KEY && process.env.VERCEL_ENV === 'production') {
+    console.error('UC_ENGINE_KEY is not set. The engine cannot be called.');
+    return failure('misconfigured');
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${ENGINE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-uc-key': ENGINE_KEY },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+
+    const data = (await response.json()) as Record<string, unknown>;
+
+    if (data?.ok === true) {
+      return data as T;
+    }
+
+    // The engine sends its own code. Map it to our sentence, never pass its text.
+    return failure(typeof data?.code === 'string' ? data.code : 'engine_error');
+  } catch {
+    return failure('unreachable');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** What is hidden in this. Read only, free, about 40ms. */
+export function scan(payload: { file: string; name: string }) {
+  return call<ScanResult>('/api/scan', payload, 20_000);
+}
+
+/**
+ * Take it out.
+ *
+ * Without options this is layer A plus metadata: instant, no model call, free.
+ * With layer_b it also rewrites, which costs money and takes 6 to 22 seconds.
+ */
+export function clean(
+  payload: { file: string; name: string },
+  options: { layer_b?: boolean } = {},
+) {
+  const slow = options.layer_b === true;
+  return call<CleanResult>('/api/clean', { ...payload, options }, slow ? 120_000 : 20_000);
+}
