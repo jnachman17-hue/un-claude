@@ -1896,3 +1896,79 @@ rather than a cost one.
 
 **Deliberately not decided here:** the subscription price, which waits for a few
 weeks of real repeat purchases, `04` entry 64.
+
+### 68. [T1] Correcting this session: Claude DOES mark files, and it is the strongest honest claim we have
+
+**Jon challenged a claim this session made twice, and he was right.** This session
+said that for a Claude user "the two layers we can prove don't apply" and that
+Claude adds no metadata. **The second half is false.**
+
+**What `anthropic-watermarking-context.md` section 3 actually says**, and the site's
+own vendor table already said it:
+
+| | Text watermark | C2PA content credential |
+|---|---|---|
+| What it marks | Generated text | **Generated files** |
+| Where it lives | In the token choices | **In file metadata** |
+| Who can verify | Only Anthropic | **Anyone, with any C2PA tool** |
+| **Available today** | **No. No marked model is shipping** | **YES** |
+
+**So the asymmetry runs the opposite way to what this session assumed.** The thing
+Anthropic does to Claude's files is **live now, provable by anyone, and removable
+by us with a before-and-after we can show.** The thing it does to Claude's text is
+**not yet shipping on any public model**, unverifiable by anyone, and only best
+effort to remove.
+
+**What this changes commercially, and it is Jon's positioning argument made
+sound.** He wanted to position maximally as a Claude product without lying. **The
+honest Claude-first claim is stronger than the one this session was reaching
+for:**
+
+> If Claude made you a file, it carries a signed credential anyone can read with
+> a free public tool. We remove it, and we show you the file before and after.
+> Claude's text watermark is a separate mechanism, rolling out, and no detector
+> for it exists anywhere — our rewrite is the published defence and we call it
+> best effort because that is what it is.
+
+**Certainty about Claude, today, on files. Best effort on text, labelled.** That
+is a Claude product without a false sentence in it.
+
+**`06` row 62 is amended rather than closed:** what remains unknown is which
+shipping models carry the **text** watermark. The **file** credential is not in
+doubt.
+
+### 69. [T1] A Word document never gets the rewrite, and both the price and the interface assume it does
+
+**Found by reading `server.py` while adding a word count. Not a decision yet — it
+is a defect that invalidates part of `04` entry 67 and needs Jon's ruling.**
+
+**What the engine actually does**, in `_clean_payload`:
+
+| Input | Layers that run |
+|---|---|
+| Pasted text or `.txt` | Layer A **and** layer B, the rewrite |
+| An image | Metadata only |
+| **A `.docx` or any other container** | **Metadata, and layer A inside the text. NO rewrite** |
+
+**Layer B is inside `if kind == "text"` and nowhere else.** A container never
+reaches it.
+
+**Three things follow, and none of them are small.**
+
+1. **The interface asks for a rewrite it will not get.** The workbench sends
+   `layer_b: true` for a container, because `carriesProse` is true when
+   `scan.kind === 'container'`. The engine ignores it silently.
+2. **This is one cause of Jon's complaint that rows stay lit after sanitising.**
+   The statistical row reads `done && receipt ? 'removed' : 'found'`. A container
+   returns no receipt, **so after a successful sanitise the row still says
+   "present"** — correctly, as it happens, but for a reason nobody could guess.
+3. **It breaks the pricing.** `04` entry 67 charges a Word document by the words
+   inside it, on this session's stated reasoning that "its text goes through
+   layer B". **It does not.** A `.docx` costs us the same as an image: no model
+   call at all.
+
+**The question for Jon, and it is a real fork.** Either a Word document is priced
+like an image — a flat credit, because that is what it costs and what it gets —
+**or** the engine is changed so containers do get the rewrite, which is a larger
+piece of work and the only option that matches what the interface currently
+promises. **Not decided here.** `06` row 74.
