@@ -5,8 +5,13 @@ legal text a change makes wrong, hand him the replacement wording, and **do not
 edit the pages.** The rewrite goes to a separate session. This file is that
 handover.
 
-**Status: OUTSTANDING.** The events are in the code. The policies have not been
-changed. **The published policies currently under-describe what is measured.**
+**Status: APPLIED, 19 August 2026, Track 1.** All four changes are in the pages
+and shipped in the same push as the events they describe. The cookie policy's
+opening line was left exactly as it is, as this file required. **The gap this
+file existed to record never reached production.**
+
+> Kept rather than deleted because it is the record of what changed and why, and
+> because the next person to add measurement needs the same four places.
 
 ---
 

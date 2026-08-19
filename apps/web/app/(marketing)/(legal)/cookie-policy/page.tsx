@@ -66,7 +66,7 @@ async function CookiePolicyPage() {
             ],
             [
               'PostHog analytics',
-              'Counts visits and pages read. Configured to store nothing on your device, so it sets no cookie and writes no local storage',
+              'Counts visits, pages read, and which steps of the tool are used. Configured to store nothing on your device, so it sets no cookie and writes no local storage',
               'Nothing is stored, so there is nothing to expire',
             ],
           ]}

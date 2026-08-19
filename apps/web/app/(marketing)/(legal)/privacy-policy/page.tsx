@@ -44,9 +44,11 @@ async function PrivacyPolicyPage() {
           We do not keep what you give us. Text you paste and files you upload are
           processed and returned, not stored. We do not use your content to train
           anything. We run no advertising and no advertising trackers. We measure
-          how many people visit and which pages they read, using a tool that
-          stores nothing on your device. If you create an account, we hold your
-          email address and name and nothing else.
+          how many people visit, which pages they read, and which steps of the
+          tool they use, with a tool that stores nothing on your device. We
+          record that a scan ran and what kind of mark it found — never the text
+          or the file it ran on. If you create an account, we hold your email
+          address and name and nothing else.
         </Lead>
 
         <H2>What happens to text and files you submit</H2>
@@ -111,6 +113,15 @@ async function PrivacyPolicyPage() {
           between visits, which we accept as the price of not tracking you. If
           your browser sends a Do Not Track signal, we do not measure you at all.
         </P>
+        <P>
+          We also record which steps of the tool you use, so we can see where it
+          is going wrong: that a scan finished, how many hidden characters it
+          found, that a clean started or failed, that you reached the point where
+          free uses run out. These are counts and yes-or-no answers about the
+          tool, never about you and never about what you submitted. File names
+          are reduced to a file type before anything is recorded, and lengths and
+          timings are recorded as ranges rather than exact figures.
+        </P>
         <List
           items={[
             <>
@@ -140,8 +151,8 @@ async function PrivacyPolicyPage() {
             ['Supabase', 'Stores accounts and handles sign-in', 'Your account record'],
             [
               'PostHog',
-              'Counts visits and which pages are read',
-              'Pages viewed, rough location from IP address, browser and device type. Nothing stored on your device, and never the content you submit',
+              'Counts visits, which pages are read, and which steps of the tool are used',
+              'Pages viewed, rough location from IP address, browser and device type, and which actions you took in the tool with counts of what was found. Nothing stored on your device, and never the content you submit, your file names, or your text',
             ],
             [
               'Mistral, via Vercel AI Gateway',
