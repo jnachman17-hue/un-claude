@@ -49,6 +49,10 @@ type Mark = 'yes' | 'committed' | 'na';
  *
  * PRODUCT FIRST, COMPANY SECOND, which is Jon's question answered.
  *
+ * Both lines are full-strength text and only the description is grey, so the row
+ * breaks once: who this is, then what they do. Greying the company line put the
+ * break in the wrong place and made the identity look like a footnote.
+ *
  * Nobody arrives here thinking Anthropic watermarked their text. They think
  * Claude did. The product is the thing people met, the thing our own headline
  * names, and the thing they will scan this table looking for. But the company is
@@ -91,6 +95,9 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'yes',
     note: 'Files signed since 2 August 2026. Text watermarked from the same date, worldwide, with no way to opt out.',
+    // TODO Jon: the Claude mark. This is Anthropic's, which now sits under a
+    // row headed Claude. Drop claude.png into public/images/vendors and point
+    // here. Same for Firefly and Stable Diffusion below.
     logo: { src: '/images/vendors/anthropic.png', mono: true },
   },
   {
@@ -141,6 +148,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'na',
     note: 'Files signed on everything it makes. Adobe wrote the standard the others adopted.',
+    // TODO Jon: the Firefly mark, not Adobe's corporate A.
     logo: { src: '/images/vendors/adobe.png' },
   },
   {
@@ -151,6 +159,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'na',
     note: 'Files signed on the hosted service. The versions you run yourself are unmarked.',
+    // TODO Jon: the Stable Diffusion mark, not Stability AI's.
     logo: { src: '/images/vendors/stability.png' },
   },
 ];
@@ -262,7 +271,7 @@ export function CoverageSection() {
                     <span className={'text-foreground block text-[14px] font-medium tracking-[-0.012em]'}>
                       {vendor.product}
                     </span>
-                    <span className={'text-muted-foreground block text-[11.5px] leading-tight'}>
+                    <span className={'text-foreground block text-[11.5px] leading-tight'}>
                       by {vendor.company}
                     </span>
                     <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>
