@@ -464,6 +464,72 @@ the deploy did what was intended: zero occurrences of the Google button on
 
 ---
 
+### Google sign in cannot be tested by pasting a URL, and the failure is silent
+
+**19 August 2026, session 6.** With the Google console work done and the provider
+enabled in Supabase, the flow was tested by pasting this into a browser:
+
+```
+https://itdgggoxsoolbfiwujvt.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://un-claude.com/auth/callback
+```
+
+**Google's consent screen appeared, the account was chosen, and the browser came
+back to `un-claude.com` showing the email and password sign in form. Not signed
+in. No error message anywhere.**
+
+**The configuration was not at fault. The test was.** The assistant proposed this
+method to avoid shipping a button in order to test it, which was the right goal
+and the wrong mechanism.
+
+**Why it cannot work.** The site uses PKCE, a scheme where the browser invents a
+one-time secret at the start of sign in and the server needs that same secret at
+the end to complete it. The button creates that secret. A pasted URL does not.
+With no secret in play, Supabase returns the session in the part of the URL after
+the `#`, and **browsers never send that part to the server**, so the callback
+route receives nothing at all.
+
+**Why it fails silently rather than erroring.** In
+`packages/supabase/src/auth-callback.service.ts`, `exchangeCodeForSession` acts
+only if a `code` or an `error` parameter is present. With neither, it falls
+through to its final `return` and forwards the user to `/home` with no session.
+`/home` is protected, so the middleware bounces them to the sign in page. **There
+is no error path for "nothing arrived", so nothing is reported.** Proven live:
+
+```
+/auth/callback  → 307 → /home
+/home           → 307 → /auth/sign-in?next=/home
+```
+
+**How to test it instead: run the button locally. No deploy, no Google change.**
+
+1. Add `http://localhost:3000/**` to Supabase, Authentication, URL Configuration,
+   Redirect URLs.
+2. Set `oAuth: ['google']` in `apps/web/config/auth.config.ts` **without
+   committing it.**
+3. `pnpm dev`, open `http://localhost:3000/auth/sign-in`, click the real button.
+
+**Google needs no configuration for this.** Proven from the live redirect below:
+the address Google is given is always the Supabase one, never the site's. Local
+development, Vercel previews and production are identical as far as Google is
+concerned, and only Supabase's redirect allow list has to know about them.
+
+**The one command that shows the whole Google configuration at once,** without a
+browser and without signing in to anything:
+
+```
+curl -s -o /dev/null -w '%{redirect_url}\n' \
+  "https://itdgggoxsoolbfiwujvt.supabase.co/auth/v1/authorize?provider=google"
+```
+
+A correctly configured project answers with a `accounts.google.com` address
+carrying `client_id`, `redirect_uri=https://itdgggoxsoolbfiwujvt.supabase.co/auth/v1/callback`
+and **`scope=email profile`**. An unconfigured one answers with
+`{"code":400,...,"msg":"Unsupported provider: provider is not enabled"}`.
+**That `scope` value is the whole verification question and it is worth reading
+every time:** see `06` row 41.
+
+---
+
 ## How to get back to an earlier state
 
 **Every commit is permanent and nothing is ever really lost.** Git keeps a full
@@ -698,3 +764,54 @@ full opacity, and `get_page_text` returned all of its content correctly.
 **Do not diagnose a layout bug from a blank screenshot.** Measure the DOM first.
 The mobile layout in this session was verified by measurement, not by eye, and
 that was recorded as such rather than claimed as a visual check.
+
+---
+
+## The overnight build session, and a bug worth remembering
+
+### The engine crashed on every short rewrite, and had done since it was written
+
+**`uc_chunk.rewrite_long` called `one(0)` six lines before `one` was defined.**
+Python treats `one` as a local name in that function, so it was not yet assigned
+and the call raised `UnboundLocalError`. The engine caught it, reported only the
+exception type, and the failure surfaced as `layer B rewrite failed:
+UnboundLocalError` with no clue where it came from.
+
+**A single chunk is roughly 350 words, so this broke every document shorter than
+that: very nearly every paste a visitor makes into the box on the landing page.**
+
+**Why it was not caught in session 4:** the documents used to prove layer B were
+all long enough to split into several chunks, which takes the other code path.
+**A feature proved only on large inputs was completely broken on small ones.**
+
+### The Browser preview pane degrades, and it manufactures fake bugs
+
+**Recorded again, harder, because it cost real time in this session.** The pane
+reached a state where the page rendered server HTML but never hydrated: clicks did
+nothing, effects never ran, and the tool sat at its initial state forever. The
+console showed no error, every chunk returned 200, and `git`-level checks all
+passed.
+
+**About forty minutes went into diagnosing an application bug that did not exist.
+Opening a fresh tab showed the app working perfectly.**
+
+**The rule: before diagnosing a front end bug, reproduce it in a NEW tab.** If a
+fresh tab behaves, the pane is the defect. Symptoms to recognise: blank
+screenshots of elements the DOM reports as present and full opacity; clicks that
+do nothing; stale console errors naming files that no longer exist.
+
+**A code comment was written blaming a bug that was never confirmed, and it was
+corrected once the real cause was known.** Do not leave a diagnosis in the source
+that the evidence did not support.
+
+### Reading state from outside the app
+
+The tool's root carries `data-phase`. Use it rather than inferring state from a
+screenshot:
+
+```js
+document.querySelector('[data-phase]').dataset.phase
+```
+
+**This project's own record is eight measurement errors in one session.** A stable
+way to ask the application what it is doing is worth more than a picture of it.

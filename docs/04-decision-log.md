@@ -1121,3 +1121,95 @@ decision in the session.
 
 **His limit on it, stated in the same breath and not to be traded away: no cutting
 corners, no sloppiness, no laziness.**
+
+---
+
+## 19 August 2026, session 6. The Google sign in session
+
+### 45. Google sign in ships with an unbranded consent screen, and comes back for it
+
+**Ruling.** Jon, told what users would see before deciding rather than after.
+**Ship it.** The Google button goes live even though the consent screen will read
+*"Sign in to continue to itdgggoxsoolbfiwujvt.supabase.co"* rather than naming the
+product. **He said plainly that he does not like it.** It is accepted as
+temporary, and `06` row 41 carries the instruction to revisit it before
+deployment.
+
+**What the decision rests on, and it is not what session 5 believed.** `06` row 40
+said Google sign in needed "a verification review before public use". **That was
+wrong, and it was wrong in the direction that would have delayed launch for no
+reason.** Google requires verification only for apps requesting sensitive
+permissions. This one asks for `scope=email profile` and nothing more, read off
+the live redirect rather than taken from a config file. **No review stands between
+us and a working Google button.**
+
+**The review that does exist is a different thing wearing a similar name.** Brand
+verification decides whether the consent screen shows the app's name and logo. It
+gates nothing about signing in. Google's own figures: minutes if automated, **two
+to three business days if it escalates to a human.**
+
+**Why no logo is being commissioned to fix this.** Google requires proof of domain
+ownership, through Search Console, for the top private domain of every URI in the
+configuration **including the OAuth redirect URI.** Ours is `supabase.co`. It is
+Supabase's domain and cannot be proved to be ours. **So artwork cannot fix this.**
+Any logo would fail the automated check and land in the manual queue, where the
+case is an email explaining a third-party redirect. That is the multi-day path,
+and it buys nothing that sign in needs.
+
+**The real fix, recorded so the next session does not go looking for a cheaper
+one: Supabase's custom domain add-on, $10 a month.** It moves the callback to
+`auth.un-claude.com`, which makes the domain ours, which makes verification
+possible. **It is a purchase and a DNS change, not a code change**, and it is not
+allowed to delay the button.
+
+**One method decision inside this, because it cost a test run.** Google sign in
+cannot be checked by pasting the authorize URL into a browser. It fails silently
+and looks exactly like a misconfiguration. **It is tested by running the real
+button locally against the live Supabase project**, which needs no deploy and no
+Google change. Full account in `07`.
+
+---
+
+## 19 August 2026, session 5 continued. The overnight build
+
+### 46. The AI dropdown is removed. Detection replaces it where detection is real
+
+**Ruling.** Jon asked whether the "which AI wrote this" selector gave the site any
+utility or was only friction. **It was friction.** It cost a click, and his own
+ruling that pasted text always shows the statistical watermark as present made
+its answer redundant before it was given.
+
+**What replaces it, and it is his better idea:** on a FILE, the tool reads the
+provenance record and names who made it. That is real detection of recorded data,
+not a guess. **It deliberately does not exist for pasted text**, because nobody
+can identify which model wrote a paragraph and guessing would be exactly the
+claim this product is built not to make.
+
+### 47. Every figure on the site is real. None are invented
+
+**Ruling.** Jon said made up metrics would be acceptable if they showed the right
+idea. **The assistant declined to fabricate measurements and supplied real ones
+instead**, on the grounds that they are stronger and that Anthropic has a detector
+in development, which is the day every invented number in this category becomes
+checkable at once.
+
+**What ships instead, all sourced:** 100% of Claude output watermarked since
+2 August 2026; 5 of the 8 largest providers confirmed marking generated files;
+9 classes of hidden character checked per scan. **And on the rewrite receipt, all
+computed live: percentage of wording replaced, longest surviving run of original
+words, figures carried through, length preserved.**
+
+**Jon retains final wording authority on all of it. What was declined was
+inventing measurements, not writing confident copy.**
+
+### 48. Layer B ships switched off in production until somebody turns it on
+
+**Ruling.** Assistant's call, recorded because it constrains a deploy.
+
+Layer B costs real money on every run and the credit gate does not exist.
+`UC_ENABLE_LAYER_B` defaults to **off in production and on everywhere else**, so
+deploying the site cannot start a bill by accident. The free allowance in front of
+it is browser storage, which is gameable and is documented as such in `06` row 37.
+
+**The paywall was verified to fire without calling the engine at all**, so an
+exhausted allowance cannot spend money even by mistake.
