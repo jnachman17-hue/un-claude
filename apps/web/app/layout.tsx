@@ -6,7 +6,7 @@ import { cn } from '@kit/ui/utils';
 
 import { RootProviders } from '~/components/root-providers';
 import appConfig from '~/config/app.config';
-import { heading, sans } from '~/lib/fonts';
+import { heading, mono, sans } from '~/lib/fonts';
 import { generateRootMetadata } from '~/lib/root-metdata';
 
 import '../styles/globals.css';
@@ -51,7 +51,7 @@ export default async function RootLayout({
 }
 
 function getClassName() {
-  const font = [sans.variable, heading.variable].reduce<string[]>(
+  const font = [sans.variable, heading.variable, mono.variable].reduce<string[]>(
     (acc, curr) => {
       if (acc.includes(curr)) return acc;
 

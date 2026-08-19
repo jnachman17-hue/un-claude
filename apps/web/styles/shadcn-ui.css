@@ -13,16 +13,23 @@
       sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     --font-heading: var(--font-sans);
 
-    --background: var(--color-white);
-    --foreground: var(--color-neutral-950);
+    --background: oklch(98.6% 0.004 95);
+    --foreground: oklch(19% 0.008 90);
 
-    --card: var(--color-white);
+    /* The one accent. It is a highlighter: the same colour marks a hidden
+       character in the text and fills the primary button. Nothing else on the
+       page introduces a second accent. */
+    --mark: oklch(87% 0.176 116);
+    --mark-strong: oklch(80% 0.168 116);
+    --mark-foreground: oklch(20% 0.02 100);
+
+    --card: oklch(99.6% 0.003 95);
     --card-foreground: var(--color-neutral-950);
 
-    --popover: var(--color-white);
+    --popover: oklch(99.6% 0.003 95);
     --popover-foreground: var(--color-neutral-950);
 
-    --primary: var(--color-neutral-950);
+    --primary: oklch(19% 0.008 90);
     --primary-foreground: var(--color-white);
 
     --secondary: oklch(96.76% 0.0013 286.38);
@@ -41,7 +48,7 @@
     --input: var(--color-gray-200);
     --ring: var(--color-neutral-800);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --chart-1: var(--color-orange-400);
     --chart-2: var(--color-teal-600);
@@ -60,8 +67,14 @@
   }
 
   .dark {
-    --background: var(--color-neutral-900);
-    --foreground: var(--color-white);
+    --background: oklch(17% 0.006 90);
+    --foreground: oklch(96% 0.004 95);
+
+    /* Same accent, same role, lifted so it holds contrast on a dark surface.
+       The theme flips; the accent does not change identity. */
+    --mark: oklch(84% 0.172 116);
+    --mark-strong: oklch(89% 0.176 116);
+    --mark-foreground: oklch(18% 0.02 100);
 
     --card: var(--color-neutral-900);
     --card-foreground: var(--color-white);

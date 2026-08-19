@@ -21,6 +21,17 @@ const ENGINE_URL = process.env.UC_ENGINE_URL ?? 'https://un-claude.com';
 const ENGINE_KEY = process.env.UC_ENGINE_KEY ?? '';
 
 /**
+ * The two deployments answer on different paths and this has already misled one
+ * session. Production is /api/scan and /api/clean, the Vercel functions in
+ * apps/web/api. The engine's own standalone server, used for local development,
+ * is /inspect and /clean. API.md documents only the second and calls it the
+ * production contract, which is wrong. Both are configurable so neither is
+ * hardcoded into a component.
+ */
+const SCAN_PATH = process.env.UC_ENGINE_SCAN_PATH ?? '/api/scan';
+const CLEAN_PATH = process.env.UC_ENGINE_CLEAN_PATH ?? '/api/clean';
+
+/**
  * Our own messages, a closed set. Raw upstream error text is never shown to a
  * user, which is the practice from 04 entry 15 and the fix for the defect open
  * as 06 row 13.
@@ -92,7 +103,7 @@ async function call<T>(path: string, body: unknown, timeoutMs: number): Promise<
 
 /** What is hidden in this. Read only, free, about 40ms. */
 export function scan(payload: { file: string; name: string }) {
-  return call<ScanResult>('/api/scan', payload, 20_000);
+  return call<ScanResult>(SCAN_PATH, payload, 20_000);
 }
 
 /**
@@ -106,5 +117,5 @@ export function clean(
   options: { layer_b?: boolean } = {},
 ) {
   const slow = options.layer_b === true;
-  return call<CleanResult>('/api/clean', { ...payload, options }, slow ? 120_000 : 20_000);
+  return call<CleanResult>(CLEAN_PATH, { ...payload, options }, slow ? 120_000 : 20_000);
 }

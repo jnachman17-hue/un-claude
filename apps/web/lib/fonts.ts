@@ -1,11 +1,15 @@
-import { Inter as SansFont } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 
 /**
  * @sans
- * @description Define here the sans font.
- * By default, it uses the Inter font from Google Fonts.
+ * @description The interface font.
+ *
+ * Geist rather than the kit's default of Inter. Inter is the default every
+ * generated site arrives with, and this product's whole position is that it is
+ * the credible one in its category. Geist carries the same neutral clarity with
+ * tighter, more deliberate letterforms at display sizes.
  */
-const sans = SansFont({
+const sans = Geist({
   subsets: ['latin'],
   variable: '--font-sans',
   fallback: ['system-ui', 'Helvetica Neue', 'Helvetica', 'Arial'],
@@ -14,10 +18,20 @@ const sans = SansFont({
 });
 
 /**
- * @heading
- * @description Define here the heading font.
+ * @mono
+ * @description For codepoints, counts and receipts.
+ *
+ * The product's evidence is characters and numbers. A monospaced face is what
+ * makes "U+200B" read as a fact rather than as prose.
  */
+const mono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+  preload: true,
+  weight: ['400', '500'],
+});
+
 const heading = sans;
 
-// we export these fonts into the root layout
-export { sans, heading };
+export { sans, heading, mono };

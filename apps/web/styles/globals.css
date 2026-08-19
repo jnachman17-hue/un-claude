@@ -48,4 +48,18 @@
   textarea::placeholder {
     color: theme(--color-muted-foreground);
   }
+
+  /* Every animation on this site collapses to nothing when the visitor has
+     asked their system for reduced motion. Non negotiable, and global so it
+     cannot be forgotten in one component. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

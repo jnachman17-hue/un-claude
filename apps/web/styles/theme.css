@@ -33,6 +33,12 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
+  --color-mark: var(--mark);
+  --color-mark-strong: var(--mark-strong);
+  --color-mark-foreground: var(--mark-foreground);
+
+  --font-mono: var(--font-mono);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -60,6 +66,59 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Motion used on this site, all CSS, no animation dependency.
+     Each one is here because it communicates something: content arriving in
+     reading order, a marker landing on the character it found, a strip that
+     conveys breadth without demanding attention. */
+  --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-mark-in: mark-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-drift: drift 48s linear infinite;
+  --animate-sweep: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes mark-in {
+    0% {
+      opacity: 0;
+      transform: scaleY(0.2);
+    }
+    60% {
+      opacity: 1;
+      transform: scaleY(1.15);
+    }
+    100% {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(320%);
+    }
+  }
 
   --animate-fade-up: fade-up 0.5s;
   --animate-fade-down: fade-down 0.5s;
