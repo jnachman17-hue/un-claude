@@ -15,8 +15,13 @@ import { buildReceipt } from '~/lib/engine/receipt';
  * everywhere else. Deploying this file cannot start a bill on its own.
  */
 function layerBAllowed(): boolean {
-  if (process.env.UC_ENABLE_LAYER_B === 'true') return true;
-  if (process.env.UC_ENABLE_LAYER_B === 'false') return false;
+  // Trimmed and lowercased. A value set from a shell without care arrives as
+  // "true\n", which does not equal "true", and the flag would silently do the
+  // opposite of what was intended with nothing to show why. Same failure that
+  // broke the engine key, so it is closed here before it happens.
+  const flag = (process.env.UC_ENABLE_LAYER_B ?? '').trim().toLowerCase();
+  if (flag === 'true') return true;
+  if (flag === 'false') return false;
   return process.env.VERCEL_ENV !== 'production';
 }
 
