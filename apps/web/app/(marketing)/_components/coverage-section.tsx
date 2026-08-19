@@ -32,11 +32,19 @@ type Mark = 'yes' | 'committed' | 'na';
  * The names are therefore set like every other word on this page. That is not a
  * compromise, it is the honest version.
  *
- * `color` survives on each row because the fallback tile still uses it if artwork
- * is ever missing. Two values worth keeping accurate if it is ever shown: Gemini
- * gets no single hex, because its identity is a gradient, and Stability's purple
- * is #8300FF sampled from the supplied asset rather than the #6B21A8 circulating
- * online that Jon correctly flagged as unverified.
+ * ALL SEVEN ARE NOW THE PRODUCT'S OWN MARK, in clean vector, supplied by Jon.
+ * Claude's sunburst rather than Anthropic's wordmark, Firefly rather than Adobe's
+ * corporate A, so the artwork agrees with the name above it.
+ *
+ * They load as <img src> rather than inlined, which matters here: three of these
+ * files define a gradient called `linearGradient-1`, and inlining them together
+ * would have them fight over the same id. As separate documents they cannot.
+ *
+ * `color` survives on each row only as the fallback tile's background, used if
+ * artwork ever goes missing. Two values kept accurate there: Gemini gets no single
+ * hex, because its identity is a gradient, and Stability's purple is #8300FF
+ * sampled from the supplied asset rather than the #6B21A8 circulating online that
+ * Jon correctly flagged as unverified.
  */
 /**
  * THE LOGO CARRIES THE BRAND. THE NAME IS JUST THE NAME.
@@ -95,10 +103,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'yes',
     note: 'Files signed since 2 August 2026. Text watermarked from the same date, worldwide, with no way to opt out.',
-    // TODO Jon: the Claude mark. This is Anthropic's, which now sits under a
-    // row headed Claude. Drop claude.png into public/images/vendors and point
-    // here. Same for Firefly and Stable Diffusion below.
-    logo: { src: '/images/vendors/anthropic.png', mono: true },
+    logo: { src: '/images/vendors/claude.svg' },
   },
   {
     product: 'ChatGPT',
@@ -108,7 +113,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'committed',
     note: 'Files signed since February 2024. Text watermarking committed under the European code, not yet shipped.',
-    logo: { src: '/images/vendors/openai.svg', mono: true },
+    logo: { src: '/images/vendors/chatgpt.svg', mono: true },
   },
   {
     product: 'Gemini',
@@ -118,7 +123,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'yes',
     note: 'Files signed since November 2025. Text watermarked with SynthID on every output.',
-    logo: { src: '/images/vendors/google.png' },
+    logo: { src: '/images/vendors/gemini.svg' },
   },
   {
     product: 'Grok',
@@ -128,7 +133,7 @@ const VENDORS: Vendor[] = [
     files: 'committed',
     text: 'committed',
     note: 'Files and text both committed under the European code. Neither has shipped yet.',
-    logo: { src: '/images/vendors/xai.png', mono: true },
+    logo: { src: '/images/vendors/grok.svg', mono: true },
   },
   {
     product: 'Meta AI',
@@ -138,7 +143,7 @@ const VENDORS: Vendor[] = [
     files: 'committed',
     text: 'committed',
     note: 'Files and text both committed under the European code. Today it reads and labels other companies’ marks.',
-    logo: { src: '/images/vendors/meta.png' },
+    logo: { src: '/images/vendors/meta-ai.svg' },
   },
   {
     product: 'Firefly',
@@ -148,8 +153,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'na',
     note: 'Files signed on everything it makes. Adobe wrote the standard the others adopted.',
-    // TODO Jon: the Firefly mark, not Adobe's corporate A.
-    logo: { src: '/images/vendors/adobe.png' },
+    logo: { src: '/images/vendors/firefly.svg' },
   },
   {
     product: 'Stable Diffusion',
@@ -159,8 +163,7 @@ const VENDORS: Vendor[] = [
     files: 'yes',
     text: 'na',
     note: 'Files signed on the hosted service. The versions you run yourself are unmarked.',
-    // TODO Jon: the Stable Diffusion mark, not Stability AI's.
-    logo: { src: '/images/vendors/stability.png' },
+    logo: { src: '/images/vendors/stable-diffusion.svg' },
   },
 ];
 
