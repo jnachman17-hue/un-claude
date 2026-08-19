@@ -111,3 +111,10 @@ yarn-error.log*
 engine/.venv/
 __pycache__/
 *.pyc
+
+# apps/web/.env holds the kit's non-secret configuration: product name, title,
+# theme, which auth methods are on. Every value is NEXT_PUBLIC_ and therefore
+# ships to browsers anyway. Vercel's `vercel link` added the .env* rule above,
+# which silently blocked this file and made every deployment fail for hours
+# while the old build kept serving. See docs/07-runbook.md.
+!apps/web/.env
