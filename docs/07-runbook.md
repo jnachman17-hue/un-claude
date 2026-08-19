@@ -1301,3 +1301,83 @@ them is not being counted.**
 **Cost and token counts are deliberately absent from the HTTP response.** They
 are our unit economics and the site is public. The browser gets words, bytes,
 seconds and whether layer B ran.
+
+---
+
+## Cookieless has an identity boundary, and it runs straight through the paywall
+
+**19 August 2026, session 7, Track 4. Proved on the live site rather than reasoned
+about.**
+
+`persistence: 'memory'` means the visitor's id lives in a JavaScript variable and
+nowhere else. **A full page load makes a new one. A client-side navigation does
+not.** So a funnel joins up exactly as far as Next's router carries the visitor,
+and no further.
+
+Measured on un-claude.com, each move made the way a real visitor would make it:
+
+| The move | Visitor id | Session id |
+|---|---|---|
+| `/` → `/how-it-works`, header link (`<Link>`) | same | same |
+| `/` → `/auth/sign-up`, header "Sign Up" (`<Link>`) | same | same |
+| `/` → `/auth/sign-up`, paywall "Get credits" (plain `<a>`) | **new** | **new** |
+| `/` → `/auth/sign-up`, address typed in | **new** | **new** |
+
+From the paywall run: before `01a01bf0-ba56-7cf5-a9c4-354fea8ca2e1`, after
+`01a01bf3-bc25-7222-ac0f-2c896572c70c`, and the `window` variable holding the
+"before" value was gone, which is what a full page load looks like from inside
+the page.
+
+**The one route that broke it was the one that matters most.** Every other way
+into sign-up preserved the visitor. The paywall's own call to action did not,
+because `paywall.tsx` used a plain `<a href>` where the rest of the site uses
+Next's `<Link>`.
+
+**The fix is one line and it costs nothing legally.** `<Link>` keeps the
+navigation client-side, the id stays in memory, nothing is written to the device,
+and no sentence in either policy changes. **Do not reach for a cookie, a stored
+id, or a URL parameter to solve this.** The first two end the no-banner property
+outright, which is the thing the whole configuration was chosen to protect.
+
+**The test, for any two pages, and it is the whole test:**
+
+```js
+// on page one
+window.__before = posthog.get_distinct_id();
+// navigate the way a real visitor would, then:
+({ survived: !!window.__before, before: window.__before, after: posthog.get_distinct_id() })
+```
+
+`survived: false` means the browser did a full page load and PostHog is now
+looking at a different person.
+
+### A page mid-hydration reads exactly like a broken one
+
+**19 August 2026, session 7.** Cost twenty minutes and was one step away from
+being written up as a live outage.
+
+Checked immediately after `/` finished loading, the workbench reported all five of
+these at once:
+
+- `data-phase="scanning"`, its initial state, indistinguishable from a hung scan
+- no `__reactFiber` key on its root element, indistinguishable from a component
+  that never hydrated
+- zero requests to `/api/tool/scan` in `performance.getEntriesByType('resource')`
+- an ancestor `<div id="S:0">`, React's streaming-SSR placeholder container
+- clicks on its buttons doing nothing at all
+
+**All five are also true of a genuinely dead page, and all five were false.**
+Seconds later the same checks returned `data-phase="scanned"`, a fiber present,
+one scan request made, and `S:0` gone. Hydration on this page is slow enough to
+span several tool calls.
+
+**Before concluding anything from the DOM here, confirm the page is actually
+alive first:**
+
+```js
+({ phase: document.querySelector('[data-phase]').getAttribute('data-phase'),
+   hydrated: Object.keys(document.querySelector('[data-phase]')).some(k => /^__reactFiber/.test(k)) })
+```
+
+**`phase` must not be `scanning` and `hydrated` must be `true`.** Anything read
+before that is a reading of the server's HTML, not of the running product.
