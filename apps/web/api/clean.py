@@ -2,7 +2,13 @@
 
 Without options, this is Layer A plus metadata: instant, no model call, free.
 With {"options": {"layer_b": true}} it also rewrites the text first, which costs
-money and takes seconds. Layer B is signed-in only. 04 entry 22.
+money and takes seconds.
+
+This docstring used to say "Layer B is signed-in only. 04 entry 22." Entry 22
+says no such thing: it rules that all three layers ship free with tight limits
+and no way to pay. Nothing anywhere enforced signing in, and layer B is reachable
+today without an account. The claim is removed rather than left as a rule that
+exists only as a comment. 06 row 57.
 """
 from __future__ import annotations
 
@@ -41,9 +47,22 @@ class handler(BaseHTTPRequestHandler):
             payload = srv._clean_payload(data, name, opts)
         except ValueError as e:
             code = "layer_b_failed" if "layer B" in str(e) else "bad_format"
+            # A failed layer B run still spent money, and spent MORE of it than a
+            # successful one: every chunk retries up to eight times and every
+            # attempt is billed. The engine attaches what it spent to the error
+            # so the costliest requests are not the ones recording nothing.
+            # 06 row 48.
+            usage_record("clean", name, data, None, time.time() - started,
+                         ok=False, code=code,
+                         layer_b_usage=getattr(e, "usage", None),
+                         headers=self.headers)
             return json_response(self, *fail(code))
-        except Exception:
+        except Exception as e:
+            usage_record("clean", name, data, None, time.time() - started,
+                         ok=False, code="engine_error",
+                         layer_b_usage=getattr(e, "usage", None),
+                         headers=self.headers)
             return json_response(self, *fail("engine_error", 500))
-        lb = (payload.get("report") or {}).get("layer_b")
-        payload["usage"] = usage_record(name, data, lb, time.time() - started)
+        payload["usage"] = usage_record(
+            "clean", name, data, payload, time.time() - started, headers=self.headers)
         json_response(self, 200, payload)

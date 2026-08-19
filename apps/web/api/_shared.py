@@ -6,6 +6,7 @@ apps/web/engine. See that folder's PROVENANCE.md for the licence and version.
 from __future__ import annotations
 
 import base64, hmac, json, os, sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent.parent / "engine"
@@ -100,19 +101,128 @@ def read_request(raw: bytes):
     return data, str(body.get("name") or "paste.txt"), (opts if isinstance(opts, dict) else {})
 
 
-def usage_record(name: str, data: bytes, layer_b: dict | None, seconds: float) -> dict:
-    """What this operation consumed.
+# Every usage line starts with this word so one grep finds all of them and
+# nothing else. Deliberately not a word that appears anywhere else in the logs.
+USAGE_TAG = "UC_USAGE"
 
-    Recorded from the first line of code so the pricing session can price from
-    real numbers rather than guesses. 04 entry 22, 06 row 18.
+# The layer B figures worth keeping, in the order a person would want to read
+# them. Anything the engine reports that is not in this list is dropped rather
+# than logged blindly, so the line stays one line.
+_LAYER_B_FIGURES = (
+    "chunks", "attempts", "retries", "model_calls", "calls_without_usage",
+    "prompt_tokens", "completion_tokens", "total_tokens", "cost_usd",
+)
+
+# What the browser is allowed to see. Token counts and cost are OUR unit
+# economics on a public site, so they go to the log and not into the response.
+# Nothing in the site reads this block; it is kept for support and debugging.
+_PUBLIC_FIELDS = (
+    "endpoint", "kind", "extension", "bytes_in", "words_in", "words_out",
+    "seconds", "ok", "layer_b_used", "layer_b_model",
+)
+
+
+def _word_count(raw: bytes | None) -> int | None:
+    """Words in a piece of UTF-8, counted the same way the engine counts them.
+
+    len(text.split()) is exactly what uc_chunk uses for its length guard, so the
+    two numbers can be compared without having to wonder whether they mean the
+    same thing.
     """
-    return {
-        "bytes_in": len(data),
+    if raw is None:
+        return None
+    try:
+        return len(raw.decode("utf-8", errors="surrogateescape").split())
+    except Exception:
+        return None
+
+
+def usage_record(
+    endpoint: str,
+    name: str,
+    data: bytes,
+    payload: dict | None,
+    seconds: float,
+    *,
+    ok: bool = True,
+    code: str | None = None,
+    layer_b_usage: dict | None = None,
+    headers=None,
+) -> dict:
+    """What this operation consumed, written down where it can be read later.
+
+    04 entry 22 promised words, tokens and retries so the pricing session could
+    price from real numbers rather than guesses. This function recorded none of
+    the three, and every run before this fix is evidence that cannot be got
+    back. 06 row 48.
+
+    It returns the public subset for the HTTP response AND writes the full line
+    to the log, so a caller cannot compute the numbers and forget to keep them.
+
+    THIS IS A LOG LINE, NOT A DATABASE. Vercel's runtime logs are kept for a
+    short window, so this stops the loss rather than ending it. The durable
+    ledger needs a migration, and every migration belongs to Track 1.
+    """
+    payload = payload or {}
+    report = payload.get("report") or {}
+    layer_b = report.get("layer_b") or {}
+    kind = payload.get("kind")
+
+    # Words only mean something for text. A PNG has bytes, not words, and a
+    # made-up word count on one would be worse than no word count at all.
+    is_text = kind == "text" or (kind is None and Path(name).suffix.lower() in ("", ".txt", ".md"))
+    cleaned_bytes = None
+    if is_text and payload.get("cleaned"):
+        try:
+            cleaned_bytes = base64.b64decode(payload["cleaned"], validate=True)
+        except Exception:
+            cleaned_bytes = None
+
+    record: dict = {
+        "at": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+        "endpoint": endpoint,
+        "ok": ok,
+        "kind": kind,
         "extension": Path(name).suffix.lower() or ".txt",
+        "bytes_in": len(data),
+        "words_in": _word_count(data) if is_text else None,
+        "words_out": _word_count(cleaned_bytes),
         "seconds": round(seconds, 3),
-        "layer_b_used": bool(layer_b),
-        "layer_b_model": (layer_b or {}).get("model"),
+        "layer_b_used": bool(layer_b) or bool(layer_b_usage),
+        "layer_b_model": layer_b.get("model"),
     }
+    if code:
+        record["code"] = code
+
+    # On a successful run the figures ride inside the engine's own report. On a
+    # failed one they are attached to the error, because a failure retries up to
+    # eight times per chunk and is the most expensive thing this engine does.
+    figures = layer_b.get("usage") or layer_b_usage or {}
+    if figures:
+        record["layer_b"] = {k: figures[k] for k in _LAYER_B_FIGURES if k in figures}
+
+    # Vercel stamps every request with an id. Carrying it makes this line
+    # joinable to the platform's own log of the same request.
+    if headers is not None:
+        request_id = headers.get("x-vercel-id")
+        if request_id:
+            record["request_id"] = str(request_id)[:120]
+
+    _emit(record)
+    return {k: record[k] for k in _PUBLIC_FIELDS if k in record}
+
+
+def _emit(record: dict) -> None:
+    """One line of JSON to stdout. Never raises.
+
+    A logging failure must not turn a successful clean into a failed request for
+    the user waiting on it.
+    """
+    try:
+        print(USAGE_TAG + " " + json.dumps(record, ensure_ascii=False, default=str),
+              flush=True)
+    except Exception:      # noqa: S110 — see the docstring
+        pass
 
 
 def json_response(h, status: int, payload: dict) -> None:

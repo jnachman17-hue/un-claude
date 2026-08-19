@@ -39,5 +39,6 @@ class handler(BaseHTTPRequestHandler):
             return json_response(self, *fail("bad_format"))
         except Exception:
             return json_response(self, *fail("engine_error", 500))
-        payload["usage"] = usage_record(name, data, None, time.time() - started)
+        payload["usage"] = usage_record(
+            "scan", name, data, payload, time.time() - started, headers=self.headers)
         json_response(self, 200, payload)

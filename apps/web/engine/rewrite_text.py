@@ -320,6 +320,38 @@ def call_ollama(base_url: str, model: str, prompt: str, timeout: float, temperat
     return str(content).strip()
 
 
+def accumulate_usage(into: dict, usage: object) -> None:
+    """Add one upstream response's token and cost figures into a running total.
+
+    The AI Gateway answers with an OpenAI-shaped `usage` block plus its own
+    `cost` in US dollars. Verified live against mistral/mistral-small on
+    19 August 2026: prompt_tokens 20, completion_tokens 2, total_tokens 22,
+    cost 2.6e-06.
+
+    EVERY call is counted, including the ones whose output a retry later throws
+    away, because every one of them was paid for. Retries default to eight per
+    chunk, so counting only the successful call would under-report the exact
+    case that costs the most. 06 row 48.
+
+    A response without a usage block is counted as a call and recorded as such
+    rather than silently ignored, so a zero cost can be told apart from an
+    unreported one.
+    """
+    into["model_calls"] = into.get("model_calls", 0) + 1
+    if not isinstance(usage, dict):
+        into["calls_without_usage"] = into.get("calls_without_usage", 0) + 1
+        return
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = usage.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            into[key] = into.get(key, 0) + int(value)
+    cost = usage.get("cost")
+    if isinstance(cost, (int, float)) and not isinstance(cost, bool):
+        # Rounded far below a cent so repeated addition cannot drift, and far
+        # above zero so a single cheap call is never rounded out of existence.
+        into["cost_usd"] = round(into.get("cost_usd", 0.0) + float(cost), 10)
+
+
 def call_openai_compatible(
     base_url: str,
     model: str,
@@ -328,6 +360,7 @@ def call_openai_compatible(
     timeout: float,
     temperature: float,
     reasoning_effort: str | None = None,
+    usage_out: dict | None = None,
 ) -> str:
     url = base_url.rstrip("/") + "/v1/chat/completions"
     headers: dict[str, str] = {}
@@ -346,6 +379,10 @@ def call_openai_compatible(
         headers,
         timeout,
     )
+    # Recorded BEFORE the checks below, because a response that arrives with an
+    # empty choices list was still billed. 06 row 48.
+    if usage_out is not None:
+        accumulate_usage(usage_out, data.get("usage"))
     choices = data.get("choices") or []
     if not choices:
         raise RuntimeError(f"openai-compatible empty choices: {data!r}"[:500])
@@ -375,7 +412,17 @@ def rewrite(
     markllm_dir: str | None = None,
     markllm_model: str | None = None,
     markllm_timeout: float = 180.0,
+    usage_out: dict | None = None,
 ) -> tuple[str, dict]:
+    """Rewrite `text` once. Returns the rewritten text and a report on the run.
+
+    `usage_out`, when given, is a dict OWNED BY THE CALLER that this function
+    adds token counts and cost into. It is a parameter rather than a return
+    value on purpose: a call that raises still spent money, and a caller that
+    holds the dict keeps those figures. A caller that reads them off the return
+    value loses them on exactly the runs that cost the most. 06 row 48.
+    """
+    usage: dict = usage_out if usage_out is not None else {}
     prompt = build_prompt(strength, text, lang=lang, original_lang=original_lang)
     info: dict = {
         "backend": backend,
@@ -423,11 +470,15 @@ def rewrite(
     outs: list[str] = []
     for _ in range(n):
         if backend == "ollama":
+            # Ollama runs locally and reports no usage block. Counted anyway, so
+            # the number of calls is right whatever the backend is.
+            usage["model_calls"] = usage.get("model_calls", 0) + 1
             outs.append(call_ollama(base_url, model, prompt, timeout, temperature))
         elif backend == "openai-compatible":
             outs.append(
                 call_openai_compatible(
-                    base_url, model, prompt, api_key, timeout, temperature, reasoning_effort
+                    base_url, model, prompt, api_key, timeout, temperature,
+                    reasoning_effort, usage_out=usage,
                 )
             )
         else:
@@ -468,6 +519,7 @@ def rewrite(
 
     info["output_chars"] = len(out)
     info["mode"] = "rewritten"
+    info["usage"] = usage
     info["note"] = (
         "Layer B is best-effort against statistical token-sampling watermarks; "
         "cannot certify removal against a vendor detector."

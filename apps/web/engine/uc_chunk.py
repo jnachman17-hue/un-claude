@@ -67,22 +67,38 @@ def _numbers(text: str) -> set[str]:
     Compares values rather than spellings, so a model writing 'eighteen percent'
     for '18 percent' is not a loss.
 
-    COMPOUNDS MATTER AND WERE MISSED ONCE. 'thirty-four' must resolve to 34, not
-    to 30 and 4. Without that, the guard rejected six chunks in eight and every
-    single number it flagged was a false positive.
+    COMPOUNDS MATTER AND HAVE NOW BEEN GOT WRONG TWICE, IN OPPOSITE DIRECTIONS.
+
+    First time: 'thirty-four' resolved to 30 and 4 and not to 34, so the guard
+    rejected six chunks in eight on entirely false grounds.
+
+    Second time, fixed here 19 August 2026: the repair added 34 to the set but
+    LEFT 30 AND 4 IN IT. So a source saying 'thirty-four' demanded that the
+    output contain 30, and an output written as '34' — the natural thing for a
+    model to do — looked like a dropped figure. Measured on a real 674 word
+    document: ten model calls where three were needed, seven of them retries
+    chasing numbers that were never lost, 38 seconds against a 60 second
+    ceiling, and four times the documented cost per thousand words.
+
+    A tens word immediately followed by a unit word is now consumed as ONE
+    value. 'thirty-four' is 34 and nothing else. 'thirty percent and four
+    people' is still 30 and 4, because those two words are not adjacent.
     """
     out = {m.replace(",", "").rstrip("0").rstrip(".") if "." in m.replace(",", "")
            else m.replace(",", "") for m in _NUM.findall(text)}
     toks = re.findall(r"[a-z]+", text.lower().replace("-", " "))
-    for i, w in enumerate(toks):
-        if w in _WORDNUM:
-            out.add(_WORDNUM[w])
-        if w in _TENS:
-            out.add(str(_TENS[w]))
-            if i + 1 < len(toks) and toks[i + 1] in _WORDNUM:
-                unit = int(_WORDNUM[toks[i + 1]])
-                if 1 <= unit <= 9:
-                    out.add(str(_TENS[w] + unit))
+    i = 0
+    while i < len(toks):
+        word = toks[i]
+        if word in _TENS and i + 1 < len(toks) and toks[i + 1] in _WORDNUM:
+            unit = int(_WORDNUM[toks[i + 1]])
+            if 1 <= unit <= 9:
+                out.add(str(_TENS[word] + unit))
+                i += 2          # the ten and the unit are one number, not two
+                continue
+        if word in _WORDNUM:
+            out.add(_WORDNUM[word])
+        i += 1
     return out
 
 
@@ -104,16 +120,39 @@ def split_paragraphs(text: str) -> list[str]:
     return ["\n\n".join(c) for c in chunks] or [text]
 
 
+def _merge_usage(total: dict, part: dict) -> dict:
+    """Add one chunk's usage figures into the document total.
+
+    Every value is a count or an amount of money, so adding them is the whole of
+    it. Kept as plain addition rather than anything cleverer so a figure cannot
+    be lost by a key this function has not been taught about.
+    """
+    for key, value in part.items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            total[key] = total.get(key, 0) + value
+    if "cost_usd" in total:
+        total["cost_usd"] = round(total["cost_usd"], 10)
+    return total
+
+
 def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     """Rewrite `text` in chunks, in parallel, and verify nothing went missing.
 
-    `rewrite_fn(chunk) -> (rewritten, info)` does one chunk.
+    `rewrite_fn(chunk, attempt, missing, usage_out) -> (rewritten, info)` does
+    one chunk. `usage_out` is a dict this function owns and the callee adds token
+    counts and cost into; it is passed down rather than returned back so the
+    figures survive a call that raises.
+
     Raises TruncatedRewrite if any chunk, or the whole, comes back too short.
     """
     chunks = split_paragraphs(text)
 
     results: list[str | None] = [None] * len(chunks)
-    infos: list[dict] = [{}] * len(chunks)
+    infos: list[dict] = [{} for _ in chunks]
+    # One accumulator per chunk. Each thread writes only its own index, so the
+    # totals need no lock, and they are readable from here even if a chunk
+    # raises part way through its retries.
+    usages: list[dict] = [{} for _ in chunks]
 
     def one(i: int):
         """Best effort, then report. Never throw away a usable rewrite.
@@ -132,11 +171,18 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         useless; a document with two figures flagged for checking is not.
         """
         best_out = None
+        best_info: dict = {}
         best_missing: list[str] = []
         last_err = None
+        usage = usages[i]
         for attempt in range(RETRIES):
+            # Counted before the call, so an attempt that raises is still an
+            # attempt. `attempts` is the retry story and `model_calls`, filled in
+            # by the callee, is the billing one. They are equal at one candidate
+            # per attempt and are recorded separately rather than assumed equal.
+            usage["attempts"] = attempt + 1
             try:
-                out, info = rewrite_fn(chunks[i], attempt, best_missing)
+                out, info = rewrite_fn(chunks[i], attempt, best_missing, usage)
             except Exception as e:
                 last_err = e
                 if attempt < RETRIES - 1:
@@ -152,15 +198,18 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                 raise
             try:
                 _guard_facts(chunks[i], out, i)     # facts: advisory, keep the best
-                return i, out, info, []
+                return i, out, info, [], usage
             except FactsLost as e:
                 if best_out is None or len(e.missing) < len(best_missing):
-                    best_out, best_missing = out, e.missing
+                    # The info of the attempt actually being kept. This used to
+                    # return an empty dict here, which threw away the model name
+                    # and every figure belonging to the run that was returned.
+                    best_out, best_info, best_missing = out, info, e.missing
                 if attempt < RETRIES - 1:
                     time.sleep(0.4)
                     continue
         if best_out is not None:
-            return i, best_out, {}, best_missing
+            return i, best_out, best_info, best_missing, usage
         raise RuntimeError(
             f"chunk {i + 1} failed after {RETRIES} attempts: "
             f"{type(last_err).__name__}") from last_err
@@ -171,31 +220,68 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     # chunk raised UnboundLocalError and layer B failed outright. Under roughly
     # 350 words is one chunk, which is very nearly every paste a visitor makes
     # into the box on the landing page.
-    if len(chunks) == 1:
-        _, out, info, missing = one(0)
-        info = dict(info or {})
-        info.update(chunks=1, parallel=False,
-                    figures_to_check=[m for m in missing if m not in _numbers(out)])
-        return out, info
+    def totals() -> dict:
+        """Every chunk's usage added together, plus the two derived counts.
 
-    with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
-        at_risk: list[str] = []
-        for i, out, info, missing in pool.map(one, range(len(chunks))):
-            results[i], infos[i] = out, (info or {})
-            at_risk.extend(missing)
+        Safe to call on a half-finished run: a chunk that never started
+        contributes an empty dict rather than a wrong number.
+        """
+        total: dict = {}
+        for part in usages:
+            _merge_usage(total, part)
+        total["chunks"] = len(chunks)
+        # Attempts beyond the first for each chunk. Reported separately because
+        # eight attempts spread over four chunks and eight attempts on one chunk
+        # cost about the same and mean very different things.
+        total["retries"] = sum(max(0, u.get("attempts", 0) - 1) for u in usages)
+        return total
 
-    joined = "\n\n".join(r for r in results if r is not None)
-    _guard(text, joined, -1)
-    merged = dict(infos[0])
-    # Figures the rewrite could not be shown to preserve inside their own chunk.
-    # Most reappear elsewhere in the document; they are surfaced so a user can
-    # check rather than hidden. 06 row 27: the panel shows what was checked.
-    still_missing = sorted(
-        {m for m in at_risk if m not in _numbers(joined)}, key=lambda x: (-len(x), x))
-    merged.update(chunks=len(chunks), parallel=True,
-                  words_in=len(text.split()), words_out=len(joined.split()),
-                  figures_to_check=still_missing)
-    return joined, merged
+    try:
+        if len(chunks) == 1:
+            _, out, info, missing, _usage = one(0)
+            info = dict(info or {})
+            # words_in and words_out used to be set on the multi-chunk path only,
+            # so they were absent on anything under roughly 350 words, which is
+            # very nearly every paste. API.md section 12 documented that absence
+            # as a fact. They are now on both paths. 06 row 48.
+            info.update(chunks=1, parallel=False,
+                        words_in=len(text.split()), words_out=len(out.split()),
+                        usage=totals(),
+                        figures_to_check=[m for m in missing if m not in _numbers(out)])
+            return out, info
+
+        with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
+            at_risk: list[str] = []
+            for i, out, info, missing, _usage in pool.map(one, range(len(chunks))):
+                results[i], infos[i] = out, (info or {})
+                at_risk.extend(missing)
+
+        joined = "\n\n".join(r for r in results if r is not None)
+        _guard(text, joined, -1)
+        merged = dict(infos[0])
+        # Figures the rewrite could not be shown to preserve inside their own chunk.
+        # Most reappear elsewhere in the document; they are surfaced so a user can
+        # check rather than hidden. 06 row 27: the panel shows what was checked.
+        still_missing = sorted(
+            {m for m in at_risk if m not in _numbers(joined)}, key=lambda x: (-len(x), x))
+        # `merged` starts as chunk one's info and therefore carries chunk one's
+        # usage. Overwriting it with the document total is not optional: leaving
+        # it would report one chunk's tokens as the whole document's.
+        merged.update(chunks=len(chunks), parallel=True,
+                      words_in=len(text.split()), words_out=len(joined.split()),
+                      usage=totals(),
+                      figures_to_check=still_missing)
+        return joined, merged
+    except Exception as failure:
+        # A failed layer B run is the most expensive thing this engine can do:
+        # every chunk retries up to RETRIES times and every attempt is billed.
+        # The exception is re-raised unchanged so the caller's own branches still
+        # work; the figures ride along on it. 06 row 48.
+        try:
+            failure.usage = totals()
+        except Exception:      # noqa: S110 — an exception that refuses an
+            pass               # attribute must not replace the real failure
+        raise
 
 
 def _guard_facts(src: str, out: str, index: int) -> None:

@@ -685,6 +685,21 @@ def _detect_payload(data: bytes, name: str) -> dict[str, Any]:
             }
 
 
+def _layer_b_failure(message: str, cause: BaseException) -> ValueError:
+    """The user-facing error for a failed rewrite, carrying what the run cost.
+
+    A failed layer B run is the most expensive request this engine can make:
+    every chunk retries up to eight times and every attempt is billed. Without
+    this the costliest requests would be the ones recording nothing at all.
+    06 row 48.
+
+    The message is our own text. Upstream error text never reaches a user.
+    """
+    error = ValueError(message)
+    error.usage = getattr(cause, "usage", {}) or {}
+    return error
+
+
 def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str, Any]:
     kind = classify_bytes(data, Path(name).suffix)
     if kind == "unknown":
@@ -715,10 +730,16 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     base_temp = float(
                         os.environ.get("WATERMARKS_REWRITE_TEMPERATURE", "1.0"))
 
-                    def _one(chunk: str, attempt: int = 0, missing=None):
+                    def _one(chunk: str, attempt: int = 0, missing=None,
+                             usage_out=None):
                         # Cool by 0.2 per retry, floor 0.2. A creative first pass,
                         # then progressively closer to the source until the facts
                         # survive.
+                        #
+                        # usage_out is uc_chunk's per-chunk accumulator. It goes
+                        # DOWN into the call rather than coming back from it, so
+                        # a call that raises still leaves its tokens and cost
+                        # behind. 06 row 48.
                         temp = max(0.2, base_temp - 0.2 * attempt)
                         return layer_b_rewrite(
                         chunk,
@@ -737,6 +758,7 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                         candidates=1,
                         allow_remote=True,
                         reasoning_effort=None,
+                        usage_out=usage_out,
                     )
 
                     # Chunked and parallel. A single call silently truncates any
@@ -745,9 +767,11 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     # truncation outright, so a short result raises instead.
                     text, layer_b_report = rewrite_long(text, _one)
                 except TruncatedRewrite as e:
-                    raise ValueError(f"layer B rewrite failed: truncated: {e}") from e
+                    raise _layer_b_failure(
+                        f"layer B rewrite failed: truncated: {e}", e) from e
                 except Exception as e:  # never leak upstream text to a user
-                    raise ValueError(f"layer B rewrite failed: {type(e).__name__}") from e
+                    raise _layer_b_failure(
+                        f"layer B rewrite failed: {type(e).__name__}", e) from e
             detect_before = bool(options.get("detect_before"))
             detect_after = bool(options.get("detect_after"))
             detector_reports: dict[str, Any] = {}
