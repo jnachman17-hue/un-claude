@@ -20,11 +20,13 @@ for _p in (str(_HERE), str(_HERE.parent / "engine")):
 import time                                        # noqa: E402
 from http.server import BaseHTTPRequestHandler     # noqa: E402
 
-from _shared import engine, fail, json_response, read_request, usage_record  # noqa: E402
+from _shared import authorised, engine, fail, json_response, read_request, usage_record  # noqa: E402
 
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802 — the name Vercel requires
+        if not authorised(self.headers):
+            return json_response(self, *fail("unauthorised", 401))
         started = time.time()
         parsed = read_request(self.rfile.read(int(self.headers.get("Content-Length") or 0)))
         if isinstance(parsed[0], int):

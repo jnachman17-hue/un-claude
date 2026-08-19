@@ -5,7 +5,7 @@ apps/web/engine. See that folder's PROVENANCE.md for the licence and version.
 """
 from __future__ import annotations
 
-import base64, json, sys
+import base64, hmac, json, os, sys
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent.parent / "engine"
@@ -13,6 +13,25 @@ if str(ENGINE) not in sys.path:
     sys.path.insert(0, str(ENGINE))
 
 MAX_BYTES = 5 * 1024 * 1024   # 5 MB ceiling on any single upload
+
+# The engine is a back room, not a public counter. Only our own site may call it.
+# /api/clean with layer_b spends real money on every request, so an unauthenticated
+# endpoint is an open tap on Jon's AI Gateway balance.
+ENGINE_KEY = os.environ.get("UC_ENGINE_KEY", "")
+IS_PRODUCTION = os.environ.get("VERCEL_ENV") == "production"
+
+
+def authorised(headers) -> bool:
+    """True if this request carries our shared key.
+
+    Fails CLOSED in production. A missing UC_ENGINE_KEY on Vercel breaks the
+    endpoint loudly rather than silently leaving it open, which is 07-runbook's
+    own lesson: a correct config file is not a loaded one. Locally the key is
+    optional so development needs no setup.
+    """
+    if not ENGINE_KEY:
+        return not IS_PRODUCTION
+    return hmac.compare_digest(str(headers.get("x-uc-key") or ""), ENGINE_KEY)
 
 # A closed set of messages. An open error string puts raw upstream text in front
 # of a user, which is the defect still open as 06 row 13. See 04 entry 15.
@@ -24,6 +43,7 @@ ERRORS = {
     "bad_format":     "That file type is not supported. Use text, a Word document, PNG or JPG.",
     "layer_b_failed": "The rewrite could not be completed. Nothing was charged. Try again.",
     "engine_error":   "Something went wrong with that file. Nothing was charged.",
+    "unauthorised":   "That request was not authorised.",
 }
 
 _engine_module = None

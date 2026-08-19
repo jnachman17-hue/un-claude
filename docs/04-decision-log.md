@@ -983,3 +983,141 @@ must not call it one.** This is the sourced version of the working position in
 every major hosted AI provider except Grok and Midjourney marks its generated
 files, they have converged on C2PA, and **that standard is removable by design.**
 Full table in `apps/web/engine/ENGINE.md` section 2.
+
+---
+
+## 19 August 2026, session 5. The landing page session
+
+### 36. The product removes AI marks generally. It is marketed Claude forward
+
+**Ruling.** Jon, correcting the assistant's framing.
+
+**The capability is general.** The tool sanitises AI produced content from any
+model, across all three layers: invisible characters in text, metadata in files,
+and statistical marks in word placement. It is not built to remove one company's
+marks.
+
+**The marketing is Claude forward, deliberately.** The product exists because of
+the media attention around Anthropic's August 2026 announcement, it is called
+un-claude, and the headline will be about Claude. **Every other major lab signed
+the EU code of practice and is expected to follow, so all of them are named on the
+site, less prominently.**
+
+**Jon's framing:** built intentionally for Claude sanitation, serves all models.
+
+**What this corrects.** The assistant treated "the name promises Claude and layer A
+does not touch Claude" as the central problem of the session. It is not. The
+product's capability was never Claude specific, and the tension only existed
+because the assistant had assumed it was.
+
+### 37. What the site may claim, refining entry 35
+
+**Ruling.** Jon, narrowing a rule the assistant had drawn too wide.
+
+| May say | May not say |
+|---|---|
+| **Layer A removes watermarks.** Invisible character marking is a real watermarking technique and removal is provable | **That layer A removes Claude's watermark.** Anthropic adds no hidden characters |
+| **Word documents.** In scope | **PDFs.** Not accepted in version one, so nothing is claimed |
+| **We remove it**, in the framed way below | An explicitly false claim of any kind |
+
+**On layer B, Jon's own framing of how it is sold honestly:** explain how it works,
+that it is not merely an AI rewrite, that it holds verbatim runs to three words,
+that it varies high entropy words such as adjectives rather than facts because
+those are where the key mechanism can sit, **and show receipts at the end for how
+different the text is.**
+
+**Marketing is deliberately enticing and may be intentionally ambiguous. It stops
+short of explicitly false claims and stays in line with the facts. Final wording
+authority is Jon's, on every sentence.**
+
+### 38. The per response "nobody can verify this" note is dropped from the interface
+
+**Ruling.** Jon, overturning the assistant's reading of entry 23.
+
+**Reasoning, his:** it is unneeded on every response, and **it will be untrue in
+the near future** when Anthropic ships the detection API confirmed on 12 August
+2026.
+
+**What survives.** The engine still returns `verified: false` in its payload. The
+limits of layer B are explained properly, once and precisely, on the capability
+page in entry 40 and in the technical deep dive. **What changes is that it stops
+being a repeated disclaimer stapled to every result.**
+
+### 39. One work box, not a chooser. The tool routes itself
+
+**Working position, Jon, stated as a strong preference and open to discussion.**
+
+**One box.** Paste text or upload a file into the same place. **The tool runs
+whatever applies on its own:** layer A and B for text, all three for a file. The
+user never picks a layer and never sees the three layer split as a choice they
+have to make.
+
+**Consequence.** The three layer table is an explanation on the page, not a
+control in the interface.
+
+### 40. Four pages at launch
+
+**Ruling.** Jon.
+
+| Page | Content | Written by |
+|---|---|---|
+| **Landing** | The tool, results, marquee, how it works in brief | Assistant |
+| **Technical deep dive** | How all three layers work at a real technical level, with simple visual animations breaking it down for non technical readers | Assistant |
+| **Capabilities, precise** | Legal register. Explicitly and precisely what the tool can and cannot do | Assistant |
+| **Mission** | Why the product exists | **Jon, entirely** |
+
+**`06` row 22 is closed by this.** It asked whether a how it works page and a
+mission page were in scope. Both are, and a third has been added.
+
+**`06` row 28 comes into scope with them.** The surviving wording receipt is how
+layer B shows a tangible result, per entry 37.
+
+### 41. Layout is reopened. Publication strip stays single
+
+**Ruling.** Jon.
+
+**Entry 33's "tool immediately usable beside it" is not ratified as a side by side
+layout** and is open for discussion. What is fixed from entry 33 is light, serious,
+some visuals, and the tool usable above the fold.
+
+**Requirements he added:** beautiful, intuitive, user friendly, clear to
+understand and use, professional, with animations and visual graphics or icons so
+it is not all text. **Simple intuitive interface showing what is scanned for on
+every pass, what was found, and what was removed**, across whichever layers apply
+to what was submitted.
+
+**One logo strip only, the publications.** `06` row 32 closed in favour of the
+working position.
+
+**The marquee caption is Jon's to write.** He rejected the assistant's amendment.
+**His reasoning, and it is the correct one: the whole point of a watermark is that
+it is invisible,** so "without telling you" is not the overreach the assistant
+called it.
+
+### 42. Hero box arrives pre-filled with a live sample
+
+**Working position. Jon likes it and wants to discuss further.** The box on arrival
+holds a short sample that has already been scanned, with the marks lit up in place,
+so the product demonstrates itself before the visitor does anything.
+
+### 43. The paywall blurs the result, not the scan
+
+**Working position. Jon's idea, and he likes it.** When free credits run out, the
+scan still appears to complete, **the results and the sanitised output are blurred**,
+and the visitor is taken to a paywall to buy credits and reveal them.
+
+**Jon's revenue position, which is broader than the assistant assumed:** layers A
+and metadata are to be limited and monetised too, not only layer B. **They cost
+almost nothing to run, so the margin on them is the highest in the product.**
+
+**Open underneath this: how a free allowance is tracked so it cannot be refilled
+by opening a new tab.** `06` row 37.
+
+### 44. Extreme time pressure is a standing condition of this session
+
+**Ruling.** Jon. **The media attention is live now and the site has to be up as
+soon as possible.** This is stated as massively important and applies to every
+decision in the session.
+
+**His limit on it, stated in the same breath and not to be traded away: no cutting
+corners, no sloppiness, no laziness.**
