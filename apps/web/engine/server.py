@@ -712,7 +712,14 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                 try:
                     from uc_chunk import TruncatedRewrite, rewrite_long
 
-                    def _one(chunk: str):
+                    base_temp = float(
+                        os.environ.get("WATERMARKS_REWRITE_TEMPERATURE", "1.0"))
+
+                    def _one(chunk: str, attempt: int = 0, missing=None):
+                        # Cool by 0.2 per retry, floor 0.2. A creative first pass,
+                        # then progressively closer to the source until the facts
+                        # survive.
+                        temp = max(0.2, base_temp - 0.2 * attempt)
                         return layer_b_rewrite(
                         chunk,
                         backend=os.environ.get(
@@ -720,13 +727,13 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                         model=os.environ.get("WATERMARKS_REWRITE_MODEL"),
                         base_url=os.environ.get("WATERMARKS_REWRITE_BASE_URL"),
                         api_key=os.environ.get("WATERMARKS_REWRITE_API_KEY"),
-                        strength="unclaude",
+                        strength=("unclaude_retry:" + ", ".join(missing))
+                        if missing else "unclaude",
                         lang="French",
                         original_lang="English",
                         timeout=float(os.environ.get("WATERMARKS_REWRITE_TIMEOUT", "45")),
                         layer_a_after=False,   # the Layer A pass below does this
-                        temperature=float(
-                            os.environ.get("WATERMARKS_REWRITE_TEMPERATURE", "1.0")),
+                        temperature=temp,
                         candidates=1,
                         allow_remote=True,
                         reasoning_effort=None,

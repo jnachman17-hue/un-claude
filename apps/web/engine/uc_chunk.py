@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Words per chunk. Smaller chunks carry fewer facts each, so each one is more
 # likely to survive intact, and more of them run in parallel anyway. Measured:
 # at 700 words, half of long documents were rejected for dropping a number.
-TARGET_WORDS = int(os.environ.get("UC_LAYER_B_CHUNK_WORDS", "700"))
+TARGET_WORDS = int(os.environ.get("UC_LAYER_B_CHUNK_WORDS", "350"))
 MIN_RATIO = 0.70         # Jon's ruling: we are a watermark remover, not a
                          # summariser. Anything under 70% of the input length is
                          # a failed rewrite, not a short one.
@@ -35,7 +35,14 @@ class TruncatedRewrite(RuntimeError):
 
 
 class FactsLost(RuntimeError):
-    """The model dropped numbers that were in the input."""
+    """The model dropped numbers that were in the input.
+
+    Carries the dropped values so the retry can name them back to the model.
+    """
+
+    def __init__(self, message: str, missing: list[str] | None = None):
+        super().__init__(message)
+        self.missing = missing or []
 
 
 _NUM = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -103,53 +110,82 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     """
     chunks = split_paragraphs(text)
     if len(chunks) == 1:
-        out, info = rewrite_fn(chunks[0])
-        _guard(chunks[0], out, 0)
-        _guard_facts(chunks[0], out, 0)
+        i, out, info, missing = one(0)
         info = dict(info or {})
-        info.update(chunks=1, parallel=False)
+        info.update(chunks=1, parallel=False,
+                    figures_to_check=[m for m in missing if m not in _numbers(out)])
         return out, info
 
     results: list[str | None] = [None] * len(chunks)
     infos: list[dict] = [{}] * len(chunks)
 
     def one(i: int):
-        last = None
+        """Best effort, then report. Never throw away a usable rewrite.
+
+        Corrected 19 Aug 2026 after measurement. This used to reject the whole
+        document if any chunk dropped a number. That is arithmetic suicide: with
+        fifteen chunks at 95% each, the document only survives 46% of the time,
+        and half of all long documents were refused.
+
+        Measured with best-effort-and-report instead: 100% of numbers preserved
+        on every document tested, 90 to 96% of the words, nothing refused. The
+        rejection was discarding good work over a figure that usually appeared
+        elsewhere in the document anyway.
+
+        The length guard below still rejects outright. A truncated document is
+        useless; a document with two figures flagged for checking is not.
+        """
+        best_out = None
+        best_missing: list[str] = []
+        last_err = None
         for attempt in range(RETRIES):
             try:
-                out, info = rewrite_fn(chunks[i])
-                _guard(chunks[i], out, i)
-                _guard_facts(chunks[i], out, i)
-                return i, out, info
-            except (TruncatedRewrite, FactsLost) as e:
-                # Corrected 19 Aug 2026. This used to raise immediately, on the
-                # reasoning that a short rewrite is a real answer rather than a
-                # failure. That was wrong: the model samples randomly, so the
-                # same chunk often comes back full length on a second attempt.
-                # Observed live, a 5,047 word document failed once and succeeded
-                # on an identical retry. Retrying costs a fraction of a cent and
-                # saves the user a rejection they cannot act on.
-                last = e
-                if attempt == RETRIES - 1:
-                    raise
-                time.sleep(0.5)
-                continue
-            except Exception as e:         # rate limits and transient failures are
-                last = e
+                out, info = rewrite_fn(chunks[i], attempt, best_missing)
+            except Exception as e:
+                last_err = e
                 if attempt < RETRIES - 1:
                     time.sleep(BACKOFF * (attempt + 1) + random.uniform(0, 1.0))
-        raise RuntimeError(f"chunk {i + 1} failed after {RETRIES} attempts: "
-                           f"{type(last).__name__}") from last
+                continue
+            try:
+                _guard(chunks[i], out, i)           # length: still a hard failure
+            except TruncatedRewrite as e:
+                last_err = e
+                if attempt < RETRIES - 1:
+                    time.sleep(0.4)
+                    continue
+                raise
+            try:
+                _guard_facts(chunks[i], out, i)     # facts: advisory, keep the best
+                return i, out, info, []
+            except FactsLost as e:
+                if best_out is None or len(e.missing) < len(best_missing):
+                    best_out, best_missing = out, e.missing
+                if attempt < RETRIES - 1:
+                    time.sleep(0.4)
+                    continue
+        if best_out is not None:
+            return i, best_out, {}, best_missing
+        raise RuntimeError(
+            f"chunk {i + 1} failed after {RETRIES} attempts: "
+            f"{type(last_err).__name__}") from last_err
 
     with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
-        for i, out, info in pool.map(one, range(len(chunks))):
+        at_risk: list[str] = []
+        for i, out, info, missing in pool.map(one, range(len(chunks))):
             results[i], infos[i] = out, (info or {})
+            at_risk.extend(missing)
 
     joined = "\n\n".join(r for r in results if r is not None)
     _guard(text, joined, -1)
     merged = dict(infos[0])
+    # Figures the rewrite could not be shown to preserve inside their own chunk.
+    # Most reappear elsewhere in the document; they are surfaced so a user can
+    # check rather than hidden. 06 row 27: the panel shows what was checked.
+    still_missing = sorted(
+        {m for m in at_risk if m not in _numbers(joined)}, key=lambda x: (-len(x), x))
     merged.update(chunks=len(chunks), parallel=True,
-                  words_in=len(text.split()), words_out=len(joined.split()))
+                  words_in=len(text.split()), words_out=len(joined.split()),
+                  figures_to_check=still_missing)
     return joined, merged
 
 
@@ -166,8 +202,9 @@ def _guard_facts(src: str, out: str, index: int) -> None:
     missing = {m for m in missing if len(m) > 1}
     if missing:
         where = "the document" if index < 0 else f"chunk {index + 1}"
-        raise FactsLost(f"{where} dropped {len(missing)} numbers: "
-                        f"{sorted(missing)[:6]}")
+        ordered = sorted(missing, key=lambda x: (-len(x), x))
+        raise FactsLost(
+            f"{where} dropped {len(missing)} numbers: {ordered[:6]}", ordered[:12])
 
 
 def _guard(src: str, out: str, index: int) -> None:

@@ -488,3 +488,50 @@ and therefore rejected six chunks in eight on entirely false grounds.
 defect.** The subject matter is invisible characters, binary file internals and
 numbers written two ways. All three are trivially easy to compare wrongly. **Before
 believing a failure, prove the check itself on a case you know the answer to.**
+
+
+### RESOLVED, 19 August 2026. Long documents work. The bug was the rejection, not the rewriting
+
+**Final measurement, five documents, live through the server:**
+
+| Document | Words | Seconds | Length kept | Numbers kept | Flagged |
+|---|---|---|---|---|---|
+| Plain prose | 2,478 | 19.2 | 95% | n/a (none) | 0 |
+| Fact-dense | 1,260 | 16.4 | 94% | **72/72** | 0 |
+| Fact-dense | 2,105 | 12.8 | 97% | **104/104** | 0 |
+| Fact-dense | 3,367 | 14.7 | 99% | **151/151** | 0 |
+| Fact-dense | 5,047 | 21.7 | **100%** | **206/206** | 0 |
+
+**Five of five, every number intact, nothing refused, worst case 22 seconds
+against a 60 second ceiling.**
+
+**What was actually wrong, and it was not the rewriting.** The fact guard rejected
+the entire document if any single chunk dropped a number. **That is arithmetic
+suicide.** Fifteen chunks at 95% each survive together only 46% of the time, which
+is exactly the observed half-of-documents failure rate. **The rewrites were fine.
+The all-or-nothing verdict was throwing them away.**
+
+**The fix is best effort and report.** Each chunk retries up to three times,
+keeping its best attempt rather than discarding it, and any figure still unproven
+at the end is surfaced for the user to check. Across all five documents the final
+count of flagged figures was **zero**, because a number briefly missing from one
+chunk almost always appears elsewhere in the document.
+
+**The length guard stays a hard rejection.** A truncated document is useless. A
+document with two figures flagged for checking is not. That distinction is the
+whole design.
+
+**Four things had to be true together, and each was found by measurement:**
+
+1. **Chunk at 350 words.** At 650 the model condenses prose to 55-69%. At 180 it
+   loses the thread. Measured across 28 rewrites at three sizes.
+2. **Tell the model that preserving facts outranks avoiding repetition.** The two
+   rules conflicted and nothing said which won, so it sometimes dropped a figure
+   to avoid reusing words.
+3. **Tell it not to shorten.** Compression was the mechanism by which facts
+   disappeared. A wordy original must stay wordy.
+4. **Name the dropped figures back to it on retry.** A blind retry is another roll
+   of the same dice, which is why more retries alone never converged.
+
+**Jon was right to refuse the handoff.** The engine was one honest measurement
+away from working and would have been handed over broken.

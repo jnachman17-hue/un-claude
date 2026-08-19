@@ -42,17 +42,48 @@ from text_unicode import clean_text
 DEFAULT_MARKLLM_MODEL = "facebook/opt-1.3b"
 
 PROMPTS = {
+    "unclaude_retry": (
+        "Rewrite the text so that almost none of the original phrasing survives.\n\n"
+        "YOUR PREVIOUS ATTEMPT DROPPED THESE AND THAT IS THE ONE UNFORGIVABLE "
+        "MISTAKE: {MISSING}\n"
+        "Every one of them must appear in your new version, exactly as written in "
+        "the original. Check your version against this list before you finish.\n\n"
+        "RULES\n"
+        "1. Every fact must survive character-for-character: numbers, amounts, "
+        "percentages, dates, and the names of people, companies and places. THIS "
+        "OUTRANKS EVERY OTHER RULE. If you cannot rewrite around a fact without "
+        "losing it, keep more of the original wording.\n"
+        "2. Your version must be about as long as the original. Do not condense or "
+        "summarise. Losing length is how facts get lost.\n"
+        "3. Subject to rules 1 and 2, avoid reusing runs of more than three "
+        "consecutive words from the original.\n"
+        "4. Keep every claim. Add nothing, remove nothing.\n"
+        "5. Copy numbers and dates in exactly the form the original used, in both "
+        "directions. Words stay words, digits stay digits.\n"
+        "6. Output only the rewritten text, with no preamble or commentary."
+        "\n\n---\n{TEXT}"
+    ),
     "unclaude": (
         "Rewrite the text so that almost none of the original phrasing survives.\n\n"
         "RULES\n"
         "1. Every fact must survive character-for-character: numbers, amounts, "
         "percentages, dates, and the names of people, companies and places. Copy them "
-        "exactly. Never change, drop, round, or approximate one.\n"
-        "2. Apart from those facts themselves, do not reuse any run of more than three "
+        "exactly. Never change, drop, round, or approximate one. "
+        "THIS RULE OUTRANKS EVERY OTHER RULE. If you cannot rewrite the words around "
+        "a fact without losing the fact, then keep more of the original wording and "
+        "move on. Dropping a number to avoid repeating words is always the wrong "
+        "trade. Before you finish, re-read your version and check that every number "
+        "and every name from the original is present.\n"
+        "2. Subject to rule 1, do not reuse any run of more than three "
         "consecutive words from the original. This includes the words immediately "
         "around each fact. Rewrite the framing of every fact, not just the sentences "
         "between them.\n"
         "3. Keep every claim exactly as asserted. Add nothing and remove nothing.\n"
+        "3a. YOUR VERSION MUST BE ABOUT AS LONG AS THE ORIGINAL, within roughly one "
+        "tenth. Do not condense, summarise, tighten, or trim. If the original is "
+        "wordy, your version stays wordy. If it labours a point across three "
+        "sentences, yours labours it across three sentences too. Shortening is not "
+        "an improvement here and it is the most common way facts get lost.\n"
         "4. Vary sentence length on purpose. Mix short sentences with long ones. Do not "
         "let every sentence come out a similar length.\n"
         "5. Copy every number and date in EXACTLY the form the original used, in both "
@@ -227,6 +258,9 @@ def _per_candidate_detections(
 def build_prompt(strength: str, text: str, *, lang: str, original_lang: str) -> str:
     if strength == "unclaude":
         return PROMPTS["unclaude"].format(TEXT=text)
+    if strength.startswith("unclaude_retry:"):
+        missing = strength.split(":", 1)[1] or "(unknown)"
+        return PROMPTS["unclaude_retry"].format(TEXT=text, MISSING=missing)
     if strength == "paraphrase":
         return PROMPTS["paraphrase"].format(TEXT=text)
     if strength == "humanize":
