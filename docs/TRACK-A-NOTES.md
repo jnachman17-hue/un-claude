@@ -358,3 +358,41 @@ a settled document was quietly inverted rather than surfaced as a conflict.
   length, so one pass on 5,000 words is materially weaker than on 500.
 - **A hosted open-weight endpoint could apply its own watermark and we would never
   know.** Excluding Anthropic and Google removes the two documented cases only.
+
+### FINDING, 19 August 2026. SEVERE. Layer B silently truncates long documents
+
+**Tested against the live site at four lengths. The engine returns a fraction of
+the document and reports success.**
+
+| Document | Words in | Words out | Kept | Numbers kept | Seconds |
+|---|---|---|---|---|---|
+| 1,260 words | 1,260 | 1,170 | 93% | 31/72 | 12.6 |
+| 2,105 words | 2,105 | 1,860 | 88% | 38/104 | 20.8 |
+| **3,367 words** | 3,367 | **348** | **10%** | 35/151 | 5.5 |
+| **5,047 words** | 5,047 | **623** | **12%** | 56/206 | 8.0 |
+
+**A user pasting a 3,000 word document gets back a tenth of it, with `"ok": true`
+and no warning.** That is silent data loss reported as success, and it is the
+worst failure mode this product could have.
+
+**Cause: the model's output length limit.** It stops generating and the engine
+treats the short answer as a complete rewrite. Nothing checks that the output is
+the same size as the input.
+
+**This directly violates a standing ruling.** `04` entry 22 preserves entry 16's
+mechanic: **overflow rejects, never truncates.** "Silently rewriting the first N
+words hands someone a document that stops mid sentence, which reads as a broken
+product rather than as a limit." That rule was written for the humanizer, it
+survived the rescope, and this breaks it.
+
+**The number-loss figures in the table are a consequence, not a separate problem.**
+31 of 72 numbers survive because two thirds of the document is missing.
+
+**What the test did NOT find, and this is worth stating.** The 60 second Vercel
+ceiling was never reached. The worst case was 20.8 seconds. **Time is not the
+constraint. Output length is.** The 60 second limit only becomes relevant once
+chunking makes the engine actually process the whole document.
+
+**Also confirmed working:** layer A on its own is unaffected at every length,
+returning in under a second and preserving every number, because it removes
+characters rather than regenerating text.
