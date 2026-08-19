@@ -16,20 +16,33 @@ import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
 type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
 
 /**
- * Brand colours, initials and weights so the column reads as brands rather than
- * as a list of words in one typeface. Jon's objection, and it was fair.
+ * THE LOGO CARRIES THE BRAND. THE NAME IS JUST THE NAME.
  *
- * REAL LOGOS ARE THE PROPER FIX and he has offered to supply them. Drop files
- * into apps/web/public/images/vendors/ named anthropic.svg, google.svg and so on
- * and the initial tile below becomes an <Image>. Their actual typefaces are not
- * worth chasing: it would mean licensing and shipping eight commercial font
- * families to set eight words.
+ * An earlier version set each vendor's name in its brand colour. Jon's own
+ * research is what ruled that out, and it was right: the correct typefaces are
+ * Styrene, Google Sans, Optimistic Display, OpenAI Sans and Adobe Clean, and four
+ * of those five are licensed and cannot be installed. Putting Anthropic's hex on
+ * a name set in somebody else's typeface is an approximation wearing a precise
+ * number, which is the exact thing his notes warn against.
+ *
+ * His research reaches the same conclusion four separate times: for Meta,
+ * Midjourney, Stability and xAI it says to use the vector wordmark for fidelity.
+ * That artwork is now beside every name, supplied by him, so the brand is
+ * represented by the brand's own asset rather than by a guess at it.
+ *
+ * The names are therefore set like every other word on this page. That is not a
+ * compromise, it is the honest version.
+ *
+ * `color` survives on each row because the fallback tile still uses it if artwork
+ * is ever missing. Two values worth keeping accurate if it is ever shown: Gemini
+ * gets no single hex, because its identity is a gradient, and Stability's purple
+ * is #8300FF sampled from the supplied asset rather than the #6B21A8 circulating
+ * online that Jon correctly flagged as unverified.
  */
 interface Vendor {
   name: string;
   color: string;
   initial: string;
-  weight: string;
   files: Mark;
   text: Mark;
   note: string;
@@ -38,14 +51,14 @@ interface Vendor {
 }
 
 const VENDORS: Vendor[] = [
-  { name: 'Anthropic', initial: 'A', weight: 'font-semibold tracking-[-0.02em]', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents', logo: { src: '/images/vendors/anthropic.png', mono: true } },
-  { name: 'Google', initial: 'G', weight: 'font-medium tracking-[-0.005em]', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025', logo: { src: '/images/vendors/google.png' } },
-  { name: 'OpenAI', initial: 'O', weight: 'font-semibold tracking-[-0.025em]', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code', logo: { src: '/images/vendors/openai.svg', mono: true } },
-  { name: 'Adobe Firefly', initial: 'Ad', weight: 'font-bold tracking-[-0.02em]', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes', logo: { src: '/images/vendors/adobe.png' } },
-  { name: 'Stability, Flux', initial: 'S', weight: 'font-semibold tracking-[-0.015em]', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not', logo: { src: '/images/vendors/stability.png' } },
-  { name: 'Meta', initial: 'M', weight: 'font-bold tracking-[-0.03em]', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented', logo: { src: '/images/vendors/meta.png' } },
-  { name: 'Midjourney', initial: 'MJ', weight: 'font-medium tracking-[0.02em]', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking', logo: { src: '/images/vendors/midjourney.svg', mono: true } },
-  { name: 'xAI Grok', initial: 'X', weight: 'font-semibold tracking-[-0.01em]', color: '#1A1A1A', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
+  { name: 'Anthropic', initial: 'A', color: '#141413', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents', logo: { src: '/images/vendors/anthropic.png', mono: true } },
+  { name: 'Google', initial: 'G', color: '#1F1F1F', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025', logo: { src: '/images/vendors/google.png' } },
+  { name: 'OpenAI', initial: 'O', color: '#000000', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code', logo: { src: '/images/vendors/openai.svg', mono: true } },
+  { name: 'Adobe Firefly', initial: 'Ad', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes', logo: { src: '/images/vendors/adobe.png' } },
+  { name: 'Stability, Flux', initial: 'S', color: '#8300FF', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not', logo: { src: '/images/vendors/stability.png' } },
+  { name: 'Meta', initial: 'M', color: '#1C2B33', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented', logo: { src: '/images/vendors/meta.png' } },
+  { name: 'Midjourney', initial: 'MJ', color: '#000000', files: 'no', text: 'na', note: 'No provenance marking', logo: { src: '/images/vendors/midjourney.svg', mono: true } },
+  { name: 'xAI Grok', initial: 'X', color: '#000000', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments', logo: { src: '/images/vendors/xai.png', mono: true } },
 ];
 
 const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: string }> = {
@@ -154,10 +167,7 @@ export function CoverageSection() {
                     </span>
 
                     <div className={'min-w-0'}>
-                    <span
-                      style={{ color: vendor.color }}
-                      className={`text-[14px] dark:brightness-[1.7] ${vendor.weight}`}
-                    >
+                    <span className={'text-foreground text-[14px] font-medium tracking-[-0.012em]'}>
                       {vendor.name}
                     </span>
                     <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>

@@ -12,87 +12,77 @@ import Link from 'next/link';
  * un-claude. The caption says what the strip actually is, and it links through to
  * the mission page, which is Jon's to write.
  *
- * BRAND COLOURS AND WEIGHTS, NOT LOGO FILES.
+ * REAL ARTWORK, all nine, supplied by Jon. Which is the right route: 06 row 34
+ * requires his approval before any logo file is fetched, and a masthead he took
+ * from a press page is on far safer ground than one scraped from a search result.
  *
- * Jon's objection is right: nine names in one typeface do not read as nine
- * mastheads. Each entry now carries its own colour, weight, tracking and casing,
- * which is as close as type alone gets.
- *
- * The real fix is the actual artwork, and Jon has offered to supply it. That is
- * the right route: 06 row 34 requires his approval before any logo file is
- * fetched, CLAUDE.md section 5 requires it before anything is downloaded, and a
- * masthead taken from a press page is on far safer ground than one scraped from a
- * search result. Drop PNG or SVG files into apps/web/public/images/outlets/ named
- * cnn.svg, npr.svg and so on, and they slot straight in here.
+ * Three of them carry their own background, because that is how those brands
+ * present: CNN's red square, The Register's red band and Forbes' dark band. They
+ * get a corner radius and no colour treatment. The rest are art on transparent
+ * and are inverted for dark mode, with a hue rotation where the mark also carries
+ * a brand colour so that Axios blue does not come back orange.
  */
 interface Article {
   outlet: string;
-  color: string;
-  style: string;
   href: string;
-  /** Real artwork, when we have it. Falls back to the styled wordmark when not. */
-  logo?: { src: string; width: number; height: number; badge?: boolean };
+  logo: {
+    src: string;
+    /** Carries its own background, so it gets a corner radius and no inversion. */
+    plate?: boolean;
+    /** Dark art on transparent. Needs inverting to stay legible in dark mode. */
+    mono?: boolean;
+    /** Dark art plus a brand colour. Inverting alone would flip the hue too. */
+    mixed?: boolean;
+    /** Square-ish marks need a touch more height to match a wordmark's weight. */
+    tall?: boolean;
+  };
 }
 
 const ARTICLES: Article[] = [
   {
     outlet: 'CNN',
-    color: '#CC0000',
-    style: 'font-black tracking-[-0.05em]',
     href: 'https://www.cnn.com/2026/08/11/business/video/invisible-watermarks-coming-claudes-ai-written-text-digvid-vrtc',
-    logo: { src: '/images/outlets/cnn.png', width: 512, height: 512, badge: true },
+    logo: { src: '/images/outlets/cnn.png', plate: true, tall: true },
   },
   {
     outlet: 'NPR',
-    color: '#235F9E',
-    style: 'font-bold tracking-[0.02em]',
     href: 'https://www.npr.org/2026/08/17/nx-s1-5928211/anthropics-new-invisible-watermark-marks-content-generated-by-ai-chatbot-claude',
+    logo: { src: '/images/outlets/npr.png', plate: true },
   },
   {
     outlet: 'ABC News',
-    color: '#0A0A0A',
-    style: 'font-semibold tracking-[-0.03em]',
     href: 'https://www.youtube.com/watch?v=R01_-MkxFws',
+    logo: { src: '/images/outlets/abc.png', mono: true },
   },
   {
     outlet: 'Forbes',
-    color: '#0A0A0A',
-    style: 'font-bold tracking-[-0.045em]',
     href: 'https://www.forbes.com/sites/anishasircar/2026/08/13/claude-will-now-leave-a-watermark-on-everything-it-writes-what-does-that-mean/',
+    logo: { src: '/images/outlets/forbes.svg', plate: true },
   },
   {
-    outlet: 'FORTUNE',
-    color: '#0A0A0A',
-    style: 'font-semibold tracking-[0.06em] text-[0.85em]',
+    outlet: 'Fortune',
     href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/',
-    logo: { src: '/images/outlets/fortune.png', width: 1030, height: 193 },
+    logo: { src: '/images/outlets/fortune.png', mono: true },
   },
   {
     outlet: 'Axios',
-    color: '#1858C8',
-    style: 'font-bold tracking-[-0.035em]',
     href: 'https://www.axios.com/2026/08/12/anthropic-claude-watermarks-ai-detection',
-    logo: { src: '/images/outlets/axios.png', width: 2560, height: 649 },
+    logo: { src: '/images/outlets/axios.png', mixed: true },
   },
   {
     outlet: 'TechCrunch',
-    color: '#149A4B',
-    style: 'font-bold tracking-[-0.04em]',
     href: 'https://techcrunch.com/2026/08/11/anthropic-says-it-will-watermark-text-generated-by-its-ai-models/',
-    logo: { src: '/images/outlets/techcrunch.png', width: 246, height: 50 },
+    logo: { src: '/images/outlets/techcrunch.png', mixed: true },
   },
   {
     outlet: 'CNET',
-    color: '#E21B22',
-    style: 'font-black tracking-[-0.02em]',
     href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/',
-    logo: { src: '/images/outlets/cnet.png', width: 522, height: 383 },
+    logo: { src: '/images/outlets/cnet.png', mono: true },
   },
   {
     outlet: 'The Register',
-    color: '#FF0000',
-    style: 'font-semibold tracking-[-0.035em]',
     href: 'https://www.theregister.com/ai-and-ml/2026/08/11/anthropic-pledges-to-embed-watermarks-to-help-discern-ai-slop-in-sop-to-eu/5285792',
+    logo: { src: '/images/outlets/register.png', plate: true },
   },
 ];
 
@@ -136,39 +126,28 @@ export function CoverageMarquee() {
                   rel={'noopener noreferrer'}
                   tabIndex={copy === 1 ? -1 : undefined}
                   aria-label={`${article.outlet} on the AI watermark story`}
-                  style={{ '--outlet': article.color } as React.CSSProperties}
                   className={
-                    'group/link inline-flex shrink-0 items-center px-9 opacity-60 transition-opacity duration-300 hover:opacity-100 sm:px-12'
+                    'inline-flex shrink-0 items-center px-9 opacity-65 transition-opacity duration-300 hover:opacity-100 sm:px-12'
                   }
                 >
-                  {article.logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={article.logo.src}
-                      alt={article.outlet}
-                      width={article.logo.width}
-                      height={article.logo.height}
-                      loading={'lazy'}
-                      decoding={'async'}
-                      /* Inverting lightness while rotating hue keeps a dark
-                         wordmark legible on a dark page without turning a red or
-                         green mark into its opposite. */
-                      className={[
-                        'w-auto object-contain dark:invert dark:hue-rotate-180',
-                        article.logo.badge ? 'h-[30px] rounded-[6px]' : 'h-[26px]',
-                      ].join(' ')}
-                    />
-                  ) : (
-                    <span
-                      className={[
-                        'text-[26px] whitespace-nowrap text-[color:var(--outlet)] sm:text-[30px]',
-                        'dark:brightness-[1.7]',
-                        article.style,
-                      ].join(' ')}
-                    >
-                      {article.outlet}
-                    </span>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={article.logo.src}
+                    alt={article.outlet}
+                    loading={'lazy'}
+                    decoding={'async'}
+                    className={[
+                      'w-auto object-contain',
+                      article.logo.tall ? 'h-[32px]' : 'h-[26px]',
+                      article.logo.plate ? 'rounded-[5px]' : '',
+                      // A plate brings its own background and needs no help.
+                      // Dark art on transparent would vanish on a dark page, so it
+                      // is inverted; where the mark also carries a brand colour the
+                      // hue is rotated back so blue does not become orange.
+                      article.logo.mono ? 'dark:invert' : '',
+                      article.logo.mixed ? 'dark:invert dark:hue-rotate-180' : '',
+                    ].join(' ')}
+                  />
                 </a>
               ))}
             </div>
