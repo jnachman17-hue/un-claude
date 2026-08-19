@@ -25,7 +25,7 @@ type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
  * worth chasing: it would mean licensing and shipping eight commercial font
  * families to set eight words.
  */
-const VENDORS: Array<{
+interface Vendor {
   name: string;
   color: string;
   initial: string;
@@ -33,14 +33,18 @@ const VENDORS: Array<{
   files: Mark;
   text: Mark;
   note: string;
-}> = [
-  { name: 'Anthropic', initial: 'A', weight: 'font-semibold tracking-[-0.02em]', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
-  { name: 'Google', initial: 'G', weight: 'font-medium tracking-[-0.005em]', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
-  { name: 'OpenAI', initial: 'O', weight: 'font-semibold tracking-[-0.025em]', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
-  { name: 'Adobe Firefly', initial: 'Ad', weight: 'font-bold tracking-[-0.02em]', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
-  { name: 'Stability, Flux', initial: 'S', weight: 'font-semibold tracking-[-0.015em]', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
-  { name: 'Meta', initial: 'M', weight: 'font-bold tracking-[-0.03em]', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
-  { name: 'Midjourney', initial: 'MJ', weight: 'font-medium tracking-[0.02em]', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking' },
+  /** Real artwork where we have it. `mono` marks need inverting in dark mode. */
+  logo?: { src: string; mono?: boolean };
+}
+
+const VENDORS: Vendor[] = [
+  { name: 'Anthropic', initial: 'A', weight: 'font-semibold tracking-[-0.02em]', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents', logo: { src: '/images/vendors/anthropic.png', mono: true } },
+  { name: 'Google', initial: 'G', weight: 'font-medium tracking-[-0.005em]', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025', logo: { src: '/images/vendors/google.png' } },
+  { name: 'OpenAI', initial: 'O', weight: 'font-semibold tracking-[-0.025em]', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code', logo: { src: '/images/vendors/openai.svg', mono: true } },
+  { name: 'Adobe Firefly', initial: 'Ad', weight: 'font-bold tracking-[-0.02em]', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes', logo: { src: '/images/vendors/adobe.png' } },
+  { name: 'Stability, Flux', initial: 'S', weight: 'font-semibold tracking-[-0.015em]', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not', logo: { src: '/images/vendors/stability.png' } },
+  { name: 'Meta', initial: 'M', weight: 'font-bold tracking-[-0.03em]', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented', logo: { src: '/images/vendors/meta.png' } },
+  { name: 'Midjourney', initial: 'MJ', weight: 'font-medium tracking-[0.02em]', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking', logo: { src: '/images/vendors/midjourney.svg', mono: true } },
   { name: 'xAI Grok', initial: 'X', weight: 'font-semibold tracking-[-0.01em]', color: '#1A1A1A', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
 ];
 
@@ -120,14 +124,33 @@ export function CoverageSection() {
                   }
                 >
                   <div className={'flex min-w-0 items-start gap-3'}>
+                    {/* A neutral tile behind every vendor, so a full colour mark
+                        and a black one carry the same weight down the column.
+                        xAI has no artwork here on purpose: the file supplied is
+                        clipped, and a cut off brand mark looks worse than a clean
+                        initial. */}
                     <span
-                      style={{ backgroundColor: vendor.color }}
                       aria-hidden
+                      style={vendor.logo ? undefined : { backgroundColor: vendor.color }}
                       className={
-                        'mt-[1px] grid size-[26px] shrink-0 place-items-center rounded-[7px] text-[11px] font-bold text-white'
+                        'bg-foreground/[0.045] mt-[1px] grid size-[28px] shrink-0 place-items-center overflow-hidden rounded-[8px]'
                       }
                     >
-                      {vendor.initial}
+                      {vendor.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={vendor.logo.src}
+                          alt={''}
+                          loading={'lazy'}
+                          decoding={'async'}
+                          className={[
+                            'size-[17px] object-contain',
+                            vendor.logo.mono ? 'dark:invert' : '',
+                          ].join(' ')}
+                        />
+                      ) : (
+                        <span className={'text-[11px] font-bold text-white'}>{vendor.initial}</span>
+                      )}
                     </span>
 
                     <div className={'min-w-0'}>
