@@ -1608,3 +1608,106 @@ words, tokens and model cost so pricing would not guess, and entry 60 rules that
 V1 pricing proceeds without them. **A future session must not read "row 48
 closed" and assume there is usage history to price V2 from.** There is a log
 with a short memory, and there is no ledger.
+
+### 62. [T1] Track 1 prices the product. It does not write what the product says
+
+**Ruling.** Jon, correcting this session directly. **"Your job here isn't to build
+the landing page, messaging, wording etc... It is to help me with pricing and get
+that set up."**
+
+**What prompted it, recorded because the mistake is worth not repeating.** This
+session read `03-pricing.md` and `anthropic-watermarking-context.md`, inferred
+from them what the live site must be claiming, and argued at length that a
+sentence needed removing. **It had never opened the landing page.** The inference
+was built on documents Jon describes as stale and partial.
+
+**Jon's position, which is the one that governs:** he is the sole authority on
+this project, the language on the site is precise, accurate, legal and not
+misleading, and **nothing is being charged for on a false claim.**
+
+**The general rule this sets, beyond one mistake.** `TRACK-RULES.md` already
+assigns landing-page copy to Track 2. **Reading another track's files to price
+correctly is right. Reasoning about what they contain without reading them is
+not.** `CLAUDE.md` section 4 says an assertion carries no weight without the
+artefact, and that applies to assertions about our own product.
+
+**`06` row 62 stays open** because it is a question about Anthropic's rollout that
+Track 1 needs answered for the refund policy, not a claim about our copy.
+
+### 63. [T1] All three layers are charged. The free allowance is generous and finite
+
+**Ruling.** Jon. **"We are going to charge for the sanitization of layer A,
+metadata, and Layer B."** And on the free tier: **"Invisible characters and file
+metadata can be generous free but not free forever. Those should still be
+charged."**
+
+**What this supersedes.** This session proposed giving layers A and metadata away
+without limit, on the reasoning that they call no model and would serve as the
+proof-of-work demonstration. **Overruled.** It also confirms and hardens `04`
+entry 43, where Jon first ruled that the cheap layers are monetised too.
+
+**What it changes in code, which is not this track's to change.** The live paywall
+in `_components/workbench/paywall.tsx` reads *"Scanning stays free and unlimited.
+Credits cover the rewrite, which is the part that costs us money to run."* **The
+second sentence stops being true under this ruling** and the file belongs to
+Track 3. Track 1 must ask rather than edit. `TRACK-RULES.md`.
+
+**Scanning is not sanitisation and is not affected.** It stays free and unlimited,
+per `04` entry 43 and the same paywall copy. **Recorded as this session's reading
+of the ruling rather than as something Jon said**, and flagged to him for
+confirmation.
+
+### 64. [T1] One credit buys 1,000 words. Packs first, subscription soon, no lifetime pass
+
+**Ruling.** Jon, four decisions in one breath.
+
+**The unit is a credit and one credit buys 1,000 words**, not the 100 this session
+proposed. **His reasoning is better than the one it overrules:** at 1,000 words a
+credit maps to a job. "This document costs 3 credits" is a sentence a person can
+check against the thing in front of them. At 100 words the same document costs 25
+credits, which is a number nobody can sanity-check.
+
+**The cost of it, stated so it is a known trade rather than a surprise:** jobs
+round up to a whole credit, so a 200 word paste and a 900 word paste both cost
+one. That is the small unfairness the 100 word unit existed to avoid. **Accepted
+deliberately**, and the pricing page has to say it plainly.
+
+**Packs of credits at launch. No subscription in the first release, and a
+subscription "asap" after it.** Jon pushed back on the argument that a
+subscription should wait for data and he was substantially right: the compute
+maths was already laid out for him and does not need more evidence. **What
+survives the pushback is narrower and he accepted it** — a pack price can be
+changed tomorrow with nobody affected, a subscription price cannot, so the
+subscription number is the one worth setting against a few weeks of real repeat
+purchases.
+
+**The consequence Track 1 owns from day one:** the ledger is built so a
+subscription is an additional way credits arrive, not a second system. **If that
+is designed in now it is a small change later. If it is not, it is a rebuild.**
+
+**The lifetime pass at $49.99 is deferred, not refused.** Jon's own note with the
+deferral: he is not much worried about somebody adversarially draining the
+system. **The disagreement is recorded rather than smoothed over**, because the
+argument that persuaded him was the commercial one — a lifetime pass caps the
+highest-intent buyers and makes the subscription he wants irrational — and not
+the abuse one.
+
+**Layer B requires an account.** Accepted from this session's recommendation. It
+is the only layer that calls a model, and an account is the only gate available
+short of a card on file.
+
+### 65. [T1] Stripe, and a real accountant when revenue is real
+
+**Ruling.** Jon, after being told plainly that Stripe does not handle sales tax.
+**Stripe Tax calculates and collects; registering with a tax authority and filing
+returns remain the seller's.** EU VAT on digital sales to consumers has no
+minimum threshold.
+
+**Decision: go with Stripe, accept the exposure knowingly at launch volumes, and
+engage an accountant if revenue becomes material.** A merchant of record such as
+Paddle would absorb the liability by becoming the legal seller, and was not
+chosen because its acceptable-use policy is stricter for this category than
+Stripe's. `06` row 61 holds the detail and the revisit trigger.
+
+**Nobody in this project is qualified to advise on tax and none of the above is
+advice.**
