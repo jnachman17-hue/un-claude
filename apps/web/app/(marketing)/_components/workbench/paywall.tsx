@@ -1,6 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+
 import { LockIcon } from 'lucide-react';
+
+import { paywallDismissed, paywallSignUpClicked } from '~/lib/analytics/events';
 
 /**
  * What a visitor sees once the free runs are gone.
@@ -12,6 +16,13 @@ import { LockIcon } from 'lucide-react';
  * Deliberately, NO rewrite is run to produce this screen. Blurring a real result
  * would mean paying for work nobody gets to see. The blur is a locked state, not
  * a hidden answer.
+ *
+ * "Get credits" IS A `Link` AND MUST STAY ONE. It was a plain anchor until
+ * 19 August 2026, which reloaded the whole page. PostHog stores nothing on the
+ * device, so the visitor's id lives in memory and a reload destroys it: the most
+ * important conversion step in the product arrived at sign-up as a stranger and
+ * could not be joined to anything before it. Measured, not guessed. 06 row 67 and
+ * 07, "Cookieless has an identity boundary".
  */
 export function Paywall({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -41,17 +52,21 @@ export function Paywall({ onDismiss }: { onDismiss: () => void }) {
           </p>
 
           <div className={'mt-1 flex flex-wrap items-center justify-center gap-2'}>
-            <a
+            <Link
               href={'/auth/sign-up'}
+              onClick={paywallSignUpClicked}
               className={
                 'bg-mark text-mark-foreground hover:bg-mark-strong rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-colors active:scale-[0.98]'
               }
             >
               Get credits
-            </a>
+            </Link>
             <button
               type={'button'}
-              onClick={onDismiss}
+              onClick={() => {
+                paywallDismissed();
+                onDismiss();
+              }}
               className={
                 'text-muted-foreground hover:text-foreground rounded-[9px] px-3 py-2 text-[13px] font-medium transition-colors'
               }

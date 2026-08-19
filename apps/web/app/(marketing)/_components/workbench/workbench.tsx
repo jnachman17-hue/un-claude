@@ -16,6 +16,7 @@ import { FREE_SANITISES, recordUse, remaining } from './free-uses';
 import { Paywall } from './paywall';
 import { ReceiptPanel } from './receipt-panel';
 import type { Receipt } from '~/lib/engine/receipt';
+import * as track from '~/lib/analytics/events';
 
 type Phase = 'scanning' | 'scanned' | 'cleaning' | 'cleaned' | 'error' | 'locked';
 
@@ -61,7 +62,7 @@ export function Workbench() {
   const textArea = useRef<HTMLTextAreaElement>(null);
   const inFlight = useRef<AbortController | null>(null);
 
-  const runScan = useCallback(async (next: Loaded) => {
+  const runScan = useCallback(async (next: Loaded, fromSample = false) => {
     // A counter comparing "is this still the newest call" would work, but an
     // AbortController cannot get out of step with itself: the request that was
     // cancelled is exactly the request that must not apply its result, and the
@@ -102,18 +103,40 @@ export function Workbench() {
 
     if (attempt.signal.aborted) return;
 
+    const kind: track.InputKind = next.name === 'paste.txt' ? 'text' : 'file';
+
     if (result?.ok) {
       setScan(result as ScanResult);
       setPhase('scanned');
+
+      const found = result as ScanResult;
+      const scanHits = found.report?.hits ?? [];
+      const scanReport = (found.report ?? {}) as Record<string, unknown>;
+
+      track.scanCompleted({
+        inputKind: kind,
+        name: next.name,
+        characters: found.report?.length ?? next.text.length,
+        marksFound: scanHits.reduce((total, hit) => total + hit.count, 0),
+        markKinds: [...new Set(scanHits.map((hit) => hit.kind))],
+        provenanceFound:
+          scanReport.has_c2pa === true ||
+          scanReport.has_ai_metadata === true ||
+          (Array.isArray(scanReport.findings) && scanReport.findings.length > 0),
+        producer: kind === 'file' ? detectProducer(scanReport) : null,
+        isSample: fromSample,
+      });
     } else {
       setMessage(result?.message ?? 'Something went wrong.');
       setPhase('error');
+
+      track.scanFailed({ inputKind: kind, name: next.name });
     }
   }, []);
 
   useEffect(() => {
     setLeft(remaining());
-    void runScan({ payload: textToBase64(SAMPLE_TEXT), name: 'paste.txt', text: SAMPLE_TEXT });
+    void runScan({ payload: textToBase64(SAMPLE_TEXT), name: 'paste.txt', text: SAMPLE_TEXT }, true);
   }, [runScan]);
 
   const scanText = () => {
@@ -126,10 +149,11 @@ export function Workbench() {
     void runScan({ payload: textToBase64(text), name: 'paste.txt', text });
   };
 
-  const takeFile = async (file: File | undefined) => {
+  const takeFile = async (file: File | undefined, method: 'picker' | 'drop' = 'picker') => {
     if (!file) return;
     setIsSample(false);
     setText('');
+    track.fileUploaded(file.name, file.size, method);
     const payload = await fileToBase64(file);
     void runScan({ payload, name: file.name, text: '' });
   };
@@ -143,15 +167,31 @@ export function Workbench() {
     // reason to spend a model call on it.
     const wantsRewrite = carriesProse;
 
+    const kind: track.InputKind = isFile ? 'file' : 'text';
+
     if (wantsRewrite && remaining() <= 0) {
       // Nothing is sent. Blurring a real result would mean paying for work the
       // visitor never sees.
       setPhase('locked');
+      track.paywallShown({ inputKind: kind, name: loaded.name });
       return;
     }
 
     setPhase('cleaning');
     setMessage(null);
+
+    // Counted from here rather than from the click, so the number is the wait
+    // the visitor actually sits through and not the paywall check in front of it.
+    const startedAt = performance.now();
+    const scanHits = scan?.report?.hits ?? [];
+    const marksFound = scanHits.reduce((total, hit) => total + hit.count, 0);
+
+    track.sanitiseStarted({
+      inputKind: kind,
+      name: loaded.name,
+      rewriteIncluded: wantsRewrite,
+      freeRewritesLeft: remaining(),
+    });
 
     const result = await fetch('/api/tool/clean', {
       method: 'POST',
@@ -183,9 +223,50 @@ export function Workbench() {
       }
 
       setPhase('cleaned');
+
+      // The same honest count the panel shows: the finished text is re-read for
+      // the exact characters the scan found, rather than trusting the engine's
+      // own removal figure, which reads zero whenever a rewrite replaced the
+      // prose wholesale. See the note on `stillPresent` below.
+      const finishedText = isFile ? '' : base64ToText(finished.cleaned);
+      const stillThere = finishedText
+        ? scanHits.reduce(
+            (total, hit) =>
+              total +
+              [...finishedText].filter(
+                (character) =>
+                  `U+${character.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}` ===
+                  hit.codepoint,
+              ).length,
+            0,
+          )
+        : 0;
+      const finishedReport = (finished.report ?? {}) as Record<string, unknown>;
+
+      track.sanitiseCompleted({
+        inputKind: kind,
+        name: loaded.name,
+        rewriteIncluded: wantsRewrite,
+        milliseconds: performance.now() - startedAt,
+        marksFound,
+        marksRemoved: Math.max(0, marksFound - stillThere),
+        provenanceActions: Array.isArray(finishedReport.actions)
+          ? finishedReport.actions.length
+          : 0,
+        stillMarked:
+          finishedReport.still_has_c2pa === true ||
+          finishedReport.still_has_ai_metadata === true,
+      });
     } else {
       setMessage(result?.message ?? 'Something went wrong.');
       setPhase('error');
+
+      track.sanitiseFailed({
+        inputKind: kind,
+        name: loaded.name,
+        rewriteIncluded: wantsRewrite,
+        milliseconds: performance.now() - startedAt,
+      });
     }
   };
 
@@ -193,6 +274,7 @@ export function Workbench() {
     if (isSample) {
       setText('');
       setIsSample(false);
+      track.ownTextEntered();
     }
     setEditing(true);
     requestAnimationFrame(() => textArea.current?.focus());
@@ -363,7 +445,7 @@ export function Workbench() {
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        void takeFile(event.dataTransfer.files?.[0]);
+        void takeFile(event.dataTransfer.files?.[0], 'drop');
       }}
       /* A stable hook for checking what the tool is actually doing from
          outside it. This project's own runbook records eight occasions where a
@@ -529,6 +611,7 @@ export function Workbench() {
               <a
                 href={downloadUrl}
                 download={`cleaned-${loaded.name}`}
+                onClick={() => track.resultDownloaded({ name: loaded.name })}
                 className={'text-foreground font-semibold underline underline-offset-2'}
               >
                 Download the clean file
