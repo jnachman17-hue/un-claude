@@ -20,7 +20,15 @@ for _p in (str(_HERE), str(_HERE.parent / "engine")):
 import time                                        # noqa: E402
 from http.server import BaseHTTPRequestHandler     # noqa: E402
 
-from _shared import authorised, engine, fail, json_response, read_request, usage_record  # noqa: E402
+from _shared import (  # noqa: E402
+    authorised,
+    billing_estimate,
+    engine,
+    fail,
+    json_response,
+    read_request,
+    usage_record,
+)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -39,6 +47,12 @@ class handler(BaseHTTPRequestHandler):
             return json_response(self, *fail("bad_format"))
         except Exception:
             return json_response(self, *fail("engine_error", 500))
+        # What the job will cost, worked out here because this is the only place
+        # that has both the decoded bytes and the format. 06 row 72: credits are
+        # priced in words, the browser holds only base64 for a file, and nothing
+        # in the scan reply carried a word count. Without this the interface
+        # cannot tell anyone the price before they commit to paying it.
+        payload["billing"] = billing_estimate(payload.get("kind"), data)
         payload["usage"] = usage_record(
             "scan", name, data, payload, time.time() - started, headers=self.headers)
         json_response(self, 200, payload)

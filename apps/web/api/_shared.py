@@ -137,6 +137,41 @@ def _word_count(raw: bytes | None) -> int | None:
         return None
 
 
+# One credit buys this many words. 04 entry 67.
+CREDIT_WORDS = 1000
+
+
+def billing_estimate(kind: str | None, raw: bytes | None) -> dict:
+    """What this job costs in credits, worked out BEFORE it runs.
+
+    04 entry 16 and entry 67: the price has to be knowable before somebody
+    commits to paying it, never discovered afterwards. That is only possible if
+    the free scan — which costs $0.0000021 and is never charged — comes back
+    carrying the number.
+
+    Two cases and one rule between them, which is the whole of the pricing:
+
+      * Anything with words in it is charged by its words, one credit per
+        thousand, ROUNDED UP, minimum one.
+      * Anything without words is a flat one credit whatever its size, because
+        stripping metadata from a 4 MB photograph and a 40 KB one is the same
+        forty milliseconds of work.
+
+    CONTAINERS ARE FLAT, AND THAT IS A WORKING POSITION RATHER THAN A RULING.
+    06 row 74: layer B runs only when kind == "text", so a .docx gets metadata
+    and layer A and never reaches the model. Charging it by its words would be
+    charging for a rewrite it does not receive. Flat is the option that cannot
+    overcharge, so it is the one to be wrong in. Jon rules on 06 row 74.
+    """
+    if kind == "text":
+        words = _word_count(raw) or 0
+        # Ceiling division without importing math, and 0 words still costs 1:
+        # an empty job is refused earlier, so reaching here means real input.
+        credits = max(1, -(-words // CREDIT_WORDS))
+        return {"credits": credits, "words": words, "basis": "words"}
+    return {"credits": 1, "words": None, "basis": "flat"}
+
+
 def usage_record(
     endpoint: str,
     name: str,
