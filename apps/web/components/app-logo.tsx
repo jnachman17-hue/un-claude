@@ -22,7 +22,7 @@ function LogoImage({ className }: { className?: string }) {
         aria-hidden
         className={'bg-mark-strong h-[15px] w-[3px] rounded-[1px]'}
       />
-      un-claude
+      Un-Claude
     </span>
   );
 }

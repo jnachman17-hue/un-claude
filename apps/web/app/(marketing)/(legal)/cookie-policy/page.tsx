@@ -37,7 +37,7 @@ async function CookiePolicyPage() {
         <Updated date={'19 August 2026'} />
 
         <P>
-          un-claude sets no advertising cookies and no tracking cookies. We do
+          Un-Claude sets no advertising cookies and no tracking cookies. We do
           measure how many people visit, using a tool that stores nothing on your
           device at all, which is why there is no consent banner on this site.
         </P>

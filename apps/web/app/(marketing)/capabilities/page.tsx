@@ -5,7 +5,7 @@ import { PageHeader, Section } from '../_components/prose';
 export const metadata = {
   title: 'What we can and cannot do',
   description:
-    'A precise statement of what un-claude removes, what it can prove, and what no tool in this category can currently verify.',
+    'A precise statement of what Un-Claude removes, what it can prove, and what no tool in this category can currently verify.',
 };
 
 /**

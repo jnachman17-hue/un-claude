@@ -210,7 +210,7 @@ export function CoverageSection() {
 
           <p className={'text-muted-foreground mt-4 max-w-[40ch] text-[15px] leading-[1.6]'}>
             Claude and Gemini mark their text today. The rest have committed to it
-            under European law, and are building it now. un-claude sanitises all
+            under European law, and are building it now. Un-Claude sanitises all
             of them, in text and in files.
           </p>
 

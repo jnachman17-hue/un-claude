@@ -17,7 +17,7 @@ export async function generateMetadata() {
 /**
  * THERE IS DELIBERATELY NO GOVERNING LAW SECTION.
  *
- * There is no company and no legal entity behind un-claude, so there is nothing
+ * There is no company and no legal entity behind Un-Claude, so there is nothing
  * to name as a party and nowhere to seat a dispute. Inventing a jurisdiction
  * would be a false statement in the one document that most needs to be true.
  * It gets added when an entity exists, alongside payments. 04 entry 54.
@@ -38,9 +38,9 @@ async function TermsOfServicePage() {
       <Prose>
         <Updated date={'19 August 2026'} />
 
-        <H2>What un-claude does</H2>
+        <H2>What Un-Claude does</H2>
         <P>
-          un-claude finds and removes marks that identify text and documents as
+          Un-Claude finds and removes marks that identify text and documents as
           machine-generated. It works in three parts:
         </P>
         <List
@@ -109,7 +109,7 @@ async function TermsOfServicePage() {
 
         <H2>Acceptable use</H2>
         <P>
-          un-claude is for your own writing and your own files. People use it
+          Un-Claude is for your own writing and your own files. People use it
           because they do not want their work carrying hidden data about the tool
           that produced it, because invisible characters break formatting and
           search, because file metadata reveals more than they intended to share,
@@ -118,14 +118,14 @@ async function TermsOfServicePage() {
         </P>
         <P>
           It is not for passing off machine-generated work as your own where
-          somebody has asked you not to. Do not use un-claude to deceive a school,
+          somebody has asked you not to. Do not use Un-Claude to deceive a school,
           an employer, a publisher, a client, or anyone else who is relying on your
           word about how something was made. If a person or institution has a rule
           about AI-assisted work, that rule is between you and them, and this tool
           does not change it.
         </P>
         <P>
-          You also agree not to use un-claude to break the law, to infringe
+          You also agree not to use Un-Claude to break the law, to infringe
           anyone’s rights, or to attack, overload, or reverse-engineer the service.
         </P>
 
@@ -157,7 +157,7 @@ async function TermsOfServicePage() {
         <P>
           To the fullest extent the law allows, we are not liable for indirect or
           consequential losses, loss of data, or loss of opportunity arising from
-          your use of un-claude. Where liability cannot be excluded, it is limited
+          your use of Un-Claude. Where liability cannot be excluded, it is limited
           to the greater of the amount you have paid us in the previous six months
           or 50 US dollars.
         </P>
@@ -165,7 +165,7 @@ async function TermsOfServicePage() {
 
         <H2>Ending your use</H2>
         <P>
-          You may stop using un-claude and delete your account at any time. We may
+          You may stop using Un-Claude and delete your account at any time. We may
           suspend or end access if these terms are breached.
         </P>
 

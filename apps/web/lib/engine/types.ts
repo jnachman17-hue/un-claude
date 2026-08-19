@@ -1,5 +1,5 @@
 /**
- * The shapes the un-claude engine returns.
+ * The shapes the Un-Claude engine returns.
  *
  * Written from real responses, not from the documentation. See
  * apps/web/engine/API.md for the reference and ENGINE.md section 2 for what

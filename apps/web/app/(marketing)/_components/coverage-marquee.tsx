@@ -9,7 +9,7 @@ import Link from 'next/link';
  *
  * The caption is not decoration. Publication names sitting under our own tool,
  * unlabelled, read as "as seen in", which would be false. Nobody has covered
- * un-claude. The caption says what the strip actually is, and it links through to
+ * Un-Claude. The caption says what the strip actually is, and it links through to
  * the mission page, which is Jon's to write.
  *
  * REAL ARTWORK, all nine, supplied by Jon. Which is the right route: 06 row 34
@@ -88,13 +88,19 @@ const ARTICLES: Article[] = [
 
 export function CoverageMarquee() {
   return (
-    <section className={'bg-foreground/[0.022] border-border/70 border-y'}>
+    <section>
       <div className={'mx-auto max-w-[1180px] px-5 pt-14 pb-9 sm:px-8'}>
-        <p className={'text-foreground max-w-[52ch] text-[17px] leading-[1.5] font-medium tracking-[-0.015em] text-balance sm:text-[19px]'}>
+        <p
+          className={
+            'text-foreground max-w-[52ch] text-[17px] leading-[1.5] font-medium tracking-[-0.015em] text-balance sm:text-[19px]'
+          }
+        >
           AI tools now mark what they make. Invisibly, and{' '}
           <Link
             href={'/mission'}
-            className={'decoration-mark-strong underline decoration-2 underline-offset-[3px] transition-colors hover:text-foreground/70'}
+            className={
+              'decoration-mark-strong underline decoration-2 underline-offset-[3px] transition-colors hover:text-foreground/70'
+            }
           >
             without telling you
           </Link>
@@ -110,14 +116,22 @@ export function CoverageMarquee() {
           own implementation gets right. The two copies are what makes the loop
           seamless, and the spacing is wide enough that the same outlet is never
           on screen twice at once. */}
-      <div className={'group relative overflow-hidden pb-14'}>
+      <div
+        className={
+          'group bg-foreground/[0.022] border-border/70 relative overflow-hidden border-y py-9'
+        }
+      >
         <div
           className={
             'animate-drift flex w-max items-center group-hover:[animation-play-state:paused]'
           }
         >
           {[0, 1].map((copy) => (
-            <div key={copy} className={'flex items-center'} aria-hidden={copy === 1}>
+            <div
+              key={copy}
+              className={'flex items-center'}
+              aria-hidden={copy === 1}
+            >
               {ARTICLES.map((article) => (
                 <a
                   key={`${copy}-${article.outlet}`}
@@ -145,7 +159,9 @@ export function CoverageMarquee() {
                       // is inverted; where the mark also carries a brand colour the
                       // hue is rotated back so blue does not become orange.
                       article.logo.mono ? 'dark:invert' : '',
-                      article.logo.mixed ? 'dark:invert dark:hue-rotate-180' : '',
+                      article.logo.mixed
+                        ? 'dark:invert dark:hue-rotate-180'
+                        : '',
                     ].join(' ')}
                   />
                 </a>
@@ -155,8 +171,18 @@ export function CoverageMarquee() {
         </div>
 
         {/* Fades at both ends so the loop has no visible seam. */}
-        <div className={'from-foreground/[0.022] pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r to-transparent'} aria-hidden />
-        <div className={'from-foreground/[0.022] pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l to-transparent'} aria-hidden />
+        <div
+          className={
+            'from-foreground/[0.022] pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r to-transparent'
+          }
+          aria-hidden
+        />
+        <div
+          className={
+            'from-foreground/[0.022] pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l to-transparent'
+          }
+          aria-hidden
+        />
       </div>
     </section>
   );

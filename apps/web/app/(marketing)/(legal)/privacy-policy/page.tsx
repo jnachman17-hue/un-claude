@@ -183,7 +183,7 @@ async function PrivacyPolicyPage() {
 
         <H2>Children</H2>
         <P>
-          un-claude is not intended for anyone under 18 and we do not knowingly
+          Un-Claude is not intended for anyone under 18 and we do not knowingly
           collect their information.
         </P>
 

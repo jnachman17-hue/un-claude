@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
  * company, two years ago, and it is the most conservative public number
  * available, which is why it is the one used.
  *
- * What this is NOT is a counter of how many files un-claude has cleaned. Jon
+ * What this is NOT is a counter of how many files Un-Claude has cleaned. Jon
  * asked for one, starting around six thousand, and described it as a little bit
  * fictitious. That is fabricated usage data presented as real, it is the one
  * claim on this site anybody could disprove, and it would undo the position

@@ -6,7 +6,7 @@ import { Figure, PageHeader, Section } from '../_components/prose';
 export const metadata = {
   title: 'How it works',
   description:
-    'The three kinds of AI watermark, where each one hides, and exactly how un-claude removes them.',
+    'The three kinds of AI watermark, where each one hides, and exactly how Un-Claude removes them.',
 };
 
 /**

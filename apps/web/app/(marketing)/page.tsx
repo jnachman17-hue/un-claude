@@ -5,7 +5,7 @@ import { HowItWorksSection } from './_components/how-it-works-section';
 import { LimitsSection } from './_components/limits-section';
 
 /**
- * The un-claude landing page. 04 entry 41.
+ * The Un-Claude landing page. 04 entry 41.
  *
  * The tool is the page. Everything under it answers a question the tool raises:
  * who else does this, how does it actually work, and which parts of it can be

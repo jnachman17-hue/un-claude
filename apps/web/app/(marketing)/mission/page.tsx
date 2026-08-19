@@ -2,7 +2,7 @@ import { PageHeader } from '../_components/prose';
 
 export const metadata = {
   title: 'Why we built this',
-  description: 'Why un-claude exists.',
+  description: 'Why Un-Claude exists.',
 };
 
 /**

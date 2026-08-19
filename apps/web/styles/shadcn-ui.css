@@ -13,20 +13,31 @@
       sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     --font-heading: var(--font-sans);
 
-    --background: oklch(98.6% 0.004 95);
-    --foreground: oklch(19% 0.008 90);
+    /* Paper, not white. The page is a shade below its cards so that a card
+       reads as a raised surface rather than as a region of the same sheet.
+       This used to be 98.6% against a 99.6% card: ONE point of lightness
+       between them, which is why every box dissolved into the background and
+       nothing looked like it had an edge. 04 entry 70. */
+    --background: oklch(96.4% 0.006 70);
+    --foreground: oklch(19% 0.008 60);
 
-    /* The one accent. It is a highlighter: the same colour marks a hidden
-       character in the text and fills the primary button. Nothing else on the
-       page introduces a second accent. */
-    --mark: oklch(87% 0.176 116);
-    --mark-strong: oklch(80% 0.168 116);
-    --mark-foreground: oklch(20% 0.02 100);
+    /* The one accent, and it is Claude's own orange: #D97757, read out of
+       apps/web/public/images/vendors/claude.svg rather than guessed. 04 entry 70.
+       It is a highlighter: the same colour marks a hidden character in the text,
+       fills the primary button and lights the glow behind the hero. Nothing else
+       on the page introduces a second accent.
 
-    --card: oklch(99.6% 0.003 95);
+       The foreground stays near-black rather than going white. Measured: this
+       coral carries 4.65:1 against near-black and only 3.12:1 against white, so
+       white would fail WCAG AA on a 13px button. */
+    --mark: oklch(67.5% 0.135 39);
+    --mark-strong: oklch(60% 0.145 37);
+    --mark-foreground: oklch(20% 0.02 60);
+
+    --card: oklch(100% 0 0);
     --card-foreground: var(--color-neutral-950);
 
-    --popover: oklch(99.6% 0.003 95);
+    --popover: oklch(100% 0 0);
     --popover-foreground: var(--color-neutral-950);
 
     --primary: oklch(19% 0.008 90);
@@ -44,9 +55,12 @@
     --destructive: var(--color-red-500);
     --destructive-foreground: var(--color-white);
 
-    --border: var(--color-gray-100);
-    --input: var(--color-gray-200);
-    --ring: var(--color-neutral-800);
+    /* Warm, and dark enough to actually be an edge. gray-100 is both too faint
+       to see and a COOL grey on a warm page, so it read as haze rather than as
+       a line. */
+    --border: oklch(90% 0.007 65);
+    --input: oklch(86% 0.008 65);
+    --ring: oklch(67.5% 0.135 39);
 
     --radius: 0.75rem;
 
@@ -67,14 +81,14 @@
   }
 
   .dark {
-    --background: oklch(17% 0.006 90);
+    --background: oklch(17% 0.006 60);
     --foreground: oklch(96% 0.004 95);
 
     /* Same accent, same role, lifted so it holds contrast on a dark surface.
        The theme flips; the accent does not change identity. */
-    --mark: oklch(84% 0.172 116);
-    --mark-strong: oklch(89% 0.176 116);
-    --mark-foreground: oklch(18% 0.02 100);
+    --mark: oklch(72% 0.135 40);
+    --mark-strong: oklch(78% 0.130 41);
+    --mark-foreground: oklch(18% 0.02 60);
 
     --card: var(--color-neutral-900);
     --card-foreground: var(--color-white);
