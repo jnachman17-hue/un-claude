@@ -1550,3 +1550,61 @@ case. **The recommendation in `03-pricing.md` never rested on usage data anyway:
 it rests on the model bill measured directly against the gateway and on
 competitors' published prices. **Row 48's trigger is overruled, and row 48 itself
 stands** — the fix is still urgent, for V2 rather than V1.
+
+
+### 61. [T3] Usage goes to the log now and to a ledger later, and cost stays off the wire
+
+**Ruling.** Assistant's call, recorded because it constrains what Track 1 builds
+next and because it is a deliberately partial fix rather than a finished one.
+**It is the Track 3 half of entry 59.**
+
+**Three choices inside one piece of work.**
+
+**One. The figures travel down into the model call, not back out of it.** The
+obvious design returns token counts alongside the rewritten text. It loses the
+data on exactly the runs that matter most: a call that raises still spent money,
+and a failed layer B run retries up to eight times per chunk, so **the most
+expensive requests were the ones reporting nothing at all.** The accumulator is
+therefore a dict the caller owns and passes downwards.
+
+**Two. A log line, not a database, and it is labelled a stopgap.** Every request
+writes one `UC_USAGE` JSON line to the server log. A durable ledger needs a
+database table, and `apps/web/supabase/` and every migration belong to Track 1
+under `TRACK-RULES.md`. **Track 3 stops the loss; it does not end it.** `06` row
+64 carries the unfinished half, and **everything before 19 August 2026 stays
+lost.**
+
+**Three. Cost and token counts do not go into the HTTP response.** They are our
+unit economics and this site is public and unauthenticated. The browser gets
+words, bytes, seconds and whether layer B ran. Nothing in the site reads any of
+it today, so the restriction costs nothing and closes a door before it opens.
+
+**Against entry 59's list, which is the useful way to read this.**
+
+| Entry 59 asked for | State |
+|---|---|
+| Words in | **Done.** Words out as well |
+| Which layers ran | **Done** |
+| Model retries | **Done.** Plus attempts, chunks and model calls, which are three different numbers |
+| Wall time | **Done** |
+| Model tokens and cost | **Done.** Cost is the AI Gateway's own dollar figure, not our arithmetic |
+| Credits charged, credits refunded | **Not started.** Credits do not exist. Track 1 |
+| The Stripe event that paid for it | **Not started.** Track 1 |
+| Somewhere durable to put it | **Not started, and it is the gap that matters.** Track 1 |
+
+**What was found while doing it, and it changes a number Track 1 has been
+given.** The fact guard was forcing a retry on every compound number word from
+twenty-one to ninety-nine, because an earlier repair taught it that
+`thirty-four` is 34 and left 30 and 4 in the set. On one 674 word document that
+was ten model calls where three were needed, 38.4 seconds against a 60 second
+ceiling, and four times the documented cost per thousand words. Fixed. **The
+measured cost after the fix is still 0.093 to 0.128 cents per thousand words
+against the 0.06 cents in entry 49**, and it moves with how many numbers the text
+contains. `06` row 65. **Two runs of a non-deterministic process is not a cost
+model** and must not be treated as one.
+
+**Why this is in the decision log rather than only in `06`.** Entry 22 promised
+words, tokens and model cost so pricing would not guess, and entry 60 rules that
+V1 pricing proceeds without them. **A future session must not read "row 48
+closed" and assume there is usage history to price V2 from.** There is a log
+with a short memory, and there is no ledger.
