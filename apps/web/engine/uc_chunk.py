@@ -111,12 +111,6 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     Raises TruncatedRewrite if any chunk, or the whole, comes back too short.
     """
     chunks = split_paragraphs(text)
-    if len(chunks) == 1:
-        i, out, info, missing = one(0)
-        info = dict(info or {})
-        info.update(chunks=1, parallel=False,
-                    figures_to_check=[m for m in missing if m not in _numbers(out)])
-        return out, info
 
     results: list[str | None] = [None] * len(chunks)
     infos: list[dict] = [{}] * len(chunks)
@@ -170,6 +164,19 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         raise RuntimeError(
             f"chunk {i + 1} failed after {RETRIES} attempts: "
             f"{type(last_err).__name__}") from last_err
+
+    # A single chunk needs no pool, and this call has to come AFTER `one` is
+    # defined. It used to sit above the definition, where `one` is a local name
+    # that has not been assigned yet, so every document short enough to be one
+    # chunk raised UnboundLocalError and layer B failed outright. Under roughly
+    # 350 words is one chunk, which is very nearly every paste a visitor makes
+    # into the box on the landing page.
+    if len(chunks) == 1:
+        _, out, info, missing = one(0)
+        info = dict(info or {})
+        info.update(chunks=1, parallel=False,
+                    figures_to_check=[m for m in missing if m not in _numbers(out)])
+        return out, info
 
     with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
         at_risk: list[str] = []

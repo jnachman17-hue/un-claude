@@ -2,71 +2,101 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { FileUpIcon, PencilLineIcon, SparklesIcon } from 'lucide-react';
+import { FileUpIcon, SparklesIcon, UploadCloudIcon } from 'lucide-react';
 
 import type { CleanResult, ScanResult } from '~/lib/engine/types';
 
+import { CHECK_CLASSES, explain, prettyName } from './characters';
 import { Checklist, type ChecklistRow } from './checklist';
 import { ACCEPTED_FILES, base64ToText, fileToBase64, textToBase64 } from './encode';
-import { MarkedText, MarkedTextLegend } from './marked-text';
-import { SAMPLE_CAPTION, SAMPLE_TEXT } from './sample';
-import { SourceSelect } from './source-select';
-import { DEFAULT_SOURCE, type Source } from './sources';
+import { MarkedText } from './marked-text';
+import { SAMPLE_TEXT } from './sample';
+import { detectProducer, provenanceItems } from './producer';
+import { FREE_SANITISES, recordUse, remaining } from './free-uses';
+import { Paywall } from './paywall';
+import { ReceiptPanel } from './receipt-panel';
+import type { Receipt } from '~/lib/engine/receipt';
 
-type Phase = 'editing' | 'scanning' | 'scanned' | 'cleaning' | 'cleaned' | 'error';
+type Phase = 'scanning' | 'scanned' | 'cleaning' | 'cleaned' | 'error' | 'locked';
+
+interface Loaded {
+  /** base64, exactly as sent to the engine, kept so sanitising can reuse it. */
+  payload: string;
+  name: string;
+  /** Empty for a file. A file's content is not text we can show. */
+  text: string;
+}
 
 /**
  * The product.
  *
- * One box. The visitor pastes text or drops a file and never chooses a layer:
- * the tool runs whatever applies to what it was given. 04 entry 39.
+ * One box. Paste text or drop a file, and the tool runs whatever applies to what
+ * it was given. The visitor never chooses a layer and never sees the word.
+ * 04 entry 39.
  *
- * Two actions, not one. Scanning is free, instant and unlimited, so it happens
- * on its own. Sanitising is the deliberate press, and it is the action that will
- * cost credits. Folding them into a single button would mean either charging for
- * the free hook or giving away the paid work.
+ * Two actions. Scanning is free, instant and happens on its own. Sanitising is
+ * the deliberate press and is the action that will cost credits. Folding them
+ * into one button would mean either charging for the free hook or giving away
+ * the paid work.
  */
 export function Workbench() {
   const [text, setText] = useState(SAMPLE_TEXT);
-  const [scannedText, setScannedText] = useState(SAMPLE_TEXT);
-  const [source, setSource] = useState<Source>(DEFAULT_SOURCE);
+  const [loaded, setLoaded] = useState<Loaded>({
+    payload: '',
+    name: 'paste.txt',
+    text: SAMPLE_TEXT,
+  });
   const [phase, setPhase] = useState<Phase>('scanning');
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [cleaned, setCleaned] = useState<CleanResult | null>(null);
   const [cleanedText, setCleanedText] = useState('');
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSample, setIsSample] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [left, setLeft] = useState(FREE_SANITISES);
 
   const fileInput = useRef<HTMLInputElement>(null);
-  const request = useRef(0);
+  const textArea = useRef<HTMLTextAreaElement>(null);
+  const ticket = useRef(0);
 
-  const runScan = useCallback(async (payloadFile: string, name: string, shownText: string) => {
-    const ticket = ++request.current;
-    setPhase('scanning');
-    setMessage(null);
+  const runScan = useCallback(async (next: Loaded) => {
+    const mine = ++ticket.current;
+
+    // Every previous result is dropped the instant new input arrives. Leaving
+    // the old one on screen while the next scan runs is what made an uploaded
+    // image report provenance found before anything had read it.
+    setScan(null);
     setCleaned(null);
+    setCleanedText('');
+    setDownloadUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+    setMessage(null);
+    setLoaded(next);
+    setEditing(false);
+    setPhase('scanning');
 
-    // The scan itself takes about 40 milliseconds, which is too fast to read as
-    // work having happened. The floor is not padding for its own sake: watching
-    // the markers land is the moment that explains the product, and it needs
-    // long enough to be perceived.
+    // The scan takes about 40 milliseconds, too fast to read as work happening.
+    // The floor is not decoration: watching the marks land is what explains the
+    // product, and it needs long enough to be seen.
     const [result] = await Promise.all([
       fetch('/api/tool/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: payloadFile, name }),
+        body: JSON.stringify({ file: next.payload, name: next.name }),
       })
         .then((response) => response.json())
         .catch(() => ({ ok: false, message: 'We could not reach the service. Please try again.' })),
-      new Promise((resolve) => setTimeout(resolve, 620)),
+      new Promise((resolve) => setTimeout(resolve, 640)),
     ]);
 
-    if (ticket !== request.current) return;
+    if (mine !== ticket.current) return;
 
     if (result?.ok) {
       setScan(result as ScanResult);
-      setScannedText(shownText);
       setPhase('scanned');
     } else {
       setMessage(result?.message ?? 'Something went wrong.');
@@ -74,54 +104,77 @@ export function Workbench() {
     }
   }, []);
 
-  // The page arrives and scans itself. Nothing to click, nothing to read first.
   useEffect(() => {
-    void runScan(textToBase64(SAMPLE_TEXT), 'paste.txt', SAMPLE_TEXT);
+    setLeft(remaining());
+    void runScan({ payload: textToBase64(SAMPLE_TEXT), name: 'paste.txt', text: SAMPLE_TEXT });
   }, [runScan]);
 
-  const onScanText = () => {
-    const trimmed = text.trim();
-    if (trimmed.length === 0) {
+  const scanText = () => {
+    if (text.trim().length === 0) {
       setMessage('Paste some text, or choose a file.');
       setPhase('error');
       return;
     }
-    setFileName(null);
-    setIsSample(trimmed === SAMPLE_TEXT.trim());
-    void runScan(textToBase64(text), 'paste.txt', text);
+    setIsSample(false);
+    void runScan({ payload: textToBase64(text), name: 'paste.txt', text });
   };
 
-  const onChooseFile = async (file: File | undefined) => {
+  const takeFile = async (file: File | undefined) => {
     if (!file) return;
-    setFileName(file.name);
     setIsSample(false);
     setText('');
-    const encoded = await fileToBase64(file);
-    void runScan(encoded, file.name, '');
+    const payload = await fileToBase64(file);
+    void runScan({ payload, name: file.name, text: '' });
   };
 
-  const onSanitise = async () => {
+  const isFile = loaded.name !== 'paste.txt';
+  // An image carries no writing. A document does. Pasted text always does.
+  const carriesProse = !isFile || scan?.kind === 'container';
+
+  const sanitise = async () => {
+    // An image has no prose, so there is nothing for the rewrite to do and no
+    // reason to spend a model call on it.
+    const wantsRewrite = carriesProse;
+
+    if (wantsRewrite && remaining() <= 0) {
+      // Nothing is sent. Blurring a real result would mean paying for work the
+      // visitor never sees.
+      setPhase('locked');
+      return;
+    }
+
     setPhase('cleaning');
     setMessage(null);
 
-    const payload = fileName
-      ? { file: scan ? '' : '', name: fileName }
-      : { file: textToBase64(scannedText), name: 'paste.txt' };
-
-    // Layer B is not wired here yet. It costs money on every run and the credit
-    // gate that has to sit in front of it does not exist, so this press runs the
-    // free, instant, provable half: hidden characters and file provenance.
     const result = await fetch('/api/tool/clean', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, layer_b: false }),
+      // The payload is the one already loaded. An earlier version rebuilt it and
+      // sent an empty string for files, which surfaced as "nothing was sent"
+      // over a file that was plainly on screen.
+      body: JSON.stringify({ file: loaded.payload, name: loaded.name, layer_b: wantsRewrite }),
     })
       .then((response) => response.json())
       .catch(() => ({ ok: false, message: 'We could not reach the service. Please try again.' }));
 
     if (result?.ok) {
-      setCleaned(result as CleanResult);
-      if (!fileName) setCleanedText(base64ToText((result as CleanResult).cleaned));
+      const finished = result as CleanResult;
+      setCleaned(finished);
+
+      if (isFile) {
+        // A cleaned file is useless to anybody if they cannot get it back.
+        const binary = atob(finished.cleaned);
+        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+        setDownloadUrl(URL.createObjectURL(new Blob([bytes])));
+      } else {
+        setCleanedText(base64ToText(finished.cleaned));
+      }
+
+      if (wantsRewrite) {
+        recordUse();
+        setLeft(remaining());
+      }
+
       setPhase('cleaned');
     } else {
       setMessage(result?.message ?? 'Something went wrong.');
@@ -129,152 +182,257 @@ export function Workbench() {
     }
   };
 
+  const startEditing = () => {
+    if (isSample) {
+      setText('');
+      setIsSample(false);
+    }
+    setEditing(true);
+    requestAnimationFrame(() => textArea.current?.focus());
+  };
+
+  const busy = phase === 'scanning' || phase === 'cleaning';
+  const done = phase === 'cleaned';
+  const report = (scan?.report ?? {}) as Record<string, unknown>;
   const hits = scan?.report?.hits ?? [];
   const foundCount = hits.reduce((total, hit) => total + hit.count, 0);
-  const isFile = Boolean(fileName);
-  const busy = phase === 'scanning' || phase === 'cleaning';
-
-  const done = phase === 'cleaned';
   const stats = cleaned?.report?.stats;
-  const removed = (stats?.removed_count ?? 0) + (stats?.replaced_count ?? 0);
+  const fileReport = (cleaned?.report ?? {}) as Record<string, unknown>;
+  const actions = Array.isArray(fileReport.actions) ? (fileReport.actions as string[]) : [];
+  const stillMarked =
+    fileReport.still_has_c2pa === true || fileReport.still_has_ai_metadata === true;
+  const producer = isFile && scan ? detectProducer(report) : null;
+  const receipt = (cleaned?.report as Record<string, unknown> | undefined)?.receipt as
+    | Receipt
+    | undefined;
+
+  const provenanceFound =
+    report.has_c2pa === true ||
+    report.has_ai_metadata === true ||
+    (Array.isArray(report.findings) && report.findings.length > 0);
 
   const rows: ChecklistRow[] = [
     {
       id: 'characters',
       label: 'Hidden characters',
-      state: busy ? 'pending' : done ? 'clean' : foundCount > 0 ? 'found' : 'clean',
-      status: busy
+      state: busy || !scan ? 'pending' : done ? 'removed' : foundCount > 0 ? 'found' : 'absent',
+      status: busy || !scan
         ? 'checking'
         : done
-          ? removed > 0
-            ? `${removed} removed`
-            : 'clean'
+          ? stats
+            ? `${(stats.removed_count ?? 0) + (stats.replaced_count ?? 0)} removed`
+            : 'none found'
           : foundCount > 0
             ? `${foundCount} found`
-            : 'clean',
+            : 'none found',
       detail: done
-        ? // Removed and replaced are separate numbers and both have to be shown.
-          // Some characters are deleted and some are swapped for an ordinary
-          // space, and a swap does not change the length, so a single "removed"
-          // figure will not match the size change and looks broken. API.md
-          // section 4, and it has already caught this project once.
-          `${stats?.removed_count ?? 0} deleted, ${stats?.replaced_count ?? 0} replaced with ordinary spaces. Nothing else in the text changed.`
+        ? stats
+          ? // Removed and replaced are separate numbers and both are shown. Some
+            // characters are deleted, some are swapped for an ordinary space, and
+            // a swap does not change the length, so a single figure looks broken
+            // against the size change. API.md section 4.
+            `${stats.removed_count ?? 0} deleted and ${stats.replaced_count ?? 0} swapped for ordinary spaces. Nothing else changed.`
+          : 'No hidden characters were in this file to begin with.'
         : foundCount > 0
-          ? 'Marked above, exactly where each one sits. Invisible on the page until now.'
-          : 'Nine classes checked: zero width, direction, tag, variation selector, private use, space and lookalike.',
+          ? 'Characters sitting between the words that never appear on the page.'
+          : `None in this text. ${CHECK_CLASSES.length} classes checked, including ${CHECK_CLASSES.slice(0, 3).join(', ').toLowerCase()}.`,
+      items:
+        !busy && !done && hits.length > 0
+          ? hits.map((hit) => ({
+              key: hit.codepoint,
+              head: `${prettyName(hit.label, hit.codepoint)}${hit.count > 1 ? ` x${hit.count}` : ''}`,
+              body: explain(hit.codepoint, hit.kind),
+            }))
+          : undefined,
     },
     {
       id: 'provenance',
       label: 'File provenance',
-      state: busy ? 'pending' : isFile ? (done ? 'clean' : scan?.suspicious ? 'found' : 'clean') : 'skipped',
-      status: busy
-        ? 'checking'
-        : isFile
-          ? done
+      state: busy || !scan
+        ? 'pending'
+        : !isFile
+          ? 'skipped'
+          : done
             ? 'removed'
-            : scan?.suspicious
+            : provenanceFound
               ? 'found'
-              : 'clean'
-          : 'no file',
-      detail: isFile
-        ? 'C2PA content credentials, EXIF, XMP and generator tags, read from the file wrapper.'
-        : 'Pasted text has no file wrapper to read. Upload a file and this one runs.',
+              : 'absent',
+      status: busy || !scan
+        ? 'checking'
+        : !isFile
+          ? 'no file'
+          : done
+            ? stillMarked
+              ? 'partly removed'
+              : `${actions.length} removed`
+            : provenanceFound
+              ? producer
+                ? `made by ${producer}`
+                : 'found'
+              : 'none found',
+      detail: !isFile
+        ? 'Provenance lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
+        : done
+          ? stillMarked
+            ? 'Some provenance data could not be removed from this file. It is still marked.'
+            : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
+          : provenanceFound
+            ? producer
+              ? `This file carries a signed record naming ${producer} as what made it.`
+              : 'This file carries a record of the tool that made it.'
+            : 'No content credentials, generator tags or AI metadata in this file.',
+      items:
+        !busy && isFile
+          ? done
+            ? actions.map((action, index) => ({
+                key: `action-${index}`,
+                head: 'Removed',
+                body: action,
+              }))
+            : provenanceItems(report)
+          : undefined,
     },
     {
       id: 'statistical',
       label: 'Statistical watermark',
-      state: busy ? 'pending' : source.watermarksText ? 'present' : 'clean',
-      status: busy ? 'checking' : source.watermarksText ? 'present' : 'not confirmed',
-      detail: source.statement,
+      state: busy || !scan ? 'pending' : carriesProse ? 'found' : 'skipped',
+      status: busy || !scan ? 'checking' : carriesProse ? 'present' : 'no text',
+      detail: carriesProse
+        ? 'Hidden in which words the model picked, not in anything added between them. No tool can point to it, which is why it is removed rather than found.'
+        : 'An image carries no writing, so there are no word choices for this mark to hide in.',
     },
   ];
 
   return (
-    <div className={'bg-card ring-border/70 rounded-[18px] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_40px_-12px_rgba(0,0,0,0.10)] ring-1'}>
-      {/* Controls */}
-      <div className={'border-border/70 flex flex-wrap items-center gap-3 border-b px-4 py-2.5 sm:px-5'}>
-        <SourceSelect value={source} onChange={setSource} />
+    <div
+      onDragOver={(event) => {
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDragging(false);
+        void takeFile(event.dataTransfer.files?.[0]);
+      }}
+      className={[
+        'bg-card ring-border/70 relative rounded-[18px] ring-1 transition-shadow',
+        'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_40px_-12px_rgba(0,0,0,0.10)]',
+        dragging ? 'ring-mark-strong ring-2' : '',
+      ].join(' ')}
+    >
+      {dragging ? (
+        <div
+          className={
+            'bg-card/92 absolute inset-0 z-20 grid place-items-center rounded-[18px] backdrop-blur-[2px]'
+          }
+        >
+          <div className={'flex flex-col items-center gap-2'}>
+            <UploadCloudIcon className={'text-foreground/70 size-7'} strokeWidth={1.6} aria-hidden />
+            <span className={'text-[13.5px] font-medium'}>Drop it anywhere in this box</span>
+          </div>
+        </div>
+      ) : null}
 
-        <div className={'ml-auto flex items-center gap-2'}>
+      {/* The input surface. Deliberately inset and bordered so it reads as the
+          thing you type into, separate from the findings underneath it. */}
+      <div className={'p-3 sm:p-3.5'}>
+        <div
+          className={[
+            'bg-background border-border/80 relative rounded-[13px] border transition-colors',
+            editing ? 'border-foreground/25' : 'hover:border-foreground/20',
+          ].join(' ')}
+        >
+          {editing ? (
+            <textarea
+              ref={textArea}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={'Paste your text here, or drop a file anywhere in this box.'}
+              className={
+                'text-foreground placeholder:text-muted-foreground/60 min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[14.5px] leading-[1.75] tracking-[-0.005em] outline-none'
+              }
+            />
+          ) : phase === 'locked' ? (
+            <Paywall onDismiss={() => setPhase('scanned')} />
+          ) : (
+            <button
+              type={'button'}
+              onClick={startEditing}
+              disabled={isFile}
+              aria-label={'Edit this text'}
+              className={
+                'block w-full cursor-text px-4 py-3.5 text-left disabled:cursor-default'
+              }
+            >
+              <div className={'min-h-[184px]'}>
+                {isFile ? (
+                  <FileSummary name={loaded.name} scanning={busy} />
+                ) : done ? (
+                  <MarkedText text={cleanedText} hits={[]} animate={false} />
+                ) : (
+                  <div className={isSample ? 'opacity-55' : ''}>
+                    <MarkedText
+                      text={loaded.text}
+                      hits={phase === 'scanning' ? [] : hits}
+                    />
+                  </div>
+                )}
+              </div>
+            </button>
+          )}
+
+          {/* Nothing about a paragraph of prose says "this is a demonstration,
+              delete it". The label and the line beneath it do. */}
+          {isSample && !editing ? (
+            <>
+              <span
+                className={
+                  'bg-foreground/[0.055] text-muted-foreground absolute top-2.5 right-2.5 rounded-[6px] px-2 py-[3px] text-[10.5px] font-medium tracking-wide uppercase'
+                }
+              >
+                Example
+              </span>
+              <button
+                type={'button'}
+                onClick={startEditing}
+                className={
+                  'border-border/80 text-muted-foreground hover:text-foreground w-full border-t px-4 py-2.5 text-left text-[12.5px] transition-colors'
+                }
+              >
+                Click anywhere above to clear this and paste your own text.
+              </button>
+            </>
+          ) : null}
+
+          {phase === 'scanning' ? (
+            <div
+              className={'pointer-events-none absolute inset-0 overflow-hidden rounded-[13px]'}
+              aria-hidden
+            >
+              <div
+                className={'animate-sweep from-mark/0 via-mark/30 to-mark/0 h-full w-1/3 bg-gradient-to-r'}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {/* Actions */}
+        <div className={'mt-3 flex flex-wrap items-center gap-2'}>
           <input
             ref={fileInput}
             type={'file'}
             accept={ACCEPTED_FILES}
             className={'sr-only'}
-            onChange={(event) => void onChooseFile(event.target.files?.[0])}
+            onChange={(event) => void takeFile(event.target.files?.[0])}
           />
-          <button
-            type={'button'}
-            onClick={() => fileInput.current?.click()}
-            className={
-              'text-foreground/75 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
-            }
-          >
-            <FileUpIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
-            Upload a file
-          </button>
-        </div>
-      </div>
 
-      {/* The text */}
-      <div className={'relative px-4 py-4 sm:px-5'}>
-        {phase === 'editing' ? (
-          <textarea
-            autoFocus
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder={'Paste your text here.'}
-            className={
-              'text-foreground placeholder:text-muted-foreground/70 min-h-[150px] w-full resize-none border-0 bg-transparent text-[15px] leading-[1.75] tracking-[-0.005em] outline-none'
-            }
-          />
-        ) : (
-          <div className={'min-h-[150px]'}>
-            {isFile ? (
-              <FileSummary name={fileName!} />
-            ) : phase === 'cleaned' ? (
-              <MarkedText text={cleanedText} hits={[]} animate={false} />
-            ) : (
-              <MarkedText text={scannedText} hits={phase === 'scanning' ? [] : hits} />
-            )}
-          </div>
-        )}
-
-        {phase === 'scanning' ? (
-          <div
-            className={'pointer-events-none absolute inset-x-0 top-0 h-full overflow-hidden'}
-            aria-hidden
-          >
-            <div
-              className={
-                'animate-sweep from-mark/0 via-mark/25 to-mark/0 h-full w-1/3 bg-gradient-to-r'
-              }
-            />
-          </div>
-        ) : null}
-      </div>
-
-      {/* Legend and edit affordance */}
-      <div className={'border-border/70 flex flex-wrap items-center gap-x-5 gap-y-3 border-t px-4 py-2.5 sm:px-5'}>
-        {phase === 'scanned' && hits.length > 0 ? <MarkedTextLegend hits={hits} /> : null}
-
-        {phase === 'cleaned' ? (
-          <p className={'text-[12.5px] font-medium'}>
-            Clean. Select the text above and copy it.
-          </p>
-        ) : null}
-
-        {phase === 'error' ? (
-          <p className={'text-destructive text-[12.5px] font-medium'}>{message}</p>
-        ) : null}
-
-        <div className={'ml-auto flex items-center gap-2'}>
-          {phase === 'editing' ? (
+          {editing ? (
             <button
               type={'button'}
-              onClick={onScanText}
+              onClick={scanText}
               className={
-                'bg-foreground text-background inline-flex items-center gap-1.5 rounded-[9px] px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-[0.98]'
+                'bg-foreground text-background rounded-[9px] px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-[0.98]'
               }
             >
               Scan it
@@ -282,54 +440,88 @@ export function Workbench() {
           ) : (
             <button
               type={'button'}
-              onClick={() => {
-                setPhase('editing');
-                setFileName(null);
-                if (isSample) setText('');
-              }}
+              onClick={() => void sanitise()}
+              disabled={busy || done}
               className={
-                'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
+                'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
               }
             >
-              <PencilLineIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
-              {isSample ? 'Use your own text' : 'Edit'}
+              <SparklesIcon className={'size-[14px]'} strokeWidth={2.2} aria-hidden />
+              {phase === 'cleaning'
+                ? carriesProse
+                  ? 'Rewriting'
+                  : 'Sanitising'
+                : done
+                  ? 'Sanitised'
+                  : 'Sanitise it'}
             </button>
           )}
+
+          <button
+            type={'button'}
+            onClick={() => fileInput.current?.click()}
+            className={
+              'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
+            }
+          >
+            <FileUpIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
+            Upload a file
+          </button>
+
+          <p className={'text-muted-foreground ml-auto text-[11.5px]'}>
+            {phase === 'error' ? (
+              <span className={'text-destructive font-medium'}>{message}</span>
+            ) : done && downloadUrl ? (
+              <a
+                href={downloadUrl}
+                download={`cleaned-${loaded.name}`}
+                className={'text-foreground font-semibold underline underline-offset-2'}
+              >
+                Download the clean file
+              </a>
+            ) : done ? (
+              'Clean. Select the text above and copy it.'
+            ) : phase === 'cleaning' && carriesProse ? (
+              'Breaking up the wording. This takes a few seconds.'
+            ) : left > 0 ? (
+              `${left} free ${left === 1 ? 'rewrite' : 'rewrites'} left. Scanning is always free.`
+            ) : (
+              'Scanning is free and unlimited. Rewrites need credits.'
+            )}
+          </p>
         </div>
       </div>
 
-      {/* What was checked */}
-      <div className={'bg-foreground/[0.018] rounded-b-[18px] px-4 py-3.5 sm:px-5'}>
+      {/* The findings. A separate surface, with its own heading, because it
+          answers a different question from the box above it. */}
+      <div className={'border-border/70 bg-foreground/[0.017] rounded-b-[18px] border-t px-4 py-3.5 sm:px-5'}>
+        <div className={'mb-2 flex items-baseline justify-between gap-3'}>
+          <h2 className={'text-foreground text-[12px] font-semibold tracking-wide uppercase'}>
+            Every mark we check for
+          </h2>
+          <span className={'text-muted-foreground text-[11.5px]'}>
+            Checked in full, every time
+          </span>
+        </div>
+
         <Checklist rows={rows} />
 
-        <div className={'border-border/70 mt-3.5 flex flex-wrap items-center gap-3 border-t pt-3.5'}>
-          <button
-            type={'button'}
-            onClick={() => void onSanitise()}
-            disabled={busy || phase === 'editing'}
-            className={
-              'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-[13.5px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
-            }
-          >
-            <SparklesIcon className={'size-[15px]'} strokeWidth={2.2} aria-hidden />
-            {phase === 'cleaning' ? 'Sanitising' : 'Sanitise it'}
-          </button>
-
-          <p className={'text-muted-foreground text-[12px] leading-snug'}>
-            {isSample && phase !== 'cleaned'
-              ? SAMPLE_CAPTION
-              : 'Free while we are in preview. No account needed.'}
-          </p>
-        </div>
+        {receipt ? (
+          <div className={'border-border/70 mt-4 border-t pt-4'}>
+            <ReceiptPanel receipt={receipt} />
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function FileSummary({ name }: { name: string }) {
+function FileSummary({ name, scanning }: { name: string; scanning: boolean }) {
   return (
-    <div className={'flex h-[150px] flex-col items-start justify-center gap-1.5'}>
-      <span className={'text-muted-foreground text-[12px]'}>Reading</span>
+    <div className={'flex h-[184px] flex-col items-start justify-center gap-1.5'}>
+      <span className={'text-muted-foreground text-[12px]'}>
+        {scanning ? 'Reading' : 'Loaded'}
+      </span>
       <span className={'font-mono text-[15px] font-medium'}>{name}</span>
     </div>
   );

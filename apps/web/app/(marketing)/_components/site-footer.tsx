@@ -37,9 +37,31 @@ export async function SiteFooter() {
           }}
         />
       }
+      /*
+       * SOCIAL LINKS ARE NOT HERE ON PURPOSE. Jon asked for them and has not
+       * given the handles, and a footer full of links to nothing is worse than a
+       * footer without them. Add a fourth section here when the accounts exist.
+       */
       sections={[
         {
-          heading: 'Get Started',
+          heading: <Trans i18nKey="marketing.product" />,
+          links: [
+            {
+              href: '/how-it-works',
+              label: <Trans i18nKey="marketing.howItWorks" />,
+            },
+            {
+              href: '/capabilities',
+              label: <Trans i18nKey="marketing.capabilities" />,
+            },
+            {
+              href: '/mission',
+              label: <Trans i18nKey="marketing.mission" />,
+            },
+          ],
+        },
+        {
+          heading: 'Account',
           links: [
             {
               href: '/auth/sign-in',
