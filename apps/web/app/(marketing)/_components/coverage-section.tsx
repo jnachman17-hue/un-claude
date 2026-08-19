@@ -1,4 +1,4 @@
-import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
+import { CheckIcon, ClockIcon, MinusIcon } from 'lucide-react';
 
 /**
  * Who marks what, and it is the most credible thing on this page.
@@ -8,12 +8,11 @@ import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
  * mark their output and how, which is more useful than a usage number and is
  * checkable by anyone.
  *
- * Every row comes from ENGINE.md section 2, researched 18 August 2026. Where
- * something is unconfirmed it says unconfirmed, including for the vendors it
- * would flatter us to overstate.
+ * Every row comes from ENGINE.md section 2. Where something has been committed
+ * but not shipped it says so, including where overstating it would flatter us.
  */
 
-type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
+type Mark = 'yes' | 'committed' | 'na';
 
 /**
  * THE LOGO CARRIES THE BRAND. THE NAME IS JUST THE NAME.
@@ -39,35 +38,129 @@ type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
  * is #8300FF sampled from the supplied asset rather than the #6B21A8 circulating
  * online that Jon correctly flagged as unverified.
  */
+/**
+ * THE LOGO CARRIES THE BRAND. THE NAME IS JUST THE NAME.
+ *
+ * An earlier version set each vendor's name in its brand colour. Jon's own
+ * research ruled that out and was right: the correct faces are Styrene, Google
+ * Sans, Optimistic Display, OpenAI Sans and Adobe Clean, four of which are
+ * licensed and cannot be installed. Putting Anthropic's exact hex on a name set
+ * in somebody else's typeface is an approximation wearing a precise number.
+ *
+ * PRODUCT FIRST, COMPANY SECOND, which is Jon's question answered.
+ *
+ * Nobody arrives here thinking Anthropic watermarked their text. They think
+ * Claude did. The product is the thing people met, the thing our own headline
+ * names, and the thing they will scan this table looking for. But the company is
+ * what actually signs the European code and applies the mark, so dropping it
+ * would make the row less true rather than simpler.
+ *
+ * So both, in a fixed order: the product people know, with the company that owns
+ * it underneath. It also settles the logo question, because the two marks are
+ * paired in every case here anyway.
+ *
+ * Midjourney is gone entirely, at Jon's instruction. It marks nothing and writes
+ * nothing, so it was a row that said "not applicable" twice. Removing it also
+ * emptied the "does not mark" state, which has been removed with it rather than
+ * left in a legend explaining a symbol that never appears.
+ *
+ * Ordered by how much they matter to someone reading this, not alphabetically.
+ */
 interface Vendor {
-  name: string;
+  product: string;
+  company: string;
   color: string;
   initial: string;
   files: Mark;
   text: Mark;
   note: string;
-  /** Real artwork where we have it. `mono` marks need inverting in dark mode. */
   logo?: { src: string; mono?: boolean };
 }
 
+/**
+ * One formula for every row, so the column can be read down rather than
+ * deciphered line by line: what happens to files, then what happens to text.
+ * Every claim comes from ENGINE.md section 2.
+ */
 const VENDORS: Vendor[] = [
-  { name: 'Anthropic', initial: 'A', color: '#141413', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents', logo: { src: '/images/vendors/anthropic.png', mono: true } },
-  { name: 'Google', initial: 'G', color: '#1F1F1F', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025', logo: { src: '/images/vendors/google.png' } },
-  { name: 'OpenAI', initial: 'O', color: '#000000', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code', logo: { src: '/images/vendors/openai.svg', mono: true } },
-  { name: 'Adobe Firefly', initial: 'Ad', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes', logo: { src: '/images/vendors/adobe.png' } },
-  { name: 'Stability, Flux', initial: 'S', color: '#8300FF', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not', logo: { src: '/images/vendors/stability.png' } },
-  { name: 'Meta', initial: 'M', color: '#1C2B33', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented', logo: { src: '/images/vendors/meta.png' } },
-  { name: 'Midjourney', initial: 'MJ', color: '#000000', files: 'no', text: 'na', note: 'No provenance marking', logo: { src: '/images/vendors/midjourney.svg', mono: true } },
-  { name: 'xAI Grok', initial: 'X', color: '#000000', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments', logo: { src: '/images/vendors/xai.png', mono: true } },
+  {
+    product: 'Claude',
+    company: 'Anthropic',
+    color: '#141413',
+    initial: 'A',
+    files: 'yes',
+    text: 'yes',
+    note: 'Files signed since 2 August 2026. Text watermarked from the same date, worldwide, with no way to opt out.',
+    logo: { src: '/images/vendors/anthropic.png', mono: true },
+  },
+  {
+    product: 'ChatGPT',
+    company: 'OpenAI',
+    color: '#000000',
+    initial: 'O',
+    files: 'yes',
+    text: 'committed',
+    note: 'Files signed since February 2024. Text watermarking committed under the European code, not yet shipped.',
+    logo: { src: '/images/vendors/openai.svg', mono: true },
+  },
+  {
+    product: 'Gemini',
+    company: 'Google',
+    color: '#1F1F1F',
+    initial: 'G',
+    files: 'yes',
+    text: 'yes',
+    note: 'Files signed since November 2025. Text watermarked with SynthID on every output.',
+    logo: { src: '/images/vendors/google.png' },
+  },
+  {
+    product: 'Grok',
+    company: 'xAI',
+    color: '#000000',
+    initial: 'X',
+    files: 'committed',
+    text: 'committed',
+    note: 'Files and text both committed under the European code. Neither has shipped yet.',
+    logo: { src: '/images/vendors/xai.png', mono: true },
+  },
+  {
+    product: 'Meta AI',
+    company: 'Meta',
+    color: '#1C2B33',
+    initial: 'M',
+    files: 'committed',
+    text: 'committed',
+    note: 'Files and text both committed under the European code. Today it reads and labels other companies’ marks.',
+    logo: { src: '/images/vendors/meta.png' },
+  },
+  {
+    product: 'Firefly',
+    company: 'Adobe',
+    color: '#FA0F00',
+    initial: 'Ad',
+    files: 'yes',
+    text: 'na',
+    note: 'Files signed on everything it makes. Adobe wrote the standard the others adopted.',
+    logo: { src: '/images/vendors/adobe.png' },
+  },
+  {
+    product: 'Stable Diffusion',
+    company: 'Stability AI',
+    color: '#8300FF',
+    initial: 'S',
+    files: 'yes',
+    text: 'na',
+    note: 'Files signed on the hosted service. The versions you run yourself are unmarked.',
+    logo: { src: '/images/vendors/stability.png' },
+  },
 ];
 
 const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: string }> = {
-  yes: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'Marks its output' },
-  no: { icon: XIcon, className: 'bg-rose-500 text-white', label: 'Does not mark' },
-  unconfirmed: {
+  yes: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'Marking today' },
+  committed: {
     icon: ClockIcon,
     className: 'bg-amber-500 text-white',
-    label: 'Committed to watermarking',
+    label: 'Committed, coming',
   },
   na: {
     icon: MinusIcon,
@@ -100,20 +193,19 @@ export function CoverageSection() {
               'text-foreground text-[28px] leading-[1.1] font-semibold tracking-[-0.028em] text-balance sm:text-[34px]'
             }
           >
-            It is not only Claude, and it is not only text.
+            Every major lab has signed up to this.
           </h2>
 
           <p className={'text-muted-foreground mt-4 max-w-[40ch] text-[15px] leading-[1.6]'}>
-            Anthropic is the one in the news. Nearly every lab now marks what it
-            makes, and every major one signed the European transparency code, so
-            the rest are arriving. un-claude sanitises all of them, in text and
-            in files.
+            Claude and Gemini mark their text today. The rest have committed to it
+            under European law, and are building it now. un-claude sanitises all
+            of them, in text and in files.
           </p>
 
           <p className={'text-muted-foreground/80 mt-5 max-w-[40ch] text-[12.5px] leading-relaxed'}>
-            Researched 18 August 2026 from each vendor’s own published material.
-            Where something has not been confirmed it says so.
+            As of 19 August 2026, from each company’s own published material.
           </p>
+
         </div>
 
         <div className={'lg:col-span-8'}>
@@ -131,7 +223,7 @@ export function CoverageSection() {
             <ul className={'divide-border/70 divide-y'}>
               {VENDORS.map((vendor) => (
                 <li
-                  key={vendor.name}
+                  key={vendor.product}
                   className={
                     'hover:bg-foreground/[0.014] grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-4 py-3 transition-colors sm:px-5'
                   }
@@ -167,8 +259,11 @@ export function CoverageSection() {
                     </span>
 
                     <div className={'min-w-0'}>
-                    <span className={'text-foreground text-[14px] font-medium tracking-[-0.012em]'}>
-                      {vendor.name}
+                    <span className={'text-foreground block text-[14px] font-medium tracking-[-0.012em]'}>
+                      {vendor.product}
+                    </span>
+                    <span className={'text-muted-foreground block text-[11.5px] leading-tight'}>
+                      by {vendor.company}
                     </span>
                     <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>
                       {vendor.note}
@@ -188,13 +283,10 @@ export function CoverageSection() {
 
           <div className={'text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px]'}>
             <span className={'inline-flex items-center gap-1.5'}>
-              <Cell mark={'yes'} /> Marks its output
+              <Cell mark={'yes'} /> Marking today
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
-              <Cell mark={'unconfirmed'} /> Committed to watermarking
-            </span>
-            <span className={'inline-flex items-center gap-1.5'}>
-              <Cell mark={'no'} /> Does not mark
+              <Cell mark={'committed'} /> Committed, coming
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'na'} /> Does not produce this

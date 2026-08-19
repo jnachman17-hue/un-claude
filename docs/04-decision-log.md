@@ -1243,3 +1243,98 @@ control and should not be relied on once there is a reason to visit.**
 **Measured live in production:** 105 words rewritten in 2.8 seconds, 86.4% of the
 wording replaced, longest surviving run 5 words, 11 of 11 figures kept, length
 unchanged at 105 words.
+
+### 46. Correcting entry 45 within the hour. The consent screen is fixable, free, and before launch
+
+**This entry exists because entry 45 is wrong on its central point and the log is
+append only.** Read 45 with this attached to it.
+
+**What 45 got wrong.** It said branding could not be fixed while the callback sits
+on `itdgggoxsoolbfiwujvt.supabase.co`, because Google demands Search Console proof
+of ownership for every domain in the configuration including the redirect URI, and
+that Supabase's $10 a month custom domain was therefore the only unlock. **It
+presented that as near certain. It was over-read from a single documentation page
+and it is not what happens in practice.**
+
+**Jon rejected it on sight and his reasoning was better than the source.** A very
+large number of small sites run Google sign in through Supabase and do display
+their own name and logo. If the redirect host genuinely gated branding, none of
+them could. **That is decisive, and it is a good example of a plain argument from
+observed reality beating a model's reading of a document.**
+
+**What is actually happening, and it is simpler.** Google shows an app's name and
+logo only once the brand is verified, and shows the bare domain until then. **Brand
+verification does not start until the app is published to production.** un-claude
+is still in Testing. **Nothing is broken and nothing has been refused. The step has
+not been taken yet.**
+
+**The free path, in order:** verify `un-claude.com` in Google Search Console,
+publish the app on the Audience page, let the automated brand check run. Google's
+stated time for that check is minutes.
+
+**One real risk survives, in a much smaller form, and is worth keeping.** Google's
+developer forums carry a documented failure where an unverified app's consent
+screen falls back to the redirect host, and Google's own automated checker then
+compares that fallback against the homepage and rejects with *"the app name shown
+on your OAuth consent screen does not match the app name on your home page"* — with
+no email thread offered to argue it. **It is a flaw in Google's checker that lands
+on hosted auth providers. It is not a rule against them, and it does not always
+fire.**
+
+**So the ruling changes.** Entry 45 accepted an unbranded consent screen as the
+shipping state. **Jon has since ruled the opposite: we do not go live to the public
+with sign in looking like that.** Branding is worked in parallel with the button,
+not after launch.
+
+**And the $10 add-on is demoted from unlock to escape hatch.** Buy it only if the
+automated check returns that specific name-mismatch rejection. Not before.
+
+### 50. Products are named first, companies second
+
+**Ruling.** Jon raised the question and it is a real one: the table listed
+Anthropic, Google, OpenAI, when the things people actually met are Claude,
+Gemini, ChatGPT.
+
+**Answer: both, in a fixed order. The product on top, the company underneath.**
+
+**Reasoning.** Nobody arrives here thinking Anthropic watermarked their text.
+They think Claude did. The product is what our own headline names and what a
+visitor scans the table looking for. **But the company is what signs the European
+code and applies the mark**, so dropping it would make the row less true rather
+than simpler. It also settles the logo question, because in every one of these
+cases the product mark and the company mark are paired anyway.
+
+| Shown | Underneath |
+|---|---|
+| Claude | Anthropic |
+| ChatGPT | OpenAI |
+| Gemini | Google |
+| Grok | xAI |
+| Meta AI | Meta |
+| Firefly | Adobe |
+| Stable Diffusion | Stability AI |
+
+### 51. Midjourney is removed, and the state it occupied with it
+
+**Ruling.** Jon. Midjourney marks no files and writes no text, so its row said
+"not applicable" twice and told a reader nothing.
+
+**The consequence he spotted himself: removing it emptied the "does not mark"
+state.** A legend explaining a symbol that never appears is worse than no legend,
+so that state is gone from the code rather than left unused. Three states remain:
+marking today, committed and coming, does not produce this.
+
+### 52. One formula for every row in the coverage table
+
+**Ruling.** Jon: each description followed its own shape, which made the column
+impossible to read down.
+
+**The formula, fixed for every row: what happens to files, then what happens to
+text.** Two short sentences, files always first.
+
+**Also corrected at his instruction.** "Anthropic is the one in the news" is gone.
+"Researched 18 August 2026" becomes "As of 19 August 2026". The Word documents
+caveat is cut from the table, where it was detail nobody needed. **And a vendor
+that has signed the European code but not shipped is described as committed and
+coming rather than unconfirmed**, which is both better marketing and more
+accurate, since a signed commitment is a fact rather than an absence.
