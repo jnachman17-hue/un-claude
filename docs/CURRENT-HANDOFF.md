@@ -32,7 +32,7 @@ sessions editing one repository is the largest new risk in this project.
 | Landing page | Hero, marquee on real artwork, how it works, coverage table, limits |
 | Pages | `/how-it-works`, `/capabilities`, `/mission` as a shell, three real legal pages |
 | Sign-in | Email and **Google, live and branded** |
-| Analytics | **PostHog, verified cookieless.** Pageviews only, no funnel events |
+| Analytics | **PostHog, verified cookieless.** Funnel events added 19 Aug, `04` entry 66. **Policy text to match them is still outstanding, `06` row 68** |
 | Payments | **None** |
 
 ---
@@ -79,3 +79,43 @@ allowance, refund window. `06` row 18 and `03-pricing.md` section 6.
 
 **And the hardest open question in the project:** how a free allowance is tracked
 so it cannot be refilled by opening a new tab. `06` row 37.
+
+---
+
+## 5. Track 4, session 7, 19 August 2026
+
+**Done.** Seventeen funnel events, `04` entry 66. The paywall's "Get credits" was
+a plain anchor that reloaded the page and destroyed the visitor's in-memory id,
+so the most important conversion step in the product could not be joined to
+anything before it; it is now a `Link`, `06` row 67. PostHog's host corrected to
+the US region in the two places that documented it as the EU one.
+
+**Outstanding, and it is the first thing to pick up.**
+
+**`docs/POLICY-CHANGES-PENDING.md` has not been applied.** It contains the exact
+replacement wording for three passages in the privacy policy and one in the
+cookie policy. Jon's instruction was that policy rewrites go to a separate
+session, which overrides the same-commit rule, `04` entry 69. **Until it is
+applied the published policy under-describes what is measured.** Nothing in it is
+false; it is incomplete.
+
+**Nothing has been pushed.** Publishing is Jon's call, `CLAUDE.md` section 5.
+
+**Not verified, and it must be before anyone trusts a number.** The events were
+proven by compiling the module and driving it in Node, because **the landing page
+does not hydrate on a local machine at all**, `06` row 70. What is proven: every
+event's exact payload, and that no fragment of a confidential filename or a real
+sentence reaches any property. **What is not proven: that they fire at the right
+moments in a real browser.** That needs one pass over the live site after a
+deploy, watching `window.__events` with a stubbed `posthog.capture`, or the
+PostHog live view.
+
+**Session replay, `06` row 55, is still off and should stay last.** Beyond the
+masking that row already names, there is an unverified second blocker: the
+recorder may need to write a session marker to the device, which would end the
+no-consent-banner property and turn a small job into a consent system. **Unproven
+either way.** Testing it means starting a real recording against the production
+PostHog project, which was not done unasked.
+
+**The rename and the Google logo, `06` row 60, were not touched.** Jon said he is
+handling them himself.
