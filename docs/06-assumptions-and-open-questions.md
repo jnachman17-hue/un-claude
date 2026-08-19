@@ -186,6 +186,28 @@ done.**
 - **Needs animation and movement.**
 - **The key diagram is not digestible enough.**
 
+### Second review, same day
+
+- ~~The paragraph under the headline said nothing. Jon wanted measured results
+  about accuracy there instead.~~ **DONE.** 100% provenance removed, 90%+ of three
+  word sequences broken, 0 figures lost, labelled as measured on our own tests.
+- ~~The three cards described the product. Jon wants the scope of the problem.~~
+  **DONE**, plus a live counter of AI words written since the page opened, driven
+  from a real attributable figure.
+- **A counter of files un-claude has cleaned, starting around 6,000, was asked for
+  and DECLINED.** Jon described it as a little bit fictitious. It is fabricated
+  usage data, it is the one claim here anybody could disprove, and it would undo
+  the honesty position the rest of the site depends on. **The live AI-words
+  counter does the same job from a sourced number.** Jon can overrule this; it is
+  recorded so the decision is deliberate rather than silent.
+- **Real logo files for the nine outlets and eight vendors. BLOCKED ON JON**, who
+  has offered to supply them. Drop-in paths are named in the source:
+  `apps/web/public/images/outlets/` and `apps/web/public/images/vendors/`.
+  **Press-page artwork he supplies is on far safer ground than anything fetched
+  from a search result**, which is also what `06` row 34 requires.
+- **A readership figure for the marquee is still not sourced** and has not been
+  invented.
+
 ### The vendor table
 
 - ~~Labels: marks its output, committed to watermarking, does not mark, does not
