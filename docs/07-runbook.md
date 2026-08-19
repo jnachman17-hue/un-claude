@@ -891,3 +891,54 @@ cd ~/un-claude && KEY=$(grep '^AI_GATEWAY_API_KEY=' .env.engine.local | cut -d= 
   with `echo` gives `"true\n"`, which is not `"true"`, so the flag silently does
   the opposite of what was intended. `printf` avoids it and the code now trims
   anyway. This is the same failure that broke the engine key an hour earlier.
+
+### Logo files, and the mistake that wasted most of a batch
+
+**19 August 2026.** Jon supplied fifteen files for nine outlets. **Six were HTML
+documents rather than images**, saved with "Save Page As" instead of "Save Image
+As". Their titles gave it away: *American Broadcasting Company - Wikipedia*,
+*Forbes Logo, symbol, meaning, history, PNG, brand*.
+
+**Check before processing anything.** The extension lies:
+
+```bash
+cd ~/Outlets && file *
+```
+
+**A `.png` that reports `HTML document text` is a saved web page.** Anything
+reporting `PNG image data` or `JPEG image data` is real.
+
+**Also check that transparency is real rather than drawn.** One CNN file showed a
+checkerboard, which was baked-in pixels from a stock site preview rather than an
+alpha channel:
+
+```bash
+python3 -c "
+import struct
+d=open('FILE.png','rb').read(); i=8
+while i<len(d):
+    n=struct.unpack('>I',d[i:i+4])[0]; k=d[i+4:i+8]
+    if k==b'IHDR': print('colortype',struct.unpack('>IIBB',d[i+8:i+18])[3],'(6=RGBA, 3=palette, 2=RGB)')
+    i+=12+n"
+```
+
+**What to ask for.** SVG first. Failing that, PNG **with a transparent
+background**, from the outlet's own press or brand page. A logo on a white square
+needs the background lifting out before it can sit on a tinted band.
+
+### Removing a white background without PIL or ImageMagick
+
+Neither is installed. `apps/web/../scratchpad/logo_prep.py` in session 5 decoded
+PNG directly with `zlib` and `struct`.
+
+**The part worth keeping: un-premultiply, do not key out.** Setting white pixels
+transparent and leaving the rest alone leaves pale fringes on every antialiased
+edge, and turns a coloured logo washed out. Instead:
+
+```
+alpha = 255 - min(r, g, b)
+colour = (observed - 255 * (1 - alpha/255)) / (alpha/255)
+```
+
+That recovers the original colour and coverage of art drawn over white, which is
+why TechCrunch's green survived as green.
