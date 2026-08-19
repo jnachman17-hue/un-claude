@@ -59,10 +59,16 @@ export function Workbench() {
 
   const fileInput = useRef<HTMLInputElement>(null);
   const textArea = useRef<HTMLTextAreaElement>(null);
-  const ticket = useRef(0);
+  const inFlight = useRef<AbortController | null>(null);
 
   const runScan = useCallback(async (next: Loaded) => {
-    const mine = ++ticket.current;
+    // A counter comparing "is this still the newest call" would work, but an
+    // AbortController cannot get out of step with itself: the request that was
+    // cancelled is exactly the request that must not apply its result, and the
+    // cancelled request also stops travelling rather than finishing unwatched.
+    inFlight.current?.abort();
+    const attempt = new AbortController();
+    inFlight.current = attempt;
 
     // Every previous result is dropped the instant new input arrives. Leaving
     // the old one on screen while the next scan runs is what made an uploaded
@@ -87,13 +93,14 @@ export function Workbench() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file: next.payload, name: next.name }),
+        signal: attempt.signal,
       })
         .then((response) => response.json())
         .catch(() => ({ ok: false, message: 'We could not reach the service. Please try again.' })),
       new Promise((resolve) => setTimeout(resolve, 640)),
     ]);
 
-    if (mine !== ticket.current) return;
+    if (attempt.signal.aborted) return;
 
     if (result?.ok) {
       setScan(result as ScanResult);
@@ -196,15 +203,40 @@ export function Workbench() {
   const report = (scan?.report ?? {}) as Record<string, unknown>;
   const hits = scan?.report?.hits ?? [];
   const foundCount = hits.reduce((total, hit) => total + hit.count, 0);
+  const receipt = (cleaned?.report as Record<string, unknown> | undefined)?.receipt as
+    | Receipt
+    | undefined;
   const stats = cleaned?.report?.stats;
+
+  /**
+   * How many of the characters the SCAN found are genuinely gone.
+   *
+   * The layer A counter alone is not the answer once a rewrite is involved. The
+   * rewrite replaces the prose, so the hidden characters vanish with it, and the
+   * layer A pass that runs afterwards then has nothing left to remove and
+   * reports zero. Showing "3 found" and then "0 removed" reads as a failure over
+   * a run that worked perfectly. So the finished text is re-read for the exact
+   * characters that were found, which is the only honest count.
+   */
+  const stillPresent =
+    done && cleanedText
+      ? hits.reduce(
+          (total, hit) =>
+            total +
+            [...cleanedText].filter(
+              (character) =>
+                `U+${character.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}` ===
+                hit.codepoint,
+            ).length,
+          0,
+        )
+      : 0;
+  const actuallyRemoved = Math.max(0, foundCount - stillPresent);
   const fileReport = (cleaned?.report ?? {}) as Record<string, unknown>;
   const actions = Array.isArray(fileReport.actions) ? (fileReport.actions as string[]) : [];
   const stillMarked =
     fileReport.still_has_c2pa === true || fileReport.still_has_ai_metadata === true;
   const producer = isFile && scan ? detectProducer(report) : null;
-  const receipt = (cleaned?.report as Record<string, unknown> | undefined)?.receipt as
-    | Receipt
-    | undefined;
 
   const provenanceFound =
     report.has_c2pa === true ||
@@ -219,20 +251,24 @@ export function Workbench() {
       status: busy || !scan
         ? 'checking'
         : done
-          ? stats
-            ? `${(stats.removed_count ?? 0) + (stats.replaced_count ?? 0)} removed`
+          ? foundCount > 0
+            ? `${actuallyRemoved} of ${foundCount} removed`
             : 'none found'
           : foundCount > 0
             ? `${foundCount} found`
             : 'none found',
       detail: done
-        ? stats
-          ? // Removed and replaced are separate numbers and both are shown. Some
-            // characters are deleted, some are swapped for an ordinary space, and
-            // a swap does not change the length, so a single figure looks broken
-            // against the size change. API.md section 4.
-            `${stats.removed_count ?? 0} deleted and ${stats.replaced_count ?? 0} swapped for ordinary spaces. Nothing else changed.`
-          : 'No hidden characters were in this file to begin with.'
+        ? foundCount === 0
+          ? 'There were none in this to begin with.'
+          : stillPresent > 0
+            ? `${stillPresent} could not be removed. Read the result before you use it.`
+            : stats && (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
+              ? // Removed and replaced are separate numbers and both are shown.
+                // Some characters are deleted and some are swapped for an ordinary
+                // space, and a swap does not change the length, so one figure
+                // looks broken against the size change. API.md section 4.
+                `${stats.removed_count ?? 0} deleted and ${stats.replaced_count ?? 0} swapped for ordinary spaces. The text was read back to confirm none are left.`
+              : 'Removed with the rewrite, and the result was read back to confirm none are left.'
         : foundCount > 0
           ? 'Characters sitting between the words that never appear on the page.'
           : `None in this text. ${CHECK_CLASSES.length} classes checked, including ${CHECK_CLASSES.slice(0, 3).join(', ').toLowerCase()}.`,
@@ -295,11 +331,25 @@ export function Workbench() {
     {
       id: 'statistical',
       label: 'Statistical watermark',
-      state: busy || !scan ? 'pending' : carriesProse ? 'found' : 'skipped',
-      status: busy || !scan ? 'checking' : carriesProse ? 'present' : 'no text',
-      detail: carriesProse
-        ? 'Hidden in which words the model picked, not in anything added between them. No tool can point to it, which is why it is removed rather than found.'
-        : 'An image carries no writing, so there are no word choices for this mark to hide in.',
+      state: busy || !scan
+        ? 'pending'
+        : !carriesProse
+          ? 'skipped'
+          : done && receipt
+            ? 'removed'
+            : 'found',
+      status: busy || !scan
+        ? 'checking'
+        : !carriesProse
+          ? 'no text'
+          : done && receipt
+            ? 'rewritten'
+            : 'present',
+      detail: !carriesProse
+        ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
+        : done && receipt
+          ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that.`
+          : 'Hidden in which words the model picked, not in anything added between them. No tool can point to it, which is why it is removed rather than found.',
     },
   ];
 
@@ -315,6 +365,12 @@ export function Workbench() {
         setDragging(false);
         void takeFile(event.dataTransfer.files?.[0]);
       }}
+      /* A stable hook for checking what the tool is actually doing from
+         outside it. This project's own runbook records eight occasions where a
+         test failed and the fault was the measurement, so being able to read the
+         real state without guessing from pixels is worth three characters of
+         markup. */
+      data-phase={phase}
       className={[
         'bg-card ring-border/70 relative rounded-[18px] ring-1 transition-shadow',
         'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_40px_-12px_rgba(0,0,0,0.10)]',

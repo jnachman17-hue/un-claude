@@ -24,15 +24,20 @@ const VENDORS: Array<[RegExp, string]> = [
   [/grok|xai/i, 'xAI'],
 ];
 
-/** Every string the file report carries, flattened, so nothing is missed. */
+/**
+ * Every string VALUE the file report carries.
+ *
+ * Field names are deliberately excluded, and that is not a detail. An earlier
+ * version harvested keys too, and the report always contains a field called
+ * `synthid` whether or not anything was found in it. Every file uploaded was
+ * therefore reported as "made by Google", which is a false claim about a named
+ * company printed in the interface. Only values are read now.
+ */
 function harvest(value: unknown, into: string[] = []): string[] {
   if (typeof value === 'string') into.push(value);
   else if (Array.isArray(value)) value.forEach((item) => harvest(item, into));
   else if (value && typeof value === 'object') {
-    Object.entries(value).forEach(([key, inner]) => {
-      into.push(key);
-      harvest(inner, into);
-    });
+    Object.values(value).forEach((inner) => harvest(inner, into));
   }
   return into;
 }
