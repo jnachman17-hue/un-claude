@@ -1133,3 +1133,84 @@ when the automated pass cannot decide.
 
 **So a logo is not free but it is not a multi-day commitment either.** Make the
 change once, when the artwork is final, with the site stable, and expect a re-run.
+
+### Turborepo strips environment variables the build needs, silently
+
+**19 August 2026, and it is the fifth time this project has hit a setting that is
+present, correct, and never loaded.**
+
+**Turborepo 2 filters the build environment in strict mode.** Only names listed in
+`turbo.json`'s `globalEnv` reach a task. Anything else is removed before Next
+runs, and the build succeeds with a warning nobody reads.
+
+**It only bites `NEXT_PUBLIC_` variables, which is why it hid for so long.**
+Runtime secrets are read by the deployed function and never touch the build, so
+Supabase and `UC_ENGINE_KEY` kept working. A `NEXT_PUBLIC_` value is inlined at
+BUILD time, so stripping it produces a deployment that quietly has the feature
+switched off while Vercel shows the setting present and correct.
+
+**`NEXT_PUBLIC_SUPABASE_URL` survives for a third reason again:** it lives in
+`apps/web/.env.production` on disk, where Next reads it directly and Turbo cannot
+reach it.
+
+**The rule. Any variable needed at BUILD time must be in three places:**
+
+1. Vercel project settings
+2. `turbo.json` `globalEnv`
+3. `apps/web/.env` as documentation, blank
+
+**The warning is in the build log and names the variables it is dropping:**
+
+```bash
+npx vercel@latest inspect <deployment-url> --logs 2>&1 | grep -A12 "missing from"
+```
+
+**A bonus, once a variable IS declared:** changing its value changes Turbo's cache
+key, so a rebuild cannot reuse a stale cached build. Declaring it fixes the
+delivery and the cache invalidation together.
+
+### Verifying a client-side script actually works, and three ways to get it wrong
+
+**All three of these produced a false result on the PostHog install.**
+
+**1. `curl` cannot see an `afterInteractive` script.** Next injects it client side
+after hydration, so it is never in the server HTML. `curl | grep posthog`
+returning nothing proves nothing.
+
+**2. The chunk path is `/_next/static/immutable/chunks/`, not
+`/_next/static/chunks/`.** A grep over the wrong path searched one irrelevant file
+and reported a clean miss.
+
+**3. `grep ... | head && echo "found"` prints "found" when grep matched nothing,**
+because `head` exits 0 on empty input. That reported a key as embedded when it was
+absent.
+
+**What actually works is reading the rendered DOM in a browser:**
+
+```js
+document.getElementById('posthog').textContent.match(/api_host: "([^"]*)"/)[1]
+```
+
+**That is what found the real bug: the stored host was truncated to
+`https://us.i.po`.** Every config-level check passed, because the config was
+correct; the value inside it was not. **Read the rendered output, not the source
+that produced it.**
+
+### Proving the cookieless claim, which the cookie policy stakes a claim on
+
+Run in the browser console on the live site, after the library has loaded:
+
+```js
+({ loaded: !!window.posthog.__loaded, cookies: document.cookie || '(none)',
+   local: Object.keys(localStorage), session: Object.keys(sessionStorage) })
+```
+
+**All three stores must be empty WITH `loaded: true`.** Empty stores while the
+library failed to load proves nothing at all, which was the state for two rounds
+of this. Verified 19 August 2026: library loaded, an event reached
+`us.i.posthog.com/i/v0/e/`, and cookies, local storage and session storage were
+all empty.
+
+**Note for reading the numbers: the browser used for testing blocked PostHog with
+`ERR_BLOCKED_BY_CLIENT`.** Ad and tracker blocking will undercount real visitors
+too. The figures are directional, not exact.
