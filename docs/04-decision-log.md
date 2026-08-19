@@ -1793,3 +1793,51 @@ decision rather than looking like the rule was forgotten.
 Until it is applied the published privacy policy describes less measurement than
 actually happens. Nothing in it becomes false — no new company, no device storage,
 no content — but it is incomplete.
+
+### 66. [T1] Three billing mechanics settled, and the number-form gap Jon found
+
+**Ruled by Jon this session, recorded together because each is small and none
+should have to be rediscovered.**
+
+**Images are a flat one credit, whatever their size.** His words: "to keep all
+credits simple, write like text = 1,000 words and images are flat rate one
+credit. We make that clear so you can price it in but that keeps it simple."
+**The reason it is defensible rather than merely simple:** stripping metadata from
+a 4 MB photograph and a 40 KB one is the same 40 millisecond operation, so our
+cost genuinely does not scale with file size when there is no text to rewrite.
+Word documents remain charged by the words inside them, with the metadata strip
+included.
+
+**The statement descriptor is `UN-CLAUDE.COM`.** That is the 5 to 22 characters a
+customer sees on their card statement. An unrecognised descriptor is a leading
+cause of disputes and a dispute costs $15, so matching the site they bought from
+is the whole job.
+
+**Credits are debited when the work completes and returned in full when it
+fails.** Confirmed by Jon. This was already `04` entry 16's surviving mechanic;
+what makes it urgent rather than theoretical is `06` row 66, where a 674 word
+document was measured at 38.4 seconds against a 60 second ceiling. **Timeouts are
+a live case, not a hypothetical**, and every failure screen already tells the user
+nothing was charged.
+
+**The number-form gap, found by Jon reading Track 3's report and correct.** He
+asked whether rewriting "thirteen percent" as "13%" is a user's stylistic choice
+being overwritten. **Three findings, from reading the code and running it, not
+from reasoning about it.**
+
+1. **The prompt already forbids it.** `rewrite_text.py` rule 5: "Copy every number
+   and date in EXACTLY the form the original used, in both directions. Words stay
+   words: 'eighteen percent' stays 'eighteen percent', never '18%'."
+2. **Nothing enforces it.** `_numbers()` in `uc_chunk.py` compares values and not
+   spellings, by deliberate design stated in its own docstring. **Run live this
+   session: source "thirteen percent of the fund" and output "13% of the fund"
+   both resolve to `['13']`, so the guard passes it with no retry.**
+3. **Track 3's fix did not cause this and is correct.** The value comparison
+   predates it. Their change was to compound parsing, and it is right:
+   "thirty-four" now resolves to `['34']` alone, where before it also demanded 30
+   and 4 and forced retries against figures that were never lost.
+
+**So the instruction exists, the check does not, and whether the model actually
+disobeys has never been measured.** Proven here: the guard would not catch it.
+**Not proven: that it happens.** `06` row 71, and it belongs to whoever owns the
+engine.
