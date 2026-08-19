@@ -18,7 +18,20 @@ import type { CleanResult, EngineFailure, EngineResult, ScanResult } from './typ
  * free and instant, so this costs nothing and needs no local Python.
  */
 const ENGINE_URL = process.env.UC_ENGINE_URL ?? 'https://un-claude.com';
-const ENGINE_KEY = process.env.UC_ENGINE_KEY ?? '';
+
+/**
+ * Read at request time, never at module load.
+ *
+ * A value read once when this file is first evaluated can be frozen in at build
+ * time, and a variable marked Sensitive on Vercel is not necessarily readable
+ * during a build at all. Either way the deployment would come up holding an empty
+ * key and refuse every request, while the dashboard showed the setting present
+ * and correct. This project has already learned three times that a correct
+ * setting is not a loaded one.
+ */
+function engineKey(): string {
+  return process.env.UC_ENGINE_KEY ?? '';
+}
 
 /**
  * The two deployments answer on different paths and this has already misled one
@@ -69,7 +82,9 @@ export function textToPayload(text: string) {
 async function call<T>(path: string, body: unknown, timeoutMs: number): Promise<EngineResult<T>> {
   // Fail loudly rather than silently calling an unlocked endpoint. A missing key
   // in production is a configuration failure, not something to work around.
-  if (!ENGINE_KEY && process.env.VERCEL_ENV === 'production') {
+  const key = engineKey();
+
+  if (!key && process.env.VERCEL_ENV === 'production') {
     console.error('UC_ENGINE_KEY is not set. The engine cannot be called.');
     return failure('misconfigured');
   }
@@ -80,7 +95,7 @@ async function call<T>(path: string, body: unknown, timeoutMs: number): Promise<
   try {
     const response = await fetch(`${ENGINE_URL}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-uc-key': ENGINE_KEY },
+      headers: { 'Content-Type': 'application/json', 'x-uc-key': key },
       body: JSON.stringify(body),
       signal: controller.signal,
       cache: 'no-store',
