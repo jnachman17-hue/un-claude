@@ -61,6 +61,7 @@ from format_dispatch import classify_bytes
 from image_meta import clean_image, inspect_image, run_synthid_score
 from score_stylometry import score_text_stylometry
 from text_detectors import detector_status, run_all_text_detectors, run_text_detectors
+from rewrite_text import rewrite as layer_b_rewrite
 from text_unicode import clean_text, inspect_text
 
 VERSION = os.environ.get("WATERMARKS_SERVER_VERSION", "dev")
@@ -87,6 +88,7 @@ ALLOWED_CLEAN_OPTIONS = {
     "strip_all_metadata": bool,
     "detect_before": bool,
     "detect_after": bool,
+    "layer_b": bool,
 }
 
 
@@ -701,6 +703,33 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     "refusing to clean bytes that look like a binary container as text"
                 )
             text = data.decode("utf-8", errors="surrogateescape")
+            layer_b_report: dict[str, Any] | None = None
+            if options.get("layer_b"):
+                # Layer B rewrites with a NON-Anthropic, NON-Google model. Rewriting
+                # Claude text with Claude re-applies the watermark at full strength.
+                # Configured entirely by environment variable so the model is one
+                # swappable setting. See docs/TRACK-A-NOTES.md and 04 entry 23.
+                try:
+                    text, layer_b_report = layer_b_rewrite(
+                        text,
+                        backend=os.environ.get(
+                            "WATERMARKS_REWRITE_BACKEND", "openai-compatible"),
+                        model=os.environ.get("WATERMARKS_REWRITE_MODEL"),
+                        base_url=os.environ.get("WATERMARKS_REWRITE_BASE_URL"),
+                        api_key=os.environ.get("WATERMARKS_REWRITE_API_KEY"),
+                        strength="unclaude",
+                        lang="French",
+                        original_lang="English",
+                        timeout=float(os.environ.get("WATERMARKS_REWRITE_TIMEOUT", "45")),
+                        layer_a_after=False,   # the Layer A pass below does this
+                        temperature=float(
+                            os.environ.get("WATERMARKS_REWRITE_TEMPERATURE", "1.0")),
+                        candidates=1,
+                        allow_remote=True,
+                        reasoning_effort=None,
+                    )
+                except Exception as e:  # never leak upstream text to a user
+                    raise ValueError(f"layer B rewrite failed: {type(e).__name__}") from e
             detect_before = bool(options.get("detect_before"))
             detect_after = bool(options.get("detect_after"))
             detector_reports: dict[str, Any] = {}
@@ -715,6 +744,16 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                 detector_reports["after"] = run_text_detectors(cleaned)
             cleaned_bytes = cleaned.encode("utf-8", errors="surrogateescape")
             report: dict[str, Any] = {"kind": "text", "stats": stats, "length": len(cleaned)}
+            if layer_b_report is not None:
+                report["layer_b"] = {
+                    **layer_b_report,
+                    "verified": False,
+                    "note": (
+                        "Layer B is best effort. No public detector exists for any "
+                        "vendor's text watermark, so nobody can verify removal, "
+                        "including us."
+                    ),
+                }
             if detector_reports:
                 report["text_detectors"] = detector_reports
         elif kind == "image":

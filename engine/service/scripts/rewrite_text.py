@@ -63,10 +63,7 @@ PROMPTS = {
         "6. Use ordinary phrasing. Prefer a plain common word over an unusual synonym. "
         "Never reach for an odd construction just to avoid the original wording: write "
         "'five-year deal', never 'semi-decade pact'.\n"
-        "7. Never use an em dash or an en dash. Use a comma, a full stop, or brackets. "
-        "An em dash is among the most recognisable signs of machine written text and "
-        "putting one into a user's document is the opposite of this tool's purpose.\n"
-        "8. Output only the rewritten text, with no preamble or commentary."
+        "7. Output only the rewritten text, with no preamble or commentary."
         "\n\n---\n{TEXT}"
     ),
     "paraphrase": (

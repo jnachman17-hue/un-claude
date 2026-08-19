@@ -176,7 +176,53 @@ undecided and has its own session. `06` row 18.
 | | Status |
 |---|---|
 | `/clean` and `/inspect` | **Working. Proven on text, PNG, JPEG and an Office document** |
-| Layer B, the statistical watermark | **Not built.** Needs a model chosen. Session A2 |
+| **Layer B** | **Working.** `POST /clean` with `{"options": {"layer_b": true}}` |
 | Deployed to Vercel | **Not yet.** Runs locally only |
 | The shared password | Not set up |
 | PDF | **Out of version one.** `04` entry 26 |
+
+---
+
+## 9. Layer B over HTTP
+
+**One extra option on the call you already make.**
+
+```json
+{ "file": "<base64>", "name": "paste.txt", "options": { "layer_b": true } }
+```
+
+**Leave it out and nothing changes:** layer A only, instant, no model call, no
+cost. **That is the free path a signed out visitor gets.**
+
+**Turn it on** and the text is rewritten first, then layer A runs on the result.
+Measured end to end through the server: **6.4 seconds for 566 words.**
+
+The response gains a `layer_b` block inside `report`:
+
+```json
+"layer_b": {
+  "model": "mistral/mistral-small",
+  "mode": "rewritten",
+  "verified": false,
+  "note": "Layer B is best effort. No public detector exists for any vendor's
+           text watermark, so nobody can verify removal, including us."
+}
+```
+
+**`verified` is always `false` and the note always ships.** `04` entry 23. The
+interface must not present a layer B result with the confidence of the other two.
+
+### Configured entirely by environment variable
+
+| Variable | Value in use |
+|---|---|
+| `WATERMARKS_REWRITE_BACKEND` | `openai-compatible` |
+| `WATERMARKS_REWRITE_BASE_URL` | `https://ai-gateway.vercel.sh` (no `/v1`, the code appends it) |
+| `WATERMARKS_REWRITE_MODEL` | `mistral/mistral-small` |
+| `WATERMARKS_REWRITE_API_KEY` | **Secret.** Never in the repository |
+
+**The model is one setting, deliberately.** If a vendor starts watermarking its
+own output, swapping it is a one line change. `06` row 29.
+
+**It must never be an Anthropic or Google model.** Rewriting Claude text with
+Claude re-applies the watermark at full strength rather than removing it.
