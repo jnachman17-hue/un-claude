@@ -1,5 +1,6 @@
 import { FileTextIcon, ImageIcon, TypeIcon } from 'lucide-react';
 
+import { FactCards } from './fact-cards';
 import { Workbench } from './workbench/workbench';
 
 /**
@@ -20,16 +21,22 @@ import { Workbench } from './workbench/workbench';
  */
 const FACTS = [
   {
-    figure: '100%',
-    label: 'of Claude’s output has carried a watermark since 2 August 2026, worldwide, with no way to opt out',
-  },
-  {
-    figure: '5 of 8',
-    label: 'of the largest AI providers are confirmed marking every file they generate, and two more will not say',
+    figure: '3',
+    label: 'kinds of mark, in three different places',
+    detail:
+      'Hidden characters between the words, provenance records inside a file’s wrapper, and a bias in which words the model chose. They are unrelated mechanisms, and a tool that treats them as one thing is not removing all of them.',
   },
   {
     figure: '9',
-    label: 'classes of hidden character checked on every scan, free, in about forty milliseconds',
+    label: 'classes of hidden character checked every scan',
+    detail:
+      'Zero width, unusual spaces, direction marks, tag characters, variation selectors, private use, lookalike letters, control characters and other invisibles. Every class is checked whether or not anything is found, and the scan is free and takes about forty milliseconds.',
+  },
+  {
+    figure: '5 of 8',
+    label: 'of the largest providers already mark the files they generate',
+    detail:
+      'Anthropic, Google, OpenAI, Adobe and the hosted Stability and Flux services all attach a signed provenance record. They converged on one format, C2PA, and that format is removable by design. Every major lab has also signed the European transparency code.',
   },
 ];
 
@@ -71,46 +78,33 @@ export function HeroSection() {
               AI written, and sanitise it.
             </p>
 
-            <ul className={'mt-6 flex flex-wrap gap-x-5 gap-y-2.5'}>
+            <p className={'text-muted-foreground mt-6 max-w-[38ch] text-[13px] leading-[1.6]'}>
+              Three kinds of mark, nine classes of hidden character, and a rewrite
+              that never repeats more than three of your words in a row. Scanning
+              is free and takes about forty milliseconds.
+            </p>
+          </div>
+
+          <div className={'animate-rise lg:col-span-7'} style={{ animationDelay: '110ms' }}>
+            <Workbench />
+
+            <ul className={'mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1'}>
               {HANDLES.map((handle) => (
                 <li
                   key={handle.label}
-                  className={'text-muted-foreground inline-flex items-center gap-1.5 text-[12.5px]'}
+                  className={'text-muted-foreground inline-flex items-center gap-1.5 text-[12px]'}
                 >
-                  <handle.icon className={'size-[14px]'} strokeWidth={1.9} aria-hidden />
+                  <handle.icon className={'size-[13px]'} strokeWidth={1.9} aria-hidden />
                   {handle.label}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className={'animate-rise lg:col-span-7'} style={{ animationDelay: '110ms' }}>
-            <Workbench />
-          </div>
         </div>
       </div>
 
-      <div className={'relative mx-auto max-w-[1180px] px-5 pb-16 sm:px-8'}>
-        <dl className={'border-border/70 grid gap-x-10 gap-y-7 border-t pt-8 sm:grid-cols-3'}>
-          {FACTS.map((fact, index) => (
-            <div
-              key={fact.figure}
-              className={'animate-rise'}
-              style={{ animationDelay: `${index * 90}ms` }}
-            >
-              <dt
-                className={
-                  'text-foreground font-mono text-[30px] leading-none font-medium tracking-[-0.03em] tabular-nums sm:text-[36px]'
-                }
-              >
-                {fact.figure}
-              </dt>
-              <dd className={'text-muted-foreground mt-2.5 max-w-[34ch] text-[13px] leading-[1.55]'}>
-                {fact.label}
-              </dd>
-            </div>
-          ))}
-        </dl>
+      <div className={'relative mx-auto max-w-[1180px] px-5 pb-20 sm:px-8'}>
+        <FactCards facts={FACTS} />
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { CheckIcon, MinusIcon, XIcon } from 'lucide-react';
+import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
 
 /**
  * Who marks what, and it is the most credible thing on this page.
@@ -18,19 +18,27 @@ type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
 const VENDORS: Array<{ name: string; files: Mark; text: Mark; note: string }> = [
   { name: 'Anthropic', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
   { name: 'Google', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
-  { name: 'OpenAI', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed, and it signed the EU code of practice' },
+  { name: 'OpenAI', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
   { name: 'Adobe Firefly', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
   { name: 'Stability, Flux', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
-  { name: 'Meta', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload. Its own marking is less clearly documented' },
+  { name: 'Meta', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
   { name: 'Midjourney', files: 'no', text: 'na', note: 'No provenance marking' },
-  { name: 'xAI Grok', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published' },
+  { name: 'xAI Grok', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
 ];
 
 const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: string }> = {
-  yes: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'Yes' },
-  no: { icon: XIcon, className: 'bg-rose-500 text-white', label: 'No' },
-  unconfirmed: { icon: MinusIcon, className: 'bg-amber-500 text-white', label: 'Unconfirmed' },
-  na: { icon: MinusIcon, className: 'bg-foreground/12 text-foreground/40', label: 'Not applicable' },
+  yes: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'Marks its output' },
+  no: { icon: XIcon, className: 'bg-rose-500 text-white', label: 'Does not mark' },
+  unconfirmed: {
+    icon: ClockIcon,
+    className: 'bg-amber-500 text-white',
+    label: 'Committed to watermarking',
+  },
+  na: {
+    icon: MinusIcon,
+    className: 'bg-foreground/12 text-foreground/40',
+    label: 'Does not produce this',
+  },
 };
 
 function Cell({ mark }: { mark: Mark }) {
@@ -117,7 +125,7 @@ export function CoverageSection() {
               <Cell mark={'yes'} /> Marks its output
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
-              <Cell mark={'unconfirmed'} /> Not confirmed either way
+              <Cell mark={'unconfirmed'} /> Committed to watermarking
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'no'} /> Does not mark

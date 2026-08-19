@@ -348,8 +348,8 @@ export function Workbench() {
       detail: !carriesProse
         ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
         : done && receipt
-          ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that.`
-          : 'Hidden in which words the model picked, not in anything added between them. No tool can point to it, which is why it is removed rather than found.',
+          ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that to survive.`
+          : 'Anthropic applies this to Claude models launched from 2 August 2026, globally, with no way to opt out. It hides in which words the model picked rather than in anything added between them, so no tool can point at it. That is why it is removed rather than found.',
     },
   ];
 
@@ -441,24 +441,22 @@ export function Workbench() {
           {/* Nothing about a paragraph of prose says "this is a demonstration,
               delete it". The label and the line beneath it do. */}
           {isSample && !editing ? (
-            <>
+            <button
+              type={'button'}
+              onClick={startEditing}
+              className={
+                'border-border/80 text-muted-foreground hover:text-foreground flex w-full items-center gap-2 border-t px-4 py-2.5 text-left text-[12.5px] transition-colors'
+              }
+            >
               <span
                 className={
-                  'bg-foreground/[0.055] text-muted-foreground absolute top-2.5 right-2.5 rounded-[6px] px-2 py-[3px] text-[10.5px] font-medium tracking-wide uppercase'
+                  'bg-foreground/[0.07] text-foreground/70 shrink-0 rounded-[5px] px-1.5 py-[2px] text-[10px] font-semibold tracking-wide uppercase'
                 }
               >
                 Example
               </span>
-              <button
-                type={'button'}
-                onClick={startEditing}
-                className={
-                  'border-border/80 text-muted-foreground hover:text-foreground w-full border-t px-4 py-2.5 text-left text-[12.5px] transition-colors'
-                }
-              >
-                Click anywhere above to clear this and paste your own text.
-              </button>
-            </>
+              Click anywhere above to clear this and paste your own text.
+            </button>
           ) : null}
 
           {phase === 'scanning' ? (
@@ -550,13 +548,13 @@ export function Workbench() {
 
       {/* The findings. A separate surface, with its own heading, because it
           answers a different question from the box above it. */}
-      <div className={'border-border/70 bg-foreground/[0.017] rounded-b-[18px] border-t px-4 py-3.5 sm:px-5'}>
+      <div className={'border-border bg-foreground/[0.035] rounded-b-[18px] border-t-2 px-4 py-4 sm:px-5'}>
         <div className={'mb-2 flex items-baseline justify-between gap-3'}>
-          <h2 className={'text-foreground text-[12px] font-semibold tracking-wide uppercase'}>
+          <h2 className={'text-foreground text-[11.5px] font-semibold tracking-[0.06em] uppercase'}>
             Every mark we check for
           </h2>
-          <span className={'text-muted-foreground text-[11.5px]'}>
-            Checked in full, every time
+          <span className={'text-muted-foreground text-[11px]'}>
+            All three, every time
           </span>
         </div>
 

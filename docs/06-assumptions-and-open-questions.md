@@ -131,3 +131,64 @@ hand written login system. Full reasoning in `04` entry 14. **The known cost is
 that it has no billing.** That is row 10, and it is now urgent rather than
 future.
 
+
+---
+
+## Session 5 review notes from Jon, 19 August 2026
+
+Given after seeing the built page. Kept as a list rather than folded into rows,
+because they are a review pass rather than open questions. **Struck items are
+done.**
+
+### Corrections to fact, done first because they are wrong rather than ugly
+
+- ~~**"100% of Claude's output has carried a watermark since 2 August 2026" is not
+  true.** Jon caught it. Anthropic has said it is coming, not that every model
+  from that date carries it. Going forward it will be the case; we do not know
+  when.~~ **FIXED.**
+- ~~"5 of 8 ... and two more will not say" editorialises. **Say what is
+  committed, not what is withheld.**~~ **FIXED.**
+
+### The box
+
+- ~~The "Example" chip overlaps the text.~~ **FIXED.**
+- ~~Not enough separation between the input area and the findings below it.~~ **FIXED.**
+- ~~The list of what was found should be behind an expander, not always open.~~ **FIXED.**
+- ~~File provenance needs a better symbol. A paperclip was suggested.~~ **FIXED.**
+- ~~Statistical watermark needs a better description, and must name Anthropic and
+  2 August 2026 the way the earlier version did.~~ **FIXED.**
+- ~~Status words top right in capitals.~~ **FIXED.**
+- **The whole findings area needs to be readable in five seconds.** Less text,
+  more colour, easier on the eye. Partly done, still open.
+
+### The hero
+
+- **Format list (pasted text, Word, PNG, JPG) is in the wrong place.** Move it near
+  the box. Put technical-sounding but true facts in its place.
+- **The three facts need real design:** cards, motion, click to expand for detail.
+
+### The marquee
+
+- ~~Widen spacing so the same outlet is never visible twice at once.~~ **FIXED.**
+- **Use each outlet's real logo and brand colour.** Brand-coloured wordmarks are in
+  as a first step. **Actual logo files still need Jon's approval, `06` row 34.**
+- ~~More separation between the hero and this strip.~~ **FIXED.**
+- **Add a readership figure**, directionally correct and sourced. **NOT INVENTED:
+  still open because no source has been checked.**
+- **Caption is Jon's**, and he wants it to link to the mission page, styled as a
+  link. Wiring done, wording his.
+
+### How it works
+
+- **Inconsistent and needs rebuilding.** One panel has the accent background and a
+  side-by-side layout, the other two do not, and the column count changes down the
+  page. **Jon's words: the section is bad, but the direction is a strong start.**
+- **Needs animation and movement.**
+- **The key diagram is not digestible enough.**
+
+### The vendor table
+
+- ~~Labels: marks its output, committed to watermarking, does not mark, does not
+  produce this.~~ **FIXED.**
+- **Vendor names in each vendor's own brand colour and typeface.** Colour done.
+  Typeface would need font files and is not worth it.
