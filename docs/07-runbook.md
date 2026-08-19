@@ -1214,3 +1214,90 @@ all empty.
 **Note for reading the numbers: the browser used for testing blocked PostHog with
 `ERR_BLOCKED_BY_CLIENT`.** Ad and tracker blocking will undercount real visitors
 too. The figures are directional, not exact.
+
+
+---
+
+## [T3] The measurement was the defect a fourth time, and this one cost money
+
+**19 August 2026, track 3.** Written up because the same rule caught the same
+kind of bug again, and because the number it was corrupting is the one the
+pricing decision rests on.
+
+### What was wrong
+
+The fact guard compares every number in a chunk against the rewritten version,
+by value rather than spelling, so `eighteen percent` matches `18 percent`. It
+retries the chunk when a figure looks dropped.
+
+**It was forcing a retry on every compound number word from twenty-one to
+ninety-nine.** `ENGINE.md` records an earlier repair, that `thirty-four` must
+resolve to 34 and not to 30 and 4. **The repair added 34 to the set and left 30
+and 4 in it.** So a source saying `thirty-four` demanded that the output contain
+30, and an output written as `34` — the natural thing for a model to do — looked
+like a dropped figure.
+
+### What it cost, measured on one 674 word document
+
+| | Model calls | Retries | Cost | Time |
+|---|---|---|---|---|
+| **Before** | **10** for 3 chunks | 7 | $0.00167 | **38.4s against a 60s ceiling** |
+| After, run 1 | 4 | 1 | $0.00063 | |
+| After, run 2 | 5 | 4 | $0.00086 | |
+
+**Two runs of a non-deterministic process is not a cost model** and the document
+was deliberately number-dense. The direction is not in doubt; the magnitude
+varies with content. `06` rows 65 and 66.
+
+### The check that finds this class of bug in ten seconds
+
+Never reason about a value comparison. Print both sides:
+
+```bash
+cd ~/un-claude/apps/web/engine && python3 -c "
+import sys; sys.path.insert(0, '.')
+from uc_chunk import _numbers
+for src, out in [('Fifty-one hires', '51 hires'), ('Thirty-four percent', '34 percent')]:
+    s, o = _numbers(src), _numbers(out)
+    print(f'{src!r:24} -> {sorted(s, key=int)}   {out!r:20} -> {sorted(o, key=int)}   '
+          f'{\"RETRY \" + str(sorted({m for m in s - o if len(m) > 1})) if {m for m in s - o if len(m) > 1} else \"ok\"}')"
+```
+
+**Run it with controls where a number really was dropped**, or a guard that never
+fires will look identical to a guard that is working.
+
+---
+
+## [T3] Where the usage figures go, and what that is worth
+
+**19 August 2026.** Every request now writes one line to the server log:
+
+```
+UC_USAGE {"at": "...", "endpoint": "clean", "ok": true, "kind": "text",
+ "words_in": 674, "words_out": 644, "seconds": 22.1,
+ "layer_b": {"chunks": 3, "attempts": 4, "retries": 1, "model_calls": 4,
+             "prompt_tokens": 2731, "completion_tokens": 1510,
+             "total_tokens": 4241, "cost_usd": 0.0006263}}
+```
+
+**To read them:**
+
+```bash
+npx vercel@latest logs <deployment-url> 2>&1 | grep UC_USAGE
+```
+
+**Two things about it that must not be forgotten.**
+
+**It is a log line, not a database.** Vercel keeps runtime logs for a short
+window. Anything worth keeping has to be pulled out before it expires. The
+durable ledger is Track 1's, because it needs a migration. `06` row 64.
+
+**`attempts` and `model_calls` are different numbers and both matter.** An
+attempt that never reaches the model, because the connection failed or the
+gateway rate limited us, is an attempt and is not a billed call. A live run
+showed 7 attempts against 5 calls. **If they are ever equal in every line, one of
+them is not being counted.**
+
+**Cost and token counts are deliberately absent from the HTTP response.** They
+are our unit economics and the site is public. The browser gets words, bytes,
+seconds and whether layer B ran.
