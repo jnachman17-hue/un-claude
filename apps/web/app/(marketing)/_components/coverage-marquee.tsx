@@ -12,21 +12,29 @@ import Link from 'next/link';
  * un-claude. The caption says what the strip actually is, and it links through to
  * the mission page, which is Jon's to write.
  *
- * BRAND COLOURS, NOT LOGO FILES. Jon asked for real logos. 06 row 34 requires his
- * approval before any logo file is fetched, and CLAUDE.md section 5 requires it
- * before anything is downloaded. Each outlet's own colour is set here as the step
- * that needs no download. Logo files follow once he supplies or approves them.
+ * BRAND COLOURS AND WEIGHTS, NOT LOGO FILES.
+ *
+ * Jon's objection is right: nine names in one typeface do not read as nine
+ * mastheads. Each entry now carries its own colour, weight, tracking and casing,
+ * which is as close as type alone gets.
+ *
+ * The real fix is the actual artwork, and Jon has offered to supply it. That is
+ * the right route: 06 row 34 requires his approval before any logo file is
+ * fetched, CLAUDE.md section 5 requires it before anything is downloaded, and a
+ * masthead taken from a press page is on far safer ground than one scraped from a
+ * search result. Drop PNG or SVG files into apps/web/public/images/outlets/ named
+ * cnn.svg, npr.svg and so on, and they slot straight in here.
  */
 const ARTICLES = [
-  { outlet: 'CNN', color: '#CC0000', href: 'https://www.cnn.com/2026/08/11/business/video/invisible-watermarks-coming-claudes-ai-written-text-digvid-vrtc' },
-  { outlet: 'NPR', color: '#166E9E', href: 'https://www.npr.org/2026/08/17/nx-s1-5928211/anthropics-new-invisible-watermark-marks-content-generated-by-ai-chatbot-claude' },
-  { outlet: 'ABC News', color: '#1B1B1B', href: 'https://www.youtube.com/watch?v=R01_-MkxFws' },
-  { outlet: 'Forbes', color: '#004B8D', href: 'https://www.forbes.com/sites/anishasircar/2026/08/13/claude-will-now-leave-a-watermark-on-everything-it-writes-what-does-that-mean/' },
-  { outlet: 'Fortune', color: '#0A0A0A', href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/' },
-  { outlet: 'Axios', color: '#0A5BD3', href: 'https://www.axios.com/2026/08/12/anthropic-claude-watermarks-ai-detection' },
-  { outlet: 'TechCrunch', color: '#0A8F3C', href: 'https://techcrunch.com/2026/08/11/anthropic-says-it-will-watermark-text-generated-by-its-ai-models/' },
-  { outlet: 'CNET', color: '#0067B8', href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/' },
-  { outlet: 'The Register', color: '#FF0000', href: 'https://www.theregister.com/ai-and-ml/2026/08/11/anthropic-pledges-to-embed-watermarks-to-help-discern-ai-slop-in-sop-to-eu/5285792' },
+  { outlet: 'CNN', color: '#CC0000', style: 'font-black tracking-[-0.05em]', href: 'https://www.cnn.com/2026/08/11/business/video/invisible-watermarks-coming-claudes-ai-written-text-digvid-vrtc' },
+  { outlet: 'NPR', color: '#235F9E', style: 'font-bold tracking-[0.02em]', href: 'https://www.npr.org/2026/08/17/nx-s1-5928211/anthropics-new-invisible-watermark-marks-content-generated-by-ai-chatbot-claude' },
+  { outlet: 'ABC News', color: '#0A0A0A', style: 'font-semibold tracking-[-0.03em]', href: 'https://www.youtube.com/watch?v=R01_-MkxFws' },
+  { outlet: 'Forbes', color: '#0A0A0A', style: 'font-bold tracking-[-0.045em]', href: 'https://www.forbes.com/sites/anishasircar/2026/08/13/claude-will-now-leave-a-watermark-on-everything-it-writes-what-does-that-mean/' },
+  { outlet: 'FORTUNE', color: '#0A0A0A', style: 'font-semibold tracking-[0.06em] text-[0.85em]', href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/' },
+  { outlet: 'Axios', color: '#1858C8', style: 'font-bold tracking-[-0.035em]', href: 'https://www.axios.com/2026/08/12/anthropic-claude-watermarks-ai-detection' },
+  { outlet: 'TechCrunch', color: '#149A4B', style: 'font-bold tracking-[-0.04em]', href: 'https://techcrunch.com/2026/08/11/anthropic-says-it-will-watermark-text-generated-by-its-ai-models/' },
+  { outlet: 'CNET', color: '#E21B22', style: 'font-black tracking-[-0.02em]', href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/' },
+  { outlet: 'The Register', color: '#FF0000', style: 'font-semibold tracking-[-0.035em]', href: 'https://www.theregister.com/ai-and-ml/2026/08/11/anthropic-pledges-to-embed-watermarks-to-help-discern-ai-slop-in-sop-to-eu/5285792' },
 ];
 
 export function CoverageMarquee() {
@@ -69,9 +77,12 @@ export function CoverageMarquee() {
                   rel={'noopener noreferrer'}
                   tabIndex={copy === 1 ? -1 : undefined}
                   style={{ '--outlet': article.color } as React.CSSProperties}
-                  className={
-                    'group/link inline-flex shrink-0 items-center px-9 text-[26px] font-semibold tracking-[-0.03em] whitespace-nowrap text-[color:var(--outlet)] opacity-45 transition-opacity duration-300 hover:opacity-100 sm:px-12 sm:text-[30px] dark:brightness-150'
-                  }
+                  className={[
+                    'group/link inline-flex shrink-0 items-center px-9 text-[26px] whitespace-nowrap',
+                    'text-[color:var(--outlet)] opacity-50 transition-opacity duration-300',
+                    'hover:opacity-100 sm:px-12 sm:text-[30px] dark:brightness-[1.7]',
+                    article.style,
+                  ].join(' ')}
                 >
                   {article.outlet}
                 </a>

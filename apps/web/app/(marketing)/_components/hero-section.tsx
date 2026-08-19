@@ -1,6 +1,7 @@
 import { FileTextIcon, ImageIcon, TypeIcon } from 'lucide-react';
 
 import { FactCards } from './fact-cards';
+import { LiveCounter } from './live-counter';
 import { Workbench } from './workbench/workbench';
 
 /**
@@ -19,24 +20,39 @@ import { Workbench } from './workbench/workbench';
  * development, which is the day every fabricated number in this category becomes
  * checkable at once. Sources: ENGINE.md section 2, researched 18 August 2026.
  */
+const RESULTS = [
+  {
+    figure: '100%',
+    label: 'of provenance data removed, checked against the file’s raw bytes',
+  },
+  {
+    figure: '90%+',
+    label: 'of your three word sequences broken by the rewrite',
+  },
+  {
+    figure: '0',
+    label: 'figures lost across every document we have tested',
+  },
+];
+
 const FACTS = [
   {
-    figure: '3',
-    label: 'kinds of mark, in three different places',
-    detail:
-      'Hidden characters between the words, provenance records inside a file’s wrapper, and a bias in which words the model chose. They are unrelated mechanisms, and a tool that treats them as one thing is not removing all of them.',
-  },
-  {
-    figure: '9',
-    label: 'classes of hidden character checked every scan',
-    detail:
-      'Zero width, unusual spaces, direction marks, tag characters, variation selectors, private use, lookalike letters, control characters and other invisibles. Every class is checked whether or not anything is found, and the scan is free and takes about forty milliseconds.',
-  },
-  {
     figure: '5 of 8',
-    label: 'of the largest providers already mark the files they generate',
+    label: 'of the largest AI labs already mark what they generate',
     detail:
-      'Anthropic, Google, OpenAI, Adobe and the hosted Stability and Flux services all attach a signed provenance record. They converged on one format, C2PA, and that format is removable by design. Every major lab has also signed the European transparency code.',
+      'Anthropic, Google, OpenAI, Adobe and the hosted Stability and Flux services all attach a signed provenance record to the files they produce. They converged on one format, C2PA. Every major lab has also signed the European transparency code, so the remaining three are a question of when rather than whether.',
+  },
+  {
+    figure: '2.5bn',
+    label: 'prompts answered by ChatGPT alone, every day',
+    detail:
+      'Reported in 2026, and that is one product from one company. The volume of machine written text now in circulation is not something any person or organisation can audit by reading it, which is exactly why the marks exist and why they are invisible.',
+  },
+  {
+    figure: 'Aug 2026',
+    label: 'when Claude began watermarking the text it writes',
+    detail:
+      'Anthropic applies it to models launched from 2 August 2026, globally, with no way to opt out. Google already does the same to Gemini through SynthID. Neither mark can be detected by any public tool, which is why the only answer available today is removal rather than checking.',
   },
 ];
 
@@ -78,10 +94,25 @@ export function HeroSection() {
               AI written, and sanitise it.
             </p>
 
-            <p className={'text-muted-foreground mt-6 max-w-[38ch] text-[13px] leading-[1.6]'}>
-              Three kinds of mark, nine classes of hidden character, and a rewrite
-              that never repeats more than three of your words in a row. Scanning
-              is free and takes about forty milliseconds.
+            <dl className={'border-border/70 mt-7 grid max-w-[40ch] gap-x-6 gap-y-4 border-t pt-6 sm:grid-cols-3'}>
+              {RESULTS.map((result) => (
+                <div key={result.figure}>
+                  <dt
+                    className={
+                      'text-foreground font-mono text-[22px] leading-none font-medium tracking-[-0.03em] tabular-nums'
+                    }
+                  >
+                    {result.figure}
+                  </dt>
+                  <dd className={'text-muted-foreground mt-1.5 text-[11.5px] leading-[1.45]'}>
+                    {result.label}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            <p className={'text-muted-foreground/70 mt-3 max-w-[40ch] text-[11px] leading-snug'}>
+              Measured on our own test documents, not estimated.
             </p>
           </div>
 
@@ -104,7 +135,14 @@ export function HeroSection() {
       </div>
 
       <div className={'relative mx-auto max-w-[1180px] px-5 pb-20 sm:px-8'}>
-        <FactCards facts={FACTS} />
+        <div className={'grid gap-4 lg:grid-cols-12'}>
+          <div className={'lg:col-span-7'}>
+            <LiveCounter />
+          </div>
+          <div className={'lg:col-span-5'}>
+            <FactCards facts={FACTS} />
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -15,18 +15,33 @@ import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
 
 type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
 
-/** Brand colours so each vendor is recognisable at a glance. Jon's request.
- *  Their own typefaces would mean licensing and shipping font files for eight
- *  companies, which is not worth it for a table. */
-const VENDORS: Array<{ name: string; color: string; files: Mark; text: Mark; note: string }> = [
-  { name: 'Anthropic', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
-  { name: 'Google', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
-  { name: 'OpenAI', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
-  { name: 'Adobe Firefly', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
-  { name: 'Stability, Flux', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
-  { name: 'Meta', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
-  { name: 'Midjourney', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking' },
-  { name: 'xAI Grok', color: '#1A1A1A', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
+/**
+ * Brand colours, initials and weights so the column reads as brands rather than
+ * as a list of words in one typeface. Jon's objection, and it was fair.
+ *
+ * REAL LOGOS ARE THE PROPER FIX and he has offered to supply them. Drop files
+ * into apps/web/public/images/vendors/ named anthropic.svg, google.svg and so on
+ * and the initial tile below becomes an <Image>. Their actual typefaces are not
+ * worth chasing: it would mean licensing and shipping eight commercial font
+ * families to set eight words.
+ */
+const VENDORS: Array<{
+  name: string;
+  color: string;
+  initial: string;
+  weight: string;
+  files: Mark;
+  text: Mark;
+  note: string;
+}> = [
+  { name: 'Anthropic', initial: 'A', weight: 'font-semibold tracking-[-0.02em]', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
+  { name: 'Google', initial: 'G', weight: 'font-medium tracking-[-0.005em]', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
+  { name: 'OpenAI', initial: 'O', weight: 'font-semibold tracking-[-0.025em]', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
+  { name: 'Adobe Firefly', initial: 'Ad', weight: 'font-bold tracking-[-0.02em]', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
+  { name: 'Stability, Flux', initial: 'S', weight: 'font-semibold tracking-[-0.015em]', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
+  { name: 'Meta', initial: 'M', weight: 'font-bold tracking-[-0.03em]', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
+  { name: 'Midjourney', initial: 'MJ', weight: 'font-medium tracking-[0.02em]', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking' },
+  { name: 'xAI Grok', initial: 'X', weight: 'font-semibold tracking-[-0.01em]', color: '#1A1A1A', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
 ];
 
 const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: string }> = {
@@ -104,16 +119,28 @@ export function CoverageSection() {
                     'hover:bg-foreground/[0.014] grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-4 py-3 transition-colors sm:px-5'
                   }
                 >
-                  <div className={'min-w-0'}>
+                  <div className={'flex min-w-0 items-start gap-3'}>
+                    <span
+                      style={{ backgroundColor: vendor.color }}
+                      aria-hidden
+                      className={
+                        'mt-[1px] grid size-[26px] shrink-0 place-items-center rounded-[7px] text-[11px] font-bold text-white'
+                      }
+                    >
+                      {vendor.initial}
+                    </span>
+
+                    <div className={'min-w-0'}>
                     <span
                       style={{ color: vendor.color }}
-                      className={'text-[13.5px] font-semibold tracking-[-0.012em] dark:brightness-150'}
+                      className={`text-[14px] dark:brightness-[1.7] ${vendor.weight}`}
                     >
                       {vendor.name}
                     </span>
                     <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>
                       {vendor.note}
                     </p>
+                    </div>
                   </div>
                   <span className={'flex w-14 justify-center'}>
                     <Cell mark={vendor.files} />

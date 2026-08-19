@@ -23,7 +23,7 @@ export function FactCards({ facts }: { facts: Fact[] }) {
   const [open, setOpen] = useState<string | null>(null);
 
   return (
-    <dl className={'grid gap-3 sm:grid-cols-3'}>
+    <dl className={'grid h-full gap-3 sm:grid-cols-3 lg:grid-cols-1'}>
       {facts.map((fact, index) => {
         const isOpen = open === fact.figure;
 
@@ -38,7 +38,7 @@ export function FactCards({ facts }: { facts: Fact[] }) {
               onClick={() => setOpen(isOpen ? null : fact.figure)}
               aria-expanded={isOpen}
               className={[
-                'bg-card ring-border/70 group flex w-full flex-col rounded-[15px] p-5 text-left ring-1',
+                'bg-card ring-border/70 group flex h-full w-full flex-col rounded-[15px] p-4 text-left ring-1',
                 'transition-all duration-300 hover:-translate-y-[2px] active:translate-y-0',
                 isOpen
                   ? 'ring-mark-strong shadow-[0_8px_30px_-12px_rgba(0,0,0,0.14)]'
@@ -48,7 +48,7 @@ export function FactCards({ facts }: { facts: Fact[] }) {
               <div className={'flex w-full items-start justify-between gap-3'}>
                 <dt
                   className={
-                    'text-foreground font-mono text-[32px] leading-none font-medium tracking-[-0.03em] tabular-nums'
+                    'text-foreground font-mono text-[26px] leading-none font-medium tracking-[-0.03em] tabular-nums'
                   }
                 >
                   {fact.figure}
