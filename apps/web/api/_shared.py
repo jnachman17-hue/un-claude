@@ -17,7 +17,11 @@ MAX_BYTES = 5 * 1024 * 1024   # 5 MB ceiling on any single upload
 # The engine is a back room, not a public counter. Only our own site may call it.
 # /api/clean with layer_b spends real money on every request, so an unauthenticated
 # endpoint is an open tap on Jon's AI Gateway balance.
-ENGINE_KEY = os.environ.get("UC_ENGINE_KEY", "")
+# .strip() matters more than it looks. `openssl rand -hex 32` prints a trailing
+# newline, and a value pasted with one would be stored with it. HTTP headers
+# cannot carry a newline, so the sending side would drop it and the two would
+# never match, with nothing in either log to say why.
+ENGINE_KEY = os.environ.get("UC_ENGINE_KEY", "").strip()
 IS_PRODUCTION = os.environ.get("VERCEL_ENV") == "production"
 
 
@@ -30,8 +34,23 @@ def authorised(headers) -> bool:
     optional so development needs no setup.
     """
     if not ENGINE_KEY:
+        # Fails closed in production, and says so, because "no key configured"
+        # and "wrong key supplied" otherwise look identical from outside.
+        if IS_PRODUCTION:
+            print("UC_ENGINE_KEY is not set on this function", file=sys.stderr)
         return not IS_PRODUCTION
-    return hmac.compare_digest(str(headers.get("x-uc-key") or ""), ENGINE_KEY)
+
+    supplied = str(headers.get("x-uc-key") or "").strip()
+    if hmac.compare_digest(supplied, ENGINE_KEY):
+        return True
+
+    # Lengths only. Never the values. Enough to tell "nothing was sent" from
+    # "something was sent and did not match".
+    print(
+        f"engine key mismatch: configured={len(ENGINE_KEY)} supplied={len(supplied)}",
+        file=sys.stderr,
+    )
+    return False
 
 # A closed set of messages. An open error string puts raw upstream text in front
 # of a user, which is the defect still open as 06 row 13. See 04 entry 15.

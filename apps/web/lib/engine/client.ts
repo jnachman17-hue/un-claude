@@ -30,7 +30,9 @@ const ENGINE_URL = process.env.UC_ENGINE_URL ?? 'https://un-claude.com';
  * setting is not a loaded one.
  */
 function engineKey(): string {
-  return process.env.UC_ENGINE_KEY ?? '';
+  // Trimmed for the same reason the engine trims: a secret pasted with a
+  // trailing newline is invisible in a dashboard and fatal over HTTP.
+  return (process.env.UC_ENGINE_KEY ?? '').trim();
 }
 
 /**
@@ -85,8 +87,14 @@ async function call<T>(path: string, body: unknown, timeoutMs: number): Promise<
   const key = engineKey();
 
   if (!key && process.env.VERCEL_ENV === 'production') {
-    console.error('UC_ENGINE_KEY is not set. The engine cannot be called.');
+    console.error('UC_ENGINE_KEY is not readable by the site. The engine cannot be called.');
     return failure('misconfigured');
+  }
+
+  if (process.env.VERCEL_ENV === 'production') {
+    // Length only, never the value. If the engine reports a different number the
+    // two halves are reading different things.
+    console.log(`engine call: key length ${key.length}`);
   }
 
   const controller = new AbortController();
