@@ -2007,3 +2007,44 @@ a footnote** — it is the moment a visitor sees the product work.
 on a phone for the first time this session and calls it abysmal. **Traffic is
 expected from TikTok**, so the likeliest visitor is on a phone. Nothing in this
 list is finished until it is right on a small screen.
+
+### 71. [T1] A Word document is one credit, and the counter is real but starts high
+
+**Two rulings, Jon, 19 August 2026.**
+
+**A Word document costs one credit, the same as an image.** He ruled it as soon
+as he read `04` entry 69: if the engine never rewrites a container, charging it
+by its words charges for a rewrite it does not get. **`06` row 74's pricing half
+closes here.** The engineering half stays open — whether containers should one
+day be rewritten is a separate question, and his aside, "although not sure why
+they don't get rewrite", deserves the real answer: rewriting the text inside a
+`.docx` means pulling it out of the document's XML, rewriting it, and putting it
+back without destroying the formatting around it. **That is a substantially
+harder job than rewriting a plain string**, which is why the upstream engine only
+does the latter. It is a feature to build, not a bug to fix.
+
+**The live counter becomes a real, rising number, seeded above what we have
+actually done.** It replaces the current counter, which extrapolates a February
+2024 ChatGPT-only figure to imply an industry that now includes labs the citation
+predates. **Jon's judgement on that: indefensible, and he is right.**
+
+**This session raised an objection and then withdrew it, which is recorded so the
+reasoning is not re-run.** The objection was that a seeded figure could hurt the
+Stripe application. **Asked directly for a real Stripe reason, there is not one.**
+Stripe's review looks at what is sold, whether the site describes it accurately,
+and whether terms, refunds and contact details exist. **A vanity metric on a
+landing page is not a claim about what a customer receives**, and `03-pricing.md`
+section 12b's actual risk is about how we describe the product, not about a
+counter. Jon's instruction stands and this session agrees with it.
+
+**One thing worth doing anyway, because it costs almost nothing.** A scan costs
+$0.0000021, or 467,000 per dollar, and a rewrite about 0.1 cents per thousand
+words. **Two million words could be put through the engine for roughly $2.50**,
+which would make a large seed figure literally true rather than merely
+defensible. Offered, not decided.
+
+**The mechanic Jon specified:** always rising, including when nobody is using it,
+because a static counter reads as broken. Real usage adds to it on top.
+
+**Phrasing is open.** "Words sanitised" is his own note as needing something
+plainer, and `04` entry 70 defers wording until layout is settled.
