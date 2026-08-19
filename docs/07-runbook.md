@@ -815,3 +815,53 @@ document.querySelector('[data-phase]').dataset.phase
 
 **This project's own record is eight measurement errors in one session.** A stable
 way to ask the application what it is doing is worth more than a picture of it.
+
+### The engine key, and the whitespace that broke it
+
+**19 August 2026.** The key went onto Vercel correctly, the deployment said
+`Ready`, and the lock worked: unauthenticated calls to `/api/scan` and
+`/api/clean` were refused. **But the site could not call its own engine either.**
+
+**Both halves read the same variable from the same project, so the value itself
+had to differ.** The cause is whitespace. `openssl rand -hex 32` prints a trailing
+newline. A value pasted with one is stored with one. **An HTTP header cannot carry
+a newline, so the sending side drops it and the receiving side keeps it, and the
+two never match.** Nothing in either log said so, because a wrong key and a
+missing key produced the same 401.
+
+**Both sides now `.strip()` and both log the LENGTH of the key they hold, never
+the value.** The engine also says explicitly when no key is configured at all.
+
+**The general rule: any secret that is copied by hand should be trimmed at both
+ends of the comparison.** The failure it prevents is invisible in a dashboard,
+which is exactly the kind this project cannot afford.
+
+### Verifying the lock from outside, the full set
+
+Run after any deployment that touches the engine or its key.
+
+```bash
+cd ~/un-claude && python3 - <<'PY'
+import base64, json, urllib.request, urllib.error
+def post(url, body, headers=None):
+    h = {'Content-Type': 'application/json'}
+    if headers: h.update(headers)
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=h)
+    try:
+        r = urllib.request.urlopen(req, timeout=45); return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try: return e.code, json.loads(e.read())
+        except Exception: return e.code, {}
+s = 'The quarterly figure was' + chr(0x202F) + '18 percent' + chr(0x200B) + ' higher.'
+p = {'file': base64.b64encode(s.encode()).decode(), 'name': 'paste.txt'}
+print('no key      ', post('https://un-claude.com/api/scan', p)[0], 'expect 401')
+print('wrong key   ', post('https://un-claude.com/api/scan', p, {'x-uc-key': 'nope'})[0], 'expect 401')
+print('paid, no key', post('https://un-claude.com/api/clean', {**p, 'options': {'layer_b': True}})[0], 'expect 401')
+print('via the site', post('https://un-claude.com/api/tool/scan', p)[0], 'expect 200')
+print('layer B gate', post('https://un-claude.com/api/tool/clean', {**p, 'layer_b': True})[0], 'expect 503')
+PY
+```
+
+**All five must match.** The fourth is the one that matters most: three 401s alone
+prove only that something is refusing everyone, which is also what a completely
+broken engine looks like.
