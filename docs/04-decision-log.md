@@ -1841,3 +1841,58 @@ from reasoning about it.**
 disobeys has never been measured.** Proven here: the guard would not catch it.
 **Not proven: that it happens.** `06` row 71, and it belongs to whoever owns the
 engine.
+
+### 67. [T1] The prices, ratified. Three packs, and free credits weighted away from the rewrite
+
+**Ruling.** Jon, 19 August 2026. **"I ratify your recommendation on pricing and
+free credits."** `06` rows 18 and 37 close on this entry, and `03-pricing.md`
+sections 6 and 7 are superseded where they disagree.
+
+| Pack | Credits | Words | Price | Stripe takes | **Net to us** | Per 1,000 words |
+|---|---|---|---|---|---|---|
+| **Taster** | 10 | 10,000 | **$4.99** | $0.44 | **$4.55** | $0.50 |
+| **Standard** | 25 | 25,000 | **$9.99** | $0.59 | **$9.40** | $0.40 |
+| **Pro** | 100 | 100,000 | **$24.99** | $1.02 | **$23.97** | $0.25 |
+
+**One credit buys 1,000 words. A file with no words in it costs one credit,
+whatever its size. Every job rounds up to a whole credit.**
+
+**Why the ladder starts at $4.99 and not the $9 this session first proposed.**
+Jon's objection was that $9 to $24 to $60 asks a stranger for a considered
+purchase and most will not make it. **He was right and the first ladder was too
+steep.** The entry pack exists to be bought without thinking.
+
+**Why $4.99 and not the $2.99 he floated.** Stripe's 30 cent fixed fee is 12.9
+percent of a $2.99 sale and 8.9 percent of a $4.99 one, and one $15 dispute
+costs the net revenue of seven Taster sales at $2.99 against four and a half at
+$4.99. **A buyer does not distinguish the two — both read as "under five
+dollars" — but we keep three quarters more per sale.** Jon accepted this.
+
+**The free allowance, and the reasoning is Jon's own worry rather than a cost
+argument.**
+
+| Who | Gets | Covers |
+|---|---|---|
+| Anyone, no account | **Unlimited scanning** | Free forever |
+| **Signed out** | **3 credits, once** | Invisible characters and file provenance. **No rewrite** |
+| **On creating an account** | **+2 credits** | Everything, rewrite unlocked |
+
+**His words: "I'm not worried about how much these signup free credits cost us,
+I'm worried they give 99% of the users enough of what they need to the point
+where they don't need to buy."** That is the correct worry and it is the opposite
+of the one `03-pricing.md` P4 was built on.
+
+**The arithmetic that set the number at 2 and not 3.** A standard essay is about
+2,500 words, which is **3 credits**. So a 3 credit signup grant is exactly one
+free essay: the person we most want to convert does the job they came for, free,
+and leaves. **At 2 credits a real essay is refused before it starts** — overflow
+rejects rather than truncating, `04` entry 16 — and that refusal is the buying
+moment. **Generous on the layers that do not compete with the sale, tight on the
+one that is the sale.**
+
+**And with a 10 credit entry pack at $4.99, every free credit given away is 50
+cents of it.** That is the frame that makes the number a commercial decision
+rather than a cost one.
+
+**Deliberately not decided here:** the subscription price, which waits for a few
+weeks of real repeat purchases, `04` entry 64.
