@@ -437,3 +437,54 @@ else.** A rewrite that returns two thirds of a document has not done the job,
 whatever it did to the watermark.
 
 **Fold into `04` at integration.** It reinforces entry 22's overflow-rejects rule.
+
+### FINDING, 19 August 2026. Chunking fixes truncation. Long documents are safe but not yet reliable
+
+**Fixed and verified.** Truncation is gone. Before chunking, a 3,367 word
+document came back as 348 words reported as success. After, documents come back
+at **86 to 94 percent** of their length, and anything below 70 percent is
+rejected outright rather than returned.
+
+**Timing is not a problem.** Worst observed run was 23 seconds on 5,047 words,
+against Vercel's 60 second ceiling. **The 60 second limit was never the real
+constraint and can be closed as a worry.**
+
+**The remaining problem: the fact guard rejects roughly half of long documents.**
+
+| Configuration | Passed | Rejected |
+|---|---|---|
+| 700 word chunks, 4 retries | 2 of 4 | 2 |
+| 700 word chunks, 8 retries | 2 of 4 | 2 |
+| 350 word chunks, 5 retries | **1 of 4** | 3 |
+
+**Every document that passed kept 100 percent of its numbers.** 72/72, 104/104,
+151/151. **The engine never returns a damaged document.** It refuses instead.
+
+**Why retries do not fix it.** Each chunk has some chance of dropping a figure.
+Across six to fifteen chunks the chance that at least one fails compounds, and
+more retries did not converge. **Smaller chunks made it worse**, which was the
+opposite of the prediction and is not yet explained.
+
+**Three routes not yet tried**, in the order worth trying them:
+1. **Retry at a lower temperature.** The first attempt is creative; a retry
+   should be conservative. Currently every attempt uses the same settings, so a
+   retry is just another roll of the same dice.
+2. **Tell the failing chunk which numbers it dropped** and ask again, rather than
+   asking again blind.
+3. **Report the at-risk figures to the user** instead of rejecting the document,
+   letting them decide. This one needs Jon's ruling, not an engineer's.
+
+### RUNBOOK, 19 August 2026. Eight harness errors in one session, and the pattern is now clear
+
+Every one was the measurement being wrong, never the thing being measured:
+invisible characters destroyed by the shell, two mis-built string comparisons, a
+check for a file that never existed, output sent to `/dev/null`, exact-string
+fact matching that flagged `thirty-four percent` against `34 percent`, name
+matching that failed when a model shortened `Bergstrom Manufacturing` to
+`Bergstrom`, and finally a number extractor that read `thirty-four` as 30 and 4
+and therefore rejected six chunks in eight on entirely false grounds.
+
+**The rule this project should keep: in this domain the harness is the likely
+defect.** The subject matter is invisible characters, binary file internals and
+numbers written two ways. All three are trivially easy to compare wrongly. **Before
+believing a failure, prove the check itself on a case you know the answer to.**
