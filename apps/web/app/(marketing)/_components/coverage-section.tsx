@@ -15,15 +15,18 @@ import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
 
 type Mark = 'yes' | 'no' | 'unconfirmed' | 'na';
 
-const VENDORS: Array<{ name: string; files: Mark; text: Mark; note: string }> = [
-  { name: 'Anthropic', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
-  { name: 'Google', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
-  { name: 'OpenAI', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
-  { name: 'Adobe Firefly', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
-  { name: 'Stability, Flux', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
-  { name: 'Meta', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
-  { name: 'Midjourney', files: 'no', text: 'na', note: 'No provenance marking' },
-  { name: 'xAI Grok', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
+/** Brand colours so each vendor is recognisable at a glance. Jon's request.
+ *  Their own typefaces would mean licensing and shipping font files for eight
+ *  companies, which is not worth it for a table. */
+const VENDORS: Array<{ name: string; color: string; files: Mark; text: Mark; note: string }> = [
+  { name: 'Anthropic', color: '#D97757', files: 'yes', text: 'yes', note: 'Text watermarked globally since 2 August 2026. Files signed, though not Word documents' },
+  { name: 'Google', color: '#4285F4', files: 'yes', text: 'yes', note: 'SynthID on every output, plus signed files since November 2025' },
+  { name: 'OpenAI', color: '#0A0A0A', files: 'yes', text: 'unconfirmed', note: 'Files signed since February 2024. No text watermark confirmed yet, and it signed the European transparency code' },
+  { name: 'Adobe Firefly', color: '#FA0F00', files: 'yes', text: 'na', note: 'Originated the file provenance standard and marks everything it makes' },
+  { name: 'Stability, Flux', color: '#7C3AED', files: 'yes', text: 'na', note: 'Marked on their hosted services. The open versions are not' },
+  { name: 'Meta', color: '#0064E0', files: 'unconfirmed', text: 'unconfirmed', note: 'Reads and labels marks on upload, and signed the European transparency code. Its own marking is not yet documented' },
+  { name: 'Midjourney', color: '#111111', files: 'no', text: 'na', note: 'No provenance marking' },
+  { name: 'xAI Grok', color: '#1A1A1A', files: 'unconfirmed', text: 'unconfirmed', note: 'A visible corner logo only, as far as anyone has published. Bound by the same European commitments' },
 ];
 
 const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: string }> = {
@@ -102,7 +105,10 @@ export function CoverageSection() {
                   }
                 >
                   <div className={'min-w-0'}>
-                    <span className={'text-foreground text-[13.5px] font-medium'}>
+                    <span
+                      style={{ color: vendor.color }}
+                      className={'text-[13.5px] font-semibold tracking-[-0.012em] dark:brightness-150'}
+                    >
                       {vendor.name}
                     </span>
                     <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>

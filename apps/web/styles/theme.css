@@ -72,6 +72,21 @@
      reading order, a marker landing on the character it found, a strip that
      conveys breadth without demanding attention. */
   --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-chosen: chosen 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-chain: chain 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  @keyframes chosen {
+    0%, 12% { opacity: 0.25; }
+    26%, 82% { opacity: 1; }
+    100% { opacity: 0.25; }
+  }
+
+  @keyframes chain {
+    0%, 20% { opacity: 0.2; }
+    45%, 85% { opacity: 1; }
+    100% { opacity: 0.2; }
+  }
+
   --animate-mark-in: mark-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-drift: drift 48s linear infinite;
   --animate-sweep: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;

@@ -78,7 +78,7 @@ export function StatisticalWatermarkDiagram({ className }: { className?: string 
                 width={132}
                 height={38}
                 rx={9}
-                className={candidate.chosen ? 'fill-mark' : 'fill-foreground/[0.045]'}
+                className={candidate.chosen ? 'fill-mark animate-chosen' : 'fill-foreground/[0.045]'}
               />
               <text
                 x={x + 66}
@@ -112,7 +112,10 @@ export function StatisticalWatermarkDiagram({ className }: { className?: string 
               width={22}
               height={12}
               rx={3}
-              className={index % 3 === 1 ? 'fill-mark' : 'fill-foreground/[0.09]'}
+              style={index % 3 === 1 ? { animationDelay: `${index * 110}ms` } : undefined}
+              className={
+                index % 3 === 1 ? 'fill-mark animate-chain' : 'fill-foreground/[0.09]'
+              }
             />
           ))}
         </g>
