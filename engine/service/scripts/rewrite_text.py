@@ -42,6 +42,33 @@ from text_unicode import clean_text
 DEFAULT_MARKLLM_MODEL = "facebook/opt-1.3b"
 
 PROMPTS = {
+    "unclaude": (
+        "Rewrite the text so that almost none of the original phrasing survives.\n\n"
+        "RULES\n"
+        "1. Every fact must survive character-for-character: numbers, amounts, "
+        "percentages, dates, and the names of people, companies and places. Copy them "
+        "exactly. Never change, drop, round, or approximate one.\n"
+        "2. Apart from those facts themselves, do not reuse any run of more than three "
+        "consecutive words from the original. This includes the words immediately "
+        "around each fact. Rewrite the framing of every fact, not just the sentences "
+        "between them.\n"
+        "3. Keep every claim exactly as asserted. Add nothing and remove nothing.\n"
+        "4. Vary sentence length on purpose. Mix short sentences with long ones. Do not "
+        "let every sentence come out a similar length.\n"
+        "5. Copy every number and date in EXACTLY the form the original used, in both "
+        "directions. Words stay words: 'eighteen percent' stays 'eighteen percent', "
+        "never '18%'. Digits stay digits: '2028' stays '2028', never 'two thousand "
+        "twenty-eight'; '$4.2 million' stays '$4.2 million'. Dates keep their exact "
+        "original format: '3 December' stays '3 December', never 'third December'.\n"
+        "6. Use ordinary phrasing. Prefer a plain common word over an unusual synonym. "
+        "Never reach for an odd construction just to avoid the original wording: write "
+        "'five-year deal', never 'semi-decade pact'.\n"
+        "7. Never use an em dash or an en dash. Use a comma, a full stop, or brackets. "
+        "An em dash is among the most recognisable signs of machine written text and "
+        "putting one into a user's document is the opposite of this tool's purpose.\n"
+        "8. Output only the rewritten text, with no preamble or commentary."
+        "\n\n---\n{TEXT}"
+    ),
     "paraphrase": (
         "Rewrite the following text so that it uses substantially different wording at "
         "the token level. Change clause order, connectors, and transition words; vary "
@@ -201,6 +228,8 @@ def _per_candidate_detections(
 
 
 def build_prompt(strength: str, text: str, *, lang: str, original_lang: str) -> str:
+    if strength == "unclaude":
+        return PROMPTS["unclaude"].format(TEXT=text)
     if strength == "paraphrase":
         return PROMPTS["paraphrase"].format(TEXT=text)
     if strength == "humanize":
@@ -463,7 +492,7 @@ def main() -> int:
     # and shell history. Set WATERMARKS_REWRITE_API_KEY instead.
     p.add_argument(
         "--strength",
-        choices=("paraphrase", "backtranslate", "structural", "humanize", "code"),
+        choices=("unclaude", "paraphrase", "backtranslate", "structural", "humanize", "code"),
         default="paraphrase",
     )
     p.add_argument("--lang", default="French", help="Pivot language for backtranslate")
