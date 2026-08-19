@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "service" / "scripts"
+SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
 import clean_file

@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "service" / "scripts"
+SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
 from format_dispatch import classify, classify_bytes

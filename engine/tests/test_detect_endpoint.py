@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "service" / "scripts"
+SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
 import image_meta

@@ -15,7 +15,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "service" / "scripts"
+SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
 from container_meta import _decode_xml_entities, _reencode_xml_text, clean_docx, clean_odt

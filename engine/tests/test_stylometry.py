@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "service" / "scripts"
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent.parent / "apps" / "web" / "engine"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 sys.path.insert(0, str(SCRIPTS_DIR))
 

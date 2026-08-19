@@ -190,6 +190,31 @@ the legal pages and the sign in screen all rendered.
 
 To stop it, press `Ctrl` and `C` in the terminal running it.
 
+### A production build fails locally, and it is not your change
+
+**18 August 2026.** `pnpm build` in `apps/web` fails locally with:
+
+```
+Failed to collect page data for /cookie-policy
+ZodError: Please provide a valid HTTPS URL. Set the variable NEXT_PUBLIC_SITE_URL
+```
+
+**Nothing is broken.** The local `.env` carries a non-HTTPS placeholder, and the
+production build validates that the site URL is real HTTPS. **Vercel has the
+real value set for Production**, so the deployed build is fine.
+
+**To build locally, supply it on the command line:**
+
+```bash
+cd ~/un-claude/apps/web && NEXT_PUBLIC_SITE_URL=https://un-claude.com pnpm run build
+```
+
+**Why this is worth writing down:** it looks exactly like a build you just broke,
+and it appears the first time anyone runs a production build locally rather than
+`pnpm dev`.
+
+---
+
 ### Docker is required for accounts, and is not installed
 
 Supabase runs locally inside Docker, which is a tool for running software in
