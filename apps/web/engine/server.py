@@ -710,8 +710,11 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                 # Configured entirely by environment variable so the model is one
                 # swappable setting. See docs/TRACK-A-NOTES.md and 04 entry 23.
                 try:
-                    text, layer_b_report = layer_b_rewrite(
-                        text,
+                    from uc_chunk import TruncatedRewrite, rewrite_long
+
+                    def _one(chunk: str):
+                        return layer_b_rewrite(
+                        chunk,
                         backend=os.environ.get(
                             "WATERMARKS_REWRITE_BACKEND", "openai-compatible"),
                         model=os.environ.get("WATERMARKS_REWRITE_MODEL"),
@@ -728,6 +731,14 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                         allow_remote=True,
                         reasoning_effort=None,
                     )
+
+                    # Chunked and parallel. A single call silently truncates any
+                    # document past roughly 2,000 words: a 3,367 word test came
+                    # back as 348 words reported as success. 04 entry 22 forbids
+                    # truncation outright, so a short result raises instead.
+                    text, layer_b_report = rewrite_long(text, _one)
+                except TruncatedRewrite as e:
+                    raise ValueError(f"layer B rewrite failed: truncated: {e}") from e
                 except Exception as e:  # never leak upstream text to a user
                     raise ValueError(f"layer B rewrite failed: {type(e).__name__}") from e
             detect_before = bool(options.get("detect_before"))
