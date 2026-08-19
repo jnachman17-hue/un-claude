@@ -6,10 +6,22 @@ money and takes seconds. Layer B is signed-in only. 04 entry 22.
 """
 from __future__ import annotations
 
-import json, time
-from http.server import BaseHTTPRequestHandler
+# Vercel bundles each function separately and does NOT put the function's own
+# folder on Python's import path, so a plain `from _shared import ...` fails at
+# runtime with ModuleNotFoundError even though the file sits right beside this
+# one. Both paths must be added explicitly, before any local import.
+import sys
+from pathlib import Path
 
-from _shared import engine, fail, json_response, read_request, usage_record
+_HERE = Path(__file__).resolve().parent
+for _p in (str(_HERE), str(_HERE.parent / "engine")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+import time                                        # noqa: E402
+from http.server import BaseHTTPRequestHandler     # noqa: E402
+
+from _shared import engine, fail, json_response, read_request, usage_record  # noqa: E402
 
 ALLOWED = {"layer_b", "nfkc", "aggressive_homoglyphs", "keep_non_ai_metadata"}
 
