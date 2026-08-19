@@ -18,9 +18,13 @@ export async function generateMetadata() {
  * Supabase schema, browser storage against free-uses.ts, and the absence of
  * trackers against a grep of the whole application.
  *
- * THE TRACKING CLAIM IS THE FRAGILE ONE. "We run no advertising or tracking" is
- * true today and stops being true the moment analytics is added. That edit ships
- * in the SAME deployment as the analytics, never after it. 06 row 46.
+ * ANALYTICS ARRIVED 19 AUGUST 2026 and this page changed in the same commit,
+ * which was the whole discipline: a privacy policy claiming no tracking while
+ * tracking is a false statement in a legal document. 06 row 46.
+ *
+ * The claim that remains, and that must stay true: PostHog is configured to store
+ * NOTHING on the visitor's device. If that configuration ever changes, this page
+ * and the cookie policy change with it, and the site needs a consent banner.
  */
 async function PrivacyPolicyPage() {
   const t = await getTranslations();
@@ -39,8 +43,10 @@ async function PrivacyPolicyPage() {
         <Lead>
           We do not keep what you give us. Text you paste and files you upload are
           processed and returned, not stored. We do not use your content to train
-          anything. We run no advertising or tracking. If you create an account,
-          we hold your email address and name and nothing else.
+          anything. We run no advertising and no advertising trackers. We measure
+          how many people visit and which pages they read, using a tool that
+          stores nothing on your device. If you create an account, we hold your
+          email address and name and nothing else.
         </Lead>
 
         <H2>What happens to text and files you submit</H2>
@@ -96,8 +102,14 @@ async function PrivacyPolicyPage() {
 
         <H2>Cookies and browser storage</H2>
         <P>
-          We use no advertising or tracking cookies. We have no third-party
-          trackers.
+          We use no advertising cookies, and no advertising trackers.
+        </P>
+        <P>
+          We do measure visits, using PostHog. It is configured to store nothing
+          at all on your device: no cookies, no local storage. That is why this
+          site has no cookie consent banner. It means we cannot recognise you
+          between visits, which we accept as the price of not tracking you. If
+          your browser sends a Do Not Track signal, we do not measure you at all.
         </P>
         <List
           items={[
@@ -126,6 +138,11 @@ async function PrivacyPolicyPage() {
               'Standard server logs: IP address, time, and which page was requested',
             ],
             ['Supabase', 'Stores accounts and handles sign-in', 'Your account record'],
+            [
+              'PostHog',
+              'Counts visits and which pages are read',
+              'Pages viewed, rough location from IP address, browser and device type. Nothing stored on your device, and never the content you submit',
+            ],
             [
               'Mistral, via Vercel AI Gateway',
               'Performs the optional rewrite',
