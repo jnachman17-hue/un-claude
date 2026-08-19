@@ -1437,3 +1437,45 @@ cannot be deleted, and verification passed anyway.
 - **Any branding change re-runs verification.** That is the cost of adding a logo
   later, and it is a re-run of the same automated check rather than a new manual
   review. Manual review only happens if the automated check cannot decide.
+
+### 56. Work splits into four parallel tracks with hard file ownership
+
+**Ruling.** Jon, 19 August 2026, at the end of session 5. The session had run long
+enough to have served four different purposes, and the remaining work does not fit
+one conversation.
+
+| Track | Owns | Jon's priority |
+|---|---|---|
+| **1. Billing** | Pricing, Stripe, credits, the ledger, the real paywall | **First** |
+| **2. Landing page** | Everything a visitor reads or looks at | Continuous |
+| **3. Trust and correctness** | The defects that break in front of a paying customer | Blocks track 1 |
+| **4. Analytics and admin** | Funnel events, Google, the rename, session replay | Smallest |
+
+**The reason ownership is written down rather than assumed.** Four sessions editing
+one repository is a new failure mode for this project, and `CLAUDE.md` section 5's
+staging rule exists because ignoring it caused real damage once already. Rules in
+`TRACK-RULES.md`.
+
+**Three assignments that are not obvious and will cause trouble if guessed:**
+
+- **`_components/workbench/**` belongs to TRACK 3, not the landing page track.** It
+  looks like page work. It holds the credit gate, the paywall trigger and every
+  engine call.
+- **The legal pages belong to TRACK 1, not the landing page track**, because
+  payments change the terms, the privacy policy and add a governing law section,
+  and those edits must ship in the same deployment as the billing.
+- **`06` row 48, the missing usage record, is TRACK 3 work that TRACK 1 depends
+  on.** It is the only open item that gets strictly worse with time, because the
+  data cannot be backfilled.
+
+### 57. Every session begins by stating what it understands
+
+**Ruling.** Jon. Each track's opening prompt asks the session to summarise the
+project, its own role, its task and its goals for the session **before doing any
+work**, and to say what it thinks is wrong or missing.
+
+**Why it is a ruling rather than a habit.** Jon cannot review code, so the only
+early signal that a session has misunderstood its brief is what it says back. **A
+session that has misread its scope will edit another track's files**, which is the
+specific damage this arrangement introduces. Catching it in the first message costs
+one paragraph; catching it later costs a merge conflict in a live repository.

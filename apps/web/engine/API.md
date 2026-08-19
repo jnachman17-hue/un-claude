@@ -1,5 +1,26 @@
 # The connection between the site and the engine
 
+> **CORRECTED 19 AUGUST 2026, AND THIS BOX EXISTS BECAUSE THE DOCUMENT BELOW
+> MISLED A SESSION.**
+>
+> **The paths depend on where the engine is running, and this document only ever
+> described one of them:**
+>
+> | Where | Scan | Clean |
+> |---|---|---|
+> | **Production** (`apps/web/api/*.py` on Vercel) | **`/api/scan`** | **`/api/clean`** |
+> | Local (the engine's own server) | `/inspect` | `/clean` |
+>
+> **The browser calls NEITHER.** It calls `/api/tool/scan` and `/api/tool/clean`
+> on our own site, which attach the shared key server side. The engine refuses
+> anything without it. See section 11.
+>
+> **Section 8 below is stale and kept only as history.** The engine is deployed,
+> layer B is live, and the shared password exists.
+>
+> **Section 6's local run command points at a file that does not exist.** The
+> working one is in `ENGINE.md` section 11.
+
 **Track A owns this document. Track B reads it and builds against it.**
 
 Written 18 August 2026, session A1, from the running engine rather than designed
@@ -260,3 +281,40 @@ Claude re-applies the watermark at full strength rather than removing it.
 may not claim, why the model was chosen, what has been proven and what has not,
 and the known limits. **If you are about to write copy about what this product
 does, read section 2 of it first.**
+
+---
+
+## 11. The lock, added 19 August 2026
+
+**Both endpoints require an `x-uc-key` header matching `UC_ENGINE_KEY`.** Before
+this, anyone who found the address could run `/api/clean` with layer B and spend
+real money. Verified by calling it from a laptop with no credentials.
+
+**The check fails CLOSED in production.** A missing key refuses every request
+rather than leaving the door open.
+
+**The browser must never call the engine directly.** It calls `/api/tool/scan`
+and `/api/tool/clean`, Next route handlers that attach the key from a server-only
+variable. **If a component ever fetches `/api/scan` from the client, the key has
+to travel with it and the lock is undone.**
+
+**Both sides `.strip()` the key.** `openssl rand -hex 32` prints a trailing
+newline, an HTTP header cannot carry one, and the mismatch produced an identical
+401 to a wrong key with nothing in either log to say why.
+
+**The five-line proof is in `07-runbook.md` under "Verifying the lock from
+outside".** All five must match. **The line that matters is the site calling its
+own engine:** three 401s alone prove only that something refuses everyone, which
+is also what a completely broken engine looks like.
+
+## 12. Two payload facts this document gets wrong elsewhere
+
+**`words_in` and `words_out` are absent on single-chunk documents**, which is
+anything under roughly 350 words and therefore most pastes. Section 9 presents
+them as always returned. The site computes its own word counts.
+
+**The clean report has two different shapes.** Text returns `report.stats` with
+`removed_count` and `replaced_count`. A file returns `report.actions`, `bytes_in`,
+`bytes_out`, `still_has_c2pa` and `still_has_ai_metadata`, and no `stats` block at
+all. Branching on the wrong one prints "0 removed" at somebody who just had three
+provenance blocks stripped out of a picture.

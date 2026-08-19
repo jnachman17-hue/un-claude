@@ -240,9 +240,9 @@ Every setting is an environment variable. **Nothing needs a code change to tune.
 | `WATERMARKS_REWRITE_BASE_URL` | `https://ai-gateway.vercel.sh` | **No `/v1`.** The code appends it. Putting it in gives a 404 |
 | `WATERMARKS_REWRITE_MODEL` | `mistral/mistral-small` | |
 | `WATERMARKS_REWRITE_API_KEY` | **Secret.** Set on Vercel as Sensitive | Never in the repository |
-| `UC_LAYER_B_CHUNK_WORDS` | 350 | Words per chunk |
-| `UC_LAYER_B_WORKERS` | 8 | Chunks at once |
-| `UC_LAYER_B_RETRIES` | 3 | Attempts per chunk |
+| `UC_LAYER_B_CHUNK_WORDS` | **NOT SET. Code default is 350** | Words per chunk. The default happens to be the measured best value, so this one is correct by accident rather than by configuration |
+| `UC_LAYER_B_WORKERS` | **NOT SET. Code default is 8** | Chunks at once. Correct value, unset. If the default ever changes upstream this silently regresses to the 56 second failure below |
+| `UC_LAYER_B_RETRIES` | **NOT SET. Code default is 8** | Attempts per chunk. **This table said 3 and that was wrong.** Verified 19 Aug 2026: no `UC_LAYER_B_*` variable is set in production at all, so every default applies. The worst case cost per request is eight times what this document previously implied |
 | `WATERMARKS_REWRITE_TEMPERATURE` | 1.0 | Cooled by 0.2 per retry, floor 0.2 |
 
 **`UC_LAYER_B_WORKERS` matters more than it looks.** At 3, the deployed engine
@@ -296,7 +296,7 @@ cents.**
 |---|---|---|
 | `/api/scan` | **Nothing** | ~40ms |
 | `/api/clean`, no layer B | **Nothing** | ~40ms |
-| `/api/clean` with layer B | **~0.06 cents per 1,000 words** | 6s for 500 words, 22s for 5,000 |
+| `/api/clean` with layer B | **~0.06 cents per 1,000 words** typical. **Worst case is eight times that**, because retries default to 8 and are invisible in this figure | 6s for 500 words, 22s for 5,000 |
 
 **Layer A and metadata call no model at all.** Only layer B costs anything, which
 is why it is the paid tier.
