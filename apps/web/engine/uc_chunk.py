@@ -22,10 +22,12 @@ TARGET_WORDS = int(os.environ.get("UC_LAYER_B_CHUNK_WORDS", "350"))
 MIN_RATIO = 0.70         # Jon's ruling: we are a watermark remover, not a
                          # summariser. Anything under 70% of the input length is
                          # a failed rewrite, not a short one.
-# Chunks at once. Higher is faster but trips provider rate limits on a free
-# credit balance. Tunable without a code change so it can be raised the moment
-# paid credits are in place.
-MAX_WORKERS = int(os.environ.get("UC_LAYER_B_WORKERS", "3"))
+# Chunks at once. Raised from 3 to 8 on 19 Aug 2026: at 3 the deployed engine
+# took 56.2 seconds on a 5,047 word document against Vercel's 60 second ceiling,
+# four seconds of headroom. At 8 the same document takes about 22 seconds. The
+# earlier limit of 3 existed only because a free credit balance was being rate
+# limited, and paid credits are now in place.
+MAX_WORKERS = int(os.environ.get("UC_LAYER_B_WORKERS", "8"))
 RETRIES = int(os.environ.get("UC_LAYER_B_RETRIES", "8"))  # per chunk
 BACKOFF = 2.5            # seconds, multiplied each attempt, plus jitter
 
