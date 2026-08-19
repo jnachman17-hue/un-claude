@@ -27,31 +27,52 @@ import { paywallDismissed, paywallSignUpClicked } from '~/lib/analytics/events';
 export function Paywall({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className={'relative overflow-hidden rounded-[13px]'}>
-      <div className={'pointer-events-none px-4 py-3.5 blur-[6px] select-none'} aria-hidden>
+      <div
+        className={'pointer-events-none px-4 py-3.5 blur-[6px] select-none'}
+        aria-hidden
+      >
         <p className={'text-foreground/70 text-[14.5px] leading-[1.75]'}>
-          The panel assessed the quarterly data and decided the deployment should
-          roll out in three phases instead of two. The initial phase encompasses
-          the northern locations and is projected to finish within eleven weeks,
-          with spending pegged at the figure matching February.
+          The panel assessed the quarterly data and decided the deployment
+          should roll out in three phases instead of two. The initial phase
+          encompasses the northern locations and is projected to finish within
+          eleven weeks, with spending pegged at the figure matching February.
         </p>
       </div>
 
-      <div className={'bg-card/70 absolute inset-0 grid place-items-center px-5 backdrop-blur-[2px]'}>
-        <div className={'flex max-w-[38ch] flex-col items-center gap-3 text-center'}>
-          <span className={'bg-mark text-mark-foreground grid size-[34px] place-items-center rounded-[10px]'}>
+      <div
+        className={
+          'bg-card/70 absolute inset-0 grid place-items-center px-5 backdrop-blur-[2px]'
+        }
+      >
+        <div
+          className={
+            'flex max-w-[38ch] flex-col items-center gap-3 text-center'
+          }
+        >
+          <span
+            className={
+              'bg-mark text-mark-foreground grid size-[34px] place-items-center rounded-[10px]'
+            }
+          >
             <LockIcon className={'size-[16px]'} strokeWidth={2} aria-hidden />
           </span>
 
-          <h3 className={'text-foreground text-[15px] font-semibold tracking-[-0.015em]'}>
-            You have used your free rewrites
+          <h3
+            className={
+              'text-foreground text-[15px] font-semibold tracking-[-0.015em]'
+            }
+          >
+            You have used your free credits
           </h3>
 
           <p className={'text-muted-foreground text-[13px] leading-snug'}>
-            Scanning stays free and unlimited. Credits cover the rewrite, which is
-            the part that costs us money to run.
+            Scanning stays free and unlimited. Credits cover sanitising: the
+            hidden characters, the file provenance and the rewrite.
           </p>
 
-          <div className={'mt-1 flex flex-wrap items-center justify-center gap-2'}>
+          <div
+            className={'mt-1 flex flex-wrap items-center justify-center gap-2'}
+          >
             <Link
               href={'/auth/sign-up'}
               onClick={paywallSignUpClicked}

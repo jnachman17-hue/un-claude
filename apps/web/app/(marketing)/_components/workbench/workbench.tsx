@@ -2,13 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { FileUpIcon, SparklesIcon, UploadCloudIcon } from 'lucide-react';
+import {
+  DownloadIcon,
+  FileUpIcon,
+  SparklesIcon,
+  UploadCloudIcon,
+  XIcon,
+} from 'lucide-react';
 
 import type { CleanResult, ScanResult } from '~/lib/engine/types';
 
 import { CHECK_CLASSES, explain, prettyName } from './characters';
 import { Checklist, type ChecklistRow } from './checklist';
-import { ACCEPTED_FILES, base64ToText, fileToBase64, textToBase64 } from './encode';
+import {
+  ACCEPTED_FILES,
+  base64ToText,
+  fileToBase64,
+  textToBase64,
+} from './encode';
 import { MarkedText } from './marked-text';
 import { SAMPLE_TEXT } from './sample';
 import { detectProducer, provenanceItems } from './producer';
@@ -18,7 +29,14 @@ import { ReceiptPanel } from './receipt-panel';
 import type { Receipt } from '~/lib/engine/receipt';
 import * as track from '~/lib/analytics/events';
 
-type Phase = 'scanning' | 'scanned' | 'cleaning' | 'cleaned' | 'error' | 'locked';
+type Phase =
+  | 'idle'
+  | 'scanning'
+  | 'scanned'
+  | 'cleaning'
+  | 'cleaned'
+  | 'error'
+  | 'locked';
 
 interface Loaded {
   /** base64, exactly as sent to the engine, kept so sanitising can reuse it. */
@@ -97,7 +115,10 @@ export function Workbench() {
         signal: attempt.signal,
       })
         .then((response) => response.json())
-        .catch(() => ({ ok: false, message: 'We could not reach the service. Please try again.' })),
+        .catch(() => ({
+          ok: false,
+          message: 'We could not reach the service. Please try again.',
+        })),
       new Promise((resolve) => setTimeout(resolve, 640)),
     ]);
 
@@ -122,7 +143,8 @@ export function Workbench() {
         provenanceFound:
           scanReport.has_c2pa === true ||
           scanReport.has_ai_metadata === true ||
-          (Array.isArray(scanReport.findings) && scanReport.findings.length > 0),
+          (Array.isArray(scanReport.findings) &&
+            scanReport.findings.length > 0),
         producer: kind === 'file' ? detectProducer(scanReport) : null,
         isSample: fromSample,
       });
@@ -136,7 +158,14 @@ export function Workbench() {
 
   useEffect(() => {
     setLeft(remaining());
-    void runScan({ payload: textToBase64(SAMPLE_TEXT), name: 'paste.txt', text: SAMPLE_TEXT }, true);
+    void runScan(
+      {
+        payload: textToBase64(SAMPLE_TEXT),
+        name: 'paste.txt',
+        text: SAMPLE_TEXT,
+      },
+      true,
+    );
   }, [runScan]);
 
   const scanText = () => {
@@ -149,7 +178,10 @@ export function Workbench() {
     void runScan({ payload: textToBase64(text), name: 'paste.txt', text });
   };
 
-  const takeFile = async (file: File | undefined, method: 'picker' | 'drop' = 'picker') => {
+  const takeFile = async (
+    file: File | undefined,
+    method: 'picker' | 'drop' = 'picker',
+  ) => {
     if (!file) return;
     setIsSample(false);
     setText('');
@@ -169,7 +201,14 @@ export function Workbench() {
 
     const kind: track.InputKind = isFile ? 'file' : 'text';
 
-    if (wantsRewrite && remaining() <= 0) {
+    // EVERY sanitise is charged, not only a rewrite. 04 entry 63.
+    //
+    // This was `wantsRewrite && remaining() <= 0` until 19 August 2026, which
+    // meant an image never reached the check and never spent a use: `wantsRewrite`
+    // is false for anything that is not prose. Jon sanitised three files in a row
+    // on the live site, never saw the paywall, and could have gone on for ever.
+    // The gate has to sit in front of the work, and all three layers are work.
+    if (remaining() <= 0) {
       // Nothing is sent. Blurring a real result would mean paying for work the
       // visitor never sees.
       setPhase('locked');
@@ -199,10 +238,17 @@ export function Workbench() {
       // The payload is the one already loaded. An earlier version rebuilt it and
       // sent an empty string for files, which surfaced as "nothing was sent"
       // over a file that was plainly on screen.
-      body: JSON.stringify({ file: loaded.payload, name: loaded.name, layer_b: wantsRewrite }),
+      body: JSON.stringify({
+        file: loaded.payload,
+        name: loaded.name,
+        layer_b: wantsRewrite,
+      }),
     })
       .then((response) => response.json())
-      .catch(() => ({ ok: false, message: 'We could not reach the service. Please try again.' }));
+      .catch(() => ({
+        ok: false,
+        message: 'We could not reach the service. Please try again.',
+      }));
 
     if (result?.ok) {
       const finished = result as CleanResult;
@@ -211,16 +257,18 @@ export function Workbench() {
       if (isFile) {
         // A cleaned file is useless to anybody if they cannot get it back.
         const binary = atob(finished.cleaned);
-        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+        const bytes = Uint8Array.from(binary, (character) =>
+          character.charCodeAt(0),
+        );
         setDownloadUrl(URL.createObjectURL(new Blob([bytes])));
       } else {
         setCleanedText(base64ToText(finished.cleaned));
       }
 
-      if (wantsRewrite) {
-        recordUse();
-        setLeft(remaining());
-      }
+      // Counted for every completed sanitise, and only on success: a failed run
+      // costs the visitor nothing. 04 entries 16 and 66.
+      recordUse();
+      setLeft(remaining());
 
       setPhase('cleaned');
 
@@ -270,24 +318,71 @@ export function Workbench() {
     }
   };
 
+  /**
+   * Drop every finding on screen.
+   *
+   * The checklist reads from `scan`, so leaving it in place while the box is
+   * emptied showed "3 found" over an empty box with nothing to find. Jon hit it
+   * by clicking into the example: the text cleared, the findings did not.
+   */
+  const clearResults = useCallback(() => {
+    inFlight.current?.abort();
+    setScan(null);
+    setCleaned(null);
+    setCleanedText('');
+    setDownloadUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+    setMessage(null);
+    setPhase('idle');
+  }, []);
+
+  /**
+   * Back to an empty box, whatever was in it.
+   *
+   * Until 19 August 2026 there was no way out of a loaded file at all: `isFile`
+   * is derived from the loaded name, the textarea is disabled while it is true,
+   * and nothing ever set the name back. A file went in and the box was finished.
+   */
+  const startOver = useCallback(() => {
+    clearResults();
+    setText('');
+    setLoaded({ payload: '', name: 'paste.txt', text: '' });
+    setIsSample(false);
+    setEditing(true);
+    if (fileInput.current) fileInput.current.value = '';
+    requestAnimationFrame(() => textArea.current?.focus());
+  }, [clearResults]);
+
   const startEditing = () => {
     if (isSample) {
       setText('');
       setIsSample(false);
       track.ownTextEntered();
     }
+    // The example's findings belong to the example. 06 row 72.
+    clearResults();
     setEditing(true);
     requestAnimationFrame(() => textArea.current?.focus());
   };
 
   const busy = phase === 'scanning' || phase === 'cleaning';
   const done = phase === 'cleaned';
+  /**
+   * Nothing has been read yet. Distinct from `busy`, which means something is
+   * being read right now.
+   *
+   * Both used to collapse into one branch reporting that it was checking, so an
+   * empty box with nothing running claimed to be working. The rows still explain
+   * what each layer is; they just stop claiming to be doing it.
+   */
+  const waitingStatus = busy ? 'checking' : 'not scanned';
   const report = (scan?.report ?? {}) as Record<string, unknown>;
   const hits = scan?.report?.hits ?? [];
   const foundCount = hits.reduce((total, hit) => total + hit.count, 0);
-  const receipt = (cleaned?.report as Record<string, unknown> | undefined)?.receipt as
-    | Receipt
-    | undefined;
+  const receipt = (cleaned?.report as Record<string, unknown> | undefined)
+    ?.receipt as Receipt | undefined;
   const stats = cleaned?.report?.stats;
 
   /**
@@ -315,9 +410,12 @@ export function Workbench() {
       : 0;
   const actuallyRemoved = Math.max(0, foundCount - stillPresent);
   const fileReport = (cleaned?.report ?? {}) as Record<string, unknown>;
-  const actions = Array.isArray(fileReport.actions) ? (fileReport.actions as string[]) : [];
+  const actions = Array.isArray(fileReport.actions)
+    ? (fileReport.actions as string[])
+    : [];
   const stillMarked =
-    fileReport.still_has_c2pa === true || fileReport.still_has_ai_metadata === true;
+    fileReport.still_has_c2pa === true ||
+    fileReport.still_has_ai_metadata === true;
   const producer = isFile && scan ? detectProducer(report) : null;
 
   const provenanceFound =
@@ -329,22 +427,31 @@ export function Workbench() {
     {
       id: 'characters',
       label: 'Hidden characters',
-      state: busy || !scan ? 'pending' : done ? 'removed' : foundCount > 0 ? 'found' : 'absent',
-      status: busy || !scan
-        ? 'checking'
-        : done
-          ? foundCount > 0
-            ? `${actuallyRemoved} of ${foundCount} removed`
-            : 'none found'
-          : foundCount > 0
-            ? `${foundCount} found`
-            : 'none found',
+      state:
+        busy || !scan
+          ? 'pending'
+          : done
+            ? 'removed'
+            : foundCount > 0
+              ? 'found'
+              : 'absent',
+      status:
+        busy || !scan
+          ? waitingStatus
+          : done
+            ? foundCount > 0
+              ? `${actuallyRemoved} of ${foundCount} removed`
+              : 'none found'
+            : foundCount > 0
+              ? `${foundCount} found`
+              : 'none found',
       detail: done
         ? foundCount === 0
           ? 'There were none in this to begin with.'
           : stillPresent > 0
             ? `${stillPresent} could not be removed. Read the result before you use it.`
-            : stats && (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
+            : stats &&
+                (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
               ? // Removed and replaced are separate numbers and both are shown.
                 // Some characters are deleted and some are swapped for an ordinary
                 // space, and a swap does not change the length, so one figure
@@ -366,28 +473,30 @@ export function Workbench() {
     {
       id: 'provenance',
       label: 'File provenance',
-      state: busy || !scan
-        ? 'pending'
-        : !isFile
-          ? 'skipped'
-          : done
-            ? 'removed'
-            : provenanceFound
-              ? 'found'
-              : 'absent',
-      status: busy || !scan
-        ? 'checking'
-        : !isFile
-          ? 'no file'
-          : done
-            ? stillMarked
-              ? 'partly removed'
-              : `${actions.length} removed`
-            : provenanceFound
-              ? producer
-                ? `made by ${producer}`
-                : 'found'
-              : 'none found',
+      state:
+        busy || !scan
+          ? 'pending'
+          : !isFile
+            ? 'skipped'
+            : done
+              ? 'removed'
+              : provenanceFound
+                ? 'found'
+                : 'absent',
+      status:
+        busy || !scan
+          ? waitingStatus
+          : !isFile
+            ? 'no file'
+            : done
+              ? stillMarked
+                ? 'partly removed'
+                : `${actions.length} removed`
+              : provenanceFound
+                ? producer
+                  ? `made by ${producer}`
+                  : 'found'
+                : 'none found',
       detail: !isFile
         ? 'Provenance lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
         : done
@@ -413,20 +522,22 @@ export function Workbench() {
     {
       id: 'statistical',
       label: 'Statistical watermark',
-      state: busy || !scan
-        ? 'pending'
-        : !carriesProse
-          ? 'skipped'
-          : done && receipt
-            ? 'removed'
-            : 'found',
-      status: busy || !scan
-        ? 'checking'
-        : !carriesProse
-          ? 'no text'
-          : done && receipt
-            ? 'rewritten'
-            : 'present',
+      state:
+        busy || !scan
+          ? 'pending'
+          : !carriesProse
+            ? 'skipped'
+            : done && receipt
+              ? 'removed'
+              : 'found',
+      status:
+        busy || !scan
+          ? waitingStatus
+          : !carriesProse
+            ? 'no text'
+            : done && receipt
+              ? 'rewritten'
+              : 'present',
       detail: !carriesProse
         ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
         : done && receipt
@@ -466,8 +577,14 @@ export function Workbench() {
           }
         >
           <div className={'flex flex-col items-center gap-2'}>
-            <UploadCloudIcon className={'text-foreground/70 size-7'} strokeWidth={1.6} aria-hidden />
-            <span className={'text-[13.5px] font-medium'}>Drop it anywhere in this box</span>
+            <UploadCloudIcon
+              className={'text-foreground/70 size-7'}
+              strokeWidth={1.6}
+              aria-hidden
+            />
+            <span className={'text-[13.5px] font-medium'}>
+              Drop it anywhere in this box
+            </span>
           </div>
         </div>
       ) : null}
@@ -485,8 +602,15 @@ export function Workbench() {
             <textarea
               ref={textArea}
               value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder={'Paste your text here, or drop a file anywhere in this box.'}
+              onChange={(event) => {
+                setText(event.target.value);
+                // The findings describe the text that WAS scanned. The moment it
+                // changes they describe nothing, so they go.
+                if (scan || cleaned || message) clearResults();
+              }}
+              placeholder={
+                'Paste your text here, or drop a file anywhere in this box.'
+              }
               className={
                 'text-foreground placeholder:text-muted-foreground/60 min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[14.5px] leading-[1.75] tracking-[-0.005em] outline-none'
               }
@@ -505,7 +629,15 @@ export function Workbench() {
             >
               <div className={'min-h-[184px]'}>
                 {isFile ? (
-                  <FileSummary name={loaded.name} scanning={busy} />
+                  <FileSummary
+                    name={loaded.name}
+                    scanning={busy}
+                    downloadUrl={done ? downloadUrl : null}
+                    onDownload={() =>
+                      track.resultDownloaded({ name: loaded.name })
+                    }
+                    onClear={startOver}
+                  />
                 ) : done ? (
                   <MarkedText text={cleanedText} hits={[]} animate={false} />
                 ) : (
@@ -543,11 +675,15 @@ export function Workbench() {
 
           {phase === 'scanning' ? (
             <div
-              className={'pointer-events-none absolute inset-0 overflow-hidden rounded-[13px]'}
+              className={
+                'pointer-events-none absolute inset-0 overflow-hidden rounded-[13px]'
+              }
               aria-hidden
             >
               <div
-                className={'animate-sweep from-mark/0 via-mark/30 to-mark/0 h-full w-1/3 bg-gradient-to-r'}
+                className={
+                  'animate-sweep from-mark/0 via-mark/30 to-mark/0 h-full w-1/3 bg-gradient-to-r'
+                }
               />
             </div>
           ) : null}
@@ -582,7 +718,11 @@ export function Workbench() {
                 'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
               }
             >
-              <SparklesIcon className={'size-[14px]'} strokeWidth={2.2} aria-hidden />
+              <SparklesIcon
+                className={'size-[14px]'}
+                strokeWidth={2.2}
+                aria-hidden
+              />
               {phase === 'cleaning'
                 ? carriesProse
                   ? 'Rewriting'
@@ -612,7 +752,9 @@ export function Workbench() {
                 href={downloadUrl}
                 download={`cleaned-${loaded.name}`}
                 onClick={() => track.resultDownloaded({ name: loaded.name })}
-                className={'text-foreground font-semibold underline underline-offset-2'}
+                className={
+                  'text-foreground font-semibold underline underline-offset-2'
+                }
               >
                 Download the clean file
               </a>
@@ -621,9 +763,9 @@ export function Workbench() {
             ) : phase === 'cleaning' && carriesProse ? (
               'Breaking up the wording. This takes a few seconds.'
             ) : left > 0 ? (
-              `${left} free ${left === 1 ? 'rewrite' : 'rewrites'} left. Scanning is always free.`
+              `${left} free ${left === 1 ? 'credit' : 'credits'} left. Scanning is always free.`
             ) : (
-              'Scanning is free and unlimited. Rewrites need credits.'
+              'Scanning is free and unlimited. Sanitising needs credits.'
             )}
           </p>
         </div>
@@ -631,9 +773,17 @@ export function Workbench() {
 
       {/* The findings. A separate surface, with its own heading, because it
           answers a different question from the box above it. */}
-      <div className={'border-border bg-foreground/[0.035] rounded-b-[18px] border-t-2 px-4 py-4 sm:px-5'}>
+      <div
+        className={
+          'border-border bg-foreground/[0.035] rounded-b-[18px] border-t-2 px-4 py-4 sm:px-5'
+        }
+      >
         <div className={'mb-2 flex items-baseline justify-between gap-3'}>
-          <h2 className={'text-foreground text-[11.5px] font-semibold tracking-[0.06em] uppercase'}>
+          <h2
+            className={
+              'text-foreground text-[11.5px] font-semibold tracking-[0.06em] uppercase'
+            }
+          >
             Every mark we check for
           </h2>
           <span className={'text-muted-foreground text-[11px]'}>
@@ -653,13 +803,74 @@ export function Workbench() {
   );
 }
 
-function FileSummary({ name, scanning }: { name: string; scanning: boolean }) {
+/**
+ * The loaded file, and the two things you always want next to it: the clean copy,
+ * and a way to put something else in.
+ *
+ * Neither existed until 19 August 2026. A loaded file disabled the textarea and
+ * nothing ever cleared it, so the box read "Loaded <name>" for ever and the only
+ * escape was a button labelled "Upload a file" that did not look like one.
+ */
+function FileSummary({
+  name,
+  scanning,
+  downloadUrl,
+  onDownload,
+  onClear,
+}: {
+  name: string;
+  scanning: boolean;
+  downloadUrl: string | null;
+  onDownload: () => void;
+  onClear: () => void;
+}) {
   return (
-    <div className={'flex h-[184px] flex-col items-start justify-center gap-1.5'}>
+    <div
+      className={'flex h-[184px] flex-col items-start justify-center gap-1.5'}
+    >
       <span className={'text-muted-foreground text-[12px]'}>
         {scanning ? 'Reading' : 'Loaded'}
       </span>
       <span className={'font-mono text-[15px] font-medium'}>{name}</span>
+
+      {!scanning ? (
+        <div className={'mt-2 flex flex-wrap items-center gap-2'}>
+          {downloadUrl ? (
+            <a
+              href={downloadUrl}
+              download={`cleaned-${name}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDownload();
+              }}
+              className={
+                'bg-foreground text-background inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold transition-transform active:scale-[0.98]'
+              }
+            >
+              <DownloadIcon
+                className={'size-[13px]'}
+                strokeWidth={2.2}
+                aria-hidden
+              />
+              Download the clean file
+            </a>
+          ) : null}
+
+          <button
+            type={'button'}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClear();
+            }}
+            className={
+              'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium transition-colors'
+            }
+          >
+            <XIcon className={'size-[13px]'} strokeWidth={2.2} aria-hidden />
+            Remove
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
