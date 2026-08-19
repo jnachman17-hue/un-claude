@@ -39,12 +39,20 @@ export interface ScanResult {
   usage?: Record<string, unknown>;
 }
 
-/** Layer B never reports a verified removal. No detector exists. */
+/**
+ * Layer B never reports a verified removal. No detector exists.
+ *
+ * `words_in` and `words_out` are OPTIONAL despite what API.md says. They are
+ * returned only when a document splits into several chunks; a single chunk, which
+ * is anything under about 350 words and therefore most pastes, omits them
+ * entirely. Verified against the live engine. The receipt computes its own word
+ * counts and does not depend on these.
+ */
 export interface LayerBReport {
   model: string;
   chunks: number;
-  words_in: number;
-  words_out: number;
+  words_in?: number;
+  words_out?: number;
   /** Numbers the engine could not prove survived the rewrite. Usually empty. */
   figures_to_check: string[];
   verified: false;

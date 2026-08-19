@@ -1213,3 +1213,33 @@ it is browser storage, which is gameable and is documented as such in `06` row 3
 
 **The paywall was verified to fire without calling the engine at all**, so an
 exhausted allowance cannot spend money even by mistake.
+
+### 49. Layer B is switched on in production
+
+**Ruling.** Jon, 19 August 2026. **Reasoning, his: nobody has the URL yet, so
+nobody is visiting, and having it live is how it gets tested properly.**
+
+**The assessment behind agreeing, so the reasoning survives rather than only the
+outcome.** The engine is now locked to our own site, so the only route to a paid
+rewrite is through the interface. The interface caps a browser at three. A rewrite
+costs about **0.06 cents per thousand words**, and the two live production
+rewrites run to verify this cost **0.0002 dollars between them** against a
+balance of 14.77.
+
+**Set as `UC_ENABLE_LAYER_B=true` on Production only.** Turning it off is one
+command and takes effect on the next deployment:
+
+```bash
+npx vercel@latest env rm UC_ENABLE_LAYER_B production
+```
+
+**One caveat that is real rather than theoretical.** "Nobody knows the URL" is
+weaker than it sounds: every domain with an HTTPS certificate appears in public
+certificate transparency logs, which are scraped continuously. What protects the
+balance is not obscurity, it is that a scraper hitting the homepage does not run
+a multi-step interface flow, plus the three-rewrite cap. **Obscurity is not the
+control and should not be relied on once there is a reason to visit.**
+
+**Measured live in production:** 105 words rewritten in 2.8 seconds, 86.4% of the
+wording replaced, longest surviving run 5 words, 11 of 11 figures kept, length
+unchanged at 105 words.

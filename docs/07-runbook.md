@@ -865,3 +865,29 @@ PY
 **All five must match.** The fourth is the one that matters most: three 401s alone
 prove only that something is refusing everyone, which is also what a completely
 broken engine looks like.
+
+### Layer B in production, and how to turn it off
+
+**On as of 19 August 2026,** `UC_ENABLE_LAYER_B=true`, Production only.
+
+```bash
+npx vercel@latest env rm UC_ENABLE_LAYER_B production   # then redeploy
+```
+
+**Watch the balance rather than the dashboard:**
+
+```bash
+cd ~/un-claude && KEY=$(grep '^AI_GATEWAY_API_KEY=' .env.engine.local | cut -d= -f2) \
+  && curl -s https://ai-gateway.vercel.sh/v1/credits -H "Authorization: Bearer $KEY"
+```
+
+**Two engine payload facts that contradict `API.md` and were verified live:**
+
+- **`words_in` and `words_out` are absent on single-chunk documents**, which is
+  anything under roughly 350 words and therefore most pastes. `API.md` presents
+  them as always returned. The site computes its own word counts and does not
+  depend on them.
+- **A boolean environment flag must be trimmed before comparison.** Setting one
+  with `echo` gives `"true\n"`, which is not `"true"`, so the flag silently does
+  the opposite of what was intended. `printf` avoids it and the code now trims
+  anyway. This is the same failure that broke the engine key an hour earlier.
