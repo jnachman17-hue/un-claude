@@ -74,9 +74,34 @@ export function HeroSection() {
         }
       />
 
-      <div className={'relative mx-auto max-w-[1180px] px-5 pt-7 pb-14 sm:px-8 lg:pt-12'}>
-        <div className={'grid items-start gap-7 lg:grid-cols-12 lg:gap-12'}>
-          <div className={'animate-rise lg:col-span-5 lg:pt-6'}>
+      <div
+        className={
+          'relative mx-auto max-w-[1180px] px-5 pt-7 pb-14 sm:px-8 lg:pt-12'
+        }
+      >
+        {/*
+          THE TOOL COMES FIRST ON A PHONE. 06 row 75.
+
+          This was one grid with two children, headline-column and box-column,
+          and on one column that stacks the box THIRD: header, headline,
+          subtitle, three statistics, and only then the product. Measured at
+          375x812 the box began roughly two screens down, so a visitor arriving
+          from a phone never saw the thing they came for.
+
+          So the left column is split in two and the order is set explicitly.
+          Narrow: headline, BOX, statistics. Wide: the original two columns,
+          restored with col-start and row-start rather than by source order.
+        */}
+        <div
+          className={
+            'flex flex-col gap-7 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 lg:gap-y-7'
+          }
+        >
+          <div
+            className={
+              'animate-rise order-1 lg:col-span-5 lg:col-start-1 lg:row-start-1 lg:pt-6'
+            }
+          >
             <h1
               className={
                 'text-foreground text-[30px] leading-[1.06] font-semibold tracking-[-0.03em] text-balance sm:text-[40px] lg:text-[52px] lg:leading-[1.04] lg:tracking-[-0.032em]'
@@ -90,11 +115,21 @@ export function HeroSection() {
                 'text-muted-foreground mt-3.5 max-w-[38ch] text-[15px] leading-[1.55] tracking-[-0.006em] lg:mt-5 lg:text-[16px] lg:leading-[1.6]'
               }
             >
-              Paste text or drop a file. We find every mark that identifies it as
-              AI written, and sanitise it.
+              Paste text or drop a file. We find every mark that identifies it
+              as AI written, and sanitise it.
             </p>
+          </div>
 
-            <dl className={'border-border/70 mt-7 grid max-w-[40ch] gap-x-6 gap-y-4 border-t pt-6 sm:grid-cols-3'}>
+          <div
+            className={
+              'animate-rise order-3 lg:col-span-5 lg:col-start-1 lg:row-start-2 lg:order-none'
+            }
+          >
+            <dl
+              className={
+                'border-border/70 grid max-w-[40ch] gap-x-6 gap-y-4 border-t pt-6 sm:grid-cols-3'
+              }
+            >
               {RESULTS.map((result) => (
                 <div key={result.figure}>
                   <dt
@@ -104,28 +139,51 @@ export function HeroSection() {
                   >
                     {result.figure}
                   </dt>
-                  <dd className={'text-muted-foreground mt-1.5 text-[11.5px] leading-[1.45]'}>
+                  <dd
+                    className={
+                      'text-muted-foreground mt-1.5 text-[11.5px] leading-[1.45]'
+                    }
+                  >
                     {result.label}
                   </dd>
                 </div>
               ))}
             </dl>
 
-            <p className={'text-muted-foreground/70 mt-3 max-w-[40ch] text-[11px] leading-snug'}>
+            <p
+              className={
+                'text-muted-foreground/70 mt-3 max-w-[40ch] text-[11px] leading-snug'
+              }
+            >
               Measured on our own test documents, not estimated.
             </p>
           </div>
 
-          <div className={'animate-rise lg:col-span-7'} style={{ animationDelay: '110ms' }}>
+          <div
+            className={
+              'animate-rise order-2 lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1 lg:order-none'
+            }
+            style={{ animationDelay: '110ms' }}
+          >
             <Workbench />
 
-            <ul className={'mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1'}>
+            <ul
+              className={
+                'mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1'
+              }
+            >
               {HANDLES.map((handle) => (
                 <li
                   key={handle.label}
-                  className={'text-muted-foreground inline-flex items-center gap-1.5 text-[12px]'}
+                  className={
+                    'text-muted-foreground inline-flex items-center gap-1.5 text-[12px]'
+                  }
                 >
-                  <handle.icon className={'size-[13px]'} strokeWidth={1.9} aria-hidden />
+                  <handle.icon
+                    className={'size-[13px]'}
+                    strokeWidth={1.9}
+                    aria-hidden
+                  />
                   {handle.label}
                 </li>
               ))}
