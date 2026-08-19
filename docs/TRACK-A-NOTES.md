@@ -396,3 +396,44 @@ chunking makes the engine actually process the whole document.
 **Also confirmed working:** layer A on its own is unaffected at every length,
 returning in under a second and preserving every number, because it removes
 characters rather than regenerating text.
+
+### BLOCKED, 19 August 2026. The free AI Gateway tier cannot run layer B at all
+
+**Verified with the balance endpoint, not the dashboard:**
+
+```
+GET https://ai-gateway.vercel.sh/v1/credits
+{"balance": "4.98647048", "total_used": "0.01352952"}
+```
+
+**The balance is free credit, and free credit is rate limited per model.** Jon
+added $10 by card, but **that did not land in the AI Gateway balance.** Adding a
+card unlocks access. **AI Gateway credits are a separate purchase.**
+
+**The limit is not about money and not about concurrency.** Only $0.0135 of
+$4.99 has been spent. Tested three ways: six chunks at once fails, three at once
+fails, one at a time with five retries fails, and after a short burst **even a
+five word request returns 429.** It is a request-rate quota that this workload
+exceeds immediately.
+
+**What is therefore built but unverified end to end:** chunked layer B with the
+truncation guard. The code is written, pushed and correct by inspection. **It has
+never completed a long document**, because every attempt is rate limited before
+it finishes.
+
+**What was verified before the limit bit:** the truncation itself, at four
+lengths, live. And layer A at every length, unaffected, sub-second.
+
+### DECISION, 19 August 2026. A short rewrite is a failure, not a short answer
+
+**Jon's ruling, verbatim:** "If any rewrite comes back under 70% its input length
+I think it should be considered a fail or an error. That makes no sense we aren't
+a synthesizser we are a watermarker remover trying to preserve all else where
+possible."
+
+**Threshold raised from 55% to 70%.** The reasoning is the product definition
+rather than a tuning choice: **this tool removes marks and preserves everything
+else.** A rewrite that returns two thirds of a document has not done the job,
+whatever it did to the watermark.
+
+**Fold into `04` at integration.** It reinforces entry 22's overflow-rejects rule.

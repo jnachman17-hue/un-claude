@@ -9,15 +9,21 @@ Two rules this module exists to enforce, both from 04 entry 22:
 """
 from __future__ import annotations
 
+import os
 import random
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 TARGET_WORDS = 700       # per chunk; well inside any model's output limit
-MIN_RATIO = 0.55         # a chunk shorter than this fraction is a failed rewrite
-MAX_WORKERS = 3          # chunks at once. Higher trips provider rate limits.
-RETRIES = 3              # per chunk, on rate limits and transient failures
+MIN_RATIO = 0.70         # Jon's ruling: we are a watermark remover, not a
+                         # summariser. Anything under 70% of the input length is
+                         # a failed rewrite, not a short one.
+# Chunks at once. Higher is faster but trips provider rate limits on a free
+# credit balance. Tunable without a code change so it can be raised the moment
+# paid credits are in place.
+MAX_WORKERS = int(os.environ.get("UC_LAYER_B_WORKERS", "3"))
+RETRIES = int(os.environ.get("UC_LAYER_B_RETRIES", "4"))  # per chunk
 BACKOFF = 2.5            # seconds, multiplied each attempt, plus jitter
 
 
@@ -93,6 +99,7 @@ def _guard(src: str, out: str, index: int) -> None:
     if src_n and out_n / src_n < MIN_RATIO:
         where = "the document" if index < 0 else f"chunk {index + 1}"
         raise TruncatedRewrite(
-            f"{where} came back at {out_n} words from {src_n}; "
-            "the rewrite was cut short and has been rejected rather than returned"
+            f"{where} came back at {out_n} words from {src_n} "
+            f"({out_n / src_n:.0%} of the original); the rewrite was cut short and has "
+            "been rejected rather than returned"
         )
