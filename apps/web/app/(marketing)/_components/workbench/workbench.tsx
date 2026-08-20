@@ -21,7 +21,6 @@ import {
   textToBase64,
 } from './encode';
 import { MarkedText } from './marked-text';
-import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { detectProducer, provenanceItems } from './producer';
 import { FREE_SANITISES, recordUse, remaining } from './free-uses';
 import { Paywall } from './paywall';
@@ -59,20 +58,39 @@ interface Loaded {
  * the paid work.
  */
 export function Workbench() {
-  const [text, setText] = useState(SAMPLE_TEXT);
+  /**
+   * THE BOX ARRIVES EMPTY. Jon's executive decision, 19 August 2026.
+   *
+   * It used to arrive holding an example paragraph and scanning itself, 04
+   * entry 42, so the first thing a visitor met was a finished result for text
+   * that was not theirs: three marked bars, three rows in three different
+   * answer formats, and a heading claiming a find. His verdict: "it's just too
+   * clunky and it's too confusing the other way around."
+   *
+   * So the page now opens in what used to be the state AFTER you cleared the
+   * example: an empty box, and the three marks named underneath.
+   */
+  const [text, setText] = useState('');
   const [loaded, setLoaded] = useState<Loaded>({
     payload: '',
     name: 'paste.txt',
-    text: SAMPLE_TEXT,
+    text: '',
   });
-  const [phase, setPhase] = useState<Phase>('scanning');
+  const [phase, setPhase] = useState<Phase>('idle');
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [cleaned, setCleaned] = useState<CleanResult | null>(null);
   const [cleanedText, setCleanedText] = useState('');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [isSample, setIsSample] = useState(true);
-  const [editing, setEditing] = useState(false);
+  const [isSample, setIsSample] = useState(false);
+  /*
+   * OPEN AND READY TO TYPE. With no example loaded there is nothing to display
+   * in the read-only branch, so the box would otherwise arrive blank with no
+   * placeholder at all.
+   */
+  const [editing, setEditing] = useState(true);
+  /** The arrival swoosh, one run only. See the panel below the textarea. */
+  const [swooshDone, setSwooshDone] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [left, setLeft] = useState(FREE_SANITISES);
 
@@ -182,15 +200,7 @@ export function Workbench() {
 
   useEffect(() => {
     setLeft(remaining());
-    void runScan(
-      {
-        payload: textToBase64(SAMPLE_TEXT),
-        name: 'paste.txt',
-        text: SAMPLE_TEXT,
-      },
-      true,
-    );
-  }, [runScan]);
+  }, []);
 
   const scanText = () => {
     if (text.trim().length === 0) {
@@ -463,7 +473,7 @@ export function Workbench() {
   const panelHeading = done
     ? 'What we removed'
     : idle
-      ? 'The three marks we look for'
+      ? 'We scan for every kind of watermark'
       : busy || !scan
         ? 'Every mark we check for'
         : isSample && anythingFound
@@ -475,7 +485,9 @@ export function Workbench() {
   const panelCaption = done
     ? 'Read the result before you use it'
     : idle
-      ? 'And which one applies to you'
+      ? // Jon: "I don't know why it says which one applies to you, that
+        // makes no sense on the right."
+        ''
       : busy || !scan
         ? 'All three, every time'
         : isSample && anythingFound
@@ -510,20 +522,34 @@ export function Workbench() {
     ChecklistRow['id'],
     { status: string; detail: string }
   > = {
+    /*
+     * ONE SHAPE FOR ALL THREE: what it is, who does it, what we do.
+     *
+     * Jon on the previous versions: "this literally is just so hard to read...
+     * half is a description, half is we find it and show you it." They were
+     * three different shapes, so nothing could be compared across rows. Each
+     * one now runs what it is, then who does it and why it reaches you, then
+     * one sentence on what we do about it.
+     */
     characters: {
       status: 'Text or files',
       detail:
-        'Characters with no width, sitting between the words where nothing shows on the page. Tools like ChatGPT emit them and they survive copy and paste. We find every one and show you exactly where it was.',
+        'Real characters that take up no space, sitting between your words. Nothing appears on the page. ChatGPT emits them, and they survive copy, paste and export, so they travel with your document. We name every one and show you exactly where it sat.',
     },
     provenance: {
       status: 'Needs a file',
       detail:
-        'Data hidden inside a file rather than in the words you can read: what made it, when, and often a signed record naming the tool. Claude signs the files it generates. Pasted text has no file around it, so this one sits out.',
+        'Information tucked inside the file rather than in the words: what made it, when, and a signed record naming the tool. Claude signs every image it generates, and anyone can read that record today with a free public tool. We strip it, and show you the file before and after.',
     },
     statistical: {
-      status: 'Text only',
+      /*
+       * THE STRONGEST LINE ON THE DEFAULT SCREEN, so it sits at rest and not
+       * only after a scan. It is true whether or not anything has been pasted:
+       * 100% of Claude output since 2 August 2026 carries it. 04 entry 81.
+       */
+      status: 'If Claude wrote it, it is marked',
       detail:
-        'Not a character you could search for. This one is in the words themselves, so there is nothing to highlight. We rewrite to break the word sequences it rides on, and check every number, date and name against your original.',
+        'It is not hidden in your words. It is your words: the exact order Claude chose them in. Another AI swaps a few and leaves the rest alone, and whatever it leaves alone still carries the mark. We rebuild every sentence so no more than three words in a row survive, and check your facts and your length against your original. Text only.',
     },
   };
 
@@ -717,6 +743,46 @@ export function Workbench() {
             editing ? 'border-foreground/25' : 'hover:border-foreground/20',
           ].join(' ')}
         >
+          {/*
+            THE ARRIVAL SWOOSH. Jon's design, 19 August 2026.
+
+            One orange panel crosses the empty box carrying one sentence, holds
+            long enough to be read, and leaves. Behind it is the ordinary box
+            with its ordinary placeholder. It says what to do with this thing in
+            the second before anyone has decided to care.
+
+            It unmounts on animation end so it can never sit over the input, and
+            it does not run at all for a visitor who has asked for reduced
+            motion: for them the box is simply ready to type in.
+          */}
+          {!swooshDone ? (
+            <div
+              aria-hidden
+              className={
+                'pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[13px] motion-reduce:hidden'
+              }
+            >
+              {/* Translucent, not opaque. The same treatment as the sweep that
+                  runs while the engine works, from-mark/0 via-mark to-mark/0,
+                  so the box stays visible through it and the two motions on
+                  this surface read as the same object. */}
+              <div
+                onAnimationEnd={() => setSwooshDone(true)}
+                className={
+                  'animate-swoosh from-mark/0 via-mark/40 to-mark/0 flex h-full w-full items-center justify-center bg-gradient-to-r px-6 text-center'
+                }
+              >
+                <span
+                  className={
+                    'text-foreground text-[15px] leading-snug font-semibold tracking-[-0.012em]'
+                  }
+                >
+                  Paste AI generated content here to remove its watermark.
+                </span>
+              </div>
+            </div>
+          ) : null}
+
           {editing ? (
             <textarea
               ref={textArea}
@@ -770,48 +836,6 @@ export function Workbench() {
               </div>
             </button>
           )}
-
-          {/*
-            THE LINE THAT MAKES THE MARKS MEAN SOMETHING.
-
-            Three orange bars in a paragraph read as cursor artefacts or a
-            rendering fault. Nothing on the arrival screen said they were the
-            find. Jon: "I see these three vertical lines... but I don't even
-            know what's going on."
-
-            It waits for the scan, because before that there is nothing marked
-            to point at.
-          */}
-          {isSample && !editing && !busy && scan && !done ? (
-            <p
-              className={
-                'text-foreground/75 border-border/80 border-t px-4 pt-2.5 text-[13px] font-medium'
-              }
-            >
-              {SAMPLE_HINT}
-            </p>
-          ) : null}
-
-          {/* Nothing about a paragraph of prose says "this is a demonstration,
-              delete it". The label and the line beneath it do. */}
-          {isSample && !editing ? (
-            <button
-              type={'button'}
-              onClick={startEditing}
-              className={
-                'border-border/80 text-muted-foreground hover:text-foreground flex w-full items-center gap-2 border-t px-4 py-2.5 text-left text-[12.5px] transition-colors'
-              }
-            >
-              <span
-                className={
-                  'bg-foreground/[0.07] text-foreground/70 shrink-0 rounded-[5px] px-1.5 py-[2px] text-[10px] font-semibold tracking-wide uppercase'
-                }
-              >
-                Example
-              </span>
-              Click anywhere above to clear this and paste your own text.
-            </button>
-          ) : null}
 
           {/*
             THE SWEEP RUNS FOR BOTH OPERATIONS NOW, AND IT USED TO RUN FOR THE

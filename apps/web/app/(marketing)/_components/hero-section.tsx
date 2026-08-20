@@ -12,39 +12,38 @@ import { Workbench } from './workbench/workbench';
  */
 
 /**
- * Three reasons there is no risk in trying this. 04 entry 78.
+ * One measured figure per layer, and the labelling is what makes it legal.
  *
- * THE RULE THAT PRODUCED THEM, because two earlier attempts failed the same way:
- * a claim about ONE LAYER is wrong for the other two. "Every mark shown in
- * place" over-promises for Claude text, which has no visible mark to show.
- * "Zero figures changed" is meaningless over a PNG. **So a claim that sits here
- * has to be true of the whole service, not of one layer of it.**
+ * REPLACED 19 August 2026. This slot held Free / Nothing stored / Nothing lost,
+ * 04 entry 78. Jon's verdict on it: "the free, nothing stored, nothing lost on
+ * the left is awful. We need to replace that with data and metrics."
  *
- * All three are true of every input, and they share one job: removing a reason
- * not to try. That matters more than a capability boast for a stranger deciding
- * whether to paste a confidential document into a site they found on TikTok.
+ * THE RULE THAT KILLED THE TWO ATTEMPTS BEFORE THAT still stands, 04 entry 78
+ * ruling 3: a claim in a whole-service slot has to be true of the whole
+ * service. "Every mark shown in place" over-promises for Claude text, which has
+ * no visible mark. "Zero figures changed" is meaningless over a PNG.
  *
- * "Nothing stored" is measured, not aspirational: `_shared.py` caps an upload at
- * 5 MB, holds it in a temporary folder for the length of the request, and
- * deletes it. There is no storage bill for this project because there is no
- * storage.
+ * The way out is not a weaker claim, it is a scoped one. EACH FIGURE NAMES THE
+ * LAYER IT BELONGS TO, so nothing is claimed beyond where it is true, and the
+ * three of them teach the three layers on the way past.
  *
- * HIDDEN ON MOBILE, on Jon's instruction. They sit beside the tool on a wide
- * screen and cost nothing; stacked on a phone they push the product down for no
- * return. GPTZero drops the equivalent block at the same breakpoint.
+ * All measured on our own test documents, which the line beneath them says.
  */
 const RESULTS = [
   {
-    figure: 'Free',
-    label: 'to scan anything. No account.',
+    figure: '9',
+    layer: 'Hidden characters',
+    label: 'classes of invisible character checked on every scan.',
   },
   {
-    figure: 'Nothing stored',
-    label: 'Your file is processed and deleted.',
+    figure: '100%',
+    layer: 'Metadata',
+    label: 'of the record removed, checked against the file\u2019s raw bytes.',
   },
   {
-    figure: 'Nothing lost',
-    label: 'Numbers, dates and names checked against your original.',
+    figure: '90%+',
+    layer: 'Statistical watermark',
+    label: 'of your three word sequences broken by the rewrite.',
   },
 ];
 
@@ -138,6 +137,14 @@ export function HeroSection() {
                       'text-muted-foreground mt-1.5 text-[11.5px] leading-[1.45]'
                     }
                   >
+                    {/* The layer name carries the scope. Without it each figure
+                        reads as a claim about the whole service, which is the
+                        exact failure 04 entry 78 ruling 3 records twice. */}
+                    <span
+                      className={'text-foreground/85 block font-semibold'}
+                    >
+                      {result.layer}
+                    </span>
                     {result.label}
                   </dd>
                 </div>

@@ -135,6 +135,30 @@
     }
   }
 
+  /*
+   * The arrival swoosh. Runs once, on load, over the empty box.
+   *
+   * It carries one sentence across the input surface and leaves nothing
+   * behind. The hold in the middle is deliberate: the panel is stationary
+   * from 28% to 72% so the line can actually be read before it clears.
+   */
+  --animate-swoosh: swoosh 2.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+
+  @keyframes swoosh {
+    0% {
+      transform: translateX(-102%);
+    }
+    28% {
+      transform: translateX(0);
+    }
+    72% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(102%);
+    }
+  }
+
   --animate-fade-up: fade-up 0.5s;
   --animate-fade-down: fade-down 0.5s;
   --animate-accordion-down: accordion-down 0.2s ease-out;
