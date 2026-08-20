@@ -13,46 +13,69 @@ import { Workbench } from './workbench/workbench';
  */
 
 /**
- * Every figure here is real and sourced, and that is deliberate.
+ * Three claims about OUR TOOL, in words a stranger can check against their own
+ * document.
  *
- * Jon suggested inventing some. The honest ones are stronger: they describe the
- * mechanism rather than decorating it, and Anthropic has a detector in
- * development, which is the day every fabricated number in this category becomes
- * checkable at once. Sources: ENGINE.md section 2, researched 18 August 2026.
+ * Every figure is real and sourced. Jon suggested inventing some; the honest
+ * ones are stronger, because they describe the mechanism rather than decorating
+ * it, and Anthropic has a detector in development — the day it ships, every
+ * fabricated number in this category becomes checkable at once. Sources:
+ * ENGINE.md section 2, researched 18 August 2026.
+ *
+ * REWRITTEN 19 August 2026 for plain English. 04 entry 76. The previous set read
+ * "of provenance data removed, checked against the file's raw bytes", "of your
+ * three word sequences broken by the rewrite" and "figures lost". Jon, who has
+ * worked on this project from the first day: "these stats make no sense there to
+ * me. Like whatsoever." If he cannot read them, nobody arriving cold can.
+ *
+ * The numbers did not change. Only the words did.
  */
 const RESULTS = [
   {
     figure: '100%',
-    label: 'of provenance data removed, checked against the file’s raw bytes',
+    label:
+      'of the hidden tags in a file removed, and we open the file again afterwards to prove it',
   },
   {
-    figure: '90%+',
-    label: 'of your three word sequences broken by the rewrite',
+    figure: '9 in 10',
+    label:
+      'three-word runs of your original wording gone after a rewrite. Runs are where the mark hides',
   },
   {
     figure: '0',
-    label: 'figures lost across every document we have tested',
+    label:
+      'numbers, dates or names changed by mistake, across every document we have tested',
   },
 ];
 
+/**
+ * Three facts about THE PROBLEM, not about us. Jon asked for this block to be
+ * "a scope of the problem type section and we name it that". 04 entry 76.
+ *
+ * Each one is sourced and none is rounded up to sound bigger. The scale point is
+ * made by naming what a single product does in a day and letting the reader do
+ * the multiplication, rather than by inventing an industry total nobody
+ * publishes.
+ */
 const FACTS = [
   {
     figure: '5 of 8',
-    label: 'of the largest AI labs already mark what they generate',
+    label: 'of the biggest AI companies already mark what they make',
     detail:
-      'Anthropic, Google, OpenAI, Adobe and the hosted Stability and Flux services all attach a signed provenance record to the files they produce. They converged on one format, C2PA. Every major lab has also signed the European transparency code, so the remaining three are a question of when rather than whether.',
+      'Anthropic, Google, OpenAI, Adobe and the hosted Stability and Flux services all attach a signed record to the files they produce, and they settled on one shared format for it. Every major lab has also signed the European transparency code, so the other three are a question of when rather than whether.',
   },
   {
     figure: '2.5bn',
-    label: 'prompts answered by ChatGPT alone, every day',
+    label:
+      'prompts answered by ChatGPT every day. That is one product, at one company',
     detail:
-      'Reported in 2026, and that is one product from one company. The volume of machine written text now in circulation is not something any person or organisation can audit by reading it, which is exactly why the marks exist and why they are invisible.',
+      'Reported in 2026. Nobody can read their way through that much machine-written text to work out where it came from, which is the whole reason the marks exist and the whole reason they are invisible.',
   },
   {
     figure: 'Aug 2026',
-    label: 'when Claude began watermarking the text it writes',
+    label: 'when Claude started marking the writing it produces',
     detail:
-      'Anthropic applies it to models launched from 2 August 2026, globally, with no way to opt out. Google already does the same to Gemini through SynthID. Neither mark can be detected by any public tool, which is why the only answer available today is removal rather than checking.',
+      'Anthropic applies it to models launched from 2 August 2026, everywhere, with no way to switch it off. Google already does the same to Gemini. Neither mark can be checked by any tool the public can use, which is why removing it is the only option anyone actually has today.',
   },
 ];
 
@@ -194,12 +217,43 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className={'relative mx-auto max-w-[1180px] px-5 pb-20 sm:px-8'}>
-        <div className={'grid gap-4 lg:grid-cols-12'}>
-          <div className={'lg:col-span-7'}>
+      {/*
+        THE SCOPE OF THE PROBLEM.
+
+        Jon asked for this block to be "a scope of the problem type section and
+        we name it that", and said the layout — counter on the left, cards on the
+        right, nothing tying them together — "needs improvement". 04 entry 76.
+
+        It is now one named section with a heading, and the two halves say
+        different things on purpose: the left is how big the problem is, the
+        right is who is causing it and since when. On a phone they stack in that
+        order, which is the order the argument runs in.
+      */}
+      <div
+        className={'relative mx-auto max-w-[1180px] px-5 pt-4 pb-20 sm:px-8'}
+      >
+        <h2
+          className={
+            'text-muted-foreground text-[11.5px] font-semibold tracking-[0.09em] uppercase'
+          }
+        >
+          The scope of the problem
+        </h2>
+
+        <p
+          className={
+            'text-foreground mt-2.5 max-w-[46ch] text-[19px] leading-[1.35] font-semibold tracking-[-0.02em] text-balance sm:text-[22px]'
+          }
+        >
+          Nearly every large AI company now marks what it produces, and none of
+          them ask first.
+        </p>
+
+        <div className={'mt-9 grid gap-x-12 gap-y-10 lg:grid-cols-12'}>
+          <div className={'lg:col-span-6'}>
             <LiveCounter />
           </div>
-          <div className={'lg:col-span-5'}>
+          <div className={'lg:col-span-6'}>
             <FactCards facts={FACTS} />
           </div>
         </div>
