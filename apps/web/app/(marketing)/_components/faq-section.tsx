@@ -19,15 +19,19 @@ import Link from 'next/link';
 const ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   {
     q: 'Can my school or employer detect Claude’s watermark today?',
-    a: 'Not today. No public detector exists for any vendor’s text watermark. Anthropic has committed to releasing one, in its own word, “soon”. The day it opens, anyone can check, and text that is already marked stays marked.',
+    a: 'Not today. Anthropic’s detector is not open yet; the company has committed to releasing one, in its own word, “soon”. The day it opens, anyone can check, and text that is already marked stays marked.',
+  },
+  {
+    q: 'Why can’t I just ask another AI to reword it?',
+    a: 'Because a generic rewrite protects exactly the wrong thing. Ask any model to reword but keep the facts, and it hands your fact-bearing sentences back nearly untouched, and those unbroken stretches of original wording are where the watermark rides. When we tested it, generic rewrites also came back a third shorter and quietly changed figures. Our engine does the opposite: it rebuilds every sentence so no more than three of your words survive in a row, on a model that is not Claude, with your facts and length held.',
   },
   {
     q: 'How do I know the rewrite actually worked?',
-    a: 'Nobody can verify removal yet, and anyone claiming otherwise is telling you something they cannot know. What we give you is measured: every run returns the share of your wording replaced, the longest sequence of your original words still standing, and every figure checked. The mark needs your words in unbroken order, and the receipt shows how little order is left.',
+    a: 'Nobody can verify removal yet, and anyone claiming otherwise is telling you something they cannot know. What we give you is measured: every run returns the share of your wording replaced, the longest sequence of your original words still standing, and every figure checked. The mark rides only on unbroken stretches of your original words, and the receipt shows how little survives.',
   },
   {
     q: 'Will it change my meaning, my facts, or my numbers?',
-    a: 'No, and this is enforced rather than promised. Every number, date and name is checked character for character against your original, and a section that drifts is rewritten until it matches. Length is held within a tenth.',
+    a: 'No, and this is enforced rather than promised. Every number, date and name is checked against your original and the section retries if one drifts. Length is held within a tenth, and the receipt shows the figures carried through.',
   },
   {
     q: 'Is using Un-Claude cheating?',
@@ -56,7 +60,7 @@ const ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
   {
     q: 'Which AI tools mark their output?',
-    a: 'Five of the eight largest providers, confirmed. Anthropic watermarks all Claude text since 2 August 2026 and signs the images it generates. OpenAI, Google, Adobe and the hosted Stability services sign theirs too, using a shared standard called C2PA that any free reader can open. The coverage table above names each one, with sources.',
+    a: 'Five of the eight largest providers, confirmed. Anthropic watermarks every Claude model launched since 2 August 2026 and signs the images Claude makes. OpenAI, Google, Adobe and the hosted Stability services sign theirs too, using a shared standard called C2PA that any free reader can open. The coverage table above names each one, with sources.',
   },
   {
     q: 'What about Word documents and PDFs?',

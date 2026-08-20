@@ -102,8 +102,7 @@ export function LiveCounter() {
           'text-muted-foreground mt-3.5 max-w-[58ch] text-[12.5px] leading-[1.6]'
         }
       >
-        Hidden characters stripped, metadata removed and wording
-        rewritten, across everything run through this page.
+        Hidden characters stripped, metadata removed and wording rewritten.
       </p>
     </div>
   );

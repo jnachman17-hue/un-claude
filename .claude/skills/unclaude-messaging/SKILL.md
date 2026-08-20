@@ -12,6 +12,31 @@ and convincing argument, and do not cross into a claim that is explicitly false.
 **Jon is the final arbiter on every sentence.** `CLAUDE.md` section 2. When this
 file and Jon disagree in a session, Jon wins and this file gets updated.
 
+## Think like the visitor first. Jon's standing order, 19 August 2026
+
+**Before anything ships, re-read it top to bottom as the person it is for: a
+college student on a phone who wants a document unwatermarked and knows nothing
+else.** Not as the team, which has researched this for weeks. Their exact words:
+"take a step back and understand at a human level... The average person visiting
+this is a college student who wants to unwatermark something. Think like them."
+
+**The mechanical tests, run every time:**
+
+1. **Left to right, top to bottom.** A reader knows only what the page has already
+   told them. A term, a count, or a concept used before it is taught is a defect.
+   "0 facts lost in rewrites" is meaningless to someone who does not yet know a
+   rewrite is involved.
+2. **One grammar per repeated element.** Three rows, three statuses: all three
+   must answer the same question in the same shape. A count, a missing input and
+   a philosophy lesson side by side is the signature failure of this project.
+3. **Read it aloud.** A sentence you stumble on, they abandon.
+4. **Render it and look.** At desktop and at 375px, before claiming done. Text
+   overflowing a column ships to nobody.
+5. **Would they care?** Every block must answer a question this visitor actually
+   has: does it work on my thing, is it free, will it wreck my essay, can anyone
+   tell. A block answering a question only the team finds interesting moves off
+   the page.
+
 ## Before writing a word
 
 **Read `.agents/product-marketing.md`.** Full positioning: audience, the three

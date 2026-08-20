@@ -1,4 +1,11 @@
-import { FileTextIcon, ImageIcon, TypeIcon } from 'lucide-react';
+import {
+  EyeOffIcon,
+  FileTextIcon,
+  FingerprintIcon,
+  ImageIcon,
+  PaperclipIcon,
+  TypeIcon,
+} from 'lucide-react';
 
 import { LiveCounter } from './live-counter';
 import { Workbench } from './workbench/workbench';
@@ -80,10 +87,60 @@ export function HeroSection() {
                 'text-muted-foreground mt-3.5 max-w-[42ch] text-[15px] leading-[1.55] tracking-[-0.006em] lg:mt-5 lg:text-[16px] lg:leading-[1.6]'
               }
             >
-              Invisible characters. A signed record inside the file. A
-              watermark in the words themselves. We find all three and
-              sanitise them in seconds. Free to scan.
+              We sanitise every kind of AI watermark in seconds.
             </p>
+
+            {/*
+              THE AUTHORITY STRIP. Jon's call, the GPTZero pattern: icons and
+              hard claims, one glance, no reading. Written for someone who does
+              not yet know what the three marks are: the icons plant that there
+              are three, the middle claim carries the authority, the last one
+              removes the risk of trying.
+            */}
+            <ul
+              className={
+                'mt-5 flex flex-wrap items-center gap-x-5 gap-y-2.5 lg:mt-6'
+              }
+            >
+              <li
+                className={
+                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                }
+              >
+                <span className={'inline-flex items-center gap-1'}>
+                  <EyeOffIcon
+                    className={'text-mark-strong size-[14px]'}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  <PaperclipIcon
+                    className={'text-mark-strong size-[14px]'}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  <FingerprintIcon
+                    className={'text-mark-strong size-[14px]'}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                </span>
+                Every kind of watermark
+              </li>
+              <li
+                className={
+                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                }
+              >
+                100% of detectable marks removed
+              </li>
+              <li
+                className={
+                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                }
+              >
+                Free. No account.
+              </li>
+            </ul>
           </div>
 
           {/* Desktop-only validity block. Drops off entirely on a phone,

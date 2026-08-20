@@ -548,83 +548,84 @@ export function Workbench() {
     ChecklistRow['id'],
     {
       status: string;
-      note?: string;
       detail: string;
+      teach: true;
       items: Array<{ key: string; head: string; body: string }>;
     }
   > = {
     /*
-     * ONE TEMPLATE BEHIND EVERY +: what it is, who puts it there, what we do.
+     * ONE GRAMMAR FOR EVERY STATUS: the state of your input. "Awaiting text
+     * or file / Awaiting a file / Awaiting text." Jon's central complaint,
+     * three times over: a count, a missing input and a philosophy lesson side
+     * by side is not a system. The property talk ("nothing can show this
+     * one") moved into the teach table where it has room to make sense.
      *
-     * Jon on the previous versions: "half is a description, half is we find it
-     * and show you it... row one mentions ChatGPT, row two mentions Claude,
-     * row three mentions how we do it." Three shapes, so nothing could be
-     * compared across rows. Cover Your Tracks answers the same questions in
-     * the same order for every metric it reports, and the fifth one costs
-     * nothing to read. docs/09 section 3.
+     * The teach table itself is Jon's design: three columns, What it is,
+     * Who puts it there, What we do, orange deepening column by column.
      */
     characters: {
-      status: '\u2014',
-      detail: 'Characters that take up no space, sitting between your words.',
+      status: 'Awaiting text or file',
+      detail: 'Invisible characters sitting between your words.',
+      teach: true,
       items: [
         {
           key: 'what',
           head: 'What it is',
-          body: 'Real, invisible characters. Zero width spaces, narrow no-break spaces, direction marks. Nothing shows on the page.',
+          body: 'Real characters with zero width. They sit between your words and nothing shows on the page.',
         },
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'ChatGPT is documented emitting them, and they survive copy, paste and export, so they travel with your document.',
+          body: 'ChatGPT leaves them behind, and they survive copy, paste and export.',
         },
         {
           key: 'we',
           head: 'What we do',
-          body: 'Name every one, show you exactly where it sat, remove it, then read the text back to confirm none are left.',
+          body: 'Find every one, show you where it sat, remove it, and prove none are left.',
         },
       ],
     },
     provenance: {
-      status: '\u2014',
-      note: 'needs a file',
-      detail: 'A signed record inside the file, not in the words you can read.',
+      status: 'Awaiting a file',
+      detail: 'A digital fingerprint hidden inside your file.',
+      teach: true,
       items: [
         {
           key: 'what',
           head: 'What it is',
-          body: 'Data in the file itself: what made it, when, and often a cryptographically signed credential. The standard is called C2PA.',
+          body: 'A signed record inside the file naming the tool that made it, and when.',
         },
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'Claude signs every image it generates. So do OpenAI, Google and Adobe. Anyone can read the record today with a free public tool.',
+          body: 'Claude signs every image it makes. So do OpenAI, Google and Adobe.',
         },
         {
           key: 'we',
           head: 'What we do',
-          body: 'Strip it, and show you the file before and after, verified against the raw bytes.',
+          body: 'Strip the record and show you the file before and after, byte for byte.',
         },
       ],
     },
     statistical: {
-      status: '\u2014',
-      note: 'nothing can show you this one. Yet',
-      detail: 'Not a character. It is the order Claude chose your words in.',
+      status: 'Awaiting text',
+      detail: 'The watermark hidden in the order of your words.',
+      teach: true,
       items: [
         {
           key: 'what',
           head: 'What it is',
-          body: 'A pattern in which words the model picked. There is nothing to highlight, no count to give you, and no tool anywhere that can point at it. Yet.',
+          body: 'Not a character. The mark is the exact order Claude chose your words in. No tool can show it. Yet.',
         },
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'Anthropic, on every Claude model launched since 2 August 2026, everywhere, with no way to switch it off.',
+          body: 'Anthropic, on Claude models, everywhere, with no off switch.',
         },
         {
           key: 'we',
           head: 'What we do',
-          body: 'Rebuild every sentence so no more than three of your words survive in a row, holding every number, date and name, and keeping your length.',
+          body: 'Rebuild every sentence, keep every fact and your length, and hand you the receipts.',
         },
       ],
     },
@@ -635,7 +636,7 @@ export function Workbench() {
       {
         id: 'characters',
         label: 'Hidden characters',
-        where: 'between your words',
+        where: 'Between your words',
         state:
           busy || !scan
             ? 'pending'
@@ -654,12 +655,7 @@ export function Workbench() {
               : foundCount > 0
                 ? `${foundCount} found`
                 : 'none found',
-        note:
-          !busy && scan && !done && foundCount === 0
-            ? // A clean result is a real answer, not a broken scan.
-              // docs/09 section 8.
-              'and that is a real answer'
-            : undefined,
+
         detail: done
           ? foundCount === 0
             ? 'There were none in this to begin with.'
@@ -688,7 +684,7 @@ export function Workbench() {
       {
         id: 'provenance',
         label: 'Metadata',
-        where: 'inside your file',
+        where: 'A digital fingerprint inside your file',
         state:
           busy || !scan
             ? 'pending'
@@ -703,7 +699,7 @@ export function Workbench() {
           busy || !scan
             ? waitingStatus
             : !isFile
-              ? '—'
+              ? 'Needs a file'
               : done
                 ? stillMarked
                   ? 'partly removed'
@@ -713,12 +709,7 @@ export function Workbench() {
                     ? producer
                     : 'found'
                   : 'none found',
-        note:
-          !busy && scan && !isFile
-            ? 'no file given'
-            : !busy && scan && isFile && !done && !provenanceFound
-              ? 'and that is a real answer'
-              : undefined,
+
         detail: !isFile
           ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
           : done
@@ -744,7 +735,7 @@ export function Workbench() {
       {
         id: 'statistical',
         label: 'Statistical watermark',
-        where: 'in the order of your words',
+        where: 'The order of your words',
         state:
           busy || !scan
             ? 'pending'
@@ -761,28 +752,16 @@ export function Workbench() {
           busy || !scan
             ? waitingStatus
             : !carriesProse
-              ? '—'
+              ? 'No words to mark'
               : done && receipt
-                ? 'rewritten'
-                : // NEVER A COUNT. There is nothing to count and there never
-                  // will be: the mark is the word order itself. The dash is
-                  // permanent, and it is the design rather than a gap in it.
-                  // Turnitin prints an asterisk instead of a figure it knows
-                  // is noise; every competitor prints the figure anyway.
-                  // docs/09 section 4.
-                  '—',
-        note:
-          busy || !scan
-            ? undefined
-            : !carriesProse
-              ? 'an image has no words'
-              : done && receipt
-                ? undefined
-                : 'nothing can show you this one. Yet',
+                ? 'Rewritten'
+                : // Never a count: there is nothing to count. The state word
+                  // matches the row grammar, and the teach table carries why.
+                  'Presumed present',
         detail: !carriesProse
           ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
-            ? `Rewritten. The longest piece of your original wording still there is ${receipt.longestRun} words in a row, and the mark needs longer than that to survive.`
+            ? `Rewritten. The longest stretch of your original wording left is ${receipt.longestRun} words in a row. The mark rides only on unbroken stretches of your original words.`
             : 'It is not hidden in your words. It is your words: the exact order Claude chose them in. Another AI swaps a few and leaves the rest alone, and whatever it leaves alone still carries the mark. We rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
       },
     ] satisfies ChecklistRow[]

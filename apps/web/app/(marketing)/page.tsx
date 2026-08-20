@@ -1,45 +1,30 @@
+import { ClaudeBand } from './_components/claude-band';
 import { CoverageMarquee } from './_components/coverage-marquee';
 import { CoverageSection } from './_components/coverage-section';
 import { FaqSection } from './_components/faq-section';
 import { HeroSection } from './_components/hero-section';
-import { LimitsSection } from './_components/limits-section';
-import { MoatSection } from './_components/moat-section';
-import { StakesSection } from './_components/stakes-section';
 
 /**
- * The Un-Claude landing page. 04 entry 41, rebuilt 19 August 2026 under
- * entries 80 to 84 and the research in docs/09.
+ * The Un-Claude landing page, radically cut 19 August 2026 on Jon's order:
+ * "People don't care about the argument. Show them what they need. Tell them
+ * what it does. Make sure they understand that this works with Claude and
+ * park the bullshit elsewhere."
  *
- * The tool is the page, and everything under it is one argument told in
- * order, each section owning exactly one beat:
+ *   Hero      the tool, the claim, the authority strip. The rows teach.
+ *   Marquee   nine outlets say this is real.
+ *   Band      three beats: marked invisibly, detector coming, marks persist.
+ *   Coverage  which vendors mark what, with sources.
+ *   FAQ       everything hard, at full length, collapsed.
  *
- *   Hero        the tool, and the claim: if Claude wrote it, it is marked
- *   Marquee     nine outlets say this is real, citation not endorsement
- *   Limits      the three marks, where they hide, who can check them today
- *   Stakes      the mark cannot tell authors from editors, and the detector
- *               is coming for documents that already exist
- *   Moat        why a generic AI rewrite fails, and the engineering that
- *               does not
- *   Coverage    which vendors mark what, with sources
- *
- * HOW-IT-WORKS LEFT THE HOME PAGE, 19 August 2026. Its three drawn panels
- * were the largest text mass on the page, and the same depth already lives
- * at /how-it-works. Jon: the page "can't be 50 scroll lanes long." The
- * argument section links there for the reader who wants the drawings.
- *   FAQ         the hard questions, answered at full length
- *
- * The Anthropic quotes are distributed, one per doubt, never boxed together:
- * Jon rejected the collected version as telling no story, and docs/09
- * section 6 found the inline-citation pattern is what reads as evidence.
+ * Limits, stakes and moat died as sections in the same cut. Their depth
+ * lives in the row teach-tables, the FAQ, and /how-it-works. 04 entry 86.
  */
 function Home() {
   return (
     <div className={'flex flex-col'}>
       <HeroSection />
       <CoverageMarquee />
-      <LimitsSection />
-      <StakesSection />
-      <MoatSection />
+      <ClaudeBand />
       <CoverageSection />
       <FaqSection />
     </div>

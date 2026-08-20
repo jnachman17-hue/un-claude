@@ -204,3 +204,16 @@ once.**
 **The one question that catches most of it: which layer, and is that provable?**
 A sentence true of one layer written as though true of all three is the single
 most common defect in this project's copy.
+
+---
+
+## 8. Think like the visitor, every turn
+
+**Jon's standing order, 19 August 2026, given after a day of technically correct
+work that read as "text slob" to a human.** Before shipping anything a visitor
+sees, step back and re-read it as the actual visitor: a college student on a
+phone who wants a document unwatermarked and knows nothing yet. Terms must be
+taught before they are used. Repeated elements must share one grammar. Copy must
+survive being read aloud. Layouts must be rendered and looked at, at desktop and
+at phone width, before being called done. The full test list lives in
+`.claude/skills/unclaude-messaging/SKILL.md` and fires with that skill.

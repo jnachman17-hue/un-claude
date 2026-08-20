@@ -44,11 +44,13 @@ export interface ChecklistRow {
   /** Where this mark lives. The same grammar on all three rows, always. */
   where: string;
   state: RowState;
-  /** How many are in your document. A count, or a dash. Never a claim. */
+  /** The state of your input, in one grammar across all three rows. */
   status: string;
-  /** Sits under the count at the same size when the count is a dash. */
+  /** Kept for live findings under the +. Unused at rest. */
   note?: string;
   detail: string;
+  /** True at rest: items render as the three-column teach table. */
+  teach?: boolean;
   items?: Array<{ key: string; head: string; body: string }>;
 }
 
@@ -121,7 +123,7 @@ const BADGE: Record<
   certain: {
     icon: AlertTriangleIcon,
     className: 'bg-foreground/45 text-white',
-    label: 'marked if Claude wrote it',
+    label: 'presumed present',
   },
 };
 
@@ -306,7 +308,51 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                     {row.detail}
                   </p>
 
-                  {hasItems ? (
+                  {hasItems && row.teach ? (
+                    /*
+                      THE TEACH TABLE. Jon's design, 19 August 2026: "three
+                      columns. What it is... Who puts it there... What we do...
+                      built like a table, easy to read... a little orange
+                      gradient that gets a little deeper with each column."
+                      One template on all three rows, so the eye learns it
+                      once. Columns stack on a phone, headers keep the tint.
+                    */
+                    <div
+                      className={'mt-3 grid gap-2 sm:grid-cols-3 sm:gap-2.5'}
+                    >
+                      {row.items!.map((item, itemIndex) => (
+                        <div
+                          key={item.key}
+                          className={'overflow-hidden rounded-[9px]'}
+                        >
+                          <p
+                            className={[
+                              'px-3 py-1.5 text-[10.5px] font-semibold tracking-[0.05em] uppercase',
+                              itemIndex === 0
+                                ? 'bg-mark/[0.10] text-mark-strong'
+                                : itemIndex === 1
+                                  ? 'bg-mark/[0.20] text-mark-strong'
+                                  : 'bg-mark/[0.30] text-mark-strong',
+                            ].join(' ')}
+                          >
+                            {item.head}
+                          </p>
+                          <p
+                            className={[
+                              'text-foreground/85 px-3 py-2 text-[12.5px] leading-[1.55]',
+                              itemIndex === 0
+                                ? 'bg-mark/[0.03]'
+                                : itemIndex === 1
+                                  ? 'bg-mark/[0.06]'
+                                  : 'bg-mark/[0.09]',
+                            ].join(' ')}
+                          >
+                            {item.body}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : hasItems ? (
                     <ul
                       className={'border-border mt-2.5 space-y-2 border-l pl-3'}
                     >
