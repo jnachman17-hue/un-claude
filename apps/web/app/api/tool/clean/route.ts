@@ -48,6 +48,17 @@ export async function POST(request: Request) {
     return fail('no_file', 'Nothing was sent. Paste some text or choose a file.');
   }
 
+  // The engine caps uploads at 5 MB; this refuses anything over that cap
+  // before it costs a network round trip, memory, or, once layer B is on in
+  // production, money. Base64 inflates by 4/3, so 7.5M characters is ~5.5 MB.
+  if (file.length > 7_500_000) {
+    return fail(
+      'too_large',
+      'That file is over the 5 MB limit. Try a smaller one.',
+      413,
+    );
+  }
+
   const wantsRewrite = layer_b === true;
 
   if (wantsRewrite && !layerBAllowed()) {

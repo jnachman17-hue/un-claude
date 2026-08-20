@@ -2677,3 +2677,49 @@ phone screens, no horizontal scroll at either width, console clean.**
 **Flagged for Jon, not decided here:** the stakes heading ("Wrote it yourself and
 edited with Claude? Same mark.") stands in for the words he said he wants to
 write himself; the marquee caption is still his; the mission page is still his.
+
+### 86. The overnight build: tested end to end, priced, missioned, logoed
+
+**Jon handed the project over for the night of 19 to 20 August 2026 with launch
+readiness as the brief: "This is your baby. Execute." The record of what was
+built and what was found, so the morning needs no archaeology.**
+
+**Built.**
+- **/pricing**, per `03` section 8 and entries 63 to 67: free tier stated as it
+  really works, three packs at the ratified prices, buttons routing to sign-up
+  until Stripe lands, with a line saying exactly that.
+- **The mission page**, Jon's draft refined in his voice, one em dash surviving.
+- **The logo**: a U missing the top of its right stem, the missing piece being
+  the orange hidden-character bar drifting away. Favicon, header and share card.
+- **The OG share card**, rendered from the live headline at /opengraph-image.
+- **A copy button** on the clean result, a size guard on both API routes, light
+  and dark themes only, the sitemap completed, title and description rewritten.
+
+**Corrected, from a primary-source research pass on the vendor table.**
+- **xAI never signed the European transparency code.** The row credited it with
+  a commitment it never made. New "Nothing yet" state, grey cross.
+- Claude text moves to committed: models launched from 2 August, retrofit over
+  coming months. Gemini text has no public check. Meta marks images today.
+  OpenAI gained its May 2026 SynthID layer. The intro sentence was false twice.
+
+**Tested live, all passing.** Sample scan, full rewrite with receipts, file scan
+reading a planted XMP creator (the STABILITY AI status lands exactly as entry 70
+demanded), file clean with byte report and download, paywall at zero allowance,
+remove-file, empty-scan error, Google button present, every route 200.
+
+**Found and settled: the preview pane's dead-hydration mystery has a mechanism**,
+written to `07`: the home page's hydration yields mid-tree and a backgrounded
+pane freezes scheduled work forever. Front the tab, force a frame, probe for
+fibers. Real visitors are unaffected.
+
+**Found and left for Jon, in order of weight.**
+1. **The rewrite invented a dollar sign**: "4.2 million" came back "$4.2
+   million" on one run. The fact guard compares values, not symbols. An engine
+   tweak, not a copy fix, and not one to make at 3am.
+2. **The headline and the Claude band ride the announced-rollout ambiguity**:
+   no shipping Claude model is confirmed marked today (`06` row 62). The precise
+   version lives in the FAQ and the vendor table; the punchy version lives in
+   the hero and band per his posture ruling (entry 84). His call stands; it is
+   recorded so it stays a decision rather than an accident.
+3. **The stakes heading and marquee caption remain placeholders in his voice to
+   replace at will.**

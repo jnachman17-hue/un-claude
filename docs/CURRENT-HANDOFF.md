@@ -1,148 +1,50 @@
 # Un-Claude: Current Handoff
 
-**Date:** 19 August 2026, session 7.
-**Status: the product works, the prices are decided, the ledger exists, and it
-still cannot take money.** Stripe is the remaining gap and it is Jon's to open.
+**Date: 20 August 2026, early morning. Rewritten at the end of the overnight
+build session.** `04` entries 79 to 86 are the full record of the last day.
 
-**The four parallel tracks are over.** Jon paused 2, 3 and 4 mid-session after
-five collisions in one day, four of which ran through billing. **One session owns
-everything now.** `TRACK-RULES.md` and the four track files are history; read
-them only for what they recorded, not for who owns what.
+**Status: the site is launch-shaped. The one gap between here and taking money
+is Stripe, and it is Jon's.**
 
 ---
 
-## 1. What is live on `un-claude.com`
+## 1. What is live on localhost, verified this session
 
 | | State |
 |---|---|
-| The tool | **Working.** Scan, hidden characters, file provenance, layer B rewrite with receipts |
-| The paywall | **Real now.** Fires after 3 free sanitises. It never fired for images before, `04` entry 63 |
-| Prices | **Decided and unbuilt.** `04` entry 67 |
-| The ledger | **Table applied to live Supabase**, empty, unused. `20260819180000_credit_ledger.sql` |
-| Payments | **None. No Stripe account yet** |
-| Look | Un-Claude, Claude's orange with white text, deboxed counter and facts |
-| Analytics | PostHog cookieless, 17 funnel events, policies updated to match |
+| The page | Hero + tool, marquee, Claude band, vendor table, FAQ. One argument, no text walls |
+| The tool | Scan, sanitise, receipts, file clean, paywall, remove, copy button: **all tested live and passing** |
+| Pricing | **/pricing built** at the ratified prices. Buttons route to sign-up until Stripe lands |
+| Mission | **Live**, Jon's words refined, first person |
+| Logo | Drawn, in the header, the favicon and the share card |
+| Vendor table | **Corrected against primary sources.** xAI never signed the EU code; Claude text is committed-not-live |
+| Legal | Terms ready for Stripe activation: credits, refunds (30 days, unspent), failed-ops-free |
+| SEO | Title, description, OG card, complete sitemap, robots |
+| Theme | Light and dark only |
+| Console | Clean |
 
----
+## 2. Jon's morning list, in order
 
-## 2. Where the money work actually stands
+1. **Stripe.** Account, identity verification, business description, payout
+   bank, 2FA, statement descriptor `UN-CLAUDE.COM`. `03` section 12c is the
+   step-by-step. The site side is built up to the checkout call: swap the
+   pricing buttons' hrefs when checkout exists.
+2. **Vercel Pro before the first sale** (`03` 12c step 7), then deploy and
+   spot-check production: the engine env keys, `UC_ENABLE_LAYER_B`, PostHog.
+3. **Read `04` entry 86's "found and left for Jon" list**: the rewrite invented
+   a dollar sign once (engine fact-guard tweak); the hero rides the
+   announced-rollout ambiguity deliberately (his entry 84 posture ruling, worth
+   one conscious re-read); stakes heading and marquee caption are placeholders
+   in his voice.
+4. **Say the word on the sample chip label** ("Try an example") and anything
+   else the morning eye catches.
 
-**Decided:** one credit buys 1,000 words; a file with no words is a flat credit;
-packs at **$4.99 / $9.99 / $24.99** for 10 / 25 / 100 credits; free is unlimited
-scanning, 3 signed-out credits with no rewrite, +2 on signup; credits debited on
-success and refunded on failure; statement descriptor `UN-CLAUDE.COM`; Stripe
-rather than a merchant of record.
+## 3. Standing cautions
 
-**Built:** the scan now returns what a job will cost **before** it runs, verified
-live — 2,500 words comes back as 3 credits, an image as 1. The ledger stores no
-balance anywhere; a balance is the sum of its rows, the Stripe event id is
-uniquely indexed so a webhook delivered twice cannot pay twice, and
-`spend_credits` locks before it checks.
-
-**Not built:** everything Stripe. Products, prices, checkout, the webhook, and
-wiring the paywall to real credits instead of `localStorage`.
-
-**Blocked on Jon:** creating the Stripe account. His identity and bank details,
-his alone. **Verification is not on the critical path** — the whole system can be
-built and tested in the sandbox first.
-
----
-
-## 3. The things most likely to hurt
-
-**The free counter is still `localStorage`.** A private window resets it. `06`
-row 47. It is a real gate now rather than a decorative one, but it is not a
-strong one, and it stops mattering the moment credits are real.
-
-**`06` row 79: white on the accent orange is 3.12:1 and fails AA for small
-text.** Chosen deliberately with the number in hand. Do not silently darken it.
-
-**`06` row 74: a Word document never gets the rewrite.** The engine runs layer B
-only on plain text. Priced accordingly, but the interface still asks for a
-rewrite it will not get.
-
-**`06` row 77: the landing page intermittently does not hydrate on a local dev
-server.** No error, no fetches, effects never run. **Restart the dev server
-before believing a workbench change is broken.** It cost this session real time
-twice.
-
----
-
-## 4. What is next, in Jon's order
-
-1. **The box rebuild.** Show only what applies to what was given, verdict first
-   with the producer name as the headline, and make credits legible before a
-   visitor commits. `06` row 63 and `04` entry 70.
-2. **Stripe**, once the account exists.
-3. Wording throughout. Jon is deliberately holding this until layout settles,
-   `04` entry 70.
-
-**Already done from his list:** the rename, Claude's orange, the page gradient,
-the definition pass, the marquee band, the deboxed counter, plain-English
-statistics, the named scope section, the paywall firing at all, the reset out of
-a loaded file, the download beside the file, badges that go quiet after removal,
-a state-following panel heading, and the tool above the fold on a phone.
-
----
-
-## Added 19 August 2026, session 8. The messaging layer
-
-**Appended, not rewritten, because session 7 was live in this folder at the time.**
-
-**Copy and UI messaging now has a written source of truth that loads itself.**
-`04` entry 79 has the reasoning.
-
-| File | Role |
-|---|---|
-| `.claude/skills/unclaude-messaging/SKILL.md` | **Fires automatically** on any copy, landing page or section-order work |
-| `.agents/product-marketing.md` | The full positioning. Read automatically by the three marketing skills |
-| `CLAUDE.md` section 7 | The pointer that loads every session |
-
-**Three skills installed** from `coreyhaines31/marketingskills`: `product-marketing`,
-`copywriting`, `cro`. **They rank third under `CLAUDE.md` section 2.** They may
-never override `ENGINE.md`, a decision log entry, or Jon.
-
-**Positioning, as corrected by Jon in the same session. `04` entry 80.**
-
-- **B2C, wider than students.** People who just learned watermarking exists, plus
-  more technical people who want metadata off a file. On a phone.
-- **The page teaches.** Most visitors come for the Claude text watermark and **it
-  cannot be shown**, so demonstration alone has nothing to offer them.
-- **Detection is imminent, not absent.** Anthropic has publicly committed to a
-  detection API anyone can use. Not callable yet. **Layer B is imminently
-  provable and the word is imminent.**
-- **The site sells.** Confident, technical, commercial. Convincing argument,
-  stopping short of explicitly false. **Jon is the final arbiter on every
-  sentence.**
-- **Restrained morally on the landing page only.** Jon writes the mission page in
-  his own voice.
-- **Billing ships before launch**, so copy assumes a working checkout.
-
-**Open, and flagged rather than filled in.** Two sections of
-`.agents/product-marketing.md` are marked under-researched and must not be used
-for copy without checking first: **section 5, the competitive landscape**, and
-**section 9, the words students actually use.** A named third party detection
-product must not appear in copy on a guess.
-
----
-
-## Added 19 August 2026, session 8, end of night. The page is rebuilt
-
-**Jon says the site goes live tomorrow.** `04` entries 79 to 85 are the day's
-record. The short version:
-
-| | State |
-|---|---|
-| Headline | **"If Claude wrote it, it's marked."** Entry 70 violation fixed |
-| The box | Empty on arrival, swoosh, sample chip, count in the button |
-| The rows | One template: name, where it lives, count or a dash |
-| The page | Hero, marquee, argument, stakes, engineering, vendors, FAQ. ~5.8 desktop screens |
-| Console | **Clean.** The counter hydration error is fixed |
-| Verified | DOM at 1280 and 375, no horizontal scroll, impeccable detector clean |
-
-**Waiting on Jon, in his own words:** the stakes heading, the marquee caption,
-the mission page. **Parked with triggers:** SEO (post-launch, `06`), testing the
-rewrite against Anthropic's API the day it opens (`06`).
-
-**Uncommitted in the tree and NOT this session's:** `privacy-policy/page.tsx`.
-Left untouched and unstaged.
+- **The preview pane freezes background hydration.** `07` has the mechanism and
+  the three-step discipline. Do not diagnose the app until the tab is fronted
+  and the fiber probe returns true.
+- **Layer B is off in production by default** (`UC_ENABLE_LAYER_B`); turning it
+  on before credits are real spends money on the honour system.
+- **No document outside `docs/` records decisions.** Write them down when they
+  happen.

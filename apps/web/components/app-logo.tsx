@@ -20,7 +20,7 @@ function LogoImage({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'text-foreground inline-flex items-center gap-[8px] text-[17px] font-semibold tracking-[-0.03em] select-none',
+        'text-foreground inline-flex items-center gap-[8px] text-[17px] font-semibold tracking-[-0.03em] whitespace-nowrap select-none',
         className,
       )}
     >

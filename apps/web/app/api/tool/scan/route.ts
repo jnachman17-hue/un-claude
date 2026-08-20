@@ -30,6 +30,15 @@ export async function POST(request: Request) {
     );
   }
 
+  // The engine caps uploads at 5 MB; refuse anything over the cap before it
+  // costs a round trip. Base64 inflates by 4/3, so 7.5M chars is ~5.5 MB.
+  if (file.length > 7_500_000) {
+    return Response.json(
+      { ok: false, code: 'too_large', message: 'That file is over the 5 MB limit. Try a smaller one.' },
+      { status: 413 },
+    );
+  }
+
   const result = await scan({ file, name: typeof name === 'string' ? name : 'paste.txt' });
 
   return Response.json(result, { status: result.ok ? 200 : 400 });
