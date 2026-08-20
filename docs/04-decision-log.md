@@ -2264,3 +2264,14 @@ redoing it:**
 **Nothing has been reverted.** The current copy stays live until he rules,
 because it is not wrong, only undiscussed — and reverting unasked would repeat
 the same mistake in the other direction.
+
+> **CORRECTION to entry 76, same day.** It records that Jon "asked for this block
+> to be a scope of the problem type section and we name it that". **That is a
+> misreading of what he meant and the section built on it is wrong.** He was not
+> asking for a headed section with that title. He was asking for **the scope of
+> the problem to be made clear fluidly throughout the site** — specifically, that
+> a visitor should understand *which mark applies to them*: Claude text goes to
+> the statistical watermark, files go to provenance, other AI text carries hidden
+> characters. **That is the routing-clarity problem, `06` row 63 and the box
+> rebuild, not a block of statistics.** His words: "This doesn't necessarily mean
+> explicitly saying that." Recorded before it is acted on, per `04` entry 77.
