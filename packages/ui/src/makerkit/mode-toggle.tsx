@@ -27,7 +27,12 @@ import {
 } from '../shadcn/dropdown-menu';
 import { Trans } from './trans';
 
-const MODES = ['light', 'dark', 'system'];
+/*
+ * 'system' removed 20 August 2026 at Jon's instruction: the site's system
+ * default was indistinguishable from light, so the third option was a
+ * choice between two identical things. Light and dark only.
+ */
+const MODES = ['light', 'dark'];
 
 export function ModeToggle(props: { className?: string }) {
   const { setTheme, theme } = useTheme();

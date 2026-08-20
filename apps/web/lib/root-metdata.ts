@@ -29,7 +29,10 @@ export const generateRootMetadata = (): Metadata => {
       description: appConfig.description,
     },
     icons: {
-      icon: '/images/favicon/favicon.ico',
+      // The drawn glyph first (app/icon.svg, theme-aware); the ico is the
+      // legacy fallback for anything that cannot read SVG favicons.
+      icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+      shortcut: '/images/favicon/favicon.ico',
       apple: '/images/favicon/apple-touch-icon.png',
     },
   };

@@ -10,6 +10,7 @@ import {
   XIcon,
   WandSparklesIcon,
 } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 
 import type { CleanResult, ScanResult } from '~/lib/engine/types';
 
@@ -93,6 +94,8 @@ export function Workbench() {
   const [editing, setEditing] = useState(true);
   /** The arrival swoosh, one run only. See the panel below the textarea. */
   const [swooshDone, setSwooshDone] = useState(false);
+  /** Two-second confirmation after the clean text is copied. */
+  const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [left, setLeft] = useState(FREE_SANITISES);
 
@@ -1078,7 +1081,27 @@ export function Workbench() {
                 Download the clean file
               </a>
             ) : done ? (
-              'Clean. Select the text above and copy it.'
+              /* A human wants a button, not an instruction to go select text.
+                 Jon's test-like-a-human order, 20 August 2026. */
+              <button
+                type={'button'}
+                onClick={() => {
+                  void navigator.clipboard.writeText(cleanedText).then(() => {
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                className={
+                  'text-foreground inline-flex items-center gap-1.5 font-semibold underline underline-offset-2'
+                }
+              >
+                <CopyIcon
+                  className={'size-[12px]'}
+                  strokeWidth={2.2}
+                  aria-hidden
+                />
+                {copied ? 'Copied' : 'Copy the clean text'}
+              </button>
             ) : phase === 'cleaning' ? (
               // The existing sentence, with the clock appended once it is worth
               // asking whether anything is still happening. Below three seconds

@@ -1,4 +1,4 @@
-import { CheckIcon, ClockIcon, MinusIcon } from 'lucide-react';
+import { CheckIcon, ClockIcon, MinusIcon, XIcon } from 'lucide-react';
 
 /**
  * Who marks what, and it is the most credible thing on this page.
@@ -12,7 +12,7 @@ import { CheckIcon, ClockIcon, MinusIcon } from 'lucide-react';
  * but not shipped it says so, including where overstating it would flatter us.
  */
 
-type Mark = 'yes' | 'committed' | 'na';
+type Mark = 'yes' | 'committed' | 'none' | 'na';
 
 /**
  * THE LOGO CARRIES THE BRAND. THE NAME IS JUST THE NAME.
@@ -101,8 +101,8 @@ const VENDORS: Vendor[] = [
     color: '#141413',
     initial: 'A',
     files: 'yes',
-    text: 'yes',
-    note: 'Files signed since 2 August 2026. Text watermarked from the same date, worldwide, with no way to opt out.',
+    text: 'committed',
+    note: 'Files signed since 2 August 2026. Text watermarking applies to models launched from that date, with no opt out, and is being added to today’s models over the coming months.',
     logo: { src: '/images/vendors/claude.svg' },
   },
   {
@@ -112,7 +112,7 @@ const VENDORS: Vendor[] = [
     initial: 'O',
     files: 'yes',
     text: 'committed',
-    note: 'Files signed since February 2024. Text watermarking committed under the European code, not yet shipped.',
+    note: 'Files signed since February 2024, with an invisible SynthID watermark added in May 2026. Text watermarking committed under the European code, not yet shipped.',
     logo: { src: '/images/vendors/chatgpt.svg', mono: true },
   },
   {
@@ -122,7 +122,7 @@ const VENDORS: Vendor[] = [
     initial: 'G',
     files: 'yes',
     text: 'yes',
-    note: 'Files signed since November 2025. Text watermarked with SynthID on every output.',
+    note: 'Files signed since November 2025. Text watermarked with SynthID in the Gemini app, with no public way to check it.',
     logo: { src: '/images/vendors/gemini.svg' },
   },
   {
@@ -130,9 +130,9 @@ const VENDORS: Vendor[] = [
     company: 'xAI',
     color: '#000000',
     initial: 'X',
-    files: 'committed',
-    text: 'committed',
-    note: 'Files and text both committed under the European code. Neither has shipped yet.',
+    files: 'none',
+    text: 'none',
+    note: 'Nothing shipped and nothing committed. xAI has not signed the European transparency code.',
     logo: { src: '/images/vendors/grok.svg', mono: true },
   },
   {
@@ -140,9 +140,9 @@ const VENDORS: Vendor[] = [
     company: 'Meta',
     color: '#1C2B33',
     initial: 'M',
-    files: 'committed',
+    files: 'yes',
     text: 'committed',
-    note: 'Files and text both committed under the European code. Today it reads and labels other companies’ marks.',
+    note: 'Images it makes carry labels, invisible watermarks and metadata today, though not C2PA. Text marking is committed under the European code.',
     logo: { src: '/images/vendors/meta-ai.svg' },
   },
   {
@@ -173,6 +173,11 @@ const CELL: Record<Mark, { icon: typeof CheckIcon; className: string; label: str
     icon: ClockIcon,
     className: 'bg-amber-500 text-white',
     label: 'Committed, coming',
+  },
+  none: {
+    icon: XIcon,
+    className: 'bg-foreground/25 text-white',
+    label: 'Nothing yet',
   },
   na: {
     icon: MinusIcon,
@@ -209,13 +214,14 @@ export function CoverageSection() {
           </h2>
 
           <p className={'text-muted-foreground mt-4 max-w-[40ch] text-[15px] leading-[1.6]'}>
-            Claude and Gemini mark their text today. The rest have committed to it
-            under European law, and are building it now. Un-Claude sanitises all
-            of them, in text and in files.
+            Gemini marks its text today. Claude marks its newest models, and is
+            adding the rest over the coming months. Almost every other major
+            lab has committed under European law. Un-Claude sanitises all of
+            them, in text and in files.
           </p>
 
           <p className={'text-muted-foreground/80 mt-5 max-w-[40ch] text-[12.5px] leading-relaxed'}>
-            As of 19 August 2026, from each company’s own published material.
+            As of 20 August 2026, from each company’s own published material.
           </p>
 
         </div>
@@ -299,6 +305,9 @@ export function CoverageSection() {
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'committed'} /> Committed, coming
+            </span>
+            <span className={'inline-flex items-center gap-2'}>
+              <Cell mark={'none'} /> Nothing yet
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'na'} /> Does not produce this

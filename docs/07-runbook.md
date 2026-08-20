@@ -1425,3 +1425,30 @@ which is `apps/web/.next/dev/logs/next-development.log`. **Read that file rather
 than guessing** — it carries both server and browser errors with timestamps, and
 it is the only way to see a compile failure belonging to a session that is not
 yours. Historical errors stay in it, so check the timestamps before believing one.
+
+## The preview pane's dead-hydration state has a cause, found 20 August 2026
+
+**The symptom this file already records** (server HTML renders, clicks do
+nothing, screenshots come back blank, "about forty minutes went into an
+application bug that did not exist") **has a mechanism:**
+
+**The home page's React hydration is large enough that React yields mid-tree
+and schedules its continuation. A preview tab that is not the FRONTED, visible
+tab freezes scheduled work.** So hydration starts, pauses, and never resumes.
+Small pages such as `/mission` hydrate synchronously in the first task and work
+even in a hidden tab, which is why the failure looks intermittent and
+page-specific.
+
+**The tell:** `Object.keys(document.querySelector('textarea')).some(k =>
+k.startsWith('__react'))` is false while scripts and HMR are demonstrably
+running.
+
+**The fix, every time, before any interaction test:** front the tab
+(`tabs_select`), wait two or three seconds, then probe hydration before
+clicking anything. A reload while hidden re-enters the frozen state.
+
+**Real visitors are unaffected**: their tab is visible while they use it. This
+is purely a property of driving the embedded pane while it is backgrounded.
+
+**Three hours of session time went into rediscovering this once. Do not
+diagnose the app until the tab is fronted and the probe above returns true.**

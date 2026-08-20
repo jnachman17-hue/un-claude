@@ -140,11 +140,20 @@ async function TermsOfServicePage() {
           credentials secure. You must be at least 18 years old.
         </P>
 
-        <H2>Payment</H2>
+        <H2>Payment, credits and refunds</H2>
         <P>
-          The service is currently free and no payment method is collected. If we
-          introduce paid credits, the terms will be shown to you before you are
-          asked to pay, and nothing will be charged without your agreement.
+          The service is currently free to use and no payment method is
+          collected. Credit packs and their prices are announced on the pricing
+          page and go on sale when card checkout opens. Nothing is charged
+          without your agreement, and the price of an operation is shown before
+          it runs.
+        </P>
+        <P>
+          One credit covers one thousand words of sanitising, and a file with no
+          words costs one credit. Credits never expire. A failed operation costs
+          nothing: any credits it debited are returned to your balance
+          automatically. Unspent credits from a purchase are refundable at the
+          price paid for 30 days from the purchase.
         </P>
 
         <H2>Availability</H2>

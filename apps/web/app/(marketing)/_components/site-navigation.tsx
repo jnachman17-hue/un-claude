@@ -49,6 +49,10 @@ const links: Record<
     label: 'marketing.mission',
     path: '/mission',
   },
+  Pricing: {
+    label: 'marketing.pricing',
+    path: '/pricing',
+  },
 };
 
 export function SiteNavigation() {
