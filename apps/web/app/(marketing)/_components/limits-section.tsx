@@ -5,59 +5,43 @@ import { ArrowRightIcon } from 'lucide-react';
 /**
  * The argument, and it is the spine of the page.
  *
- * REWRITTEN 19 August 2026 from "Two of these we can prove. One we cannot."
+ * REBUILT 19 August 2026 under 04 entries 80 and 84 and docs/09.
  *
- * That framing was built when nobody could check a text watermark and nobody
- * was going to. It is out of date. Anthropic confirmed on 12 August that a
- * detection API "that you can use yourself" is coming, published further detail
- * on 15 August, and its explainer of 16 August says a check returns a
- * probability rather than a verdict. 04 entry 80.
+ * Two fixes from Jon's review of the previous version. The pills on the right
+ * had no header, so a reader had no idea what "Anyone, today" was answering:
+ * the column now carries the question. And the "Anthropic, in their own words"
+ * box below told no story: the three quotes are gone from here and placed as
+ * inline rebuttals in the sections where each doubt actually occurs
+ * (stakes-section and moat-section), per the iFixit pattern in docs/09
+ * section 6.
  *
- * So the honest description flipped from "nobody can ever check this" to
- * "nobody can check this YET", and that one word turns the section from a
- * disclaimer into the reason to act. Jon: "we're here to sell, convert."
- *
- * The three supporting facts are all Anthropic's own public material. The first
- * is the strongest citation this product has: the company that built the
- * watermark describes the method that removes it.
+ * The table's grammar is uniform on purpose: mark, where it hides, who can
+ * check it. Same three answers on every row, so the third row's "not yet"
+ * lands against two "todays". The contrast is the argument.
  */
+const HEADERS = ['The mark', 'Where it hides', 'Can anyone check it?'];
+
 const ROWS = [
   {
     mark: 'Hidden characters',
     where: 'Between your words',
     check: 'Anyone, today',
     now: true,
-    body: 'Real characters that take up no space. ChatGPT emits them and they survive copy, paste and export. We name every one, give its exact position, remove it, and read the text back to confirm none are left.',
+    body: 'ChatGPT leaves them behind and they survive every copy and paste. We name each one, show its position, and prove none are left.',
   },
   {
     mark: 'Metadata',
-    where: 'Inside the file',
+    where: 'Inside your file',
     check: 'Anyone, today',
     now: true,
-    body: 'A signed record naming what made the file. Claude signs every image it generates and any free public tool can read it. We strip it and show you the file before and after, verified against the raw bytes.',
+    body: 'Claude signs every image it makes, and any free C2PA reader exposes it in one click. We strip it and prove it against the raw bytes.',
   },
   {
     mark: 'Statistical watermark',
-    where: 'In the word sequence itself',
+    where: 'In the order of your words',
     check: 'Not yet. Anthropic is building it',
     now: false,
-    body: 'It is not hidden in your words. It is your words: the exact order Claude chose them in. We rebuild every sentence so no more than three words in a row survive, and check your facts and your length against your original.',
-  },
-];
-
-/** All three from Anthropic's own public material. None of it is our claim. */
-const FACTS = [
-  {
-    head: 'Anthropic says rewriting with another model removes it',
-    body: 'The company that built the watermark describes the method that defeats it. That is their published position, not our promise.',
-  },
-  {
-    head: 'A check returns a probability, never a yes or a no',
-    body: 'There is no verdict at the end of this. Anthropic’s own explainer says so. Which means the work is reducing a signal, and a signal can be measured.',
-  },
-  {
-    head: 'A mark means Claude touched it, not that Claude wrote it',
-    body: 'Edit one paragraph of your own essay and you carry the same mark as someone who generated the whole thing from a prompt. The mark does not record how much you did.',
+    body: 'Nothing is added to your text. The mark is your text: the exact sequence of words Claude chose. So it cannot be found. It has to be rewritten out.',
   },
 ];
 
@@ -79,15 +63,28 @@ export function LimitsSection() {
                 'text-muted-foreground mt-4 max-w-[42ch] text-[15px] leading-[1.6]'
               }
             >
-              Anthropic has committed publicly to a detection tool that anyone
-              can use. It is not open yet. Every document already written and
-              already handed in still carries the mark on the day it opens.
+              Anthropic is building a detection tool anyone can use. It is
+              not open yet. Documents Claude has already touched are already
+              marked, and marks do not expire.
             </p>
 
             <Link
-              href={'/capabilities'}
+              href={'/how-it-works'}
               className={
                 'text-foreground hover:bg-foreground/[0.045] mt-5 inline-flex items-center gap-1.5 rounded-[9px] px-3 py-2 text-[13.5px] font-semibold transition-colors'
+              }
+            >
+              Each mark, drawn out
+              <ArrowRightIcon
+                className={'size-[14px]'}
+                strokeWidth={2.2}
+                aria-hidden
+              />
+            </Link>
+            <Link
+              href={'/capabilities'}
+              className={
+                'text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-3 py-2 text-[13.5px] font-semibold transition-colors'
               }
             >
               Exactly what we can and cannot do
@@ -100,11 +97,26 @@ export function LimitsSection() {
           </div>
 
           <div className={'lg:col-span-8'}>
+            {/* The header row is desktop-only: on a phone each row repeats its
+                own labels inline, so nothing depends on a header that scrolled
+                away. 04 entry 84 ruling 3. */}
+            <div
+              className={
+                'text-muted-foreground border-border/70 hidden grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-x-4 border-b pb-2.5 text-[11px] font-semibold tracking-[0.07em] uppercase sm:grid'
+              }
+            >
+              {HEADERS.map((header) => (
+                <span key={header}>{header}</span>
+              ))}
+            </div>
+
             <ul className={'divide-border/70 divide-y'}>
               {ROWS.map((row) => (
-                <li key={row.mark} className={'py-5 first:pt-0'}>
+                <li key={row.mark} className={'py-5'}>
                   <div
-                    className={'flex flex-wrap items-baseline gap-x-3 gap-y-1'}
+                    className={
+                      'flex flex-col gap-y-1 sm:grid sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.3fr)] sm:items-baseline sm:gap-x-4'
+                    }
                   >
                     <h3
                       className={
@@ -115,25 +127,27 @@ export function LimitsSection() {
                     </h3>
                     <span
                       className={
-                        'text-muted-foreground text-[12.5px] tracking-[-0.005em]'
+                        'text-muted-foreground text-[13px] tracking-[-0.005em]'
                       }
                     >
                       {row.where}
                     </span>
-                    <span
-                      className={[
-                        'ml-auto rounded-full px-2 py-[2px] text-[10.5px] font-semibold tracking-wide uppercase',
-                        row.now
-                          ? 'bg-emerald-600/12 text-emerald-700'
-                          : 'bg-mark/15 text-mark-strong',
-                      ].join(' ')}
-                    >
-                      {row.check}
+                    <span>
+                      <span
+                        className={[
+                          'inline-block rounded-full px-2 py-[2px] text-[10.5px] font-semibold tracking-wide uppercase',
+                          row.now
+                            ? 'bg-emerald-600/12 text-emerald-700'
+                            : 'bg-mark/15 text-mark-strong',
+                        ].join(' ')}
+                      >
+                        {row.check}
+                      </span>
                     </span>
                   </div>
                   <p
                     className={
-                      'text-muted-foreground mt-1.5 max-w-[62ch] text-[13.5px] leading-[1.6]'
+                      'text-muted-foreground mt-2 max-w-[68ch] text-[13.5px] leading-[1.6]'
                     }
                   >
                     {row.body}
@@ -141,38 +155,6 @@ export function LimitsSection() {
                 </li>
               ))}
             </ul>
-
-            {/* Anthropic's own material, kept visually separate from our rows so
-                it is obvious whose claims these are. */}
-            <div className={'border-border/70 mt-8 border-t pt-8'}>
-              <p
-                className={
-                  'text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'
-                }
-              >
-                Anthropic, in their own words
-              </p>
-              <div className={'mt-4 grid gap-5 sm:grid-cols-3'}>
-                {FACTS.map((fact) => (
-                  <div key={fact.head}>
-                    <h4
-                      className={
-                        'text-foreground text-[13.5px] leading-[1.35] font-semibold tracking-[-0.012em]'
-                      }
-                    >
-                      {fact.head}
-                    </h4>
-                    <p
-                      className={
-                        'text-muted-foreground mt-1.5 text-[12.5px] leading-[1.55]'
-                      }
-                    >
-                      {fact.body}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -41,8 +41,13 @@ export type RowState =
 export interface ChecklistRow {
   id: 'characters' | 'provenance' | 'statistical';
   label: string;
+  /** Where this mark lives. The same grammar on all three rows, always. */
+  where: string;
   state: RowState;
+  /** How many are in your document. A count, or a dash. Never a claim. */
   status: string;
+  /** Sits under the count at the same size when the count is a dash. */
+  note?: string;
   detail: string;
   items?: Array<{ key: string; head: string; body: string }>;
 }
@@ -199,30 +204,65 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 Below sm they stack, label over status. From sm they are the
                 original row, unchanged.
               */}
-              <div
-                className={
-                  'flex min-w-0 flex-1 flex-col gap-y-0.5 sm:flex-row sm:items-center sm:gap-3'
-                }
-              >
-                <span
-                  className={
-                    'text-foreground min-w-0 text-[13px] font-medium sm:flex-1'
-                  }
-                >
-                  {row.label}
+              {/*
+                ONE TEMPLATE, EVERY ROW, EVERY STATE: name, where it lives,
+                how many.
+
+                The rows used to run three different grammars at once. "3 FOUND"
+                was a count, "NO FILE" was a missing input, and the third row
+                carried a claim. The eye had to start over on every row and
+                never built a pattern, which is why Jon read them as blabber.
+
+                Now the third column always answers exactly one question: how
+                many of these are in your document. A number, or a dash. On the
+                statistical row it is a dash FOREVER, and that is the design
+                rather than a gap in it. Turnitin prints an asterisk instead of
+                a figure it knows is noise; every competitor prints the figure
+                anyway. docs/09 section 4.
+              */}
+              <div className={'flex min-w-0 flex-1 items-center gap-3'}>
+                <span className={'min-w-0 flex-1'}>
+                  <span
+                    className={
+                      'text-foreground block text-[13px] font-medium'
+                    }
+                  >
+                    {row.label}
+                  </span>
+                  <span
+                    className={
+                      'text-muted-foreground block text-[11.5px] leading-tight'
+                    }
+                  >
+                    {row.where}
+                  </span>
                 </span>
 
-                <span
-                  className={[
-                    'font-mono text-[10.5px] tracking-wide uppercase tabular-nums sm:shrink-0',
-                    lit
-                      ? 'text-foreground font-semibold'
-                      : faded
-                        ? 'text-muted-foreground/55'
-                        : 'text-muted-foreground',
-                  ].join(' ')}
-                >
-                  {row.status}
+                <span className={'shrink-0 text-right'}>
+                  <span
+                    className={[
+                      'block font-mono text-[10.5px] tracking-wide uppercase tabular-nums',
+                      lit
+                        ? 'text-foreground font-semibold'
+                        : faded
+                          ? 'text-muted-foreground/55'
+                          : 'text-muted-foreground',
+                    ].join(' ')}
+                  >
+                    {row.status}
+                  </span>
+                  {/* The reason for a dash sits WITH the dash, same size, never
+                      hidden behind the +. Have I Been Pwned puts its caveat in
+                      the same breath as the good news. docs/09 section 5. */}
+                  {row.note ? (
+                    <span
+                      className={
+                        'text-muted-foreground/80 block max-w-[19ch] text-[10.5px] leading-tight sm:max-w-none'
+                      }
+                    >
+                      {row.note}
+                    </span>
+                  ) : null}
                 </span>
               </div>
 

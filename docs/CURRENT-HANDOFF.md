@@ -123,3 +123,26 @@ never override `ENGINE.md`, a decision log entry, or Jon.
 for copy without checking first: **section 5, the competitive landscape**, and
 **section 9, the words students actually use.** A named third party detection
 product must not appear in copy on a guess.
+
+---
+
+## Added 19 August 2026, session 8, end of night. The page is rebuilt
+
+**Jon says the site goes live tomorrow.** `04` entries 79 to 85 are the day's
+record. The short version:
+
+| | State |
+|---|---|
+| Headline | **"If Claude wrote it, it's marked."** Entry 70 violation fixed |
+| The box | Empty on arrival, swoosh, sample chip, count in the button |
+| The rows | One template: name, where it lives, count or a dash |
+| The page | Hero, marquee, argument, stakes, engineering, vendors, FAQ. ~5.8 desktop screens |
+| Console | **Clean.** The counter hydration error is fixed |
+| Verified | DOM at 1280 and 375, no horizontal scroll, impeccable detector clean |
+
+**Waiting on Jon, in his own words:** the stakes heading, the marquee caption,
+the mission page. **Parked with triggers:** SEO (post-launch, `06`), testing the
+rewrite against Anthropic's API the day it opens (`06`).
+
+**Uncommitted in the tree and NOT this session's:** `privacy-policy/page.tsx`.
+Left untouched and unstaged.

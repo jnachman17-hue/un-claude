@@ -8,6 +8,7 @@ import {
   SparklesIcon,
   UploadCloudIcon,
   XIcon,
+  WandSparklesIcon,
 } from 'lucide-react';
 
 import type { CleanResult, ScanResult } from '~/lib/engine/types';
@@ -24,6 +25,7 @@ import { MarkedText } from './marked-text';
 import { detectProducer, provenanceItems } from './producer';
 import { FREE_SANITISES, recordUse, remaining } from './free-uses';
 import { Paywall } from './paywall';
+import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { ReceiptPanel } from './receipt-panel';
 import type { Receipt } from '~/lib/engine/receipt';
 import * as track from '~/lib/analytics/events';
@@ -401,6 +403,27 @@ export function Workbench() {
     requestAnimationFrame(() => textArea.current?.focus());
   };
 
+  /**
+   * THE SAMPLE IS A BUTTON NOW, NOT THE ARRIVAL STATE.
+   *
+   * docs/09 section 1: every working tool in the category ships an empty box
+   * with a sample control beside it. GPTZero runs six chips, Copyleaks five.
+   * The box stays honest about whose text goes in it, and the curious visitor
+   * with nothing to paste still gets the demonstration on demand.
+   */
+  const loadSample = () => {
+    setText(SAMPLE_TEXT);
+    setIsSample(true);
+    void runScan(
+      {
+        payload: textToBase64(SAMPLE_TEXT),
+        name: 'paste.txt',
+        text: SAMPLE_TEXT,
+      },
+      true,
+    );
+  };
+
   const busy = phase === 'scanning' || phase === 'cleaning';
   const done = phase === 'cleaned';
   /**
@@ -470,6 +493,9 @@ export function Workbench() {
    */
   const anythingFound = foundCount > 0 || provenanceFound || carriesProse;
 
+  /** Countable marks only: characters plus a signed record. Never layer B. */
+  const markCount = foundCount + (provenanceFound ? 1 : 0);
+
   const panelHeading = done
     ? 'What we removed'
     : idle
@@ -485,9 +511,9 @@ export function Workbench() {
   const panelCaption = done
     ? 'Read the result before you use it'
     : idle
-      ? // Jon: "I don't know why it says which one applies to you, that
-        // makes no sense on the right."
-        ''
+      ? // Pre-empt the clean result before anyone scans, so finding nothing
+        // reads as a working tool rather than a broken one. docs/09 section 8.
+        'Plenty of scans come back clean. That is a real answer.'
       : busy || !scan
         ? 'All three, every time'
         : isSample && anythingFound
@@ -520,36 +546,87 @@ export function Workbench() {
    */
   const RESTING_MAP: Record<
     ChecklistRow['id'],
-    { status: string; detail: string }
+    {
+      status: string;
+      note?: string;
+      detail: string;
+      items: Array<{ key: string; head: string; body: string }>;
+    }
   > = {
     /*
-     * ONE SHAPE FOR ALL THREE: what it is, who does it, what we do.
+     * ONE TEMPLATE BEHIND EVERY +: what it is, who puts it there, what we do.
      *
-     * Jon on the previous versions: "this literally is just so hard to read...
-     * half is a description, half is we find it and show you it." They were
-     * three different shapes, so nothing could be compared across rows. Each
-     * one now runs what it is, then who does it and why it reaches you, then
-     * one sentence on what we do about it.
+     * Jon on the previous versions: "half is a description, half is we find it
+     * and show you it... row one mentions ChatGPT, row two mentions Claude,
+     * row three mentions how we do it." Three shapes, so nothing could be
+     * compared across rows. Cover Your Tracks answers the same questions in
+     * the same order for every metric it reports, and the fifth one costs
+     * nothing to read. docs/09 section 3.
      */
     characters: {
-      status: 'Text or files',
-      detail:
-        'Real characters that take up no space, sitting between your words. Nothing appears on the page. ChatGPT emits them, and they survive copy, paste and export, so they travel with your document. We name every one and show you exactly where it sat.',
+      status: '\u2014',
+      detail: 'Characters that take up no space, sitting between your words.',
+      items: [
+        {
+          key: 'what',
+          head: 'What it is',
+          body: 'Real, invisible characters. Zero width spaces, narrow no-break spaces, direction marks. Nothing shows on the page.',
+        },
+        {
+          key: 'who',
+          head: 'Who puts it there',
+          body: 'ChatGPT is documented emitting them, and they survive copy, paste and export, so they travel with your document.',
+        },
+        {
+          key: 'we',
+          head: 'What we do',
+          body: 'Name every one, show you exactly where it sat, remove it, then read the text back to confirm none are left.',
+        },
+      ],
     },
     provenance: {
-      status: 'Needs a file',
-      detail:
-        'Information tucked inside the file rather than in the words: what made it, when, and a signed record naming the tool. Claude signs every image it generates, and anyone can read that record today with a free public tool. We strip it, and show you the file before and after.',
+      status: '\u2014',
+      note: 'needs a file',
+      detail: 'A signed record inside the file, not in the words you can read.',
+      items: [
+        {
+          key: 'what',
+          head: 'What it is',
+          body: 'Data in the file itself: what made it, when, and often a cryptographically signed credential. The standard is called C2PA.',
+        },
+        {
+          key: 'who',
+          head: 'Who puts it there',
+          body: 'Claude signs every image it generates. So do OpenAI, Google and Adobe. Anyone can read the record today with a free public tool.',
+        },
+        {
+          key: 'we',
+          head: 'What we do',
+          body: 'Strip it, and show you the file before and after, verified against the raw bytes.',
+        },
+      ],
     },
     statistical: {
-      /*
-       * THE STRONGEST LINE ON THE DEFAULT SCREEN, so it sits at rest and not
-       * only after a scan. It is true whether or not anything has been pasted:
-       * 100% of Claude output since 2 August 2026 carries it. 04 entry 81.
-       */
-      status: 'If Claude wrote it, it is marked',
-      detail:
-        'It is not hidden in your words. It is your words: the exact order Claude chose them in. Another AI swaps a few and leaves the rest alone, and whatever it leaves alone still carries the mark. We rebuild every sentence so no more than three words in a row survive, and check your facts and your length against your original. Text only.',
+      status: '\u2014',
+      note: 'nothing can show you this one. Yet',
+      detail: 'Not a character. It is the order Claude chose your words in.',
+      items: [
+        {
+          key: 'what',
+          head: 'What it is',
+          body: 'A pattern in which words the model picked. There is nothing to highlight, no count to give you, and no tool anywhere that can point at it. Yet.',
+        },
+        {
+          key: 'who',
+          head: 'Who puts it there',
+          body: 'Anthropic, on every Claude model launched since 2 August 2026, everywhere, with no way to switch it off.',
+        },
+        {
+          key: 'we',
+          head: 'What we do',
+          body: 'Rebuild every sentence so no more than three of your words survive in a row, holding every number, date and name, and keeping your length.',
+        },
+      ],
     },
   };
 
@@ -558,6 +635,7 @@ export function Workbench() {
       {
         id: 'characters',
         label: 'Hidden characters',
+        where: 'between your words',
         state:
           busy || !scan
             ? 'pending'
@@ -576,6 +654,12 @@ export function Workbench() {
               : foundCount > 0
                 ? `${foundCount} found`
                 : 'none found',
+        note:
+          !busy && scan && !done && foundCount === 0
+            ? // A clean result is a real answer, not a broken scan.
+              // docs/09 section 8.
+              'and that is a real answer'
+            : undefined,
         detail: done
           ? foundCount === 0
             ? 'There were none in this to begin with.'
@@ -604,6 +688,7 @@ export function Workbench() {
       {
         id: 'provenance',
         label: 'Metadata',
+        where: 'inside your file',
         state:
           busy || !scan
             ? 'pending'
@@ -618,7 +703,7 @@ export function Workbench() {
           busy || !scan
             ? waitingStatus
             : !isFile
-              ? 'no file'
+              ? '—'
               : done
                 ? stillMarked
                   ? 'partly removed'
@@ -628,6 +713,12 @@ export function Workbench() {
                     ? producer
                     : 'found'
                   : 'none found',
+        note:
+          !busy && scan && !isFile
+            ? 'no file given'
+            : !busy && scan && isFile && !done && !provenanceFound
+              ? 'and that is a real answer'
+              : undefined,
         detail: !isFile
           ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
           : done
@@ -653,6 +744,7 @@ export function Workbench() {
       {
         id: 'statistical',
         label: 'Statistical watermark',
+        where: 'in the order of your words',
         state:
           busy || !scan
             ? 'pending'
@@ -669,10 +761,24 @@ export function Workbench() {
           busy || !scan
             ? waitingStatus
             : !carriesProse
-              ? 'no text'
+              ? '—'
               : done && receipt
                 ? 'rewritten'
-                : 'If Claude wrote this, it is marked',
+                : // NEVER A COUNT. There is nothing to count and there never
+                  // will be: the mark is the word order itself. The dash is
+                  // permanent, and it is the design rather than a gap in it.
+                  // Turnitin prints an asterisk instead of a figure it knows
+                  // is noise; every competitor prints the figure anyway.
+                  // docs/09 section 4.
+                  '—',
+        note:
+          busy || !scan
+            ? undefined
+            : !carriesProse
+              ? 'an image has no words'
+              : done && receipt
+                ? undefined
+                : 'nothing can show you this one. Yet',
         detail: !carriesProse
           ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
@@ -686,7 +792,6 @@ export function Workbench() {
           ...row,
           ...RESTING_MAP[row.id],
           state: 'pending' as const,
-          items: undefined,
         }
       : row,
   );
@@ -837,6 +942,41 @@ export function Workbench() {
             </button>
           )}
 
+          {/* The line that ties the marked bars in the sample to the row
+              beneath. Without it they read as cursor artefacts, which is what
+              Jon reported. Only for the sample: a visitor's own text carries
+              its own stakes. */}
+          {isSample && !editing && !busy && scan && !done ? (
+            <p
+              className={
+                'text-foreground/75 border-border/80 border-t px-4 pt-2.5 pb-1 text-[13px] font-medium'
+              }
+            >
+              {SAMPLE_HINT}
+            </p>
+          ) : null}
+
+          {/* Nothing about a paragraph of prose says "this is a demonstration,
+              delete it". The label and the line beneath it do. */}
+          {isSample && !editing ? (
+            <button
+              type={'button'}
+              onClick={startEditing}
+              className={
+                'border-border/80 text-muted-foreground hover:text-foreground flex w-full items-center gap-2 border-t px-4 py-2.5 text-left text-[12.5px] transition-colors'
+              }
+            >
+              <span
+                className={
+                  'bg-foreground/[0.07] text-foreground/70 shrink-0 rounded-[5px] px-1.5 py-[2px] text-[10px] font-semibold tracking-wide uppercase'
+                }
+              >
+                Example
+              </span>
+              Click anywhere above to clear this and paste your own text.
+            </button>
+          ) : null}
+
           {/*
             THE SWEEP RUNS FOR BOTH OPERATIONS NOW, AND IT USED TO RUN FOR THE
             WRONG ONE.
@@ -884,6 +1024,25 @@ export function Workbench() {
             >
               Scan it
             </button>
+          ) : null}
+
+          {/* The category's universal affordance: an empty box, and a sample
+              one tap away. docs/09 section 1. */}
+          {editing ? (
+            <button
+              type={'button'}
+              onClick={loadSample}
+              className={
+                'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
+              }
+            >
+              <WandSparklesIcon
+                className={'size-[13px]'}
+                strokeWidth={2}
+                aria-hidden
+              />
+              Try an example
+            </button>
           ) : (
             <button
               type={'button'}
@@ -904,7 +1063,13 @@ export function Workbench() {
                   : 'Sanitising'
                 : done
                   ? 'Sanitised'
-                  : 'Sanitise it'}
+                  : // The count lives in the verb: one control that is the call
+                    // to action, the finding and the proof at once. The
+                    // statistical mark is deliberately not counted, because it
+                    // has no count. docs/09 section 8.
+                    markCount > 0
+                    ? `Sanitise it (${markCount})`
+                    : 'Sanitise it'}
             </button>
           )}
 
@@ -964,7 +1129,7 @@ export function Workbench() {
           answers a different question from the box above it. */}
       <div
         className={
-          'border-border bg-foreground/[0.035] rounded-b-[18px] border-t-2 px-4 py-4 sm:px-5'
+          'border-border bg-foreground/[0.035] rounded-b-[18px] border-t px-4 py-4 sm:px-5'
         }
       >
         <div className={'mb-2 flex items-baseline justify-between gap-3'}>

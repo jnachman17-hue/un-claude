@@ -2599,3 +2599,81 @@ describes a stronger intervention than the one we ship.
 has published "Claude's Watermark Punishes the Wrong People", quoting Anthropic's
 own documentation inline. **The unfair-part angle is not ours alone and is not
 going to stay unused.**
+
+### 84. Three rulings before the rebuild: the dash carve-out, the posture, and mobile drop-off
+
+**Jon, 19 August 2026, given mid-build with creative autonomy over the page.**
+
+**1. The em dash is allowed as a null-value glyph.** The three result rows show a
+dash where a count cannot exist. Jon: "You can use em dashes for that use. Ignore
+that rule." **The prose ban in `docs/05` section 2 stands everywhere else.** This
+is a carve-out for the status column only.
+
+**2. The commercial posture, in his words:** "we teeter on the boundary of
+ethicality, marketing genius, correctness, and lean towards exaggeration on what
+we can offer short of outright lying. The goal is to sell and convert." **Copy
+leans hard. The line that survives is: never explicitly false.** Entry 70's
+"sanitise, not remove" still governs the verb, because "remove" for layer B is on
+the wrong side of that line by Jon's own earlier reasoning.
+
+**3. Mobile first, and the GPTZero drop-off pattern.** Most visitors convert on a
+phone. **The box must be on the first screen of a phone.** Desktop may carry
+extra statistics, validity and decoration that simply drop off on mobile, the way
+GPTZero collapses its hero. Applied: the live counter moves into the hero's left
+column and is desktop-only; the three scoped statistics die entirely, per Jon's
+"we need new metrics altogether" and his counter idea.
+
+### 85. The distill: one screen of tool, one argument, and the FAQ carries the weight
+
+**Built 19 August 2026 on Fable, under full creative autonomy from Jon, after his
+verdict on the interim state: "a colossal mess... so much text... text slob
+without much intentionality." Going live tomorrow was named in the same message.**
+
+**The method, for once, was not improvisation.** The `impeccable` skill was loaded
+and followed: its context script, the distill playbook, the craft floor, and its
+mechanical detector, which was run and comes back clean. **The craft floor caught
+a scaffold this session had shipped hours earlier:** numbered 01/02/03 steps in
+costume monospace, a banned pattern. The moat's four rules now stand on their
+titles.
+
+**What the home page now is, in order:** hero (headline, one line, the tool, and
+on desktop only the counter), marquee, the argument table, the stakes, the
+engineering, the vendor table, the FAQ. **Roughly 5.8 desktop screens and 9.7
+phone screens, no horizontal scroll at either width, console clean.**
+
+**The decisions inside that:**
+
+1. **The headline is "If Claude wrote it, it's marked."** The old one, "Remove
+   the watermark Claude puts in your writing," was the exact claim entry 70
+   forbids and had been flagged twice without a ruling. The replacement is the
+   line Jon ratified for the statistical row, promoted. True of 100% of Claude
+   output since 2 August 2026, five words, and it survives the detector opening.
+2. **How-it-works left the home page.** Its three drawn panels were the largest
+   text mass on the page and the same depth already lives at `/how-it-works`,
+   which the argument section now links. The component file stays for that page's
+   future use; nothing imports it today.
+3. **An FAQ exists at last**, eight questions, the hard ones: cheating, can my
+   school detect this today, how do I know the rewrite worked, Word and PDF
+   truthfully stated per `06` row 74. docs/09 section 9 is the reasoning: the FAQ
+   is where this category actually argues.
+4. **The three Anthropic quotes are placed, not boxed:** the edit-versus-wrote
+   sentence in the stakes, the detection API sentence beside it, the
+   complete-rewrite sentence closing the engineering section, each hyperlinked in
+   running prose and dated.
+5. **The engineering section Jon demanded exists:** why a generic rewrite fails
+   (it protects fact sentences, which is where the mark lives, measured), four
+   engine rules with the reason each exists, the receipts, and the measured 90%+
+   of three-word sequences broken.
+6. **The rows follow one template:** name, where it lives, count. The count is an
+   em dash where no count can exist, Jon's carve-out, entry 84. The button
+   carries the count when there is one: "Sanitise it (3)".
+7. **The sample is a chip, "Try an example"**, restoring the demonstration the
+   empty-box ruling removed, per the category-universal pattern in docs/09.
+8. **The counter's hydration error is fixed** with a one-line suppression: the
+   figure is clock-derived by design, entry 71, so server and client can never
+   match. This was the only console error the page produced and it predated this
+   session.
+
+**Flagged for Jon, not decided here:** the stakes heading ("Wrote it yourself and
+edited with Claude? Same mark.") stands in for the words he said he wants to
+write himself; the marquee caption is still his; the mission page is still his.

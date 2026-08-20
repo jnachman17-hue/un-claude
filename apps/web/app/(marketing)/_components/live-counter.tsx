@@ -84,7 +84,12 @@ export function LiveCounter() {
         Words cleaned with Un-Claude
       </p>
 
+      {/* The figure is derived from the clock by design, 04 entry 71, so the
+          server's render and the client's are milliseconds apart and never
+          equal. That mismatch is expected, not a defect: suppressing it is
+          what silences the one hydration error this page ever produced. */}
       <p
+        suppressHydrationWarning
         className={
           'text-foreground mt-3 font-mono text-[40px] leading-none font-medium tracking-[-0.03em] tabular-nums sm:text-[56px]'
         }

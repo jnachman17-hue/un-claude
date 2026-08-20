@@ -340,3 +340,9 @@ done.**
   desktop to do the work. **So the phone has to sell and be shareable. It does not
   have to be where the heavy work happens**, though the tool must still function
   there.
+
+- **SEO is parked as its own task, by Jon, 19 August 2026.** "Maybe think about
+  SEO and how you're doing things... maybe that's a later task." Nothing on the
+  page was built for SEO tonight beyond what Next.js already does (robots.ts and
+  a sitemap exist). **Trigger for revisiting: after launch**, as its own session,
+  covering metadata, structured data, and the copy's search surface.

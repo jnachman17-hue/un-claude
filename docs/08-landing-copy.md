@@ -10,7 +10,10 @@ agreed does a session touch the page. **Anything not in this file is not agreed.
 **Governed by `.claude/skills/unclaude-messaging/SKILL.md`.** Claims boundary,
 voice and audience live there, not here. This file is only the words.
 
-**Status: the box and its three rows. The rest of the page is not written yet.**
+**Status: SUPERSEDED IN PART, 19 August 2026, session 8 late.** The page was
+rebuilt under Jon's creative-autonomy instruction and `04` entry 85 is the
+record. Where this file and the built page disagree, the page and entry 85
+govern. Kept because the ratified row copy and the reasoning still hold.
 
 ---
 
