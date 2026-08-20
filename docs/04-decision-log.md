@@ -2097,3 +2097,54 @@ shows nothing a visitor could not already see on the home page.
 
 **This is a work surface and it should be deleted before launch**, or kept
 deliberately. `06` row 76.
+
+### 74. [T1] The brand-guidelines skill is Anthropic's own kit. Take the neutrals, refuse the identity
+
+**Installed at Jon's request**, 19 August 2026, into
+`.claude/skills/brand-guidelines`. His terminal run had hung on an interactive
+"which agents" prompt and written nothing; `-a claude-code -y --copy` completes
+it without one.
+
+**What it actually is, which is not what the name suggests.** It is **Anthropic's
+own corporate brand kit**, category `document-processing`, and its mechanism is
+PowerPoint: it applies colours "via python-pptx's RGBColor class". Its purpose is
+making an artefact look like Anthropic produced it.
+
+**What it corroborates, and this is worth having.** Its accent is `#d97757` —
+**the same value this session read out of `claude.svg`**, independently
+confirming a number the palette was already built on. And the neutrals turn out
+to be where we already are:
+
+| Theirs | oklch | Ours |
+|---|---|---|
+| Light `#faf9f5` | `oklch(98.2% 0.005 95)` | `--background` `oklch(98.2% 0.004 70)` |
+| Dark `#141413` | `oklch(19.1% 0.002 107)` | `--foreground` `oklch(19% 0.008 60)` |
+
+**Identical lightness on both, to a tenth of a point.** We differ only in hue: we
+sit warmer, at 60–70, where Anthropic sits yellower at 95–107. **So the page is
+already in the right neighbourhood and this changes nothing.** The one value we
+have no equivalent for is Mid Gray `#b0aea5`, `oklch(75% 0.013 96)`.
+
+**What must NOT be taken from it, and the reason is specific rather than
+squeamish.**
+
+**Un-Claude removes Anthropic's watermarks and is named after Anthropic's
+product.** Looking like it belongs in Claude's world is Jon's stated aim and is
+fine. **Adopting Anthropic's official brand identity — their exact palette and
+their typography together — is a different thing: it is presenting as an
+Anthropic property.** Two concrete consequences, neither hypothetical:
+
+- **Google brand verification**, which `04` entries 45 and 53 already touch.
+- **Stripe's "unfair, deceptive or predatory" catch-all**, which `03-pricing.md`
+  12b records as the one entry a reviewer can apply to anything, **judged on how
+  the site presents itself.** A site dressed as an official Anthropic property
+  while selling watermark removal is the exact shape that earns a second look.
+
+**Typography is refused for a plainer reason too.** Poppins headings over Lora
+body is a document style, and a serif body is wrong for this product. The site
+uses Geist and should keep it.
+
+**Precedence, stated because this is exactly the case `CLAUDE.md` section 2 was
+written for.** The skill is level 3. **It cannot override `04` entry 72**, where
+Jon ruled `#C15F3C` so the button carries white text the way Claude's does. The
+skill says `#d97757`. **Entry 72 governs and the accent does not change.**
