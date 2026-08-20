@@ -63,3 +63,31 @@
     }
   }
 }
+
+/*
+ * The page's own warmth.
+ *
+ * Jon asked for the whole background to be an extremely light gradient running
+ * from the page colour into a trace of Claude's orange, rather than the flat
+ * sheet the first colour pass left behind. Fixed rather than scrolling, so the
+ * warmth stays where it is and the content moves over it.
+ *
+ * The stops are deliberately faint: at 5% and 2% of the accent this reads as a
+ * room being lit from one side, not as a coloured background.
+ */
+body {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      75% 55% at 82% 0%,
+      color-mix(in oklab, var(--mark) 11%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60% 45% at 8% 12%,
+      color-mix(in oklab, var(--mark) 4%, transparent),
+      transparent 72%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}

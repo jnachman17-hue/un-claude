@@ -2048,3 +2048,52 @@ because a static counter reads as broken. Real usage adds to it on top.
 
 **Phrasing is open.** "Words sanitised" is his own note as needing something
 plainer, and `04` entry 70 defers wording until layout is settled.
+
+### 72. [T1] The accent is #C15F3C with white text, and there is a theme bench to judge it on
+
+**Ruling.** Jon, shown both candidates side by side. **`#C15F3C`, the deeper of
+the two, chosen specifically so the button carries WHITE text the way Claude's
+own buttons do.** `oklch(59.7% 0.135 40)`, foreground pure white.
+
+**Measured rather than eyeballed: 4.23:1 against white**, which passes WCAG AA
+for normal text. The lighter alternative `#DE7356` was 4.62:1 but only against
+near-black, which would not have matched Claude.
+
+**Why the first attempt was wrong, recorded because it was this session's
+misjudgement and not a change of mind.** The first pass took the exact logo
+colour `#D97757` and kept dark text on it, because that preserved the existing
+button shape. Jon's reaction: **too orange, too deep, too dark, and harsh to
+read.** The real problem was that it was neither one thing nor the other — an
+orange too dark to be a highlighter and too light to carry white text.
+
+**One thing that had to move with it.** `marked-text.tsx` drew the bar inside a
+hidden-character marker in `--mark-foreground`. That token is now **white**, so
+the bar would have vanished on a light page. It uses the page's own ink instead,
+which is correct regardless of what the accent does next.
+
+**Definition backed off to a middle setting.** Jon: the cards read as "heavily
+placed there ... a lot going on because they are so harshly separated". The page
+sat at 96.4% against a 100% card. **It is now 97.7% against 99.7%** — roughly two
+points of separation where the original had one and the first repair had nearly
+four.
+
+**The page carries a gradient again**, per his note: a very light wash from the
+page colour into a trace of the accent, fixed rather than scrolling. The hero's
+own glow dropped from 0.16 to 0.07 so the two do not stack.
+
+### 73. [T1] A theme bench at /dev/preview, so judgement happens in a browser
+
+**Jon's request:** "It would help if you could actually make the landing page I
+can view in browser at link ... and I can click there."
+
+**Built at `/dev/preview`.** It renders **the real landing-page components**
+inside a wrapper that overrides the theme tokens, rather than a mock — a copy
+would drift from the product within a day and then be worse than useless.
+
+Three accents and three definition settings, switchable live, with the measured
+contrast ratio printed beside each. **`noindex`, and unlisted rather than
+protected:** there is no auth on the marketing side to hang a gate from, and it
+shows nothing a visitor could not already see on the home page.
+
+**This is a work surface and it should be deleted before launch**, or kept
+deliberately. `06` row 76.

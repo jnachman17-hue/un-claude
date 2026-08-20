@@ -68,13 +68,19 @@ export function MarkedText({
   }, [text, markers]);
 
   return (
-    <p className={'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em]'}>
+    <p
+      className={
+        'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em]'
+      }
+    >
       {pieces.map((piece, index) =>
         piece.marker ? (
           <span
             key={piece.key}
             title={piece.marker.label}
-            style={animate ? { animationDelay: `${160 + index * 110}ms` } : undefined}
+            style={
+              animate ? { animationDelay: `${160 + index * 110}ms` } : undefined
+            }
             className={[
               // The halo gives the mark presence at reading size. The bar inside
               // it is the character's actual position. A hidden character has no
@@ -84,8 +90,18 @@ export function MarkedText({
               animate ? 'animate-mark-in' : '',
             ].join(' ')}
           >
-            <span className={'bg-mark-foreground/75 h-[0.82em] w-[2px] rounded-[1px]'} aria-hidden />
-            <span className={'sr-only'}> hidden character {piece.marker.codepoint} </span>
+            {/* The bar is deliberately NOT bg-mark-foreground. That token became white
+              when the accent went deep enough to carry white button text, which
+              would have made this bar invisible on a light page. It is the page's
+              own ink instead, so it stays legible whatever the accent does. */}
+            <span
+              className={'bg-foreground/70 h-[0.82em] w-[2px] rounded-[1px]'}
+              aria-hidden
+            />
+            <span className={'sr-only'}>
+              {' '}
+              hidden character {piece.marker.codepoint}{' '}
+            </span>
           </span>
         ) : (
           <span key={piece.key}>{piece.text}</span>
@@ -110,11 +126,27 @@ export function MarkedTextLegend({ hits }: { hits: ScanHit[] }) {
   return (
     <ul className={'flex flex-wrap gap-x-5 gap-y-2'}>
       {hits.map((hit) => (
-        <li key={hit.codepoint} className={'flex items-baseline gap-2 text-[12.5px]'}>
-          <span className={'bg-mark/55 inline-flex h-[12px] w-[8px] shrink-0 items-center justify-center rounded-[2px]'} aria-hidden><span className={'bg-mark-foreground/75 h-[8px] w-[2px] rounded-[1px]'} /></span>
-          <span className={'font-mono text-foreground/80'}>{hit.codepoint}</span>
+        <li
+          key={hit.codepoint}
+          className={'flex items-baseline gap-2 text-[12.5px]'}
+        >
+          <span
+            className={
+              'bg-mark/55 inline-flex h-[12px] w-[8px] shrink-0 items-center justify-center rounded-[2px]'
+            }
+            aria-hidden
+          >
+            <span
+              className={'bg-mark-foreground/75 h-[8px] w-[2px] rounded-[1px]'}
+            />
+          </span>
+          <span className={'font-mono text-foreground/80'}>
+            {hit.codepoint}
+          </span>
           <span className={'text-muted-foreground'}>
-            {hit.label.replace(`${hit.codepoint} `, '').replace(/\s*\([A-Za-z]+\)$/, '')}
+            {hit.label
+              .replace(`${hit.codepoint} `, '')
+              .replace(/\s*\([A-Za-z]+\)$/, '')}
           </span>
           <span className={'text-muted-foreground/70 font-mono'}>
             {hit.count > 1 ? `x${hit.count}` : ''}

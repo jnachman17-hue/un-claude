@@ -17,8 +17,13 @@
        reads as a raised surface rather than as a region of the same sheet.
        This used to be 98.6% against a 99.6% card: ONE point of lightness
        between them, which is why every box dissolved into the background and
-       nothing looked like it had an edge. 04 entry 70. */
-    --background: oklch(96.4% 0.006 70);
+       nothing looked like it had an edge.
+
+       The first repair went too far the other way — Jon: the boxes read as
+       "heavily placed there", too harshly cut out of the page. This is the
+       middle: about two points of separation rather than one or four, which
+       is enough for an edge without making every card an announcement. */
+    --background: oklch(97.7% 0.005 70);
     --foreground: oklch(19% 0.008 60);
 
     /* The one accent, and it is Claude's own orange: #D97757, read out of
@@ -27,17 +32,18 @@
        fills the primary button and lights the glow behind the hero. Nothing else
        on the page introduces a second accent.
 
-       The foreground stays near-black rather than going white. Measured: this
-       coral carries 4.65:1 against near-black and only 3.12:1 against white, so
-       white would fail WCAG AA on a 13px button. */
-    --mark: oklch(67.5% 0.135 39);
-    --mark-strong: oklch(60% 0.145 37);
-    --mark-foreground: oklch(20% 0.02 60);
+       Jon chose the deeper of two candidates, #C15F3C, specifically so the
+       button can carry WHITE text the way Claude's own buttons do. Measured:
+       4.23:1 against white, which passes WCAG AA for normal text. The lighter
+       #DE7356 was the alternative and needed dark text to pass. */
+    --mark: oklch(59.7% 0.135 40);
+    --mark-strong: oklch(53% 0.140 39);
+    --mark-foreground: oklch(100% 0 0);
 
-    --card: oklch(100% 0 0);
+    --card: oklch(99.7% 0.002 70);
     --card-foreground: var(--color-neutral-950);
 
-    --popover: oklch(100% 0 0);
+    --popover: oklch(99.7% 0.002 70);
     --popover-foreground: var(--color-neutral-950);
 
     --primary: oklch(19% 0.008 90);
@@ -55,12 +61,13 @@
     --destructive: var(--color-red-500);
     --destructive-foreground: var(--color-white);
 
-    /* Warm, and dark enough to actually be an edge. gray-100 is both too faint
-       to see and a COOL grey on a warm page, so it read as haze rather than as
-       a line. */
-    --border: oklch(90% 0.007 65);
-    --input: oklch(86% 0.008 65);
-    --ring: oklch(67.5% 0.135 39);
+    /* Warm, and just dark enough to read as an edge. gray-100 was both too
+       faint to see and a COOL grey on a warm page, so it read as haze. The
+       first repair at 90% was a hard outline; this is a line you notice only
+       when you look for it. */
+    --border: oklch(93% 0.006 65);
+    --input: oklch(89% 0.007 65);
+    --ring: oklch(59.7% 0.135 40);
 
     --radius: 0.75rem;
 
@@ -86,9 +93,9 @@
 
     /* Same accent, same role, lifted so it holds contrast on a dark surface.
        The theme flips; the accent does not change identity. */
-    --mark: oklch(72% 0.135 40);
-    --mark-strong: oklch(78% 0.130 41);
-    --mark-foreground: oklch(18% 0.02 60);
+    --mark: oklch(66% 0.140 40);
+    --mark-strong: oklch(72% 0.135 41);
+    --mark-foreground: oklch(100% 0 0);
 
     --card: var(--color-neutral-900);
     --card-foreground: var(--color-white);

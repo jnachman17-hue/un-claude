@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import {
+  AlertTriangleIcon,
   CheckIcon,
   EyeOffIcon,
   FingerprintIcon,
@@ -46,12 +47,54 @@ const SYMBOL = {
   statistical: FingerprintIcon,
 } as const;
 
-const BADGE: Record<RowState, { icon: typeof CheckIcon; className: string; label: string }> = {
-  found: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'found' },
-  removed: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'removed' },
-  absent: { icon: XIcon, className: 'bg-rose-500 text-white', label: 'not found' },
-  skipped: { icon: MinusIcon, className: 'bg-foreground/25 text-white', label: 'not checked' },
-  pending: { icon: MinusIcon, className: 'bg-foreground/12 text-transparent', label: 'checking' },
+/**
+ * WHAT EACH BADGE MEANS, AND WHY THE OLD ONES WERE BACKWARDS.
+ *
+ * Until 19 August 2026 `found` and `removed` were the SAME green tick, and
+ * `absent` was a red cross. Read as a stranger, that said: finding a watermark
+ * in your document is a success, a clean document is a failure, and sanitising
+ * changes nothing on screen. Jon hit all three:
+ *
+ *   "once it sanitizes those are still checked green and highlighted which
+ *    makes it look like those are there even though it removed them"
+ *
+ * The rule now: THE BADGE ANSWERS "IS THERE STILL SOMETHING IN MY DOCUMENT?"
+ *
+ *   found    yes, right now, and it is why you are here    -> the accent, alert
+ *   removed  it was, it is gone                            -> green, and quiet
+ *   absent   no, and we looked                             -> calm tick
+ *   skipped  cannot apply to what you gave us              -> grey dash
+ *   pending  nothing read yet                              -> almost invisible
+ */
+const BADGE: Record<
+  RowState,
+  { icon: typeof CheckIcon; className: string; label: string }
+> = {
+  found: {
+    icon: AlertTriangleIcon,
+    className: 'bg-mark-strong text-white',
+    label: 'present',
+  },
+  removed: {
+    icon: CheckIcon,
+    className: 'bg-emerald-600 text-white',
+    label: 'removed',
+  },
+  absent: {
+    icon: CheckIcon,
+    className: 'bg-emerald-600/45 text-white',
+    label: 'none found',
+  },
+  skipped: {
+    icon: MinusIcon,
+    className: 'bg-foreground/20 text-white',
+    label: 'does not apply',
+  },
+  pending: {
+    icon: MinusIcon,
+    className: 'bg-foreground/12 text-transparent',
+    label: 'not scanned',
+  },
 };
 
 export function Checklist({ rows }: { rows: ChecklistRow[] }) {
@@ -63,7 +106,11 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
         const Symbol = SYMBOL[row.id];
         const badge = BADGE[row.state];
         const Badge = badge.icon;
-        const lit = row.state === 'found' || row.state === 'removed';
+        // Lit means "this is still in your document". A removed mark is
+        // deliberately NOT lit: going quiet is how the panel shows it worked.
+        const lit = row.state === 'found';
+        const done = row.state === 'removed';
+        const faded = row.state === 'skipped' || row.state === 'pending';
         const hasItems = Boolean(row.items && row.items.length > 0);
         const isOpen = open === row.id;
 
@@ -72,7 +119,13 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
             key={row.id}
             className={[
               'animate-rise rounded-[11px] transition-colors',
-              lit ? 'bg-mark/[0.13]' : 'bg-foreground/[0.028]',
+              lit
+                ? 'bg-mark/[0.15]'
+                : done
+                  ? 'bg-emerald-600/[0.07]'
+                  : faded
+                    ? 'bg-foreground/[0.018]'
+                    : 'bg-foreground/[0.028]',
             ].join(' ')}
             style={{ animationDelay: `${index * 70}ms` }}
           >
@@ -81,10 +134,18 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 <span
                   className={[
                     'grid size-[28px] place-items-center rounded-[8px] transition-colors',
-                    lit ? 'bg-mark text-mark-foreground' : 'bg-foreground/[0.07] text-foreground/50',
+                    lit
+                      ? 'bg-mark text-mark-foreground'
+                      : faded
+                        ? 'bg-foreground/[0.05] text-foreground/30'
+                        : 'bg-foreground/[0.07] text-foreground/50',
                   ].join(' ')}
                 >
-                  <Symbol className={'size-[14px]'} strokeWidth={2} aria-hidden />
+                  <Symbol
+                    className={'size-[14px]'}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
                 </span>
 
                 <span
@@ -95,18 +156,30 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                   ].join(' ')}
                   aria-label={badge.label}
                 >
-                  <Badge className={'size-[8px]'} strokeWidth={3.4} aria-hidden />
+                  <Badge
+                    className={'size-[8px]'}
+                    strokeWidth={3.4}
+                    aria-hidden
+                  />
                 </span>
               </span>
 
-              <span className={'text-foreground min-w-0 flex-1 text-[13px] font-medium'}>
+              <span
+                className={
+                  'text-foreground min-w-0 flex-1 text-[13px] font-medium'
+                }
+              >
                 {row.label}
               </span>
 
               <span
                 className={[
                   'shrink-0 font-mono text-[10.5px] tracking-wide uppercase tabular-nums',
-                  lit ? 'text-foreground' : 'text-muted-foreground',
+                  lit
+                    ? 'text-foreground font-semibold'
+                    : faded
+                      ? 'text-muted-foreground/55'
+                      : 'text-muted-foreground',
                 ].join(' ')}
               >
                 {row.status}
@@ -116,7 +189,11 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 type={'button'}
                 onClick={() => setOpen(isOpen ? null : row.id)}
                 aria-expanded={isOpen}
-                aria-label={isOpen ? `Hide detail for ${row.label}` : `Show detail for ${row.label}`}
+                aria-label={
+                  isOpen
+                    ? `Hide detail for ${row.label}`
+                    : `Show detail for ${row.label}`
+                }
                 className={[
                   'grid size-[20px] shrink-0 place-items-center rounded-full transition-all duration-300',
                   isOpen
@@ -124,7 +201,11 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                     : 'bg-foreground/[0.07] text-foreground/45 hover:bg-foreground/[0.12]',
                 ].join(' ')}
               >
-                <PlusIcon className={'size-[11px]'} strokeWidth={2.8} aria-hidden />
+                <PlusIcon
+                  className={'size-[11px]'}
+                  strokeWidth={2.8}
+                  aria-hidden
+                />
               </button>
             </div>
 
@@ -136,18 +217,32 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
             >
               <div className={'overflow-hidden'}>
                 <div className={'px-3 pt-0.5 pb-3 pl-[52px]'}>
-                  <p className={'text-muted-foreground text-[12.5px] leading-[1.55]'}>
+                  <p
+                    className={
+                      'text-muted-foreground text-[12.5px] leading-[1.55]'
+                    }
+                  >
                     {row.detail}
                   </p>
 
                   {hasItems ? (
-                    <ul className={'border-border mt-2.5 space-y-2 border-l pl-3'}>
+                    <ul
+                      className={'border-border mt-2.5 space-y-2 border-l pl-3'}
+                    >
                       {row.items!.map((item) => (
                         <li key={item.key}>
-                          <span className={'text-foreground block text-[12px] font-medium'}>
+                          <span
+                            className={
+                              'text-foreground block text-[12px] font-medium'
+                            }
+                          >
                             {item.head}
                           </span>
-                          <span className={'text-muted-foreground text-[12px] leading-snug'}>
+                          <span
+                            className={
+                              'text-muted-foreground text-[12px] leading-snug'
+                            }
+                          >
                             {item.body}
                           </span>
                         </li>

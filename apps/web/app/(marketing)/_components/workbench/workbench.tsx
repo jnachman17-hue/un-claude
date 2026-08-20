@@ -423,6 +423,32 @@ export function Workbench() {
     report.has_ai_metadata === true ||
     (Array.isArray(report.findings) && report.findings.length > 0);
 
+  /**
+   * The panel's own heading, which now changes with what has happened.
+   *
+   * Jon: "when the page loads it should be like FOUND not everything we check
+   * for, and then once you click it should say every mark we check for". It was
+   * fixed text, so it announced a checklist while showing results and announced
+   * results while showing an empty checklist.
+   */
+  const anythingFound = foundCount > 0 || provenanceFound || carriesProse;
+
+  const panelHeading = done
+    ? 'What we removed'
+    : busy || !scan
+      ? 'Every mark we check for'
+      : anythingFound
+        ? 'What we found'
+        : 'Nothing found in this';
+
+  const panelCaption = done
+    ? 'Read the result before you use it'
+    : busy || !scan
+      ? 'All three, every time'
+      : anythingFound
+        ? 'Sanitise to remove it'
+        : 'All three checked';
+
   const rows: ChecklistRow[] = [
     {
       id: 'characters',
@@ -494,7 +520,7 @@ export function Workbench() {
                 : `${actions.length} removed`
               : provenanceFound
                 ? producer
-                  ? `made by ${producer}`
+                  ? producer
                   : 'found'
                 : 'none found',
       detail: !isFile
@@ -505,7 +531,7 @@ export function Workbench() {
             : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
           : provenanceFound
             ? producer
-              ? `This file carries a signed record naming ${producer} as what made it.`
+              ? `Made by ${producer}. The file carries a signed record saying so, and anyone with a free C2PA tool can read it — which is exactly why removing it is provable.`
               : 'This file carries a record of the tool that made it.'
             : 'No content credentials, generator tags or AI metadata in this file.',
       items:
@@ -784,10 +810,10 @@ export function Workbench() {
               'text-foreground text-[11.5px] font-semibold tracking-[0.06em] uppercase'
             }
           >
-            Every mark we check for
+            {panelHeading}
           </h2>
           <span className={'text-muted-foreground text-[11px]'}>
-            All three, every time
+            {panelCaption}
           </span>
         </div>
 

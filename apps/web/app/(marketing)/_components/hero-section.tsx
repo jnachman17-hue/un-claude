@@ -65,12 +65,14 @@ const HANDLES = [
 export function HeroSection() {
   return (
     <section className={'relative overflow-hidden'}>
-      {/* One soft warmth behind the tool, so the box reads as the subject of the
-          page rather than a form sitting on white. Nothing that announces itself. */}
+      {/* A last touch of warmth directly behind the tool. The page-level
+          gradient in globals.css now carries most of it, so this dropped from
+          0.16 to 0.07 rather than being removed: the box is still the brightest
+          thing on the page, just no longer by a wide margin. */}
       <div
         aria-hidden
         className={
-          'pointer-events-none absolute top-[-18%] right-[-10%] h-[560px] w-[820px] rounded-full bg-[radial-gradient(closest-side,var(--mark),transparent)] opacity-[0.16] blur-[90px]'
+          'pointer-events-none absolute top-[-18%] right-[-10%] h-[560px] w-[820px] rounded-full bg-[radial-gradient(closest-side,var(--mark),transparent)] opacity-[0.07] blur-[90px]'
         }
       />
 
