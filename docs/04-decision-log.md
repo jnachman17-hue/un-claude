@@ -2275,3 +2275,62 @@ the same mistake in the other direction.
 > characters. **That is the routing-clarity problem, `06` row 63 and the box
 > rebuild, not a block of statistics.** His words: "This doesn't necessarily mean
 > explicitly saying that." Recorded before it is acted on, per `04` entry 77.
+
+### 78. [T1] Metadata, not provenance. And a claim here must be true of the whole service
+
+**Four rulings, Jon, 19 August 2026, and the first one is site-wide.**
+
+**1. "File provenance" becomes "Metadata" everywhere a visitor can read it.**
+
+**Why he is right on the substance and not only on the plainness.** Metadata is
+the umbrella — EXIF, XMP, generator tags **and** C2PA provenance. Provenance is
+one signed thing inside it. **The old label named the narrowest part of what the
+layer actually strips**, so it was less accurate as well as less clear. The
+engine's own file is `container_meta.py`, and **`CLAUDE.md` has called this layer
+"Metadata" since the rescope**, so the UI was the odd one out.
+
+Code identifiers are deliberately untouched. `provenanceFound`, `id: 'provenance'`
+and `has_c2pa` have no reader on the other end and renaming them is churn.
+
+**2. The rewrite may be described as engineering, but not as targeting Claude's
+tokens.** Jon accepted the limit without argument. What may be said, all true:
+the rewrite runs through a model that is **not Claude**, because rewriting
+Claude's text with Claude re-applies the mark at full strength; every number,
+date and name is checked against the original and the chunk retries if one
+drifts; length is held within about a tenth. **What may not be said is that we
+target the token sequences Claude used** — the key is Anthropic's, no public
+detector exists, and nothing can identify which tokens carry the mark.
+
+**His warning on how to say it, which is the harder half:** *"an average person
+has no idea what 'we break the runs the mark rides on, and we measure how many
+survive' means. That literally means nothing to an average person."* **True, and
+unsolved.** The wording for this is open, `04` entry 77.
+
+**3. The three hero figures are replaced, and the rule that produced them
+matters more than the words.** Two attempts failed the same way: **a claim about
+one layer is wrong for the other two.** "Every mark shown in place" over-promises
+for Claude text, which has no visible mark. "Zero figures changed" is meaningless
+over a PNG.
+
+**So a claim in that slot must be true of the whole service.** The replacements —
+**Free**, **Nothing stored**, **Nothing lost** — share one job: removing a reason
+not to try, which is what a stranger needs before pasting a confidential document
+into a site found on TikTok. **"Nothing stored" is measured**: uploads are capped
+at 5 MB, held in a temporary folder for the length of the request, and deleted.
+
+**They are hidden below `lg`.** Jon: beside the tool on a wide screen they cost
+nothing; on a phone they take space the product needs. GPTZero drops the
+equivalent block at the same point.
+
+**4. The three industry figures come off, parked rather than deleted.**
+`docs/PARKED-CONTENT.md`, with their sources and the reason. The heading above
+them went too, because it was built on the misread corrected under entry 76.
+
+**One standing steer recorded from this exchange, because it governs copy from
+here on.** On leading with our own limitation, Jon: *"why is that screaming at
+you at the very front of this website when that's kind of why we're here and we
+want your payment? ... we're not lying and we include that sort of implicitly in
+other places."* **The line this session will hold: where a disclosure sits is a
+choice, whether it exists is not.** Layer B stays labelled best effort at the
+result, at the point of purchase and in the terms, per `04` entry 23 — and does
+not headline the home page.
