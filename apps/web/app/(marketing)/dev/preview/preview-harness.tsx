@@ -77,15 +77,36 @@ export function PreviewHarness() {
 
   return (
     <div
+      /*
+        THE `--color-*` TOKENS ARE THE ONES THAT MATTER, AND THE FIRST VERSION OF
+        THIS FILE SET THE WRONG ONES.
+
+        `theme.css` declares `--color-mark: var(--mark)` at :root. A custom
+        property resolves its own var() references WHERE IT IS DECLARED, so
+        `--color-mark` is computed against the ROOT's `--mark` and then inherits
+        already-resolved. Overriding `--mark` further down the tree therefore
+        changes nothing, which is exactly what Jon saw: three buttons, one
+        colour. Measured before and after — `--mark` moved the wrapper's style
+        attribute and left the button at oklch(0.597 …) all three times;
+        `--color-mark` moves the button.
+
+        Both are set: the `--color-*` pair is what Tailwind's classes read, and
+        the bare pair keeps any raw `var(--mark)` in hand-written CSS in step.
+      */
       style={
         {
+          '--color-mark': v.mark,
+          '--color-mark-strong': v.strong,
+          '--color-mark-foreground': v.fg,
+          '--color-background': d.background,
+          '--color-border': d.border,
           '--mark': v.mark,
           '--mark-strong': v.strong,
           '--mark-foreground': v.fg,
           '--ring': v.mark,
           '--background': d.background,
           '--border': d.border,
-          backgroundColor: 'var(--background)',
+          backgroundColor: d.background,
         } as React.CSSProperties
       }
     >

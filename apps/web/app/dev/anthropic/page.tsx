@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Lora, Poppins } from 'next/font/google';
 
-import { Workbench } from '../../_components/workbench/workbench';
+import { Workbench } from '../../(marketing)/_components/workbench/workbench';
 
 /**
  * AN EXPERIMENT, NOT A DIRECTION. Jon, 19 August 2026: "I'm not saying we're
@@ -21,6 +21,10 @@ import { Workbench } from '../../_components/workbench/workbench';
  * components — fighting them through CSS would have taken longer and shown less.
  * The one real component included is the Workbench, because judging a landing
  * page without the product on it would be judging nothing.
+ *
+ * It sits OUTSIDE the (marketing) group on purpose. Inside it, the group's
+ * layout added the real site header above this page's own, so the experiment
+ * rendered with two headers stacked. Out here it gets the root layout only.
  *
  * 04 entry 74 records what may and may not be taken from this kit if any of it
  * survives. The short version: the neutrals are already where we are, and the
