@@ -2148,3 +2148,47 @@ uses Geist and should keep it.
 written for.** The skill is level 3. **It cannot override `04` entry 72**, where
 Jon ruled `#C15F3C` so the button carries white text the way Claude's does. The
 skill says `#d97757`. **Entry 72 governs and the accent does not change.**
+
+### 75. [T1] Take the kit's colour, refuse its typography and layout
+
+**Ruling.** Jon, after viewing `/dev/anthropic` beside the live page.
+
+**Taken:** the colouring, white text on orange, the tints and the way white and
+orange layer, and the gradients. His words: *"the orange is better, the white is
+better, the white text inside the orange is better ... the gradient where it's
+like what we found hidden characters of that orange is better."*
+
+**Refused, explicitly:** *"not the layout, not the styling, not the font."*
+**Geist stays.** Poppins and Lora were the experiment only.
+
+**What changed in the real theme.**
+
+| Token | Now | From |
+|---|---|---|
+| `--mark` | `oklch(67.2% 0.131 39)` | Kit orange `#d97757`, same value as `claude.svg` |
+| `--mark-foreground` | white | Jon's preference, and Anthropic's own convention |
+| `--background` | `oklch(98.2% 0.005 95)` | Kit Light `#faf9f5` |
+| `--foreground` | `oklch(19.1% 0.004 100)` | Kit Dark `#141413` |
+| `--border` | `oklch(92.4% 0.012 97)` | Kit Light Gray `#e8e6dc` |
+
+**The hue shift is the part that actually did the work.** The page was at hue
+60–70 and is now at 95–107 — yellower, not just lighter. That is most of what he
+was reacting to when he said the previous orange "isn't right".
+
+**A known trade, stated to him with the number before it shipped.** **White on
+`#d97757` is 3.12:1.** That passes WCAG AA for large text and **fails it for
+normal text, including a 13px button label.** The nearest orange along the same
+hue that passes at normal size is `#ab5e45` at 4.75:1, and it is visibly browner
+— it loses the thing he chose. **He saw white-on-`#d97757` at 14px, preferred it,
+and was given the figure.** Recorded so this is a decision and not an oversight,
+and so a future accessibility pass finds the reasoning rather than re-deriving
+it. `06` row 79.
+
+**Boxes are coming off, not being softened.** Jon twice: *"the boxes are too
+thick and too glaring and too demanding"*, and *"the words cleaned with Un-Claude
+can literally just exist on the page ... I don't think it needs a box around
+it."* The counter and the fact cards now have a hairline and nothing else. **The
+heaviness was never the border colour, it was that things were boxed at all.**
+
+**`/dev/anthropic` survives as the reference for this decision** and should go
+before launch with `/dev/preview`. `06` row 76.
