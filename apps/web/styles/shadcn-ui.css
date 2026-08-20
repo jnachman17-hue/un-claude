@@ -20,10 +20,11 @@
        nothing looked like it had an edge.
 
        The first repair went too far the other way — Jon: the boxes read as
-       "heavily placed there", too harshly cut out of the page. This is the
-       middle: about two points of separation rather than one or four, which
-       is enough for an edge without making every card an announcement. */
-    --background: oklch(97.7% 0.005 70);
+       "heavily placed there", too harshly cut out of the page. He then judged
+       three settings side by side on /dev/preview and chose the softest:
+       about one and a half points of separation, which is an edge you notice
+       only when you look for it. 04 entry 72. */
+    --background: oklch(98.2% 0.004 70);
     --foreground: oklch(19% 0.008 60);
 
     /* The one accent, and it is Claude's own orange: #D97757, read out of
@@ -63,10 +64,10 @@
 
     /* Warm, and just dark enough to read as an edge. gray-100 was both too
        faint to see and a COOL grey on a warm page, so it read as haze. The
-       first repair at 90% was a hard outline; this is a line you notice only
-       when you look for it. */
-    --border: oklch(93% 0.006 65);
-    --input: oklch(89% 0.007 65);
+       first repair at 90% was a hard outline; this is the softest of the three
+       settings Jon compared. */
+    --border: oklch(94.5% 0.005 65);
+    --input: oklch(90% 0.006 65);
     --ring: oklch(59.7% 0.135 40);
 
     --radius: 0.75rem;
