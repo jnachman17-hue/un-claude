@@ -2192,3 +2192,42 @@ heaviness was never the border colour, it was that things were boxed at all.**
 
 **`/dev/anthropic` survives as the reference for this decision** and should go
 before launch with `/dev/preview`. `06` row 76.
+
+### 76. [T1] The statistics say what they mean, and the problem gets a named section
+
+**Ruling.** Jon, on the three hero figures: **"these stats make no sense there to
+me. Like whatsoever."** He added the detail that makes it decisive — he has
+worked on this project since the first day, and **if he cannot read them, nobody
+arriving cold can.**
+
+**What they said, and why each failed.**
+
+| Was | Problem |
+|---|---|
+| "100% of provenance data removed, checked against the file's raw bytes" | Two pieces of jargon in one line. Nobody outside this project knows what provenance data or raw bytes are |
+| "90%+ of your three word sequences broken by the rewrite" | Jon's words: "three word sequences no one knows what that means" |
+| "0 figures lost across every document we have tested" | "Figures" reads as diagrams, or as nothing |
+
+**Now:** the hidden tags in a file removed and the file opened again to prove it;
+three-word runs of your wording gone, **and a clause saying runs are where the
+mark hides**, so the number explains itself; and zero numbers, dates or names
+changed by mistake.
+
+**The numbers did not change. Only the words did.** No claim was weakened to make
+it readable, which was the risk worth avoiding.
+
+**The counter and the fact cards become one named section: "The scope of the
+problem."** Jon asked for exactly that, and said the old arrangement — counter
+left, cards right, nothing joining them — "needs improvement". It now carries a
+heading and a claim, and the two halves do different jobs: how big the problem
+is, then who causes it and since when.
+
+**`/dev/preview` and `/dev/anthropic` are deleted** on his instruction. They
+settled the accent and the neutrals and had no further use. `06` row 76 closes.
+
+**Mobile, measured against the reference Jon named.** GPTZero on a phone: header
+56px, **tool at 305px, 0.38 screens down, and no subtitle between headline and
+tool.** Un-Claude: **tool at 282px, 0.35 screens.** **We are already ahead of the
+page he pointed at**, so no change was made for its own sake. Also checked and
+NOT a problem: the page does not scroll sideways — several elements are wider
+than the viewport and every one is properly clipped.
