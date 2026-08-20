@@ -1,166 +1,180 @@
 ---
 name: unclaude-messaging
-description: Governs every word a visitor of un-claude.com reads, and the reasoning behind how the product is explained. Use whenever writing, rewriting, reviewing or restructuring landing page copy, headlines, section order, button labels, empty states, error messages, tooltips, the marquee, the coverage table, the limits section, or any marketing page. Also use before adding, removing or reordering a section of the site, and before invoking the copywriting, cro or product-marketing skills, because it constrains what those skills are allowed to claim.
+description: Governs every word a visitor of un-claude.com reads, and the argument the site makes to sell. Use whenever writing, rewriting, reviewing or restructuring landing page copy, headlines, section order, button labels, empty states, error messages, tooltips, the marquee, the coverage table, the limits section, or any marketing page. Also use before adding, removing or reordering a section of the site, and before invoking the copywriting, cro or product-marketing skills, because it sets what those skills may claim and how hard they may push.
 ---
 
-# Un-Claude: what the site is allowed to say, and why
+# Un-Claude: the argument, the voice, and the line
 
-This skill exists because **the highest converting sentence available to this
-product is false**, and a general purpose conversion skill will find it and write
-it. It is the wrapper that keeps the downloaded marketing skills honest.
+**This site exists to sell.** It converts a visitor into a credit purchase. That
+is the job. **Write confident, technical, commercial copy that makes a coherent
+and convincing argument, and do not cross into a claim that is explicitly false.**
 
-## Before writing a single word
+**Jon is the final arbiter on every sentence.** `CLAUDE.md` section 2. When this
+file and Jon disagree in a session, Jon wins and this file gets updated.
 
-**Read `.agents/product-marketing.md`.** It is the full positioning: the visitor,
-the three layers, the claims boundary, the conversion ladder. This file is the
-short version that fires automatically. That file is the substance.
+## Before writing a word
 
-**Then read the governing sources for whatever you are about to touch:**
+**Read `.agents/product-marketing.md`.** Full positioning: audience, the three
+layers, what may be claimed, the argument order. This file is the short version
+that fires automatically. That file is the substance.
 
-| Touching | Read |
+| Touching | Also read |
 |---|---|
-| Any claim about what the tool does | **`apps/web/engine/ENGINE.md` section 2.** Non negotiable |
-| Copy, tone, or a moral framing | `docs/04-decision-log.md` entries 36, 37, 68, 70 |
+| Any claim about what the tool does | **`apps/web/engine/ENGINE.md` section 2** |
+| Copy, tone, moral framing | `docs/04-decision-log.md` entries 36, 37, 68, 70, 78 |
 | Section order or layout | `04` entries 20, 41, 70 |
-| A number of any kind | `04` entry 47 |
 
-## Precedence, when the downloaded skills disagree
+## Who is reading
 
-`CLAUDE.md` section 2 sets the order of authority. Applied here:
+**Consumers. B2C. Not a buying committee, not a company, not a procurement
+cycle.** One person deciding for themselves in a few minutes. Every B2B instinct
+a marketing skill has is wrong here.
 
-1. **Jon's instruction in the session.**
-2. **`docs/` and `ENGINE.md`.** Where a document decides a question, that answer
-   governs.
-3. **The `copywriting`, `cro` and `product-marketing` skills.** Outside
-   convention. They may inform anything the documents leave open. **They may never
-   override anything the documents have decided.**
-4. **Your own judgment.** Last.
+**Two overlapping groups, and the site serves both:**
 
-**When a marketing skill recommends something the documents forbid, say so out
-loud.** Name the document, state what the skill wanted, and say plainly that the
-document governs. Do not split the difference and do not quietly pick a side.
+- **People who have just learned that AI writing is watermarked** and that
+  institutions can check. Most of them. Usually students, and not only students.
+- **Somewhat more technical people** who know what metadata is and want a
+  watermark or a content credential off a file.
 
-## The visitor
+**They are on a phone.** Traffic is expected from TikTok. `04` entry 70. Mobile is
+a first class constraint, not a later pass.
 
-**A student, on a phone, close to a deadline, who has just learned that AI work
-is watermarked and that institutions can check.**
+**What they know:** the category. Marks exist, institutions can check, their work
+might carry one.
 
-**They arrive already believing the threat.** So the first screen does not explain
-watermarking. **It shows them what is in their own work.** A hero that teaches
-instead of demonstrating has wasted its one chance.
+**What they do not know:** the mechanism. Which layer, which model, what is
+actually detectable. **They cannot tell the three layers apart and they need to be
+taught.**
 
-**Mobile is a first class constraint.** `04` entry 70. Nothing is finished until
-it is right on a small screen.
+## Teach. Do not just demonstrate
 
-## The three sentences that must never appear
+**This is the central structural rule of the page and it is easy to get wrong.**
 
-1. **Anything saying or implying a school, employer or detector can currently
-   detect Claude's text watermark.** It cannot. No public detector exists
-   anywhere, and no marked model is shipping publicly. This is the false sentence
-   that converts best. Do not write it.
-2. **Anything saying layer A removes Claude's watermark.** Anthropic adds no
-   hidden characters. `04` entry 37.
-3. **Any invented number, counter, statistic or measurement.** `04` entry 47. Jon
-   asked for invented metrics once and was declined. **Anthropic has a detector in
-   development, which is the day every invented number in this category becomes
-   checkable at once.**
+**Most visitors come for the Claude text watermark, and that one cannot be shown.**
+It is not a character, not metadata, not anything with a position in the document.
+**It is the words themselves.** A page built on "paste your text and watch us find
+it" therefore has nothing to show the person who came for the main thing.
 
-4. **Anything saying we target the token sequences Claude used.** `04` entry 78
-   ruling 2. The key is Anthropic's and nothing can identify which tokens carry
-   the mark. **What may be said:** the rewrite runs through a model that is not
-   Claude, every number and date and name is checked against the original, and
-   length is held within about a tenth.
-5. **The word "provenance" anywhere a visitor can read it.** `04` entry 78 ruling
-   1. **The layer is called Metadata**, because metadata is the umbrella and
-   provenance is one signed thing inside it. Code identifiers keep the old name on
-   purpose.
+**So the page explains.** What the three layers are, which one applies to them,
+what to expect from each. **Clear, confident, plain teaching is the conversion
+mechanism here, not a detour from it.** A visitor who understands why word choice
+carries a mark is a visitor who understands why a rewrite is the answer, and that
+is the visitor who buys.
 
-Also: **claim nothing about PDFs.** Not in version one.
+**Demonstration still carries its own weight where a mark is real and visible.**
+Hidden characters named and positioned, metadata read out of the file, the
+producer name. **"Made by Stability AI" is a headline finding, not a footnote**,
+`04` entry 70. Use demonstration where it works and teaching where it must.
 
-## Two rules about where a claim sits, not just whether it is true
+## Detection is imminent. This is the argument, not a caveat
 
-**A claim in a whole-service slot must be true of the whole service.** `04` entry
-78 ruling 3. Two hero attempts failed identically: a claim about one layer is
-wrong for the other two. "Every mark shown in place" over-promises for Claude
-text, which has no visible mark. "Zero figures changed" is meaningless over a PNG.
-**The replacements, Free / Nothing stored / Nothing lost, share one job: removing
-a reason not to try.**
+**Anthropic has publicly committed to a detection API that anyone can use.**
+Confirmed 12 August 2026, further detail 15 August, explainer updated 16 August.
+**Not callable yet. No pricing or access tier published.**
 
-**Where the layer B disclosure sits is a choice. Whether it exists is not.** It is
-labelled best effort **at the result, at the point of purchase and in the terms**,
-`04` entries 23 and 78. **It does not headline the home page.** Jon: *"why is that
-screaming at you at the very front of this website when that's kind of why we're
-here and we want your payment?"* **Do not read the honesty rule as an instruction
-to lead with the limitation.** Honest and self-sabotaging are not the same thing.
+**Say imminent. Never say it does not exist and never say it will not come.**
 
-## The strongest claim you are allowed, and it is stronger than the false one
+**Three facts from Anthropic's own public material, all usable and all on the
+record.**
 
-`04` entry 68:
+1. **Anthropic says the mark can be defeated by rewriting with another model.**
+   The company that built the watermark describes the method that removes it.
+   **That is the strongest citation this product has.**
+2. **A check returns a probability, never yes or no.** There is no binary verdict,
+   so "reduce the signal" is the honest and accurate frame, and metrics are the
+   right language for it.
+3. **A detected mark means Claude processed the content, not that Claude wrote
+   it.** It flags people who wrote their own work and edited it with Claude.
+   **Say that plainly. It needs no adjectives and it is the emotional centre of
+   the page.**
 
-> If Claude made you a file, it carries a signed credential anyone can read with a
-> free public tool. We remove it, and we show you the file before and after.
-> Claude's text watermark is a separate mechanism, rolling out, and no detector
-> for it exists anywhere. Our rewrite is the published defence and we call it best
-> effort because that is what it is.
+**What this changes commercially.** Verification is coming, which is the reason to
+act now. **It is also the reason not to overclaim:** when the API ships, every
+sentence on this site becomes checkable at once. Overclaiming is not just
+dishonest here, it is a dated liability.
 
-**Certainty about files, today. Best effort on text, labelled.**
+## What the three layers may claim
 
-## The confidence rule, per layer
-
-| Layer | Provable | How copy may sound |
+| Layer | Status | How copy may sound |
 |---|---|---|
-| **A. Invisible characters** | **Yes** | **Confident.** The marks are countable and shown |
-| **Metadata** | **Yes** | **Confident.** File before and after, byte verified |
-| **B. Statistical rewrite** | **No** | **Best effort, always labelled.** Never with the confidence of the other two |
+| **A. Invisible characters** | **Provable now.** Deterministic, counted, positioned | **Fully confident.** Show the marks |
+| **Metadata** | **Provable now.** File before and after, byte verified | **Fully confident.** This is what strips a Claude file's signed credential |
+| **B. Statistical rewrite** | **Imminently provable.** Checkable when Anthropic's API ships | **Confident about the engineering. Stop short of proving the outcome** |
 
-**Reporting layer B with the confidence of the other two is the single easiest way
-to make this project dishonest.** `CLAUDE.md` section 4.
+**Layer B, the shape of the honest sell.** Describe the engineering, report the
+measured result, do not claim a verified defeat.
+
+- **A targeted structural rewrite that breaks the verbatim word sequences the
+  watermark rides on.** True: the mark survives only through runs of consecutive
+  words, and the engine holds runs to three.
+- **Facts persist. Length is preserved.** Numbers, dates and names are checked
+  against the original and the chunk retries if one drifts. Length holds within
+  about a tenth.
+- **Report the measured survival rate**, from our own test data, beside the run
+  length chart on the receipt.
+
+**The one line that stays out**, `04` entry 78 ruling 2: **we do not claim to know
+which specific tokens Anthropic marked.** The key is Anthropic's, and Anthropic's
+own detector returns a probability rather than a location. **Target the runs, which
+is true and sounds technical. Do not claim to target the key, which nobody can.**
+
+## What must never be said
+
+1. **That layer A removes Claude's text watermark.** Anthropic's mark is not
+   Unicode, not metadata, not hidden characters. It is in the word choices.
+   Confirmed by Anthropic's own documentation. `04` entry 37.
+2. **That we can currently prove a text watermark was removed.** Nobody can, yet.
+   **Imminent is the word.**
+3. **That a school or employer can run Anthropic's detector today.** It is not
+   callable yet. **Coming, not live.**
+4. **Anything about PDFs.** Not in version one.
+5. **The word "provenance" anywhere a visitor reads.** The layer is called
+   **Metadata**. `04` entry 78 ruling 1. Code identifiers keep the old name.
+6. **A named third party detection product, on a guess.** Research it first.
+
+## Numbers
+
+**Figures come from our own measured test data and from sourced public reporting.**
+Measure it, then say it. **Do not put a number on the page that nobody ran.**
+
+**Real and available:** hidden character classes checked per scan, providers
+confirmed marking files, the live per job receipt (wording replaced, longest
+surviving original run, figures carried through, length preserved), and the
+measured share of three word sequences broken by the rewrite.
+
+**Parked, with sources, in `docs/PARKED-CONTENT.md`.** Removed for placement, not
+accuracy. Read why before reinstating one.
 
 ## Voice
 
-**Restrained. State the fact and let the visitor conclude.** Jon's ruling. The
-register is his own draft: "AI tools now mark what they make. Invisibly, and
-without telling you." **No adjectives. The secrecy does the work.** The site does
-not call the labs unethical, illegal or immoral in its own voice. It reports what
-they do, accurately, which is more damning and much harder to attack.
+**Confident, technical, plain.** Big-technology marketing register: it should sound
+engineered and be simple to understand. **No hedging in the first screen. No lab
+report. No hype without a mechanism behind it.**
 
 **Hard rules:**
 
-- **No em dashes and no en dashes.** Anywhere a visitor reads. `docs/05` section
-  2. **Jon's style rule for his site and documents only. It says nothing about the
-  engine and must never leak into what the tool does to a user's text.**
-- **"Sanitise", not "remove the watermark".** `04` entry 70. Sanitise claims the
-  work, not the outcome, and for layer B the outcome cannot be claimed.
+- **No em dashes and no en dashes.** Anywhere a visitor reads. `docs/05` section 2.
+  **Jon's style rule for his site and documents. It never governs the engine.**
+- **"Sanitise", not "remove the watermark".** `04` entry 70.
 - **"Un-Claude".** Capital U, capital C, hyphenated. Display name only.
-- **Claude forward.** `04` entry 36. The capability is general, the marketing
-  leads with Claude, other labs appear less prominently.
+- **Claude forward.** `04` entry 36. Capability is general, marketing leads with
+  Claude, other labs appear less prominently.
 
-**Marketing may be enticing and deliberately ambiguous. It stops short of
-explicitly false. Final wording authority is Jon's, on every sentence.**
+**Moral framing is restrained ON THE LANDING PAGE.** State what the labs do,
+accurately, and let the visitor conclude. Jon's register: "AI tools now mark what
+they make. Invisibly, and without telling you." **Jon writes the mission page in
+his own voice and will call the labs unethical, illegal and immoral there. That is
+his to write and it does not belong on the home page.**
 
-## What the page is trying to achieve
+## The goal
 
-**Destination: a credit purchase.** **The checkout does not exist yet**, blocked
-on Stripe, which is Jon's to open. So optimise the highest rung that currently
-exists:
+**A credit purchase.** Billing ships before the site goes live, so write for a
+working checkout. The ladder: scan, the finding lands, sign in, paywall, purchase.
 
-1. A completed scan by a signed out stranger. **The real hero metric today.**
-2. **The producer name landing.** "Made by Stability AI" is a headline finding,
-   not a footnote. `04` entry 70. It is the moment the visitor watches the tool
-   read their own file, and it is the most persuasive thing on the site.
-3. Google sign in. Live, branded, earns 2 credits.
-4. The paywall firing after 3 sanitises.
-5. Buying credits. Blocked.
+## The question that catches most defects
 
-**Do not write copy promising a checkout that will 404.**
-
-## Two things to do every time, not once
-
-**Say which layer you are talking about.** Most incoherent copy in this project
-has come from a sentence that was true of one layer being written as though it
-were true of all three. If a sentence does not survive the question "which layer,
-and is that provable", it is not finished.
-
-**Push back before executing, not after.** If an instruction rests on a claim the
-documents forbid, say so first. `CLAUDE.md` section 1. **Building the wrong thing
-correctly is a failure.**
+**Which layer, and what may that layer claim?** A sentence true of one layer
+written as though true of all three is the single most common failure in this
+project's copy. `04` entry 78 ruling 3: **a claim in a whole-service slot must be
+true of the whole service.**

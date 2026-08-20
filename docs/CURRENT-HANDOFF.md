@@ -102,10 +102,21 @@ a state-following panel heading, and the tool above the fold on a phone.
 `copywriting`, `cro`. **They rank third under `CLAUDE.md` section 2.** They may
 never override `ENGINE.md`, a decision log entry, or Jon.
 
-**Four positioning facts that were previously nowhere:** the visitor is a student
-on a phone near a deadline; they arrive already believing the threat, so the first
-screen demonstrates rather than educates; the moral stance is restrained; the
-destination is a credit purchase.
+**Positioning, as corrected by Jon in the same session. `04` entry 80.**
+
+- **B2C, wider than students.** People who just learned watermarking exists, plus
+  more technical people who want metadata off a file. On a phone.
+- **The page teaches.** Most visitors come for the Claude text watermark and **it
+  cannot be shown**, so demonstration alone has nothing to offer them.
+- **Detection is imminent, not absent.** Anthropic has publicly committed to a
+  detection API anyone can use. Not callable yet. **Layer B is imminently
+  provable and the word is imminent.**
+- **The site sells.** Confident, technical, commercial. Convincing argument,
+  stopping short of explicitly false. **Jon is the final arbiter on every
+  sentence.**
+- **Restrained morally on the landing page only.** Jon writes the mission page in
+  his own voice.
+- **Billing ships before launch**, so copy assumes a working checkout.
 
 **Open, and flagged rather than filled in.** Two sections of
 `.agents/product-marketing.md` are marked under-researched and must not be used

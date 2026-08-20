@@ -2399,3 +2399,88 @@ argument for writing them down at all: "provenance" had been listed as
 visitor-facing vocabulary, and the layer B honesty rule had been written in a way
 a session could read as an instruction to lead with the limitation. **Both fixed.
 Where a disclosure sits is a choice, whether it exists is not.**
+
+### 80. The messaging layer is corrected by Jon, and the detector is imminent rather than absent
+
+**Jon's notes on entry 79's output, and he was right on the substance in several
+places. Recorded in full because entry 79 is now partly superseded.**
+
+**1. The assistant fabricated "close to a deadline" and put it in the audience
+definition.** Jon never said it. **In a document written specifically to stop
+invented detail, invented detail was the first thing in it.** Removed.
+
+**2. The audience is wider than students, and it is B2C.** Two overlapping groups:
+people who have just learned AI writing is watermarked, often students and not
+only students, and **somewhat more technical people who understand metadata and
+want a credential or watermark off a file.**
+
+**3. "Demonstrate, do not educate" is overturned, and Jon's reasoning is the
+better one.** **Most visitors come for the Claude text watermark, and it cannot be
+shown.** It is not a character or a tag, it is the words themselves. So a page
+built on "paste it and watch us find it" has nothing to show the person who came
+for the main thing. **The page teaches: what the three layers are, which applies,
+what to expect.** Demonstration keeps its place where a mark is real and visible.
+
+**4. The detector is announced. The assistant's "no detector exists anywhere" was
+true of today and wrong as a framing.** Checked on the web at Jon's prompting,
+because `ENGINE.md` predates the reporting.
+
+| Fact | Date |
+|---|---|
+| Anthropic confirms a text detection API **"that you can use yourself"** is coming | **12 August 2026** |
+| Anthropic publishes further detail on how the mark works | **15 August 2026** |
+| Interactive explainer: a check **"never answers yes or no"**, it returns a **probability** | **16 August 2026** |
+| **Not callable. No pricing or access tier published** | As of 19 August 2026 |
+
+**So layer B is imminently provable, not unprovable.** The word is **imminent**.
+
+**Three facts from Anthropic's own material that are commercially valuable and
+entirely true.**
+
+- **Anthropic says the mark can be defeated by rewriting with another model.**
+  **The company that built the watermark describes the method that removes it.**
+  That is the strongest citation this product has.
+- **Detection returns a probability, never a verdict.** So reducing signal is the
+  accurate frame and metrics are the right language.
+- **A detected mark means Claude processed the content, not that Claude wrote it.**
+  **It flags someone who wrote their own work and edited it with Claude.** Factual,
+  needs no adjectives, and it is the emotional centre of the pitch.
+
+**5. The commercial posture is stated plainly and governs the copy.** Jon: **"We're
+here to sell, convert. We're not going to outright lie, but we're going to make a
+coherent, logical, convincing argument that gets you to buy credits."** Confident,
+technical, big-technology marketing register. **He is the final arbiter on every
+sentence.**
+
+**One consequence worth keeping.** Because the API is coming, **overclaiming is now
+a dated liability rather than only a dishonesty.** When it ships, every sentence on
+the site becomes checkable at once.
+
+**6. Layer B's honest sell, in Jon's own cleaner phrasing.** A targeted structural
+rewrite that breaks the word sequences the mark rides on. **Facts persist. Length
+is preserved.** Report the measured share of three word sequences broken. **Stop
+short of claiming a verified defeat.** He also struck "and that rule outranks every
+other" as engine-internal detail that had leaked into visitor-facing framing.
+
+**The one limit that survives, `04` entry 78 ruling 2 restated.** **Target the
+runs, which is true and sounds technical. Do not claim to target the key, which
+nobody can**, and which Anthropic's own probabilistic detector confirms is not
+locatable.
+
+**7. The "every figure is real, none are invented" paragraph is removed at Jon's
+instruction**, along with the recounting of entry 47. **Replaced with the operative
+rule and no lecture: figures come from our own measured test data and sourced
+public reporting. Measure it, then say it.**
+
+**8. Buying credits is not "blocked".** **Billing ships before the site goes live**,
+so copy is written for a working checkout rather than around a missing one.
+
+**9. Moral framing is restrained on the landing page only.** **Jon writes the
+mission page in his own voice and will call the labs unethical, illegal and immoral
+there.** That is his, and it does not belong on the home page.
+
+**Open, and flagged rather than fixed.** **`ENGINE.md` section 2's layer B
+paragraph now understates what is public**, saying a detector is in development
+with no ship date. The 15 and 16 August material is more specific than that.
+**`ENGINE.md` is the technical source of truth and was not edited from news
+reporting without Jon.** It needs a refresh pass.

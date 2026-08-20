@@ -190,11 +190,16 @@ before they do anything: `product-marketing`, `copywriting`, `cro`.
 
 **They rank third in section 2's order of authority, not first.** They are outside
 convention. They may inform anything the documents leave open. **They may never
-override `ENGINE.md`, a decision log entry, or Jon.** A conversion skill optimising
-a page for a frightened student will reach for the claim that a school can detect
-Claude's text watermark. **No detector for it exists anywhere. That sentence is
-false and it is banned.** When a skill recommends something the documents forbid,
-name the document and say plainly that it governs.
+override `ENGINE.md`, a decision log entry, or Jon.** When a skill recommends
+something the documents forbid, name the document and say plainly that it governs.
+
+**The site sells.** Write confident, technical, commercial copy that makes a
+convincing argument and stops short of a claim that is explicitly false.
+**Anthropic has publicly committed to a detection API anyone can use, and it is not
+callable yet.** So verification of the rewrite is **imminent**, not impossible, and
+that is the argument rather than a caveat. **It is also why overclaiming is a dated
+liability: when the API ships, every sentence on this site becomes checkable at
+once.**
 
 **The one question that catches most of it: which layer, and is that provable?**
 A sentence true of one layer written as though true of all three is the single
