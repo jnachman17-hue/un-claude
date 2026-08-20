@@ -1,24 +1,13 @@
-# un-claude: Current Handoff
+# Un-Claude: Current Handoff
 
-**Date:** 19 August 2026, end of session 5.
-**Status: the product works end to end and cannot take money.**
+**Date:** 19 August 2026, session 7.
+**Status: the product works, the prices are decided, the ledger exists, and it
+still cannot take money.** Stripe is the remaining gap and it is Jon's to open.
 
-**Work now runs as four parallel tracks. This file is an index. Your instructions
-are in your own track file.**
-
----
-
-## 0. Which file is yours
-
-| Track | Read | Priority |
-|---|---|---|
-| **1. Billing** | `TRACK-1-BILLING.md` | **Jon's stated priority** |
-| **2. Landing page** | `TRACK-2-LANDING.md` | Continuous |
-| **3. Trust and correctness** | `TRACK-3-TRUST.md` | **Blocks track 1 on one item** |
-| **4. Analytics and admin** | `TRACK-4-ANALYTICS.md` | Smallest |
-
-**Every track reads `TRACK-RULES.md` first.** It carries file ownership, and four
-sessions editing one repository is the largest new risk in this project.
+**The four parallel tracks are over.** Jon paused 2, 3 and 4 mid-session after
+five collisions in one day, four of which ran through billing. **One session owns
+everything now.** `TRACK-RULES.md` and the four track files are history; read
+them only for what they recorded, not for who owns what.
 
 ---
 
@@ -26,96 +15,70 @@ sessions editing one repository is the largest new risk in this project.
 
 | | State |
 |---|---|
-| The tool | **Working.** Scan, hidden characters, file provenance, layer B rewrite with receipts, paywall |
-| The engine | **Locked** behind `UC_ENGINE_KEY`, fails closed. Verified from outside |
-| Layer B | **ON in production.** Costs money per run. Gated only by a browser counter, `06` row 47 |
-| Landing page | Hero, marquee on real artwork, how it works, coverage table, limits |
-| Pages | `/how-it-works`, `/capabilities`, `/mission` as a shell, three real legal pages |
-| Sign-in | Email and **Google, live and branded** |
-| Analytics | **PostHog, verified cookieless.** Funnel events added 19 Aug, `04` entry 66. **Policy text to match them is still outstanding, `06` row 68** |
-| Payments | **None** |
+| The tool | **Working.** Scan, hidden characters, file provenance, layer B rewrite with receipts |
+| The paywall | **Real now.** Fires after 3 free sanitises. It never fired for images before, `04` entry 63 |
+| Prices | **Decided and unbuilt.** `04` entry 67 |
+| The ledger | **Table applied to live Supabase**, empty, unused. `20260819180000_credit_ledger.sql` |
+| Payments | **None. No Stripe account yet** |
+| Look | Un-Claude, Claude's orange with white text, deboxed counter and facts |
+| Analytics | PostHog cookieless, 17 funnel events, policies updated to match |
 
 ---
 
-## 2. The three things most likely to hurt
+## 2. Where the money work actually stands
 
-**Layer B is live and costs real money, behind a `localStorage` counter a private
-window resets.** `06` row 47. Balance is fine, 22 cents spent ever. The exposure
-changed shape when the site went public with sign-in.
+**Decided:** one credit buys 1,000 words; a file with no words is a flat credit;
+packs at **$4.99 / $9.99 / $24.99** for 10 / 25 / 100 credits; free is unlimited
+scanning, 3 signed-out credits with no rewrite, +2 on signup; credits debited on
+success and refunded on failure; statement descriptor `UN-CLAUDE.COM`; Stripe
+rather than a merchant of record.
 
-**`usage_record()` records no words, tokens or retries.** `06` row 48. `04` entry
-22 promised exactly those so pricing would not guess. **It cannot be backfilled,
-so every day it runs is evidence permanently lost.** Track 3 owns it and Track 1
-is waiting on it.
+**Built:** the scan now returns what a job will cost **before** it runs, verified
+live — 2,500 words comes back as 3 credits, an image as 1. The ledger stores no
+balance anywhere; a balance is the sum of its rows, the Stripe event id is
+uniquely indexed so a webhook delivered twice cannot pay twice, and
+`spend_credits` locks before it checks.
 
-**Auth errors show the literal text `<DefaultError />`.** `06` row 13. Google
-sign-in is live, so strangers hit this now.
+**Not built:** everything Stripe. Products, prices, checkout, the webhook, and
+wiring the paywall to real credits instead of `localStorage`.
 
----
-
-## 3. Sessions so far
-
-**1 to 3, 17 to 18 Aug.** Repository, documentation system, MakerKit Lite,
-Supabase, deployed to `un-claude.com`, a humanizer built against a mocked engine.
-
-**4, 18 to 19 Aug.** Rescoped from humanizer to watermark remover. Engine vendored,
-proved and deployed. Eighteen decisions, entries 18 to 35.
-
-**5, 19 Aug. The long one.** The landing page became the product. Engine locked
-behind a key after being found open. A crash that broke every rewrite under 350
-words, found and fixed. Receipts built. Layer B wired and switched on. Seventeen
-logos. Three legal pages replacing the kit's public placeholder. PostHog
-cookieless. Entries 36 to 55, `06` rows 37 to 60.
-
-**In parallel, 19 Aug.** Google sign-in taken end to end and published.
-`03-pricing.md` written from measured cost.
+**Blocked on Jon:** creating the Stripe account. His identity and bank details,
+his alone. **Verification is not on the critical path** — the whole system can be
+built and tested in the sandbox first.
 
 ---
 
-## 4. What has not been decided at all
+## 3. The things most likely to hurt
 
-Pricing, in every dimension: credits or subscription, pack price, signup
-allowance, refund window. `06` row 18 and `03-pricing.md` section 6.
+**The free counter is still `localStorage`.** A private window resets it. `06`
+row 47. It is a real gate now rather than a decorative one, but it is not a
+strong one, and it stops mattering the moment credits are real.
 
-**And the hardest open question in the project:** how a free allowance is tracked
-so it cannot be refilled by opening a new tab. `06` row 37.
+**`06` row 79: white on the accent orange is 3.12:1 and fails AA for small
+text.** Chosen deliberately with the number in hand. Do not silently darken it.
+
+**`06` row 74: a Word document never gets the rewrite.** The engine runs layer B
+only on plain text. Priced accordingly, but the interface still asks for a
+rewrite it will not get.
+
+**`06` row 77: the landing page intermittently does not hydrate on a local dev
+server.** No error, no fetches, effects never run. **Restart the dev server
+before believing a workbench change is broken.** It cost this session real time
+twice.
 
 ---
 
-## 5. Track 4, session 7, 19 August 2026
+## 4. What is next, in Jon's order
 
-**Done.** Seventeen funnel events, `04` entry 66. The paywall's "Get credits" was
-a plain anchor that reloaded the page and destroyed the visitor's in-memory id,
-so the most important conversion step in the product could not be joined to
-anything before it; it is now a `Link`, `06` row 67. PostHog's host corrected to
-the US region in the two places that documented it as the EU one.
+1. **The box rebuild.** Show only what applies to what was given, verdict first
+   with the producer name as the headline, and make credits legible before a
+   visitor commits. `06` row 63 and `04` entry 70.
+2. **Stripe**, once the account exists.
+3. Wording throughout. Jon is deliberately holding this until layout settles,
+   `04` entry 70.
 
-**Outstanding, and it is the first thing to pick up.**
-
-**`docs/POLICY-CHANGES-PENDING.md` has not been applied.** It contains the exact
-replacement wording for three passages in the privacy policy and one in the
-cookie policy. Jon's instruction was that policy rewrites go to a separate
-session, which overrides the same-commit rule, `04` entry 69. **Until it is
-applied the published policy under-describes what is measured.** Nothing in it is
-false; it is incomplete.
-
-**Nothing has been pushed.** Publishing is Jon's call, `CLAUDE.md` section 5.
-
-**Not verified, and it must be before anyone trusts a number.** The events were
-proven by compiling the module and driving it in Node, because **the landing page
-does not hydrate on a local machine at all**, `06` row 70. What is proven: every
-event's exact payload, and that no fragment of a confidential filename or a real
-sentence reaches any property. **What is not proven: that they fire at the right
-moments in a real browser.** That needs one pass over the live site after a
-deploy, watching `window.__events` with a stubbed `posthog.capture`, or the
-PostHog live view.
-
-**Session replay, `06` row 55, is still off and should stay last.** Beyond the
-masking that row already names, there is an unverified second blocker: the
-recorder may need to write a session marker to the device, which would end the
-no-consent-banner property and turn a small job into a consent system. **Unproven
-either way.** Testing it means starting a real recording against the production
-PostHog project, which was not done unasked.
-
-**The rename and the Google logo, `06` row 60, were not touched.** Jon said he is
-handling them himself.
+**Already done from his list:** the rename, Claude's orange, the page gradient,
+the definition pass, the marquee band, the deboxed counter, plain-English
+statistics, the named scope section, the paywall firing at all, the reset out of
+a loaded file, the download beside the file, badges that go quiet after removal,
+a state-following panel heading, and the tool above the fold on a phone.
