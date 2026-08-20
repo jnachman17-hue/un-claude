@@ -1,4 +1,5 @@
 import {
+  CheckIcon,
   EyeOffIcon,
   FileTextIcon,
   FingerprintIcon,
@@ -97,17 +98,15 @@ export function HeroSection() {
               are three, the middle claim carries the authority, the last one
               removes the risk of trying.
             */}
-            <ul
-              className={
-                'mt-5 flex flex-wrap items-center gap-x-5 gap-y-2.5 lg:mt-6'
-              }
-            >
+            {/* Stacked, not flowed: three flat lines read as a system;
+                wrapped inline items read as two accidents. */}
+            <ul className={'mt-5 space-y-2 lg:mt-6'}>
               <li
                 className={
-                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
                 }
               >
-                <span className={'inline-flex items-center gap-1'}>
+                <span className={'inline-flex shrink-0 items-center gap-1'}>
                   <EyeOffIcon
                     className={'text-mark-strong size-[14px]'}
                     strokeWidth={2}
@@ -128,17 +127,27 @@ export function HeroSection() {
               </li>
               <li
                 className={
-                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
                 }
               >
+                <CheckIcon
+                  className={'text-mark-strong size-[14px] shrink-0'}
+                  strokeWidth={2.4}
+                  aria-hidden
+                />
                 100% of detectable marks removed
               </li>
               <li
                 className={
-                  'text-foreground inline-flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
                 }
               >
-                Free. No account.
+                <CheckIcon
+                  className={'text-mark-strong size-[14px] shrink-0'}
+                  strokeWidth={2.4}
+                  aria-hidden
+                />
+                Free. No account needed.
               </li>
             </ul>
           </div>

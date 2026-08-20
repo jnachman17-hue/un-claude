@@ -3,25 +3,49 @@ import Link from 'next/link';
 import { cn } from '@kit/ui/utils';
 
 /**
- * The wordmark.
+ * The Un-Claude logo, drawn 20 August 2026 at Jon's instruction.
  *
- * Typographic rather than drawn, set in the site's own face so it stays sharp at
- * any size, inherits the theme, and needs no asset. The bar in front of the name
- * is the same marker the tool draws over a hidden character, which makes the
- * identity come from the product rather than from decoration.
+ * THE CONCEPT: the U is missing the top of its right stem, and the missing
+ * piece is the orange bar, drifted up and away, tilted. That bar is the same
+ * marker the tool draws over a hidden character in a scan, so the glyph is
+ * the product's whole story in one shape: the mark, removed from the word,
+ * leaving. Nothing in it resembles Anthropic's starburst or Claude's
+ * hand-drawn asterisk, deliberately.
+ *
+ * Drawn inline so the U inherits the theme through currentColor and stays
+ * sharp at any size. The favicon at app/icon.svg is the same glyph with
+ * fixed colors and a prefers-color-scheme swap.
  */
 function LogoImage({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'text-foreground inline-flex items-center gap-[7px] text-[17px] font-semibold tracking-[-0.03em] select-none',
+        'text-foreground inline-flex items-center gap-[8px] text-[17px] font-semibold tracking-[-0.03em] select-none',
         className,
       )}
     >
-      <span
+      <svg
         aria-hidden
-        className={'bg-mark-strong h-[15px] w-[3px] rounded-[1px]'}
+        viewBox={'0 0 26 26'}
+        className={'h-[20px] w-[20px]'}
+      >
+      <path
+        d={'M5 4.5 V13 a8 8 0 0 0 16 0 V10.5'}
+        fill={'none'}
+        stroke={'currentColor'}
+        strokeWidth={3.2}
+        strokeLinecap={'round'}
       />
+      <rect
+        x={19.4}
+        y={0.6}
+        width={3.2}
+        height={7}
+        rx={1.6}
+        transform={'rotate(18 21 4.1)'}
+        className={'fill-mark-strong'}
+      />
+      </svg>
       Un-Claude
     </span>
   );

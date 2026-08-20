@@ -42,7 +42,7 @@ const ARTICLES: Article[] = [
   {
     outlet: 'CNN',
     href: 'https://www.cnn.com/2026/08/11/business/video/invisible-watermarks-coming-claudes-ai-written-text-digvid-vrtc',
-    logo: { src: '/images/outlets/cnn.png', plate: true, tall: true },
+    logo: { src: '/images/outlets/cnn.svg', plate: true, tall: true },
   },
   {
     outlet: 'NPR',
@@ -52,7 +52,7 @@ const ARTICLES: Article[] = [
   {
     outlet: 'ABC News',
     href: 'https://www.youtube.com/watch?v=R01_-MkxFws',
-    logo: { src: '/images/outlets/abc.png', mono: true },
+    logo: { src: '/images/outlets/abc.svg', plate: true },
   },
   {
     outlet: 'Forbes',
@@ -62,7 +62,7 @@ const ARTICLES: Article[] = [
   {
     outlet: 'Fortune',
     href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/',
-    logo: { src: '/images/outlets/fortune.png', mono: true },
+    logo: { src: '/images/outlets/fortune.svg', mono: true },
   },
   {
     outlet: 'Axios',

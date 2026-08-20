@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26">
+  <style>
+    .u { stroke: #292524; }
+    @media (prefers-color-scheme: dark) { .u { stroke: #e7e5e4; } }
+  </style>
+  <path class="u" d="M5 4.5 V13 a8 8 0 0 0 16 0 V10.5" fill="none" stroke-width="3.6" stroke-linecap="round"/>
+  <rect x="19.4" y="0.6" width="3.4" height="7" rx="1.7" transform="rotate(18 21 4.1)" fill="#C15F3C"/>
+</svg>
