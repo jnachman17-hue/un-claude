@@ -2555,3 +2555,47 @@ thing.**
 **This also settles the open question left by entry 78 ruling 1.** "Metadata" stays,
 and not only because that entry chose it over "provenance" on accuracy grounds.
 **It stays because it is the real word.**
+
+### 83. Anthropic's own three sentences, verified at source, and the gap in the first one
+
+**Found by research, 19 August 2026, then verified by fetching
+`anthropic.com/news/claude-text-watermark` directly rather than trusting the
+agent that found them.** Page dated 14 August 2026. **All three are verbatim.**
+
+> **"Light editing probably won't remove the watermark completely; a complete
+> rewrite where every word is replaced will."**
+
+> **"We will soon be offering a watermark detection API. We're in the process of
+> working out the details of its implementation."**
+
+> **"A watermark can only determine that Claude was likely involved with the
+> content at some point. It cannot distinguish 'Claude wrote this' from 'Claude
+> heavily edited this.'"**
+
+**Why this matters more than anything else on the page.** The first sentence is
+**the maker of the watermark saying what removes it.** Research across the wider
+field found this pattern is close to nonexistent because almost nobody ever gets a
+clean admission from the incumbent: **Spotify built an entire campaign site
+attacking Apple, `timetoplayfair.com`, containing zero verbatim Apple quotes.** We
+have one, dated, on their own domain.
+
+**The third sentence is the unfair-part argument in Anthropic's own words**, and
+stronger than the version this project had been paraphrasing.
+
+**THE GAP, AND IT IS NOT DECORATIVE.** Anthropic says **"a complete rewrite where
+every word is replaced."** Our engine holds runs to a maximum of three consecutive
+words, `ENGINE.md` rule 3, **which is not every word replaced.** So the quote
+describes a stronger intervention than the one we ship.
+
+**Two consequences, both open and neither settled here.**
+
+1. **Copy.** The quote may be used, dated and linked and unembellished. **It must
+   not be stretched into an implication that our rewrite is the thing Anthropic
+   described**, unless Jon rules that the engine should meet that bar.
+2. **Product.** It is an argument for a maximum-strength mode that replaces every
+   word, at a higher credit cost. **Jon's call, not recorded as a decision.**
+
+**A competitor is already running our best emotional argument.** `writehuman.ai`
+has published "Claude's Watermark Punishes the Wrong People", quoting Anthropic's
+own documentation inline. **The unfair-part angle is not ours alone and is not
+going to stay unused.**
