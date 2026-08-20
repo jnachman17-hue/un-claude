@@ -13,38 +13,37 @@
       sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     --font-heading: var(--font-sans);
 
-    /* Paper, not white. The page is a shade below its cards so that a card
-       reads as a raised surface rather than as a region of the same sheet.
-       This used to be 98.6% against a 99.6% card: ONE point of lightness
-       between them, which is why every box dissolved into the background and
-       nothing looked like it had an edge.
+    /* The neutrals come from Anthropic's own kit, `.claude/skills/
+       brand-guidelines`, because Jon compared them side by side at
+       /dev/anthropic and preferred them. 04 entry 75.
 
-       The first repair went too far the other way — Jon: the boxes read as
-       "heavily placed there", too harshly cut out of the page. He then judged
-       three settings side by side on /dev/preview and chose the softest:
-       about one and a half points of separation, which is an edge you notice
-       only when you look for it. 04 entry 72. */
-    --background: oklch(98.2% 0.004 70);
-    --foreground: oklch(19% 0.008 60);
+       Light #faf9f5 -> oklch(98.2% 0.005 95). Dark #141413 -> oklch(19.1%
+       0.002 107). Note the hue: 95 to 107 is YELLOWER than the 60-70 this page
+       used before, and that shift is most of what he was reacting to.
 
-    /* The one accent, and it is Claude's own orange: #D97757, read out of
-       apps/web/public/images/vendors/claude.svg rather than guessed. 04 entry 70.
-       It is a highlighter: the same colour marks a hidden character in the text,
-       fills the primary button and lights the glow behind the hero. Nothing else
-       on the page introduces a second accent.
+       The card sits barely above the page on purpose. Jon, twice: the boxes are
+       too thick, too glaring, too demanding. One point of lightness, not four. */
+    --background: oklch(98.2% 0.005 95);
+    --foreground: oklch(19.1% 0.004 100);
 
-       Jon chose the deeper of two candidates, #C15F3C, specifically so the
-       button can carry WHITE text the way Claude's own buttons do. Measured:
-       4.23:1 against white, which passes WCAG AA for normal text. The lighter
-       #DE7356 was the alternative and needed dark text to pass. */
-    --mark: oklch(59.7% 0.135 40);
-    --mark-strong: oklch(53% 0.140 39);
+    /* THE ACCENT IS THE KIT'S ORANGE, AND THE TEXT ON IT IS WHITE.
+       #d97757 -> oklch(67.2% 0.131 39). The same value sits in claude.svg in
+       this repo, so the logo and the kit agree.
+
+       MEASURED, AND IT IS A KNOWN TRADE RATHER THAN AN OVERSIGHT: white on this
+       orange is 3.12:1. That PASSES WCAG AA for large text and FAILS it for
+       normal text, which includes a 13px button label. The nearest orange along
+       the same hue that passes at normal size is #ab5e45 at 4.75:1, and it is
+       visibly browner. Jon saw white-on-#d97757 at 14px, preferred it, and was
+       told the number. 04 entry 75. */
+    --mark: oklch(67.2% 0.131 39);
+    --mark-strong: oklch(60% 0.140 38);
     --mark-foreground: oklch(100% 0 0);
 
-    --card: oklch(99.7% 0.002 70);
+    --card: oklch(99.2% 0.004 95);
     --card-foreground: var(--color-neutral-950);
 
-    --popover: oklch(99.7% 0.002 70);
+    --popover: oklch(99.2% 0.004 95);
     --popover-foreground: var(--color-neutral-950);
 
     --primary: oklch(19% 0.008 90);
@@ -54,7 +53,7 @@
     --secondary-foreground: oklch(21.03% 0.0318 264.65);
 
     --muted: oklch(96.71% 0.0029 264.54);
-    --muted-foreground: oklch(55.13% 0.0233 264.36);
+    --muted-foreground: oklch(52% 0.010 97);
 
     --accent: oklch(96.76% 0.0013 286.38);
     --accent-foreground: oklch(21.03% 0.0318 264.65);
@@ -62,13 +61,13 @@
     --destructive: var(--color-red-500);
     --destructive-foreground: var(--color-white);
 
-    /* Warm, and just dark enough to read as an edge. gray-100 was both too
-       faint to see and a COOL grey on a warm page, so it read as haze. The
-       first repair at 90% was a hard outline; this is the softest of the three
-       settings Jon compared. */
-    --border: oklch(94.5% 0.005 65);
-    --input: oklch(90% 0.006 65);
-    --ring: oklch(59.7% 0.135 40);
+    /* Light Gray #e8e6dc from the kit -> oklch(92.4% 0.014 97). Darker than
+       what this page had, which is fine BECAUSE it is used as a hairline rule
+       rather than as a box outline. The heaviness Jon objected to came from
+       things being boxed at all, not from the line being visible. */
+    --border: oklch(92.4% 0.012 97);
+    --input: oklch(88% 0.012 97);
+    --ring: oklch(67.2% 0.131 39);
 
     --radius: 0.75rem;
 
@@ -89,13 +88,13 @@
   }
 
   .dark {
-    --background: oklch(17% 0.006 60);
+    --background: oklch(17% 0.004 100);
     --foreground: oklch(96% 0.004 95);
 
     /* Same accent, same role, lifted so it holds contrast on a dark surface.
        The theme flips; the accent does not change identity. */
-    --mark: oklch(66% 0.140 40);
-    --mark-strong: oklch(72% 0.135 41);
+    --mark: oklch(67.2% 0.131 39);
+    --mark-strong: oklch(73% 0.125 40);
     --mark-foreground: oklch(100% 0 0);
 
     --card: var(--color-neutral-900);

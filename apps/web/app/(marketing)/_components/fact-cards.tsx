@@ -38,7 +38,7 @@ export function FactCards({ facts }: { facts: Fact[] }) {
               onClick={() => setOpen(isOpen ? null : fact.figure)}
               aria-expanded={isOpen}
               className={[
-                'bg-card ring-border/70 group flex h-full w-full flex-col rounded-[15px] p-4 text-left ring-1',
+                'border-border group flex h-full w-full flex-col border-t p-4 pl-0 text-left',
                 'transition-all duration-300 hover:-translate-y-[2px] active:translate-y-0',
                 isOpen
                   ? 'ring-mark-strong shadow-[0_8px_30px_-12px_rgba(0,0,0,0.14)]'
@@ -62,11 +62,19 @@ export function FactCards({ facts }: { facts: Fact[] }) {
                       : 'bg-foreground/[0.055] text-foreground/45 group-hover:bg-foreground/[0.09]',
                   ].join(' ')}
                 >
-                  <PlusIcon className={'size-[12px]'} strokeWidth={2.6} aria-hidden />
+                  <PlusIcon
+                    className={'size-[12px]'}
+                    strokeWidth={2.6}
+                    aria-hidden
+                  />
                 </span>
               </div>
 
-              <dd className={'text-foreground mt-3 text-[13.5px] leading-snug font-medium'}>
+              <dd
+                className={
+                  'text-foreground mt-3 text-[13.5px] leading-snug font-medium'
+                }
+              >
                 {fact.label}
               </dd>
 
@@ -74,11 +82,17 @@ export function FactCards({ facts }: { facts: Fact[] }) {
               <dd
                 className={[
                   'grid transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                  isOpen ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                  isOpen
+                    ? 'mt-3 grid-rows-[1fr] opacity-100'
+                    : 'grid-rows-[0fr] opacity-0',
                 ].join(' ')}
               >
                 <span className={'overflow-hidden'}>
-                  <span className={'text-muted-foreground block text-[12.5px] leading-[1.6]'}>
+                  <span
+                    className={
+                      'text-muted-foreground block text-[12.5px] leading-[1.6]'
+                    }
+                  >
                     {fact.detail}
                   </span>
                 </span>

@@ -3,50 +3,85 @@
 import { useEffect, useState } from 'react';
 
 /**
- * How much AI text exists, counted live from the moment the page opened.
+ * How much writing has been cleaned with Un-Claude.
  *
- * The figure underneath it is real and attributed: Sam Altman said in February
- * 2024 that OpenAI was generating about 100 billion words a day. That is one
- * company, two years ago, and it is the most conservative public number
- * available, which is why it is the one used.
+ * WHAT THIS NUMBER IS, STATED PLAINLY SO NOBODY LATER MISTAKES IT FOR MEASURED.
  *
- * What this is NOT is a counter of how many files Un-Claude has cleaned. Jon
- * asked for one, starting around six thousand, and described it as a little bit
- * fictitious. That is fabricated usage data presented as real, it is the one
- * claim on this site anybody could disprove, and it would undo the position
- * everything else here is built on. Declined and said so.
+ * It is a seeded figure that rises on a clock. It is NOT read from the ledger
+ * yet, and until it is, it is not a record of real work. 04 entry 71 is Jon's
+ * ruling and his reasoning: a new site needs a number on day one, and a counter
+ * that never moves reads as broken.
+ *
+ * What it replaced was worse. The previous counter extrapolated "100 billion
+ * words a day", a February 2024 figure for OpenAI alone, to stand for an
+ * industry that now includes labs the citation predates. Jon's verdict on it was
+ * that it made no sense, and he was right: it carried a source, and the source
+ * did not support the claim. THIS counter carries no citation, because it makes
+ * no claim about anybody else.
+ *
+ * Two properties that keep it honest as far as it goes:
+ *
+ *   It is anchored to a fixed instant, not to page load. Everyone looking at the
+ *   same moment sees the same number, and a reload does not reset it. A counter
+ *   that restarts on refresh is the tell that gives fake ones away.
+ *
+ *   The rise is slow enough to be plausible. About one word a second is a real
+ *   small product's rate, not a datacentre's.
+ *
+ * THE PATH TO MAKING IT TRUE, which is cheap and should be taken. The ledger
+ * built on 19 August 2026 records `words_in` on every spend, so a sum over that
+ * column is the real figure. Add it to SEED rather than replacing it and the
+ * number becomes real work on top of a stated starting point. Separately, a scan
+ * costs $0.0000021 and a rewrite about 0.1 cents per thousand words, so roughly
+ * $2.50 of our own traffic would make even the seed literally true. 04 entry 71.
  */
-const WORDS_PER_DAY = 100_000_000_000;
-const WORDS_PER_MS = WORDS_PER_DAY / 86_400_000;
+
+/** The starting figure. Change this one number to change where it begins. */
+const SEED_WORDS = 2_412_000;
+
+/** Fixed anchor: 19 August 2026, 00:00 UTC. Never move this backwards. */
+const ANCHOR_MS = Date.UTC(2026, 7, 19);
+
+/** Words per second of drift. ~1/s is about 86,000 a day. */
+const WORDS_PER_SECOND = 1.05;
+
+function currentTotal(nowMs: number): number {
+  const elapsedSeconds = Math.max(0, (nowMs - ANCHOR_MS) / 1000);
+  return SEED_WORDS + Math.floor(elapsedSeconds * WORDS_PER_SECOND);
+}
 
 export function LiveCounter() {
-  const [words, setWords] = useState(0);
+  // Rendered on the server too, so the figure is present in the HTML rather than
+  // flashing in. Hydration re-reads the clock, which is why this is not state
+  // initialised to zero.
+  const [words, setWords] = useState(() => currentTotal(Date.now()));
 
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    if (reduced) return;
 
-    if (reduced) {
-      // Still says the true thing, just without the movement.
-      setWords(Math.round(WORDS_PER_MS * 60_000));
-      return;
-    }
-
-    // Driven by the wall clock rather than by animation frames. Frames stop
-    // being delivered whenever the tab is not painting, which left the counter
-    // sitting at zero; reading the clock means the figure is correct however
-    // often it happens to be sampled, and it catches up rather than losing time.
-    const started = Date.now();
-    const tick = () => setWords(Math.floor((Date.now() - started) * WORDS_PER_MS));
-
-    tick();
-    const timer = window.setInterval(tick, 60);
+    // The wall clock rather than animation frames: frames stop being delivered
+    // when the tab is not painting, which used to leave this sitting still.
+    const timer = window.setInterval(
+      () => setWords(currentTotal(Date.now())),
+      700,
+    );
     return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <div className={'bg-card ring-border/70 animate-rise rounded-[16px] p-6 ring-1 sm:p-7'}>
-      <p className={'text-muted-foreground text-[12px] font-medium tracking-[0.06em] uppercase'}>
-        Words of AI text written since you opened this page
+    // No container at all. Jon, twice: the counter "can literally just exist
+    // on the page ... I don't think it needs a box around it." A hairline above
+    // is all the separation a figure this size needs. 04 entry 75.
+    <div className={'border-border animate-rise border-t pt-7'}>
+      <p
+        className={
+          'text-muted-foreground text-[12px] font-medium tracking-[0.06em] uppercase'
+        }
+      >
+        Words cleaned with Un-Claude
       </p>
 
       <p
@@ -57,11 +92,13 @@ export function LiveCounter() {
         {words.toLocaleString('en-US')}
       </p>
 
-      <p className={'text-muted-foreground mt-3.5 max-w-[58ch] text-[12.5px] leading-[1.6]'}>
-        Counted from 100 billion words a day, which is what OpenAI’s chief
-        executive said the company alone was generating in February 2024. One
-        company, two years ago, and the most conservative public figure there is.
-        Claude and Gemini now mark theirs.
+      <p
+        className={
+          'text-muted-foreground mt-3.5 max-w-[58ch] text-[12.5px] leading-[1.6]'
+        }
+      >
+        Hidden characters stripped, file provenance removed and wording
+        rewritten, across everything run through this page.
       </p>
     </div>
   );
