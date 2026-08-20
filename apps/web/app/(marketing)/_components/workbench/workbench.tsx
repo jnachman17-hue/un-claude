@@ -76,6 +76,17 @@ export function Workbench() {
   const [dragging, setDragging] = useState(false);
   const [left, setLeft] = useState(FREE_SANITISES);
 
+  /**
+   * Seconds spent on the current sanitise.
+   *
+   * A moving gradient says "something is running". It does not say "this is
+   * still running and has not hung", which is the question somebody asks at
+   * fifteen seconds. A number that keeps climbing answers it, and unlike a
+   * progress bar it does not have to invent a percentage nobody can compute:
+   * the work is model calls of unknown count, so any bar here would be a lie.
+   */
+  const [elapsed, setElapsed] = useState(0);
+
   const fileInput = useRef<HTMLInputElement>(null);
   const textArea = useRef<HTMLTextAreaElement>(null);
   const inFlight = useRef<AbortController | null>(null);
@@ -155,6 +166,19 @@ export function Workbench() {
       track.scanFailed({ inputKind: kind, name: next.name });
     }
   }, []);
+
+  useEffect(() => {
+    if (phase !== 'cleaning') {
+      setElapsed(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = window.setInterval(
+      () => setElapsed(Math.floor((Date.now() - startedAt) / 1000)),
+      500,
+    );
+    return () => window.clearInterval(timer);
+  }, [phase]);
 
   useEffect(() => {
     setLeft(remaining());
@@ -699,7 +723,18 @@ export function Workbench() {
             </button>
           ) : null}
 
-          {phase === 'scanning' ? (
+          {/*
+            THE SWEEP RUNS FOR BOTH OPERATIONS NOW, AND IT USED TO RUN FOR THE
+            WRONG ONE.
+
+            It was `phase === 'scanning'` only. Scanning is the FAST half —
+            measured 1.13s against production. Sanitising is the half that can
+            take 38 seconds on a number-dense document, 06 row 66, and it had no
+            motion at all. So the box animated while it was quick and sat
+            perfectly still while it was slow, which is exactly backwards and is
+            why Jon reported it as feeling like nothing was happening.
+          */}
+          {busy ? (
             <div
               className={
                 'pointer-events-none absolute inset-0 overflow-hidden rounded-[13px]'
@@ -786,8 +821,22 @@ export function Workbench() {
               </a>
             ) : done ? (
               'Clean. Select the text above and copy it.'
-            ) : phase === 'cleaning' && carriesProse ? (
-              'Breaking up the wording. This takes a few seconds.'
+            ) : phase === 'cleaning' ? (
+              // The existing sentence, with the clock appended once it is worth
+              // asking whether anything is still happening. Below three seconds
+              // a counter is noise; above it, it is the whole answer.
+              <>
+                {carriesProse
+                  ? 'Breaking up the wording. This takes a few seconds.'
+                  : 'Working through the file.'}
+                {elapsed >= 3 ? (
+                  <span
+                    className={'text-foreground ml-1.5 font-mono tabular-nums'}
+                  >
+                    {elapsed}s
+                  </span>
+                ) : null}
+              </>
             ) : left > 0 ? (
               `${left} free ${left === 1 ? 'credit' : 'credits'} left. Scanning is always free.`
             ) : (
