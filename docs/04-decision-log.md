@@ -2334,3 +2334,68 @@ other places."* **The line this session will hold: where a disclosure sits is a
 choice, whether it exists is not.** Layer B stays labelled best effort at the
 result, at the point of purchase and in the terms, per `04` entry 23 — and does
 not headline the home page.
+
+---
+
+## 19 August 2026, session 8
+
+### 79. The messaging layer is written down and loads itself, and marketing skills rank third
+
+**Jon's diagnosis, and it was the right one.** Round after round of copy and UI
+came back incoherent or counter to what the product sells, and he asked whether a
+skill or agent could fix it rather than more human rounds.
+
+**What was actually wrong.** Fourteen skills were installed and **every one of
+them was about how the page looks and moves**: motion, typography, spacing,
+animation, library choice. **Not one told a session what Un-Claude is, who reads
+it, or what it may claim.** So a session improvised the meaning and applied real
+craft to it. That is exactly the failure: something well built that says the wrong
+thing.
+
+**The second half of the cause, and it is structural.** The meaning *was* written
+down. `TRACK-2-LANDING.md` opened by asking a session to read eight documents
+including ten specific entries out of a 2,336 line decision log before writing a
+word. **That is a reading assignment, and a reading assignment is what a session
+skips under pressure.**
+
+**What was built.**
+
+| File | Role |
+|---|---|
+| `.claude/skills/unclaude-messaging/SKILL.md` | The claims boundary, voice, visitor and conversion ladder. **Fires automatically** on any copy or landing work |
+| `.agents/product-marketing.md` | The full positioning, in the shape the installed marketing skills read by default |
+| `CLAUDE.md` section 7 | The pointer, so it loads every session |
+
+**Three skills installed** from `coreyhaines31/marketingskills`:
+`product-marketing`, `copywriting`, `cro`. **Three of roughly sixty**, chosen
+deliberately. The rest are cold email, ads and SEO and would only add noise.
+
+**They rank third under `CLAUDE.md` section 2, and that is recorded because it
+will be tested.** A conversion skill optimising this page for a frightened student
+**will** reach for the sentence that a school can detect Claude's text watermark.
+**No detector for it exists anywhere.** That sentence is the highest converting
+one available and it is false, so the wrapper skill bans it by name.
+
+**Four positioning answers Jon gave that were nowhere in `docs/`.**
+
+1. **The visitor is a student.** Coursework, phone, close to a deadline.
+2. **They arrive already believing the threat.** They have learned AI work is
+   watermarked and that schools and employers can check. **So the first screen
+   demonstrates rather than educates.** A hero that explains watermarking to this
+   person has wasted its one chance.
+3. **The moral stance is restrained.** State the fact, let them conclude. The site
+   does not call the labs unethical, illegal or immoral in its own voice.
+4. **The destination is a credit purchase.**
+
+**One conflict surfaced rather than resolved quietly.** Jon named buying credits
+as the goal. **There is no checkout**: no Stripe account, no products, no pricing
+page, blocked on him. `CURRENT-HANDOFF.md`. So the positioning file records the
+purchase as the destination and names the highest rung that currently exists, a
+completed scan by a signed out stranger, as the metric to optimise. **Copy must
+not promise a checkout that will 404.**
+
+**Entry 78 corrected two things in the first draft of these files**, which is the
+argument for writing them down at all: "provenance" had been listed as
+visitor-facing vocabulary, and the layer B honesty rule had been written in a way
+a session could read as an instruction to lead with the limitation. **Both fixed.
+Where a disclosure sits is a choice, whether it exists is not.**

@@ -169,3 +169,33 @@ that ends unexpectedly loses everything that was not yet written down.
 
 `docs/CURRENT-HANDOFF.md` holds resumption context only. It must never be the
 only place a confirmed decision is recorded.
+
+---
+
+## 7. Before you write a word a visitor reads
+
+**Added 19 August 2026, session 8.** Every incoherent piece of copy this project
+has produced came from the same place: a session that knew how to build the page
+but not what the page was allowed to say.
+
+**Two files fix that, and one of them loads itself.**
+
+| File | What it is | When it applies |
+|---|---|---|
+| **`.claude/skills/unclaude-messaging/SKILL.md`** | The claims boundary, the voice, the visitor, the conversion ladder. **Fires automatically** on any landing page or copy work | Every time |
+| **`.agents/product-marketing.md`** | The full positioning. Read automatically by the three marketing skills below | Every time |
+
+**Three marketing skills are installed** and read `.agents/product-marketing.md`
+before they do anything: `product-marketing`, `copywriting`, `cro`.
+
+**They rank third in section 2's order of authority, not first.** They are outside
+convention. They may inform anything the documents leave open. **They may never
+override `ENGINE.md`, a decision log entry, or Jon.** A conversion skill optimising
+a page for a frightened student will reach for the claim that a school can detect
+Claude's text watermark. **No detector for it exists anywhere. That sentence is
+false and it is banned.** When a skill recommends something the documents forbid,
+name the document and say plainly that it governs.
+
+**The one question that catches most of it: which layer, and is that provable?**
+A sentence true of one layer written as though true of all three is the single
+most common defect in this project's copy.

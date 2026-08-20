@@ -82,3 +82,33 @@ the definition pass, the marquee band, the deboxed counter, plain-English
 statistics, the named scope section, the paywall firing at all, the reset out of
 a loaded file, the download beside the file, badges that go quiet after removal,
 a state-following panel heading, and the tool above the fold on a phone.
+
+---
+
+## Added 19 August 2026, session 8. The messaging layer
+
+**Appended, not rewritten, because session 7 was live in this folder at the time.**
+
+**Copy and UI messaging now has a written source of truth that loads itself.**
+`04` entry 79 has the reasoning.
+
+| File | Role |
+|---|---|
+| `.claude/skills/unclaude-messaging/SKILL.md` | **Fires automatically** on any copy, landing page or section-order work |
+| `.agents/product-marketing.md` | The full positioning. Read automatically by the three marketing skills |
+| `CLAUDE.md` section 7 | The pointer that loads every session |
+
+**Three skills installed** from `coreyhaines31/marketingskills`: `product-marketing`,
+`copywriting`, `cro`. **They rank third under `CLAUDE.md` section 2.** They may
+never override `ENGINE.md`, a decision log entry, or Jon.
+
+**Four positioning facts that were previously nowhere:** the visitor is a student
+on a phone near a deadline; they arrive already believing the threat, so the first
+screen demonstrates rather than educates; the moral stance is restrained; the
+destination is a credit purchase.
+
+**Open, and flagged rather than filled in.** Two sections of
+`.agents/product-marketing.md` are marked under-researched and must not be used
+for copy without checking first: **section 5, the competitive landscape**, and
+**section 9, the words students actually use.** A named third party detection
+product must not appear in copy on a guess.
