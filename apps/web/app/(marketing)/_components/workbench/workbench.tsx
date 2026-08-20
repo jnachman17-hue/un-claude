@@ -498,7 +498,7 @@ export function Workbench() {
     },
     {
       id: 'provenance',
-      label: 'File provenance',
+      label: 'Metadata',
       state:
         busy || !scan
           ? 'pending'
@@ -524,10 +524,10 @@ export function Workbench() {
                   : 'found'
                 : 'none found',
       detail: !isFile
-        ? 'Provenance lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
+        ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
         : done
           ? stillMarked
-            ? 'Some provenance data could not be removed from this file. It is still marked.'
+            ? 'Some metadata could not be removed from this file. It is still marked.'
             : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
           : provenanceFound
             ? producer

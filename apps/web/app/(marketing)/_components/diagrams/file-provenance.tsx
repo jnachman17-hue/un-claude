@@ -14,7 +14,7 @@ export function FileProvenanceDiagram({ className }: { className?: string }) {
       className={className}
       role={'img'}
       aria-label={
-        'A file shown as a picture plus a separate block of provenance data, with the data block removed and the picture unchanged'
+        'A file shown as a picture plus a separate block of metadata, with the data block removed and the picture unchanged'
       }
     >
       <defs>

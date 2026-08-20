@@ -34,7 +34,7 @@ function HowItWorks() {
         <p>
           <strong>Hidden characters</strong> are real characters sitting between
           the ones you can see, drawn as nothing at all.{' '}
-          <strong>File provenance</strong> is a record of what made a file,
+          <strong>Metadata</strong> is the hidden data inside a file, including a record of what made it,
           tucked into the file’s wrapper rather than its content.{' '}
           <strong>A statistical watermark</strong> is not added to your text at
           all: it is a bias in which words the model chose in the first place.
@@ -89,7 +89,7 @@ function HowItWorks() {
       </Section>
 
       <Section
-        title={'File provenance'}
+        title={'Metadata'}
         aside={
           <Figure caption={'The mark is not in the picture. It sits in the wrapper around it, which is why removing it changes no pixel.'}>
             <FileProvenanceDiagram className={'h-auto w-full max-w-[460px]'} />

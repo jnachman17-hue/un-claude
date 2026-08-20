@@ -39,7 +39,7 @@ const LAYERS = [
   {
     id: 'provenance',
     icon: PaperclipIcon,
-    title: 'File provenance',
+    title: 'Metadata',
     lede: 'A signed record attached to the file, not inside the picture.',
     body: 'Every file has a wrapper that describes it rather than being it. When an AI tool makes an image it writes a signed record in there saying so. Nearly every major provider now does this, they agreed on one format, and that format is removable by design.',
     pull: 'Removing it changes no pixel. The file is re-read afterwards to confirm nothing was left.',

@@ -19,7 +19,7 @@ const ROWS = [
     body: 'Countable. We name every character found, give its exact position, remove it, and read the text back afterwards to confirm none are left.',
   },
   {
-    claim: 'File provenance',
+    claim: 'Metadata',
     provable: true,
     body: 'Verified against the raw bytes. The record is present before and absent after, and the picture or document itself comes out byte for byte identical.',
   },

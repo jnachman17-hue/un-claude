@@ -67,7 +67,7 @@ export function Paywall({ onDismiss }: { onDismiss: () => void }) {
 
           <p className={'text-muted-foreground text-[13px] leading-snug'}>
             Scanning stays free and unlimited. Credits cover sanitising: the
-            hidden characters, the file provenance and the rewrite.
+            hidden characters, the metadata and the rewrite.
           </p>
 
           <div

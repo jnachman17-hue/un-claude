@@ -32,7 +32,7 @@ const CLAIMS: Array<{
       'Nine classes, named individually, with the exact position of each. The text is read back afterwards to confirm none remain. This is countable and we show you the count.',
   },
   {
-    claim: 'We remove provenance and AI metadata from files',
+    claim: 'We remove the hidden metadata from files',
     verdict: 'yes',
     detail:
       'C2PA content credentials, EXIF, XMP and generator tags. Verified against the raw bytes of the file, not by asking the tool whether it worked. The image or document content comes out byte for byte identical.',
@@ -53,7 +53,7 @@ const CLAIMS: Array<{
     claim: 'Hidden character removal deals with Claude’s text watermark',
     verdict: 'no',
     detail:
-      'It does not, and we will not imply otherwise. Anthropic states directly that no hidden characters are added to Claude’s text. Claude’s text watermark lives in word choice, which is what the rewrite addresses. On a Claude generated file, the provenance layer does remove Claude’s mark.',
+      'It does not, and we will not imply otherwise. Anthropic states directly that no hidden characters are added to Claude’s text. Claude’s text watermark lives in word choice, which is what the rewrite addresses. On a Claude generated file, the metadata layer does remove Claude’s mark.',
   },
   {
     claim: 'We support PDFs',
@@ -65,7 +65,7 @@ const CLAIMS: Array<{
     claim: 'Word documents carry AI marks we can remove',
     verdict: 'partial',
     detail:
-      'We can remove generator tags and hidden characters from a Word document, and that is tested. What has not yet been shown is that a document a real person receives from an AI tool carries provenance data at all. Anthropic’s own file signing covers images, not Word documents.',
+      'We can remove generator tags and hidden characters from a Word document, and that is tested. What has not yet been shown is that a document a real person receives from an AI tool carries this metadata at all. Anthropic’s own file signing covers images, not Word documents.',
   },
   {
     claim: 'Your text is stored',
