@@ -402,6 +402,9 @@ export function Workbench() {
    * what each layer is; they just stop claiming to be doing it.
    */
   const waitingStatus = busy ? 'checking' : 'not scanned';
+
+  /** Nothing read yet, and nothing running. See RESTING_MAP. */
+  const idle = !scan && !busy;
   const report = (scan?.report ?? {}) as Record<string, unknown>;
   const hits = scan?.report?.hits ?? [];
   const foundCount = hits.reduce((total, hit) => total + hit.count, 0);
@@ -459,142 +462,197 @@ export function Workbench() {
 
   const panelHeading = done
     ? 'What we removed'
-    : busy || !scan
-      ? 'Every mark we check for'
-      : anythingFound
-        ? 'What we found'
-        : 'Nothing found in this';
+    : idle
+      ? 'The three marks we look for'
+      : busy || !scan
+        ? 'Every mark we check for'
+        : anythingFound
+          ? 'What we found'
+          : 'Nothing found in this';
 
   const panelCaption = done
     ? 'Read the result before you use it'
-    : busy || !scan
-      ? 'All three, every time'
-      : anythingFound
-        ? 'Sanitise to remove it'
-        : 'All three checked';
+    : idle
+      ? 'And which one applies to you'
+      : busy || !scan
+        ? 'All three, every time'
+        : anythingFound
+          ? 'Sanitise to remove it'
+          : 'All three checked';
 
-  const rows: ChecklistRow[] = [
-    {
-      id: 'characters',
-      label: 'Hidden characters',
-      state:
-        busy || !scan
-          ? 'pending'
-          : done
-            ? 'removed'
-            : foundCount > 0
-              ? 'found'
-              : 'absent',
-      status:
-        busy || !scan
-          ? waitingStatus
-          : done
-            ? foundCount > 0
-              ? `${actuallyRemoved} of ${foundCount} removed`
-              : 'none found'
-            : foundCount > 0
-              ? `${foundCount} found`
-              : 'none found',
-      detail: done
-        ? foundCount === 0
-          ? 'There were none in this to begin with.'
-          : stillPresent > 0
-            ? `${stillPresent} could not be removed. Read the result before you use it.`
-            : stats &&
-                (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
-              ? // Removed and replaced are separate numbers and both are shown.
-                // Some characters are deleted and some are swapped for an ordinary
-                // space, and a swap does not change the length, so one figure
-                // looks broken against the size change. API.md section 4.
-                `${stats.removed_count ?? 0} deleted and ${stats.replaced_count ?? 0} swapped for ordinary spaces. The text was read back to confirm none are left.`
-              : 'Removed with the rewrite, and the result was read back to confirm none are left.'
-        : foundCount > 0
-          ? 'Characters sitting between the words that never appear on the page.'
-          : `None in this text. ${CHECK_CLASSES.length} classes checked, including ${CHECK_CLASSES.slice(0, 3).join(', ').toLowerCase()}.`,
-      items:
-        !busy && !done && hits.length > 0
-          ? hits.map((hit) => ({
-              key: hit.codepoint,
-              head: `${prettyName(hit.label, hit.codepoint)}${hit.count > 1 ? ` x${hit.count}` : ''}`,
-              body: explain(hit.codepoint, hit.kind),
-            }))
-          : undefined,
+  /**
+   * WHAT THE PANEL SAYS BEFORE ANYTHING HAS BEEN READ.
+   *
+   * The most valuable state in the box, and it was wasted: three rows saying
+   * "not scanned", in the exact place a newcomer is trying to work out what this
+   * tool does. At rest they become the map instead — what each mark is, and
+   * WHICH INPUT CARRIES IT. Jon's routing problem, 06 row 63.
+   *
+   * The status chip carries the routing on its own. Where it later reads
+   * "3 found" it now reads "text or file", "files only", "text only", so
+   * "does this one apply to what I have?" is answered before anything is
+   * uploaded — WITHOUT adding a chooser. 04 entry 39 stands: the tool still
+   * routes itself; this only says in advance what it will do.
+   *
+   * "text only" on the statistical row is not a simplification for the reader's
+   * benefit. Layer B runs on plain text and never on a container, 06 row 74, so
+   * a Word document genuinely is not rewritten — and this is the first place the
+   * interface has admitted it.
+   */
+  const RESTING_MAP: Record<
+    ChecklistRow['id'],
+    { status: string; detail: string }
+  > = {
+    characters: {
+      status: 'text or file',
+      detail:
+        'Characters with no width, sitting between the words where nothing shows on the page. Tools like ChatGPT emit them and they survive copy and paste. We find every one and show you exactly where it was.',
     },
-    {
-      id: 'provenance',
-      label: 'Metadata',
-      state:
-        busy || !scan
-          ? 'pending'
-          : !isFile
-            ? 'skipped'
+    provenance: {
+      status: 'files only',
+      detail:
+        'Data hidden inside a file rather than in the words you can read: what made it, when, and often a signed record naming the tool. Claude signs the files it generates. Pasted text has no file around it, so this one sits out.',
+    },
+    statistical: {
+      status: 'text only',
+      detail:
+        'Not a character you could search for. This one is in the words themselves, so there is nothing to highlight. We rewrite to break the word sequences it rides on, and check every number, date and name against your original.',
+    },
+  };
+
+  const rows: ChecklistRow[] = (
+    [
+      {
+        id: 'characters',
+        label: 'Hidden characters',
+        state:
+          busy || !scan
+            ? 'pending'
             : done
               ? 'removed'
-              : provenanceFound
+              : foundCount > 0
                 ? 'found'
                 : 'absent',
-      status:
-        busy || !scan
-          ? waitingStatus
-          : !isFile
-            ? 'no file'
+        status:
+          busy || !scan
+            ? waitingStatus
             : done
-              ? stillMarked
-                ? 'partly removed'
-                : `${actions.length} removed`
-              : provenanceFound
-                ? producer
-                  ? producer
-                  : 'found'
+              ? foundCount > 0
+                ? `${actuallyRemoved} of ${foundCount} removed`
+                : 'none found'
+              : foundCount > 0
+                ? `${foundCount} found`
                 : 'none found',
-      detail: !isFile
-        ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
-        : done
-          ? stillMarked
-            ? 'Some metadata could not be removed from this file. It is still marked.'
-            : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
-          : provenanceFound
-            ? producer
-              ? `Made by ${producer}. The file carries a signed record saying so, and anyone with a free C2PA tool can read it — which is exactly why removing it is provable.`
-              : 'This file carries a record of the tool that made it.'
-            : 'No content credentials, generator tags or AI metadata in this file.',
-      items:
-        !busy && isFile
-          ? done
-            ? actions.map((action, index) => ({
-                key: `action-${index}`,
-                head: 'Removed',
-                body: action,
+        detail: done
+          ? foundCount === 0
+            ? 'There were none in this to begin with.'
+            : stillPresent > 0
+              ? `${stillPresent} could not be removed. Read the result before you use it.`
+              : stats &&
+                  (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
+                ? // Removed and replaced are separate numbers and both are shown.
+                  // Some characters are deleted and some are swapped for an ordinary
+                  // space, and a swap does not change the length, so one figure
+                  // looks broken against the size change. API.md section 4.
+                  `${stats.removed_count ?? 0} deleted and ${stats.replaced_count ?? 0} swapped for ordinary spaces. The text was read back to confirm none are left.`
+                : 'Removed with the rewrite, and the result was read back to confirm none are left.'
+          : foundCount > 0
+            ? 'Characters sitting between the words that never appear on the page.'
+            : `None in this text. ${CHECK_CLASSES.length} classes checked, including ${CHECK_CLASSES.slice(0, 3).join(', ').toLowerCase()}.`,
+        items:
+          !busy && !done && hits.length > 0
+            ? hits.map((hit) => ({
+                key: hit.codepoint,
+                head: `${prettyName(hit.label, hit.codepoint)}${hit.count > 1 ? ` x${hit.count}` : ''}`,
+                body: explain(hit.codepoint, hit.kind),
               }))
-            : provenanceItems(report)
-          : undefined,
-    },
-    {
-      id: 'statistical',
-      label: 'Statistical watermark',
-      state:
-        busy || !scan
-          ? 'pending'
-          : !carriesProse
-            ? 'skipped'
-            : done && receipt
-              ? 'removed'
-              : 'found',
-      status:
-        busy || !scan
-          ? waitingStatus
-          : !carriesProse
-            ? 'no text'
-            : done && receipt
-              ? 'rewritten'
-              : 'present',
-      detail: !carriesProse
-        ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
-        : done && receipt
-          ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that to survive.`
-          : 'Anthropic applies this to Claude models launched from 2 August 2026, globally, with no way to opt out. It hides in which words the model picked rather than in anything added between them, so no tool can point at it. That is why it is removed rather than found.',
-    },
-  ];
+            : undefined,
+      },
+      {
+        id: 'provenance',
+        label: 'Metadata',
+        state:
+          busy || !scan
+            ? 'pending'
+            : !isFile
+              ? 'skipped'
+              : done
+                ? 'removed'
+                : provenanceFound
+                  ? 'found'
+                  : 'absent',
+        status:
+          busy || !scan
+            ? waitingStatus
+            : !isFile
+              ? 'no file'
+              : done
+                ? stillMarked
+                  ? 'partly removed'
+                  : `${actions.length} removed`
+                : provenanceFound
+                  ? producer
+                    ? producer
+                    : 'found'
+                  : 'none found',
+        detail: !isFile
+          ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
+          : done
+            ? stillMarked
+              ? 'Some metadata could not be removed from this file. It is still marked.'
+              : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
+            : provenanceFound
+              ? producer
+                ? `Made by ${producer}. The file says so in a signed record that free tools can read. We take it out and show you the file before and after.`
+                : 'This file carries a record of the tool that made it.'
+              : 'No content credentials, generator tags or AI metadata in this file.',
+        items:
+          !busy && isFile
+            ? done
+              ? actions.map((action, index) => ({
+                  key: `action-${index}`,
+                  head: 'Removed',
+                  body: action,
+                }))
+              : provenanceItems(report)
+            : undefined,
+      },
+      {
+        id: 'statistical',
+        label: 'Statistical watermark',
+        state:
+          busy || !scan
+            ? 'pending'
+            : !carriesProse
+              ? 'skipped'
+              : done && receipt
+                ? 'removed'
+                : 'found',
+        status:
+          busy || !scan
+            ? waitingStatus
+            : !carriesProse
+              ? 'no text'
+              : done && receipt
+                ? 'rewritten'
+                : 'present',
+        detail: !carriesProse
+          ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
+          : done && receipt
+            ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that to survive.`
+            : 'Anthropic applies this to Claude models launched from 2 August 2026, globally, with no way to opt out. It hides in which words the model picked rather than in anything added between them, so no tool can point at it. That is why it is removed rather than found.',
+      },
+    ] satisfies ChecklistRow[]
+  ).map((row) =>
+    idle
+      ? {
+          ...row,
+          ...RESTING_MAP[row.id],
+          state: 'pending' as const,
+          items: undefined,
+        }
+      : row,
+  );
 
   return (
     <div
