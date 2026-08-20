@@ -26,7 +26,7 @@ const ROWS = [
   {
     claim: 'Statistical watermark',
     provable: false,
-    body: 'Best effort, and we will not pretend otherwise. No public detector exists for any vendor’s text watermark, so removal cannot be confirmed by us or by anyone else. What we can show is exactly what the rewrite changed.',
+    body: 'Best effort, and we will not pretend otherwise. The detector Anthropic has committed to is not open yet, so removal cannot be confirmed by us or by anyone else. What we can show is exactly what the rewrite changed.',
   },
 ];
 

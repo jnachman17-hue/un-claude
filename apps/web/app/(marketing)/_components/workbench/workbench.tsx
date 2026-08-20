@@ -21,7 +21,7 @@ import {
   textToBase64,
 } from './encode';
 import { MarkedText } from './marked-text';
-import { SAMPLE_TEXT } from './sample';
+import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { detectProducer, provenanceItems } from './producer';
 import { FREE_SANITISES, recordUse, remaining } from './free-uses';
 import { Paywall } from './paywall';
@@ -466,9 +466,11 @@ export function Workbench() {
       ? 'The three marks we look for'
       : busy || !scan
         ? 'Every mark we check for'
-        : anythingFound
-          ? 'What we found'
-          : 'Nothing found in this';
+        : isSample && anythingFound
+          ? 'What is in this example'
+          : anythingFound
+            ? 'What we found'
+            : 'Nothing found in this';
 
   const panelCaption = done
     ? 'Read the result before you use it'
@@ -476,9 +478,14 @@ export function Workbench() {
       ? 'And which one applies to you'
       : busy || !scan
         ? 'All three, every time'
-        : anythingFound
-          ? 'Sanitise to remove it'
-          : 'All three checked';
+        : isSample && anythingFound
+          ? // Jon, 19 August 2026: this said the same thing as the Sanitise
+            // button directly above it. On a real document it is a useful next
+            // step; on the example it was pure duplication.
+            ''
+          : anythingFound
+            ? 'Sanitise to remove it'
+            : 'All three checked';
 
   /**
    * WHAT THE PANEL SAYS BEFORE ANYTHING HAS BEEN READ.
@@ -504,17 +511,17 @@ export function Workbench() {
     { status: string; detail: string }
   > = {
     characters: {
-      status: 'text or file',
+      status: 'Text or files',
       detail:
         'Characters with no width, sitting between the words where nothing shows on the page. Tools like ChatGPT emit them and they survive copy and paste. We find every one and show you exactly where it was.',
     },
     provenance: {
-      status: 'files only',
+      status: 'Needs a file',
       detail:
         'Data hidden inside a file rather than in the words you can read: what made it, when, and often a signed record naming the tool. Claude signs the files it generates. Pasted text has no file around it, so this one sits out.',
     },
     statistical: {
-      status: 'text only',
+      status: 'Text only',
       detail:
         'Not a character you could search for. This one is in the words themselves, so there is nothing to highlight. We rewrite to break the word sequences it rides on, and check every number, date and name against your original.',
     },
@@ -627,7 +634,11 @@ export function Workbench() {
               ? 'skipped'
               : done && receipt
                 ? 'removed'
-                : 'found',
+                : // NOT 'found'. Nothing was examined: this row was driven
+                  // entirely by whether the input contains words, so PRESENT
+                  // asserted a finding about the visitor's own text that we
+                  // cannot make. 04 entry 81.
+                  'certain',
         status:
           busy || !scan
             ? waitingStatus
@@ -635,12 +646,12 @@ export function Workbench() {
               ? 'no text'
               : done && receipt
                 ? 'rewritten'
-                : 'present',
+                : 'If Claude wrote this, it is marked',
         detail: !carriesProse
           ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
-            ? `Rewritten. The longest run of your original wording still present is ${receipt.longestRun} words, and the signal this mark rides on needs longer runs than that to survive.`
-            : 'Anthropic applies this to Claude models launched from 2 August 2026, globally, with no way to opt out. It hides in which words the model picked rather than in anything added between them, so no tool can point at it. That is why it is removed rather than found.',
+            ? `Rewritten. The longest piece of your original wording still there is ${receipt.longestRun} words in a row, and the mark needs longer than that to survive.`
+            : 'It is not hidden in your words. It is your words: the exact order Claude chose them in. Another AI swaps a few and leaves the rest alone, and whatever it leaves alone still carries the mark. We rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
       },
     ] satisfies ChecklistRow[]
   ).map((row) =>
@@ -759,6 +770,27 @@ export function Workbench() {
               </div>
             </button>
           )}
+
+          {/*
+            THE LINE THAT MAKES THE MARKS MEAN SOMETHING.
+
+            Three orange bars in a paragraph read as cursor artefacts or a
+            rendering fault. Nothing on the arrival screen said they were the
+            find. Jon: "I see these three vertical lines... but I don't even
+            know what's going on."
+
+            It waits for the scan, because before that there is nothing marked
+            to point at.
+          */}
+          {isSample && !editing && !busy && scan && !done ? (
+            <p
+              className={
+                'text-foreground/75 border-border/80 border-t px-4 pt-2.5 text-[13px] font-medium'
+              }
+            >
+              {SAMPLE_HINT}
+            </p>
+          ) : null}
 
           {/* Nothing about a paragraph of prose says "this is a demonstration,
               delete it". The label and the line beneath it do. */}

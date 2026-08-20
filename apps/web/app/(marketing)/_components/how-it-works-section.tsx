@@ -23,8 +23,8 @@ const LAYERS = [
     icon: FingerprintIcon,
     title: 'The statistical watermark',
     lede: 'Nothing is added to your text at any point.',
-    body: 'At each word where several choices read equally well, a secret key steers which one the model picks. Do that a few hundred times and the run of choices becomes a signature. It survives copy and paste, reformatting and light editing, because it is made of your words rather than hidden between them.',
-    pull: 'The signal lives in runs of consecutive words. Break the runs and you break the signal.',
+    body: 'At each word where several choices read equally well, a secret key steers which one the model picks. Do that a few hundred times and the pattern of choices becomes a signature. It survives copy and paste, reformatting and light editing, because it is made of your words rather than hidden between them.',
+    pull: 'The mark lives in your words in a row. Break the sequence and you break the mark.',
     Diagram: StatisticalWatermarkDiagram,
   },
   {

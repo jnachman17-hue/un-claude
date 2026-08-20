@@ -2530,3 +2530,28 @@ problem is certain rather than describing our own limits. **The assistant's vers
 led with our blindness. Jon's leads with their certainty**, and it survives the day
 the detector opens. **Why nobody can point at the mark moves one layer down, behind
 the +**, where it explains why the answer is a rewrite rather than a search.
+
+### 82. The technical labels stay. Teaching moves to the status line
+
+**Ruling, Jon, 19 August 2026.** The assistant proposed replacing two of the three
+row labels with plainer language: **"The words themselves"** for Statistical
+watermark, **"Inside the file"** for Metadata.
+
+**Jon rejected both.** *"If we deviate from hidden characters, metadata, and
+statistical watermark, we're creating a technical deviation."*
+
+**He is right and the reasoning generalises beyond these three rows.** Hidden
+characters, metadata and statistical watermark are **the real names**. They are
+what a visitor meets in a news article, in Anthropic's own documentation, and in
+anything else they read on this subject. **A private vocabulary invented for this
+page connects to nothing outside it**, and a visitor who learns our words cannot
+match them to what they read anywhere else.
+
+**So the label carries the name and the status line carries the meaning.** "Hidden
+characters / 3 found". "Statistical watermark / If Claude wrote this, it is
+marked". **Teaching happens in the status and behind the `+`, not by renaming the
+thing.**
+
+**This also settles the open question left by entry 78 ruling 1.** "Metadata" stays,
+and not only because that entry chose it over "provenance" on accuracy grounds.
+**It stays because it is the real word.**

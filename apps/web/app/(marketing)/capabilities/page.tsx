@@ -41,7 +41,7 @@ const CLAIMS: Array<{
     claim: 'We rewrite text to break up the statistical watermark',
     verdict: 'partial',
     detail:
-      'The rewrite runs and we can show you precisely what it changed. Whether the watermark is gone cannot be confirmed by us or by anyone else, because no public detector exists for any vendor’s text watermark.',
+      'The rewrite runs and we can show you precisely what it changed. Nobody can confirm the watermark is gone yet, because the detector Anthropic has committed to is not open. The day it opens, this becomes checkable by anyone.',
   },
   {
     claim: 'We can prove a statistical watermark was removed',

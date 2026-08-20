@@ -37,7 +37,7 @@ export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
         />
         <Figure
           value={`${receipt.longestRun}`}
-          label={'longest run of original words left'}
+          label={'words in a row left from your original'}
           lit
         />
         <Figure
@@ -110,8 +110,8 @@ export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
 
       <p className={'text-muted-foreground mt-4 text-[12px] leading-relaxed'}>
         These numbers describe what changed. They are not a measure of whether the
-        watermark is gone, and nothing can be: no public detector exists for any
-        vendor’s text watermark, so no tool can honestly claim that number.
+        watermark is gone. Nothing can be yet: the detector Anthropic has committed
+        to is not open, so no tool can honestly claim that number.
       </p>
     </div>
   );

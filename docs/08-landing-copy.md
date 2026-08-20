@@ -63,7 +63,20 @@ Confirmed live by Jon, 19 August 2026, and it stays that way.
 
 ### Inside the box
 
-The example paragraph, with the three planted characters marked in place.
+**The example paragraph. Rewritten on Jon's instruction: "make it a funny paragraph
+about some bullshit."** The old one was a corporate memo about a committee approving
+a rollout, which is nobody's world and least of all a student's.
+
+> The committee has reviewed the incident and agreed that Gary from accounts will
+> not be organising the Christmas party again. Costs are held at 4.2 million,
+> unchanged from the February estimate. Gary maintains that the alpacas were a
+> gift, and that eleven of them was a reasonable number for a venue of that size.
+
+**The bureaucratic deadpan is kept, because the contrast is the joke. Only the
+subject changed.** It still carries a figure, a date and a written-out number, so
+the facts-survive guarantee has something to prove itself on. **The same three
+characters are planted in it:** a narrow no-break space, a zero width space and a
+no-break space.
 
 **One line, directly under the text, and it is the most important sentence on the
 screen:**
@@ -97,9 +110,11 @@ directly above already says it.
 
 | Label | Status |
 |---|---|
-| **Hidden characters** | **3 in this text** |
-| **Metadata** | **No file yet** |
-| **The words themselves** | **If Claude wrote this, it is marked** |
+| **Hidden characters** | **3 found** |
+| **Metadata** | **No file** |
+| **Statistical watermark** | **If Claude wrote this, it is marked** |
+
+**BUILT. Live on localhost.**
 
 **One row is lit, not three.** `04` entry 81 and Jon's own note that the arrival
 screen has too much going on. **Four things currently compete for attention in
@@ -108,12 +123,18 @@ the statistical row. **Orange means look here, and four of them means look
 nowhere.** Only Hidden characters is lit on arrival, because it is the only claim
 this example can actually prove.
 
-**Open question, flagged rather than decided.** The third label is proposed as
-**"The words themselves"** in place of "Statistical watermark", which teaches
-nothing. **The second label is left as "Metadata" deliberately**: entry 78 ruling 1
-settled that word over "provenance" on accuracy grounds. **"Inside the file" is
-plainer and would be an override of Jon's own ruling, so it is his call and not
-made here.**
+**Settled, Jon, 19 August 2026. The technical labels stay.** The assistant proposed
+plainer replacements: "The words themselves" for Statistical watermark, "Inside the
+file" for Metadata. **Jon rejected both, and the reasoning is his:** *"if we deviate
+from hidden characters, metadata, and statistical watermark, we're creating a
+technical deviation."*
+
+**He is right, and it is worth writing down.** These are the real names. They are
+what a visitor meets in a news article, in Anthropic's own documentation, and in
+anything else they read about this. **Inventing our own names would build a private
+vocabulary that connects to nothing outside this page.** The label stays technical
+and **the teaching moves to the status line and the +**, which is where it
+belongs.
 
 ### Behind the + on each row
 
@@ -133,7 +154,7 @@ made here.**
 
 *Unchanged. It already works.*
 
-**Row 3, The words themselves. Rewritten, and ratified by Jon this session.**
+**Row 3, Statistical watermark. Rewritten, and ratified by Jon this session.**
 
 > **It is not hidden in your words. It is your words.** The exact order Claude
 > chose them in.
@@ -149,9 +170,10 @@ the assistant's proposed "Nothing can show you this one":**
 
 > **If Claude wrote this, it is marked.**
 
-**Open, practical:** it is seven words where the other two statuses are three and
-four. **It may not fit the badge column** and may have to sit as a line beneath the
-row instead. A layout question, not a wording one.
+**Was a layout problem, now fixed.** Seven words measured 223px of a 375px phone
+screen: the label wrapped to two lines and the status printed straight through it.
+**Below `sm` the label and status now stack**, label over status. From `sm` up the
+row is unchanged.
 
 **Why this replaced PRESENT.** The old badge was triggered by the input containing
 words. Nothing was examined. **It asserted a finding about the visitor's specific
@@ -190,7 +212,7 @@ give us.*
 |---|---|
 | **Hidden characters** | **Text or files** |
 | **Metadata** | **Needs a file** |
-| **The words themselves** | **Text only** |
+| **Statistical watermark** | **Text only** |
 
 **All three quiet.** Nothing has been scanned, so nothing is lit.
 
@@ -201,11 +223,6 @@ as a limit.
 
 ## Not yet written
 
-- The example paragraph itself. **It is currently a corporate memo about a
-  committee, a rollout and a 4.2 million budget.** For this audience it should be
-  something a student would plausibly have written, carrying the same planted
-  characters and still holding numbers and dates so the facts guarantee can be
-  demonstrated.
 - Everything below the box: what just happened, the three marks explained, the
   unfair part, what we do about each, the receipts, the price.
 - The receipt panel figures. **Three, readable in five seconds**, headed by the

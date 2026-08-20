@@ -30,7 +30,13 @@ import {
  *   a fingerprint                   an identity left in the pattern of choices
  */
 
-export type RowState = 'found' | 'absent' | 'skipped' | 'pending' | 'removed';
+export type RowState =
+  | 'found'
+  | 'absent'
+  | 'skipped'
+  | 'pending'
+  | 'removed'
+  | 'certain';
 
 export interface ChecklistRow {
   id: 'characters' | 'provenance' | 'statistical';
@@ -94,6 +100,23 @@ const BADGE: Record<
     icon: MinusIcon,
     className: 'bg-foreground/12 text-transparent',
     label: 'not scanned',
+  },
+  /**
+   * TRUE, BUT NOT FOUND, AND THE DIFFERENCE IS THE WHOLE POINT.
+   *
+   * The statistical row used to say PRESENT off the back of a single check:
+   * does the input contain words. Nothing was examined. 04 entry 81.
+   *
+   * `certain` is the honest state for a mark we can neither see nor doubt: if
+   * Claude wrote it, it is marked, and no tool can point at where. It is
+   * DELIBERATELY NOT LIT. Lit means "we found this in your document", and we
+   * did not. It also keeps Jon's one-loud-thing rule: on arrival only the
+   * characters row is lit, because it is the only claim the example can prove.
+   */
+  certain: {
+    icon: AlertTriangleIcon,
+    className: 'bg-foreground/45 text-white',
+    label: 'marked if Claude wrote it',
   },
 };
 
@@ -164,26 +187,44 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 </span>
               </span>
 
-              <span
+              {/*
+                LABEL AND STATUS STACK ON A PHONE.
+
+                They were side by side at every width, with the status set to
+                shrink-0. That held while every status was two words. The
+                statistical row now reads "If Claude wrote this, it is marked",
+                04 entry 81, which measures 223px of a 375px screen: the label
+                wrapped to two lines and the status printed straight through it.
+
+                Below sm they stack, label over status. From sm they are the
+                original row, unchanged.
+              */}
+              <div
                 className={
-                  'text-foreground min-w-0 flex-1 text-[13px] font-medium'
+                  'flex min-w-0 flex-1 flex-col gap-y-0.5 sm:flex-row sm:items-center sm:gap-3'
                 }
               >
-                {row.label}
-              </span>
+                <span
+                  className={
+                    'text-foreground min-w-0 text-[13px] font-medium sm:flex-1'
+                  }
+                >
+                  {row.label}
+                </span>
 
-              <span
-                className={[
-                  'shrink-0 font-mono text-[10.5px] tracking-wide uppercase tabular-nums',
-                  lit
-                    ? 'text-foreground font-semibold'
-                    : faded
-                      ? 'text-muted-foreground/55'
-                      : 'text-muted-foreground',
-                ].join(' ')}
-              >
-                {row.status}
-              </span>
+                <span
+                  className={[
+                    'font-mono text-[10.5px] tracking-wide uppercase tabular-nums sm:shrink-0',
+                    lit
+                      ? 'text-foreground font-semibold'
+                      : faded
+                        ? 'text-muted-foreground/55'
+                        : 'text-muted-foreground',
+                  ].join(' ')}
+                >
+                  {row.status}
+                </span>
+              </div>
 
               <button
                 type={'button'}

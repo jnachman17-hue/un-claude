@@ -149,30 +149,31 @@ function HowItWorks() {
         </p>
         <p>
           <strong>
-            Two consequences decide how it can be removed. The signal survives
-            only where runs of consecutive words survive, not where meaning or
-            vocabulary is similar. And the signal can only sit at words where
-            there was genuine choice.
+            Two consequences decide how it can be removed. The mark survives
+            only where your words survive in a row, not where meaning or
+            vocabulary is similar. And it can only sit at words where there was
+            genuine choice.
           </strong>
         </p>
         <p>
-          So the attack is not swapping in synonyms. It is breaking the runs. Our
-          rewrite is instructed never to reuse more than three of your words in a
-          row, to preserve facts and figures character for character above every
-          other rule, and to keep the length rather than condensing, because
+          So the attack is not swapping in synonyms. It is breaking the
+          sequence. Our rewrite is instructed never to reuse more than three of
+          your words in a row, to preserve facts and figures character for
+          character, and to keep the length rather than condensing, because
           compression is the mechanism by which facts actually disappear.
         </p>
       </Section>
 
       <Section title={'Why we will not tell you it worked'}>
         <p>
-          There is no public detector for any vendor’s text watermark. Anthropic
-          confirmed in August 2026 that one is in development, with no ship date
-          and no published terms.
+          Anthropic has committed publicly to a detection tool that anyone can
+          use. As of August 2026 it is not open yet, and no pricing or access
+          terms are published. Until it opens, no vendor’s text watermark can
+          be checked by anybody outside the company that made it.
         </p>
         <p>
           <strong>
-            Until that exists, every claim about text watermark removal made by
+            Until it opens, every claim about text watermark removal made by
             any tool, ours included, is unfalsifiable.
           </strong>{' '}
           Anyone telling you their rewrite is verified is telling you something
@@ -180,9 +181,9 @@ function HowItWorks() {
         </p>
         <p>
           What we do instead is show you the work. After a rewrite you get the
-          proportion of your original wording that was replaced, the longest run
-          of your words still present, how much of your original length was
-          kept, and every figure in your text accounted for. Those are
+          proportion of your original wording that was replaced, the longest
+          stretch of your words still there in a row, how much of your original
+          length was kept, and every figure in your text accounted for. Those are
           measurements of what changed. They are not, and we will not dress them
           up as, a measure of whether the watermark is gone.
         </p>
