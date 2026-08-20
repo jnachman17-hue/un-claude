@@ -2484,3 +2484,49 @@ paragraph now understates what is public**, saying a detector is in development
 with no ship date. The 15 and 16 August material is more specific than that.
 **`ENGINE.md` is the technical source of truth and was not edited from news
 reporting without Jon.** It needs a refresh pass.
+
+### 81. "Three words in a row", and the statistical row stops claiming a finding
+
+**Two copy rulings, Jon, 19 August 2026, session 8. Both affect words already live
+on the site.**
+
+**1. "Runs" is retired from anything a visitor reads. The phrase is "three words in
+a row".**
+
+**It was never actually decided.** The site says "runs" in at least six places
+(`how-it-works/page.tsx`, `how-it-works-section.tsx`, the statistical diagram,
+`workbench.tsx`, `receipt-panel.tsx`), one parked metric says "three word
+sequences", and Jon has said "sequences" every time he has spoken about it. **The
+assistant recommended neither.** Both are jargon. **"Three words in a row" needs no
+teaching**, and the metric reads: the longest piece of your original wording still
+there is three words in a row. **Jon: "I like that better."**
+
+**"Runs" is engine vocabulary that leaked into the site.** It stays in `ENGINE.md`
+and in code. It comes off the pages.
+
+**2. The statistical watermark row stops saying PRESENT. It says "If Claude wrote
+this, it is marked."**
+
+**Corrected within the session.** The assistant proposed "Nothing can show you this
+one" and Jon took it, then replaced it: **"I'm saying as a replacement to Nothing
+can show you this."** The final wording is his.
+
+**Why it mattered.** That badge was driven by a single check, `carriesProse`, which
+asks only whether the input contains words. **Nothing is examined.** Any pasted
+text produced PRESENT, including the hand-written sample paragraph in the hero,
+which almost certainly carries no Claude watermark at all.
+
+**Jon confirmed it was intentional and explained the reasoning**, which is recorded
+because it is a fair one: **it gives the visitor a receipt at one end.** We cannot
+verify removal at the other end because no detector exists yet, so asserting the
+mark at the input end was a deliberate counterweight.
+
+**The assistant's objection, raised once and not pressed after Jon reaffirmed:**
+when Anthropic opens the detector, anyone can paste that paragraph in, get nothing,
+and we are the site that said PRESENT. **Jon's replacement removes the exposure and sells harder than
+either alternative.** "If Claude wrote this, it is marked" is true at the population
+level, 100% of Claude output since 2 August 2026, so it asserts the visitor's
+problem is certain rather than describing our own limits. **The assistant's version
+led with our blindness. Jon's leads with their certainty**, and it survives the day
+the detector opens. **Why nobody can point at the mark moves one layer down, behind
+the +**, where it explains why the answer is a rewrite rather than a search.

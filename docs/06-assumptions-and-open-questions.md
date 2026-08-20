@@ -310,3 +310,33 @@ done.**
   produce this.~~ **FIXED.**
 - **Vendor names in each vendor's own brand colour and typeface.** Colour done.
   Typeface would need font files and is not worth it.
+
+---
+
+## Parked, 19 August 2026, session 8
+
+- **Test our own rewrite against Anthropic's detection API the day it opens.
+  PARKED BY JON, deliberately, not forgotten.** The assistant recommended
+  building it now, Jon's ruling was later. **The trigger for revisiting is the
+  day Anthropic opens access**, confirmed 12 August 2026 as coming, not callable
+  as of 19 August. **Why it will matter then:** the same event that makes the
+  site's urgency real is the event that makes every claim on it checkable. Being
+  first to run it is either the best marketing asset the product can own, or the
+  earliest possible warning. **Working position until then:** claims describe the
+  engineering and report measured results, and never assert a verified defeat.
+
+- **The layer B gate is confirmed and is where the money is.** Layer A and
+  metadata run instantly with no account. **Layer B needs an account, because it
+  is the layer that costs real money per run and is the thing being sold.** Sign
+  up grants 2 to 3 credits, roughly 2,000 to 3,000 words. Consistent with `04`
+  entry 67. **Open refinement, not yet ruled on:** whether a short free sample
+  rewrite, on the visitor's own text with the receipt shown, should sit in front
+  of that gate. See the session 8 discussion. The argument for it is that layer B
+  is the one layer that cannot be demonstrated, so a sample is the closest thing
+  to proof available before payment.
+
+- **Mobile is the first impression, desktop is likely the actual use.** Jon, 19
+  August 2026: students will see the site on a phone and probably switch to a
+  desktop to do the work. **So the phone has to sell and be shareable. It does not
+  have to be where the heavy work happens**, though the tool must still function
+  there.
