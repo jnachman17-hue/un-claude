@@ -184,3 +184,43 @@ and it was confirmed again here in passing.
   database. Confirmed again here.
 - **Wiring the starter's terms checkbox to its form.** Dead code while the flag
   is off. See section 1.
+
+---
+
+## CORRECTION, appended 21 August 2026 by a later session
+
+**Section 3 says the account-deletion defect is "still open" and was
+"confirmed again here in passing." That is no longer true, and was probably
+already untrue when it was written.**
+
+`apps/web/scripts/verify-account-deletion.mjs` was run twice against the live
+database after the deploy, and both runs print the same verdict:
+
+    --- AFTER — what is left behind ---
+    auth.users      : GONE
+    public.accounts : 0 row(s)
+    credit_ledger   : 0 row(s)
+
+    sign-in destroyed      : YES
+    account record removed : YES
+    credit history removed : YES
+
+    FIXED
+
+**Deleting the auth user now cascades to the accounts row and to the whole
+credit ledger.** The fix is `20260821130000_account_deletion_cascade.sql`,
+which has been applied to the hosted project.
+
+**The likely explanation for the discrepancy:** this session deleted its
+throwaway accounts row explicitly, as earlier sessions had learned to do, and
+read the success of that manual delete as evidence the cascade had not fired.
+Deleting a row that a cascade would also have deleted looks identical from the
+outside.
+
+**Also worth recording, because it was a real open question:** the append-only
+trigger on `credit_ledger` does NOT block the cascade. That interaction was
+marked "REASONED, NOT EXECUTED" in the migration's own comment. It has now been
+executed, twice, and it holds.
+
+**Nothing else in this note is affected.** Both fixes it describes are real and
+were verified against the failing case.
