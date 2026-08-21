@@ -10,6 +10,15 @@ docs/LAUNCH-CHECKLIST.md.
 Read CLAUDE.md first. Section 4 governs: prove each fix with curl against
 a running build, not by describing it.
 
+USE PORT 3003. `.claude/launch.json` defines web-d on 3003. Two other
+sessions are running on other ports right now; taking theirs breaks them.
+
+YOU CANNOT DEPLOY AND MUST NOT TRY. Two other sessions have unfinished
+edits on disk, and a deploy ships the WORKING TREE rather than git, so
+deploying now would ship their half-done work to the live site. Prove
+your changes against localhost:3003. Jon deploys later, once the tree is
+quiet.
+
 TWO THINGS A PREVIOUS SEO SESSION GOT WRONG. Do not redo them.
   - It concluded a noindex tag was blocking Google. There is NO noindex
     anywhere in the source or on any live page. Re-verified with curl.
@@ -52,10 +61,31 @@ rather than rush it.
 Prove every item with curl output pasted in full -- the actual tags. Jon
 cannot check this by reading code.
 
-NOTE FOR JON, do not do it yourself: once the canonical ships he needs to
-run URL Inspection -> Test Live URL in Search Console, then Request
-Indexing. Pass condition is Crawl allowed Yes, Page fetch Successful,
-Indexing allowed Yes. Write that into your session note.
+WRITE JON A SEARCH CONSOLE WALKTHROUGH. This is a required deliverable,
+not an afterthought. There is a half of this job only Jon can do, in
+Google Search Console under his own account, and it can only happen AFTER
+your code is deployed -- which is not today.
+
+So end your session note with a numbered, plain-English walkthrough he
+can follow without you. He is not a programmer: name the buttons he
+clicks and the exact text he should see. Cover at least:
+
+  1. URL Inspection -> Test Live URL on the homepage. Pass condition:
+     Crawl allowed YES, Page fetch SUCCESSFUL, Indexing allowed YES.
+  2. How to confirm the canonical Google sees matches the one you set --
+     the "User-declared canonical" and "Google-selected canonical" lines,
+     and what it means if they disagree.
+  3. Inspect https://www.un-claude.com/ and confirm it reports "Page with
+     redirect" rather than being indexed separately.
+  4. Request Indexing on the homepage, /pricing, /how-it-works, /mission.
+  5. What is normal afterwards: indexing takes days, not minutes, and
+     Search Console's report reflects its LAST CRAWL, not the live page.
+     Say this explicitly -- a previous session misread stale crawl data
+     as a noindex tag that never existed and sent everyone hunting for it.
+
+Tell him plainly that step 4 is pointless before the deploy, because
+Google would just re-crawl the current build and the stale data problem
+repeats.
 
 Write docs/session-notes/seo-canonicals-and-titles.md.
 
