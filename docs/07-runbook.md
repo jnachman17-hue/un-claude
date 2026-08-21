@@ -1532,3 +1532,31 @@ rather than guessing:
 
 If the SAN lists only the apex, the certificate has not been issued yet.
 Wait, do not re-diagnose.
+
+### Screenshotting a long page when the preview pane refuses to scroll
+
+**20 August 2026, session 10, the pricing rebuild.** A variant of the pane
+degradation above, with a workaround worth keeping.
+
+**The symptom:** `computer` with `action: "scroll"` times out after 30 seconds
+saying the pane is hidden, and a `window.scrollTo` from `javascript_tool` moves
+`scrollY` correctly but the next screenshot comes back painted only with the
+content that was at scroll position zero. The page is fine. The compositor is
+only painting the initial viewport.
+
+**Two things that work, in order.**
+
+1. **Set a tall viewport and shoot once.** `resize_window` to something like
+   1280x1500 captures most of a page in a single frame with no scrolling at all.
+   **Do not go much past 1500px tall** — at 3400 the pane stopped compositing
+   entirely and every screenshot timed out.
+2. **Shift the page under a normal viewport** for the parts below that.
+   `document.body.style.marginTop = '-1360px'` pulls later content up into the
+   frame the pane is willing to paint. Step it down the page in viewport-sized
+   chunks, and set it back to `'0px'` before doing anything else.
+
+**And the rule from the entries above still applies first: if the DOM itself
+reads empty, open a NEW TAB.** This session hit that too. `document.body.innerText`
+was 328 characters of header and footer with the whole page missing, while
+`curl` returned 210KB of correct HTML for the same URL. A fresh tab rendered it
+perfectly. **Measure with `curl` or a new tab before believing a broken DOM.**
