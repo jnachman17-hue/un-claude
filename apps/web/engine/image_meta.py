@@ -219,12 +219,64 @@ def _contains_any(blob: bytes, needles: tuple[bytes, ...]) -> list[str]:
     return found
 
 
+# A PNG text chunk (zTXt/iTXt) stores its value zlib-compressed, and deflate
+# reaches ratios near 1000:1 on repetitive data. A file a few hundred KB in
+# size can therefore ask zlib to produce hundreds of megabytes: a classic
+# decompression bomb, and reachable through the free, no-login /api/tool/scan.
+# This cap is the same discipline container_meta.py already applies to .docx
+# zips (MAX_ZIP_DECOMPRESSED_BYTES): never trust how much output a compressed
+# stream claims it will produce; bound the output itself. A real photo's
+# embedded caption or software tag is kilobytes, never megabytes, so 4 MB is
+# generous for anything legitimate while refusing the bomb its gigabytes.
+MAX_PNG_TEXT_DECOMPRESSED_BYTES = 4 * 1024 * 1024
+
+
+def _bounded_inflate(data: bytes, cap: int | None = None) -> bytes:
+    """Inflate a zlib stream, refusing to allocate more than ``cap`` bytes.
+
+    zlib.decompress() with no limit will happily expand a tiny input into
+    gigabytes. This streams the output in chunks and stops the instant the
+    running total would cross ``cap``, so the memory ceiling is the cap
+    itself rather than the attacker's chosen decompressed size. Raises
+    ``zlib.error`` on a bomb (over the cap) exactly as it already does on a
+    corrupt stream, so every caller's existing ``except zlib.error`` treats a
+    refused bomb the same way it treats undecodable data: skip it, raise
+    nothing, keep scanning the rest of the file.
+
+    ``cap`` defaults to MAX_PNG_TEXT_DECOMPRESSED_BYTES, read at call time (not
+    baked in as a default argument) so a test can lower it with monkeypatch,
+    matching container_meta._read_zip_member's design.
+    """
+    if cap is None:
+        cap = MAX_PNG_TEXT_DECOMPRESSED_BYTES
+    obj = zlib.decompressobj()
+    out: list[bytes] = []
+    total = 0
+    # max_length bounds each call's output; unconsumed_tail carries the rest of
+    # the compressed input forward, so memory tracks produced bytes, not the
+    # stream's claim about its size.
+    chunk = obj.decompress(data, cap + 1)
+    total += len(chunk)
+    out.append(chunk)
+    while obj.unconsumed_tail and total <= cap:
+        chunk = obj.decompress(obj.unconsumed_tail, cap + 1 - total)
+        total += len(chunk)
+        out.append(chunk)
+    if total > cap:
+        raise zlib.error(
+            f"decompressed text exceeds {cap}-byte cap; refusing (decompression bomb)"
+        )
+    return b"".join(out)
+
+
 def _png_text_entries(payload: bytes, ctype: bytes) -> list[tuple[str, str]]:
     """Parse a PNG text-chunk payload into (key, value) pairs.
 
     Handles tEXt (latin-1), zTXt (zlib-compressed text), and iTXt
     (UTF-8, optionally compressed). Malformed or undecodable chunks
-    yield whatever pairs are recoverable; nothing is raised.
+    yield whatever pairs are recoverable; nothing is raised. Compressed
+    values are inflated through a hard size cap (_bounded_inflate) so a
+    decompression bomb is refused rather than expanded.
     """
     entries: list[tuple[str, str]] = []
     if ctype == b"tEXt":
@@ -241,7 +293,7 @@ def _png_text_entries(payload: bytes, ctype: bytes) -> list[tuple[str, str]]:
         if not sep or len(rest) < 2:
             return entries
         try:
-            text = zlib.decompress(rest[1:])
+            text = _bounded_inflate(rest[1:])
         except zlib.error:
             return entries
         entries.append(
@@ -264,7 +316,7 @@ def _png_text_entries(payload: bytes, ctype: bytes) -> list[tuple[str, str]]:
             return entries
         if comp_flag == 1:
             try:
-                text = zlib.decompress(text)
+                text = _bounded_inflate(text)
             except zlib.error:
                 return entries
         entries.append(

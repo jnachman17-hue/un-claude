@@ -8,6 +8,7 @@ import re
 import struct
 import sys
 import time
+import tracemalloc
 import zipfile
 from pathlib import Path
 
@@ -40,6 +41,16 @@ from container_meta import (
     clean_svg,
     inspect_docx,
 )
+import zlib
+
+import image_meta
+from image_meta import (
+    MAX_PNG_TEXT_DECOMPRESSED_BYTES,
+    _bounded_inflate,
+    _png_text_entries,
+    inspect_png,
+    strip_png,
+)
 
 
 def test_safe_arg_prefixes_leading_dash():
@@ -52,6 +63,120 @@ def test_safe_arg_leaves_normal_paths_alone():
     assert safe_arg("dir/file.svg") == "dir/file.svg"
     assert safe_arg("/abs/path.pdf") == "/abs/path.pdf"
     assert safe_arg(".") == "."
+
+
+# --- PNG text-chunk decompression bombs -------------------------------------
+#
+# PNG zTXt/iTXt chunks store their value zlib-compressed. Without a size cap,
+# zlib.decompress() expands a tiny chunk into gigabytes — reachable through the
+# free, no-login /api/tool/scan. These mirror the zip-bomb tests above: the
+# same discipline (bound the produced bytes, never trust the stream's claim)
+# applied to the one image path that lacked it.
+
+
+def _png_chunk(ctype: bytes, payload: bytes) -> bytes:
+    crc = zlib.crc32(payload, zlib.crc32(ctype)) & 0xFFFFFFFF
+    return struct.pack(">I", len(payload)) + ctype + payload + struct.pack(">I", crc)
+
+
+def _make_png_with_ztxt(ztxt_value_compressed: bytes) -> bytes:
+    """A valid 1x1 PNG carrying one zTXt chunk with the given compressed value."""
+    ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    idat = zlib.compress(b"\x00\xff\xff\xff")
+    ztxt = b"Comment\x00\x00" + ztxt_value_compressed  # keyword \0 method \0? + data
+    return (
+        image_meta.PNG_SIG
+        + _png_chunk(b"IHDR", ihdr)
+        + _png_chunk(b"zTXt", ztxt)
+        + _png_chunk(b"IDAT", idat)
+        + _png_chunk(b"IEND", b"")
+    )
+
+
+def test_bounded_inflate_refuses_the_bomb():
+    # ~200 MB of zeros compresses to a couple hundred KB. Unbounded, this call
+    # would allocate 200 MB; bounded, it raises before crossing the 4 MB cap.
+    bomb = zlib.compress(b"\x00" * (200 * 1024 * 1024), 9)
+    assert len(bomb) < 1 * 1024 * 1024  # the crafted chunk really is small
+    with pytest.raises(zlib.error):
+        _bounded_inflate(bomb)
+
+
+def test_bounded_inflate_allows_legitimate_metadata():
+    # A real embedded caption/tag is kilobytes and must still decode fully.
+    legit = b"ChatGPT / DALL-E 3 -- some caption text"
+    assert _bounded_inflate(zlib.compress(legit)) == legit
+
+
+def test_bounded_inflate_keeps_value_just_under_the_cap():
+    # A value just below the cap decodes in full; the cap only refuses excess.
+    under = b"A" * (MAX_PNG_TEXT_DECOMPRESSED_BYTES - 10)
+    assert _bounded_inflate(zlib.compress(under)) == under
+
+
+def test_bounded_inflate_charges_real_bytes_not_the_stream_claim(monkeypatch):
+    # The cap is on bytes actually produced. Lower it and a value above it is
+    # refused even though its compressed form is tiny — reality, not the claim.
+    monkeypatch.setattr(image_meta, "MAX_PNG_TEXT_DECOMPRESSED_BYTES", 1 << 20)
+    payload = zlib.compress(b"z" * (2 << 20))  # 2 MiB > 1 MiB cap
+    with pytest.raises(zlib.error):
+        _bounded_inflate(payload)
+    # And a real member under the lowered cap still round-trips.
+    ok = b"y" * (1 << 19)  # 512 KiB < 1 MiB cap
+    assert _bounded_inflate(zlib.compress(ok)) == ok
+
+
+def test_png_text_entries_drops_a_ztxt_bomb_without_expanding_it():
+    bomb = zlib.compress(b"\x00" * (200 * 1024 * 1024), 9)
+    payload = b"Comment\x00\x00" + bomb
+    # The bomb yields no entry (refused like any undecodable chunk), and the
+    # call must not blow past the cap doing so.
+    tracemalloc.start()
+    entries = _png_text_entries(payload, b"zTXt")
+    _cur, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert entries == []
+    assert peak < 32 * 1024 * 1024, f"peak heap {peak} exceeded cap-sized budget"
+
+
+def test_png_text_entries_drops_an_itxt_bomb_without_expanding_it():
+    bomb = zlib.compress(b"\x00" * (200 * 1024 * 1024), 9)
+    # iTXt layout: keyword \0 comp_flag(1) comp_method(0) lang \0 tkey \0 data
+    payload = b"Comment\x00\x01\x00en\x00Comment\x00" + bomb
+    tracemalloc.start()
+    entries = _png_text_entries(payload, b"iTXt")
+    _cur, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert entries == []
+    assert peak < 32 * 1024 * 1024, f"peak heap {peak} exceeded cap-sized budget"
+
+
+def test_inspect_png_survives_a_bomb_chunk_in_a_real_png():
+    bomb = zlib.compress(b"\x00" * (300 * 1024 * 1024), 9)
+    png = _make_png_with_ztxt(bomb)
+    assert len(png) < 1 * 1024 * 1024  # a small file, aiming at 300 MB
+    tracemalloc.start()
+    start = time.perf_counter()
+    has_c2pa, has_ai, _findings = inspect_png(png)
+    elapsed = time.perf_counter() - start
+    _cur, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert (has_c2pa, has_ai) == (False, False)
+    assert peak < 32 * 1024 * 1024
+    assert elapsed < 5.0, f"took {elapsed:.1f}s"
+
+
+def test_strip_png_cleans_a_bomb_chunk_without_decompressing_it():
+    bomb = zlib.compress(b"\x00" * (300 * 1024 * 1024), 9)
+    png = _make_png_with_ztxt(bomb)
+    tracemalloc.start()
+    out, actions = strip_png(png)
+    _cur, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert any("zTXt" in a for a in actions)  # the text chunk was dropped
+    assert out.startswith(image_meta.PNG_SIG)
+    assert len(out) < 1024  # the bomb is gone, not carried into the output
+    assert peak < 32 * 1024 * 1024
 
 
 def test_zip_budget_rejects_oversized_member():
