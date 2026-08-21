@@ -96,11 +96,33 @@ rendered at all while the paragraphs are present with their original spacing
 (`display: contents`, `margin-top: 0`, gap from the parent). Measured in
 Chrome, both widths, in the same run.
 
+### /pricing. 7.5 phone screens to 6.5
+
+| # | What | Before | After |
+|---|---|---|---|
+| P1 | "Anything left over from step one comes with you" | on the second free-credits card | **Gone.** Jon struck the same sentence from the paywall in phase 1 and asked for the leftovers with it. The arithmetic it introduced stays, because 2 and 3 need a total beside them or the two cards read as alternatives: "5 credits in total, or 5,000 words." |
+| P2 | The four reassurances (never expire / a failed run costs nothing / no subscription / scanning is free) | icon on its own line above a heading above a body, four times | icon beside the words as a row, same grammar as the home page's three beats. Unchanged from `sm` |
+| P3 | The three layer cards (Invisible characters / File metadata / The statistical watermark) | name, a four line description, then the claim pill | name, **"What comes off +"**, then the claim pill. The description is one tap away on a phone and inline as before on a desktop |
+| P4 | Card padding | `p-6` at every width | `p-5` below `sm` |
+
+**THE CLAIM PILL IS NOT COLLAPSIBLE AND THAT IS DELIBERATE.** "Proven on
+every run" on two of those cards and "Best effort, and not verifiable yet" on
+the third is the claims boundary doing its work on the page where money
+changes hands. It stays visible at every width, with or without the plus. Only
+the description of the work waits behind the control.
+
+**The three pack cards were left alone.** They are about a full phone screen
+between them, and they are the thing the page exists to sell. `04` entry 108
+made the price the hero deliberately; shrinking it to save scroll would be
+undoing last night's work to satisfy tonight's brief.
+
+**Desktop checked, not assumed:** at 1280px the three layer cards render name,
+full description and pill, all three the same height, exactly as before.
+
 ---
 
 ## Still to do
 
-- /pricing, 7.1 screens
 - /capabilities, 3.6 screens
 - /mission, 3.7 screens
 - /contact, 1.4 screens

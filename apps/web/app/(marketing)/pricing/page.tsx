@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { CtaBand } from '../_components/cta-band';
+import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { CreditCoin } from '../_components/workbench/credit-chip';
 import { CreditCalculator } from './_components/credit-calculator';
 import {
@@ -459,32 +460,38 @@ function Pricing() {
           {/* The reassurances, directly under the buttons where the doubt is. */}
           <ul
             className={
-              'border-border/70 mt-12 grid gap-x-8 gap-y-6 border-t pt-9 sm:grid-cols-2 lg:grid-cols-4'
+              'border-border/70 mt-9 grid gap-x-8 gap-y-4 border-t pt-7 sm:mt-12 sm:gap-y-6 sm:pt-9 sm:grid-cols-2 lg:grid-cols-4'
             }
           >
+            {/* Icon beside the words on a phone, above them from `sm`. Four
+                stacked icon-over-heading-over-body blocks was a third of a
+                screen for four short sentences. Same grammar as the home
+                page's three beats, deliberately. */}
             {TRUST.map((item) => (
-              <li key={item.title}>
+              <li key={item.title} className={'flex gap-3 sm:block'}>
                 <span
                   className={
-                    'bg-mark/12 text-mark-strong grid size-[32px] place-items-center rounded-[10px]'
+                    'bg-mark/12 text-mark-strong grid size-[32px] shrink-0 place-items-center rounded-[10px]'
                   }
                 >
                   <item.icon className={'size-[16px]'} strokeWidth={2} aria-hidden />
                 </span>
-                <p
-                  className={
-                    'text-foreground mt-3 text-[14.5px] font-semibold tracking-[-0.01em]'
-                  }
-                >
-                  {item.title}
-                </p>
-                <p
-                  className={
-                    'text-muted-foreground mt-1 text-[13.5px] leading-[1.55]'
-                  }
-                >
-                  {item.body}
-                </p>
+                <span className={'min-w-0'}>
+                  <span
+                    className={
+                      'text-foreground block text-[14.5px] font-semibold tracking-[-0.01em] sm:mt-3'
+                    }
+                  >
+                    {item.title}
+                  </span>
+                  <span
+                    className={
+                      'text-muted-foreground mt-1 block text-[13.5px] leading-[1.55]'
+                    }
+                  >
+                    {item.body}
+                  </span>
+                </span>
               </li>
             ))}
           </ul>
@@ -559,7 +566,7 @@ function Pricing() {
               <ol className={'grid gap-4 sm:grid-cols-2'}>
                 <li
                   className={
-                    'bg-card ring-border/70 rounded-[18px] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1'
+                    'bg-card ring-border/70 rounded-[18px] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 sm:p-6'
                   }
                 >
                   <span
@@ -605,7 +612,7 @@ function Pricing() {
 
                 <li
                   className={
-                    'bg-mark/[0.06] ring-mark/25 rounded-[18px] p-6 ring-1'
+                    'bg-mark/[0.06] ring-mark/25 rounded-[18px] p-5 ring-1 sm:p-6'
                   }
                 >
                   <span
@@ -644,10 +651,18 @@ function Pricing() {
                       'text-muted-foreground mt-1.5 text-[13.5px] leading-[1.55]'
                     }
                   >
-                    Anything left over from step one comes with you, so that is{' '}
-                    {FREE_CREDITS} credits, or{' '}
+                    {/*
+                      "Anything left over from step one comes with you" was
+                      removed 21 August 2026 on Jon's instruction, the same
+                      sentence he had struck from the paywall. It is true, and
+                      the guest merge in /api/credits still does exactly that,
+                      but he does not want it said. The arithmetic it was
+                      introducing stays, because 2 plus 3 needs a total beside
+                      it or the two cards read as alternatives.
+                    */}
+                    {FREE_CREDITS} credits in total, or{' '}
                     {(FREE_CREDITS * WORDS_PER_CREDIT).toLocaleString('en-US')}{' '}
-                    words, in total.
+                    words.
                   </p>
                 </li>
               </ol>
@@ -685,7 +700,7 @@ function Pricing() {
               <li
                 key={layer.name}
                 className={
-                  'bg-card ring-border/70 flex flex-col rounded-[18px] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1'
+                  'bg-card ring-border/70 flex flex-col rounded-[18px] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 sm:p-6'
                 }
               >
                 <h3
@@ -696,17 +711,29 @@ function Pricing() {
                   {layer.name}
                 </h3>
 
-                <p
-                  className={
-                    'text-muted-foreground mt-3 flex-1 text-[14px] leading-[1.6]'
-                  }
-                >
-                  {layer.body}
-                </p>
+                {/*
+                  THE NAME AND THE CLAIM STRENGTH ARE NOT COLLAPSIBLE. The
+                  status pill below is the claims boundary on this page:
+                  "Proven on every run" on two of these and "Best effort, and
+                  not verifiable yet" on the third. It stays visible at every
+                  width, always. Only the description of the work waits behind
+                  the plus, and only on a phone.
+                */}
+                <div className={'mt-3 flex-1 sm:contents'}>
+                  <MobileDisclosure label={'What comes off'}>
+                    <p
+                      className={
+                        'text-muted-foreground flex-1 text-[14px] leading-[1.6] sm:mt-3'
+                      }
+                    >
+                      {layer.body}
+                    </p>
+                  </MobileDisclosure>
+                </div>
 
                 <p
                   className={[
-                    'mt-5 inline-flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-[12px] font-semibold',
+                    'mt-3 inline-flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-[12px] font-semibold sm:mt-5',
                     layer.proven
                       ? 'bg-foreground text-background'
                       : 'border-border text-muted-foreground border',
