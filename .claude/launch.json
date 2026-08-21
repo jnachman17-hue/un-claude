@@ -2,40 +2,28 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "un-claude-web",
+      "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "dev"
-      ],
+      "runtimeArgs": ["--filter", "web", "dev"],
       "port": 3000
     },
     {
-      "name": "un-claude-web-t4",
+      "name": "web-b",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "web",
-        "exec",
-        "next",
-        "dev",
-        "--port",
-        "3100"
-      ],
-      "port": 3100
+      "runtimeArgs": ["--filter", "web", "dev", "--port", "3001"],
+      "port": 3001
     },
     {
-      "name": "un-claude-web-t4-prod",
+      "name": "web-c",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "web",
-        "exec",
-        "next",
-        "start",
-        "--port",
-        "3100"
-      ],
-      "port": 3100
+      "runtimeArgs": ["--filter", "web", "dev", "--port", "3002"],
+      "port": 3002
+    },
+    {
+      "name": "web-d",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "dev", "--port", "3003"],
+      "port": 3003
     }
   ]
 }
