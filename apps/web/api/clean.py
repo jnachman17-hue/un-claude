@@ -27,7 +27,17 @@ for _p in (str(_HERE), str(_HERE.parent / "engine")):
 import time                                        # noqa: E402
 from http.server import BaseHTTPRequestHandler     # noqa: E402
 
-from _shared import authorised, engine, fail, json_response, read_request, usage_record  # noqa: E402
+from _shared import (  # noqa: E402
+    MAX_WORDS,
+    _word_count,
+    authorised,
+    engine,
+    fail,
+    json_response,
+    read_request,
+    strip_server_paths,
+    usage_record,
+)
 
 ALLOWED = {"layer_b", "nfkc", "aggressive_homoglyphs", "keep_non_ai_metadata"}
 
@@ -42,6 +52,26 @@ class handler(BaseHTTPRequestHandler):
             return json_response(self, *parsed)
         data, name, opts = parsed
         opts = {k: v for k, v in opts.items() if k in ALLOWED}
+
+        # THE WORD CEILING, REFUSED BEFORE A SINGLE MODEL CALL IS MADE.
+        #
+        # Only the rewrite has a word ceiling, and only text reaches the
+        # rewrite: a .docx, a .png and a .jpg get metadata and layer A, which
+        # are instant and free however large the file is, so capping them by
+        # words would refuse work that costs nothing to do.
+        #
+        # This must stay AHEAD of the engine call. A document past the limit
+        # would otherwise run for a minute or more, be cut off by the site's
+        # own 120 second abort, be refunded, and still be billed to us by the
+        # model provider for every chunk it managed to finish. Refusing in
+        # milliseconds costs nobody anything.
+        if opts.get("layer_b") and Path(name).suffix.lower() == ".txt":
+            words = _word_count(data) or 0
+            if words > MAX_WORDS:
+                usage_record("clean", name, data, None, time.time() - started,
+                             ok=False, code="too_many_words", headers=self.headers)
+                return json_response(self, *fail("too_many_words"))
+
         srv = engine()
         try:
             payload = srv._clean_payload(data, name, opts)
@@ -63,6 +93,8 @@ class handler(BaseHTTPRequestHandler):
                          layer_b_usage=getattr(e, "usage", None),
                          headers=self.headers)
             return json_response(self, *fail("engine_error", 500))
+        # Our own filesystem out of the reply before the browser ever sees it.
+        strip_server_paths(payload)
         payload["usage"] = usage_record(
             "clean", name, data, payload, time.time() - started, headers=self.headers)
         json_response(self, 200, payload)

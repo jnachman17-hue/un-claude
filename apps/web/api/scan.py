@@ -27,6 +27,7 @@ from _shared import (  # noqa: E402
     fail,
     json_response,
     read_request,
+    strip_server_paths,
     usage_record,
 )
 
@@ -47,6 +48,8 @@ class handler(BaseHTTPRequestHandler):
             return json_response(self, *fail("bad_format"))
         except Exception:
             return json_response(self, *fail("engine_error", 500))
+        # Our own filesystem out of the reply before the browser ever sees it.
+        strip_server_paths(payload)
         # What the job will cost, worked out here because this is the only place
         # that has both the decoded bytes and the format. 06 row 72: credits are
         # priced in words, the browser holds only base64 for a file, and nothing

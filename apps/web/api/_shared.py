@@ -15,6 +15,27 @@ if str(ENGINE) not in sys.path:
 
 MAX_BYTES = 5 * 1024 * 1024   # 5 MB ceiling on any single upload
 
+# THE MOST WORDS ONE REWRITE MAY BE ASKED TO DO. Jon's ruling, 21 August 2026.
+#
+# Measured before it was chosen, on this engine, with real prose and a real
+# model. Words against seconds, in-process with no HTTP in the way:
+#
+#     2,616 words -> 34s      7,848 words -> 64s
+#     5,232 words -> 64s     10,464 words -> 79s, and 95s on a second run
+#
+# The variance is the point: the same document twice differs by a fifth,
+# because retries chase figures rather than words. 10,464 words at 95 seconds
+# plus the HTTP round trip is already close to the 120 second abort the site
+# applies to its own engine call (lib/engine/client.ts). Beyond that the
+# browser is told the service is unreachable, the credit goes back, and the
+# engine keeps running and billing for a result nobody will ever receive.
+#
+# So the cap is an honest limit rather than a guess: it is roughly where the
+# measurements stop fitting inside the time the site is willing to wait.
+# 5 MB of plain text is about 800,000 words, so the byte cap above never
+# reaches this one — a limit in words needs saying in words.
+MAX_WORDS = int(os.environ.get("UC_MAX_WORDS", "10000"))
+
 # The engine is a back room, not a public counter. Only our own site may call it.
 # /api/clean with layer_b spends real money on every request, so an unauthenticated
 # endpoint is an open tap on Jon's AI Gateway balance.
@@ -61,6 +82,7 @@ ERRORS = {
     "bad_base64":     "The file could not be decoded.",
     "too_large":      "That file is larger than 5 MB. Try a smaller one.",
     "bad_format":     "That file type is not supported. Use text, a Word document, PNG or JPG.",
+    "too_many_words": "That is longer than 10,000 words, which is the most the rewrite can do in one go. Split it and run it in parts.",
     "layer_b_failed": "The rewrite could not be completed. Nothing was charged. Try again.",
     "engine_error":   "Something went wrong with that file. Nothing was charged.",
     "unauthorised":   "That request was not authorised.",
@@ -83,6 +105,99 @@ def fail(code: str, status: int = 400) -> tuple[int, dict]:
                     "error": ERRORS.get(code, ERRORS["engine_error"])}
 
 
+# WHAT THIS PRODUCT ACCEPTS, AND NOTHING ELSE. Jon's ruling, 21 August 2026.
+#
+# Four things, and the four are: pasted text, a Word document, a PNG and a JPG.
+# `.txt` is here because pasted text arrives as `paste.txt` — the browser has no
+# separate text path, so refusing `.txt` would refuse every paste.
+#
+# WHY THIS EXISTS AT ALL. Until this session NOTHING validated the extension
+# anywhere. `ACCEPTED_FILES` in encode.ts is the file picker's `accept`
+# attribute, which is a HINT: "All Files" in the chooser, or a drag and drop,
+# walks straight past it. The clean route has no allowlist. So the real set of
+# accepted types was the engine's own, which is 12 text extensions and 12
+# container extensions — 24 including `.pdf`, `.xlsx`, `.epub`, `.svg` and
+# `.html`, none of which anyone chose to support and none of which was ever
+# tested end to end.
+#
+# That is not a theoretical hole. It is exactly how the `.csv` undercharge got
+# in: a 100,000 word essay renamed `essay.csv` bought an unlimited rewrite for
+# one credit, because the price and the engine disagreed about what a text file
+# was. The pricing guard now stops the two lists drifting. This stops the list
+# being 24 items long in the first place.
+#
+# THIS IS DELIBERATELY NOT IN engine/format_dispatch.py. That file is vendored
+# upstream code, shared with the command line tools and the audit scripts, and
+# it is one of the two lists `verify-pricing-matches-engine.mjs` compares. This
+# is OUR product's front door, so the restriction belongs at the door.
+ACCEPTED_EXTS = (".txt", ".docx", ".png", ".jpg", ".jpeg")
+
+# Magic bytes, so a file cannot lie about what it is by being renamed. Checked
+# with plain byte prefixes rather than by importing the engine's detectors,
+# because the free scan path must not pay for a heavy import to refuse a file.
+_PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+_JPEG_MAGIC = b"\xff\xd8\xff"
+_ZIP_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+
+
+def _contents_match(ext: str, data: bytes) -> bool:
+    """Does the file's own content agree with the name it arrived under?
+
+    A .png renamed to .docx is the case this catches. Without it the engine
+    classifies by extension first, hands PNG bytes to the Word document reader,
+    and the user gets whatever that does — which nobody had ever looked at.
+    """
+    if ext == ".png":
+        return data.startswith(_PNG_MAGIC)
+    if ext in (".jpg", ".jpeg"):
+        return data.startswith(_JPEG_MAGIC)
+    if ext == ".docx":
+        # A .docx is a zip, and specifically a zip with a Word document in it.
+        # The second half matters: .xlsx, .pptx, .odt and .epub are all zips too,
+        # and all of them are containers the engine would happily open.
+        return data.startswith(_ZIP_MAGIC) and b"word/document.xml" in data
+    if ext == ".txt":
+        # Text is the one case with no magic number, so the test is negative:
+        # it must not be one of the binaries we DO recognise, and it must not
+        # carry NUL bytes, which no real UTF-8 text does.
+        if data.startswith(_PNG_MAGIC) or data.startswith(_JPEG_MAGIC):
+            return False
+        if data.startswith(_ZIP_MAGIC) or data[:5] == b"%PDF-":
+            return False
+        return b"\x00" not in data[:8192]
+    return False
+
+
+def safe_name(name: str) -> str:
+    """The bare filename, with any directory part thrown away.
+
+    A browser never sends a path, so a name carrying one is either an oddity or
+    somebody trying their luck. Measured before this existed: a file named
+    `../../etc/passwd.txt` was ACCEPTED by the front door, reached the engine,
+    and died inside `server._tmp_path` with `ValueError: unsafe filename`. That
+    was caught and reported to the user as "That file type is not supported",
+    which is the wrong sentence for the wrong problem. Nothing was ever written
+    outside the temp directory — `_tmp_path` refused first, which is what it is
+    for — but the request should not have got that far.
+
+    Taking the basename is friendlier than refusing: `../../etc/passwd.txt`
+    becomes `passwd.txt` and cleans normally, which is what the person almost
+    certainly wanted.
+    """
+    bare = str(name).replace("\\", "/").rsplit("/", 1)[-1].strip()
+    # A name that was nothing but separators, or is now a relative marker, has
+    # no filename left in it. Fall back rather than hand the engine an empty one.
+    if not bare or bare in (".", ".."):
+        return "paste.txt"
+    return bare[:255]
+
+
+def accepted(name: str, data: bytes) -> bool:
+    """True if this is one of the four things un-claude accepts, really is it."""
+    ext = Path(name).suffix.lower()
+    return ext in ACCEPTED_EXTS and _contents_match(ext, data)
+
+
 def read_request(raw: bytes):
     """Decode a request body into (bytes, filename, options), or an error tuple."""
     try:
@@ -97,8 +212,17 @@ def read_request(raw: bytes):
         return fail("bad_base64")
     if len(data) > MAX_BYTES:
         return fail("too_large", 413)
+    name = safe_name(body.get("name") or "paste.txt")
+    # An empty file is refused as "nothing was sent" rather than as a bad format,
+    # because that is what it is, and because every downstream guard divides by a
+    # length at some point.
+    if not data:
+        return fail("no_file")
+    if not accepted(name, data):
+        print(f"refused: name={Path(name).suffix.lower()!r} bytes={len(data)}", file=sys.stderr)
+        return fail("bad_format")
     opts = body.get("options")
-    return data, str(body.get("name") or "paste.txt"), (opts if isinstance(opts, dict) else {})
+    return data, name, (opts if isinstance(opts, dict) else {})
 
 
 # Every usage line starts with this word so one grep finds all of them and
@@ -168,8 +292,13 @@ def billing_estimate(kind: str | None, raw: bytes | None) -> dict:
         # Ceiling division without importing math, and 0 words still costs 1:
         # an empty job is refused earlier, so reaching here means real input.
         credits = max(1, -(-words // CREDIT_WORDS))
-        return {"credits": credits, "words": words, "basis": "words"}
-    return {"credits": 1, "words": None, "basis": "flat"}
+        # The limit rides on the free scan so the interface can say "too long"
+        # BEFORE anyone commits to paying, which is the same rule as the price
+        # itself: 04 entry 16, nothing discovered afterwards.
+        return {"credits": credits, "words": words, "basis": "words",
+                "limit": MAX_WORDS, "over_limit": words > MAX_WORDS}
+    return {"credits": 1, "words": None, "basis": "flat",
+            "limit": None, "over_limit": False}
 
 
 def usage_record(
@@ -258,6 +387,25 @@ def _emit(record: dict) -> None:
               flush=True)
     except Exception:      # noqa: S110 — see the docstring
         pass
+
+
+# Keys the engine puts in a report that describe OUR SERVER rather than the
+# user's file. They are of no use to a browser and they name the temp directory
+# layout of the machine the function runs on.
+#
+# Found 21 August 2026: every image and container scan came back carrying
+#   "path": "/var/folders/5r/rqsn.../T/wm-inspect-vjlp3as1/clean.docx"
+# because `_inspect_payload` returns its report whole. `_clean_payload` already
+# pops its own `input`/`output` keys; the inspect side popped nothing.
+def strip_server_paths(payload: dict) -> dict:
+    """Take our own filesystem back out of anything the browser is about to see."""
+    report = payload.get("report")
+    if isinstance(report, dict):
+        report.pop("path", None)
+        stylometry = report.get("stylometry")
+        if isinstance(stylometry, dict):
+            stylometry.pop("path", None)
+    return payload
 
 
 def json_response(h, status: int, payload: dict) -> None:

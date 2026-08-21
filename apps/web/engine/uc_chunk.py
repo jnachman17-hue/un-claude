@@ -35,6 +35,26 @@ RETRIES = int(os.environ.get("UC_LAYER_B_RETRIES", "8"))  # per chunk
 # function ceiling, so it is capped at one by default rather than sharing the
 # fact guard's budget of eight. Set to 0 to turn structure re-rolls off.
 STRUCTURE_RETRIES = int(os.environ.get("UC_LAYER_B_STRUCTURE_RETRIES", "1"))
+
+# HOW LONG THE WHOLE REWRITE MAY SPEND RETRYING, in seconds.
+#
+# ENGINE.md section 10 lists this as improvement zero and it is now measured.
+# The retry ceiling was a COUNT and nothing connected it to a clock, so a
+# number-dense document could spend its entire budget retrying and then fail
+# with nothing to show. Measured on a 10,464 word document: 34 chunks, 149
+# model calls, eight chunks burning all eight attempts each, 95 seconds, 2.5
+# cents spent, and the request failed. A failed run is the most expensive
+# thing this engine does and it is the one the customer is refunded for.
+#
+# 100 SECONDS IS NOT AN ARBITRARY NUMBER. The site aborts its own call to the
+# engine at 120 seconds (lib/engine/client.ts, `slow ? 120_000 : 20_000`),
+# which is well below Vercel's 300 second function ceiling. Past that abort
+# the browser is told the service is unreachable, the credit is refunded, and
+# the engine carries on running and billing for work nobody will ever see.
+# The budget sits under that abort with room for the HTTP round trip and the
+# base64, so the engine gives up and RETURNS SOMETHING before the site stops
+# listening.
+DEADLINE = float(os.environ.get("UC_LAYER_B_DEADLINE", "100"))
 BACKOFF = 2.5            # seconds, multiplied each attempt, plus jitter
 
 
@@ -240,6 +260,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
 
     Raises TruncatedRewrite if any chunk, or the whole, comes back too short.
     """
+    deadline = time.monotonic() + DEADLINE
     lead, paragraphs, separators, tail = _split_blocks(text)
     plan = _plan_chunks(paragraphs, separators)
     if not plan:
@@ -292,16 +313,31 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                 out, info = rewrite_fn(chunks[i], attempt, best_missing, usage)
             except Exception as e:
                 last_err = e
-                if attempt < RETRIES - 1:
+                if attempt < RETRIES - 1 and time.monotonic() < deadline:
                     time.sleep(BACKOFF * (attempt + 1) + random.uniform(0, 1.0))
-                continue
+                    continue
+                break
             try:
                 _guard(chunks[i], out, i)           # length: still a hard failure
             except TruncatedRewrite as e:
                 last_err = e
-                if attempt < RETRIES - 1:
+                if attempt < RETRIES - 1 and time.monotonic() < deadline:
                     time.sleep(0.4)
                     continue
+                # A SHORT LAST ATTEMPT USED TO KILL THE WHOLE DOCUMENT, even
+                # when this chunk was already holding a perfectly good rewrite
+                # from an earlier attempt that had merely dropped a figure.
+                # That is the failure Jon saw at 10,000 words and it gets more
+                # likely the longer the document is: 34 chunks with 8 rolls
+                # each is 272 chances for one of them to come back short, and
+                # any single one of them ended the request.
+                #
+                # This does not soften 04 entry 22. Nothing truncated is ever
+                # returned — `best_out` passed the same length guard when it
+                # was recorded. The only change is that a good rewrite already
+                # in hand is no longer discarded because a later roll was bad.
+                if best_out is not None:
+                    return i, best_out, best_info, best_missing, usage, best_kept
                 raise
             # The chunk's own paragraph spacing goes back on here, before any
             # guard reads it, so every path below returns the restored text.
@@ -318,6 +354,8 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                 structure_rerolls += 1
                 if best_out is None or (best_missing == [] and not best_kept):
                     best_out, best_info, best_missing, best_kept = out, info, [], kept
+                if time.monotonic() >= deadline:
+                    return i, out, info, [], usage, kept
                 time.sleep(0.4)
                 continue
             except FactsLost as e:
@@ -335,9 +373,10 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                     # return an empty dict here, which threw away the model name
                     # and every figure belonging to the run that was returned.
                     best_out, best_info, best_missing, best_kept = out, info, e.missing, kept
-                if attempt < RETRIES - 1:
+                if attempt < RETRIES - 1 and time.monotonic() < deadline:
                     time.sleep(0.4)
                     continue
+                break
         if best_out is not None:
             return i, best_out, best_info, best_missing, usage, best_kept
         raise RuntimeError(
