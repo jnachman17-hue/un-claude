@@ -1452,3 +1452,50 @@ is purely a property of driving the embedded pane while it is backgrounded.
 
 **Three hours of session time went into rediscovering this once. Do not
 diagnose the app until the tab is fronted and the probe above returns true.**
+
+## `vercel deploy` hangs forever with no output, 20 August 2026
+
+**The Vercel CLI does not read `.gitignore`.** It reads `.vercelignore`, and
+this project did not have one. So `vercel deploy` tried to upload the entire
+working folder, including the 6.2 GB Turborepo cache in `.turbo/`, before it
+would even begin the build. The real source this app needs is **764 files and
+7.3 MB.**
+
+**What it looks like:** no output at all, no error, and `vercel ls` shows no
+new deployment even minutes in. That last part misleads: the CLI registers a
+deployment only *after* the upload completes, so "no deployment appeared" reads
+as "the command failed" when it actually means "still uploading". A normal
+build for this project takes 18 to 43 seconds.
+
+**Do not diagnose this by hypothesis.** Two wrong causes were confidently
+proposed here (payload size, then directory-walk cost over `.turbo`) before
+anyone simply looked at the CLI's own progress line, which says
+`Uploading (0.0B/6.2GB)` and names the problem outright.
+
+**Never pipe a deploy through `tail`.** `vercel deploy … | tail -40` buffers
+every line until the command exits, so a hung deploy produces an empty output
+file and looks like a crash. Run it unpiped and read the file as it grows.
+
+**`.vercelignore` now exists at the repo root** and excludes build caches
+(`.turbo`, `.next`, `node_modules`, `dist`) and, importantly, the `.env.local`
+files. Without it those were being uploaded into the deployment bundle, and
+they hold the Supabase service role key.
+
+## Preview deployments have never had the Supabase keys, found 20 August 2026
+
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_SITE_URL` and `UC_ENABLE_LAYER_B` are set on the Vercel project
+for **Production only**. Every other variable covers Preview and Production.
+
+**So every preview build fails**, and the error is misleading: it surfaces as a
+`ZodError` from `get-supabase-client-keys.ts` while prerendering
+`/api/credits`, which reads as a bug in the credits route. It is not. The route
+is fine; the environment is half-configured. The one prior Preview deployment
+in the project history, from 18 August, is in `Error` state for the same
+reason.
+
+**`turbo.json` was also missing six variables from `globalEnv`**
+(`SUPABASE_SERVICE_ROLE_KEY`, `UC_ENGINE_KEY`, and the four
+`WATERMARKS_REWRITE_*`), which Turbo warns about explicitly: they are set on
+Vercel but were not declared, so they were withheld from the build. Fixed by
+declaring all of them.
