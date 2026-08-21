@@ -9,6 +9,20 @@ or docs/LAUNCH-CHECKLIST.md. Other sessions hold those.
 Read CLAUDE.md first -- section 4 governs, and section 8 (think like the
 visitor) applies because both of these are things a visitor sees.
 
+ABOUT THE DEV SERVER, so you do not lose time to it. Do NOT try to start
+your own on a spare port. Next.js 16 locks one dev server per BUILD
+DIRECTORY via .next/dev/lock -- the lock is scoped to the project folder,
+not to the port, and every session shares one working tree. So whichever
+session started first holds the only dev server, and asking for another
+port will not help. A peer session already has one running on port 3000.
+Use it: it is the same working tree, so your edits hot-reload there. Keep
+your requests to that server read-only. The launch handoff's Part 0 rule
+7 tells you to take your own port; that rule is wrong and is being
+corrected.
+
+YOU CANNOT DEPLOY AND MUST NOT TRY. Other sessions have unfinished edits
+on disk and a deploy ships the WORKING TREE rather than git.
+
 ═══ BUG 1 — THE WORD COUNTER FREEZES ON A STALE NUMBER ═══
 Jon: deleted 10,000 words, the box is empty, and it still reads
 "10,524 words = 11 tokens". Typing more words leaves it frozen there.
@@ -40,6 +54,10 @@ The unclaude-messaging skill will fire; let it check your placement.
 ═══ FINISHING ═══
 Jon cannot check this by reading code. Show the real interface, at
 desktop AND at phone width. A step you skipped is a step that failed.
+
+If the counter bug turns out NOT to be the hypothesis above, say so
+plainly and say what it actually was. A corrected hypothesis is a useful
+result; a quietly abandoned one is not.
 
 Write docs/session-notes/workbench-counter-and-disclosure.md.
 
