@@ -1,17 +1,10 @@
+import Link from 'next/link';
+
 import { getTranslations } from 'next-intl/server';
 
 import { SitePageHeader } from '~/(marketing)/_components/site-page-header';
 
-import {
-  H2,
-  Lead,
-  List,
-  Mail,
-  P,
-  Prose,
-  Table,
-  Updated,
-} from '../_components/legal';
+import { H2, Lead, Mail, P, Prose, Table, Updated } from '../_components/legal';
 
 export async function generateMetadata() {
   const t = await getTranslations();
@@ -24,8 +17,8 @@ export async function generateMetadata() {
 /**
  * Written from the code rather than from a template. Every claim is checkable:
  * retention against clean.py and the route handlers, account fields against the
- * Supabase schema, browser storage against free-uses.ts, and the absence of
- * trackers against a grep of the whole application.
+ * Supabase schema, browser storage against the clean route and credits.ts, and
+ * the absence of trackers against a grep of the whole application.
  *
  * ANALYTICS ARRIVED 19 AUGUST 2026 and this page changed in the same commit,
  * which was the whole discipline: a privacy policy claiming no tracking while
@@ -36,9 +29,43 @@ export async function generateMetadata() {
  * visitor's own mail app, and the policy has to say so rather than describe a
  * form submission that never happens.
  *
+ * REWRITTEN 21 AUGUST 2026, from the legal reconciliation in
+ * `docs/session-notes/legal-reconciliation.md`, sections 1 and 2B. The rule was
+ * followed on 19 August and not followed on 20 and 21 August: the credit ledger
+ * shipped, `free-uses.ts` was deleted and anonymous guest sessions arrived, and
+ * carefully verified sentences went false in the same week they were written.
+ * What changed here, and why:
+ *
+ *   - It documented `uc.free-sanitises.v1` in local storage. That key no longer
+ *     exists anywhere in the application.
+ *   - It said session cookies are set "only after you sign in". Untrue since
+ *     guest sessions arrived: an anonymous Supabase session and the `uc-guest`
+ *     cookie are now placed on the device of anyone who presses the button.
+ *   - It said we hold an account's email and name "and nothing else". The
+ *     credit ledger holds a permanent row per job. No content, but a history.
+ *   - Cloudflare Turnstile runs on every page and appeared nowhere.
+ *   - It named "Mistral Small", a value read from an environment variable that
+ *     does not live in this repository. Changing one Vercel setting silently
+ *     falsified a legal page. It now names the provider and commits to a rule
+ *     instead: the table is updated before a new company sees submitted text.
+ *
+ * THE ACCOUNT DELETION SENTENCE IS NOT THE ONE THE REPORT DRAFTED, and the
+ * difference is deliberate. The report expected deletion to take the credit
+ * history with it. It does not. `credit_ledger.account_id` does cascade from
+ * `public.accounts`, but `public.accounts.id` carries NO foreign key to
+ * `auth.users` and there is no delete trigger, so `auth.admin.deleteUser` in
+ * `delete-personal-account.service.ts` removes the sign-in and leaves both the
+ * account row and the ledger standing. Saying otherwise would be a false
+ * statement in a legal document, so this page says what the code does. When the
+ * cascade is added, this sentence changes in the same deployment.
+ *
  * The claim that remains, and that must stay true: PostHog is configured to store
  * NOTHING on the visitor's device. If that configuration ever changes, this page
  * and the cookie policy change with it, and the site needs a consent banner.
+ *
+ * STILL OUTSTANDING, deliberately absent rather than forgotten: there is no
+ * named data controller on this page, because there is no legal entity and
+ * naming a person is not this session's call. 04 entry 54, decision D1.
  */
 async function PrivacyPolicyPage() {
   const t = await getTranslations();
@@ -51,20 +78,28 @@ async function PrivacyPolicyPage() {
       />
 
       <Prose>
-        <Updated date={'20 August 2026'} />
+        <Updated date={'21 August 2026'} />
 
         <H2>The short version</H2>
         <Lead>
           We do not keep what you give us. Text you paste and files you upload
           are processed and returned, not stored. We do not use your content to
-          train anything. We run no advertising and no advertising trackers. We
-          measure how many people visit, which pages they read, and which steps
-          of the tool they use, with a tool that stores nothing on your device.
-          We record that a scan ran and what kind of mark it found. Never the
-          text or the file it ran on. If you create an account, we hold your
-          email address and name and nothing else. If you write to us, we use
-          your address to reply and for nothing else.
+          train anything. We run no advertising and no advertising trackers.
+          There is one exception and we would rather lead with it than bury it:
+          if you use the optional rewrite, your text is sent to another
+          company&rsquo;s AI model to be rewritten, and comes straight back.
+          Nothing else you submit ever leaves our systems.
         </Lead>
+        <P>
+          We measure how many people visit, which pages they read, and which
+          steps of the tool they use, with a tool that stores nothing on your
+          device. We keep a record of each job you run: the date, whether it was
+          a file or pasted text, how many words it had, and what it cost you.
+          That record is your credit history and it is what a balance is made
+          of. Never the text or the file itself. If you create an account, we
+          hold your email address and name. If you write to us, we use your
+          address to reply and for nothing else.
+        </P>
 
         <H2>What happens to text and files you submit</H2>
         <P>
@@ -78,23 +113,72 @@ async function PrivacyPolicyPage() {
           One exception, because it is the only time your text leaves our
           systems. The optional rewriting step, the part that addresses
           statistical watermarks, cannot run on our own servers. Your text is
-          sent to a third-party language model, Mistral Small, reached through
-          Vercel AI Gateway, which rewrites it and returns it. This happens only
-          when you run the rewrite. Scanning, invisible-character removal, and
-          file metadata cleaning never leave our infrastructure.
+          sent to a third-party language model, reached through Vercel AI
+          Gateway, which rewrites it and returns it. Today that model comes from
+          Mistral. This happens only when you run the rewrite. Scanning,
+          invisible-character removal, and file metadata cleaning never leave
+          our infrastructure.
+        </P>
+        <P>
+          The companies that can see text you submit are the ones named in the
+          table below. If we ever move the rewrite to a different provider, we
+          update that table before the change goes live, so the list is a
+          promise about who sees your text rather than a snapshot of who saw it
+          last week.
         </P>
         <P>
           We do not use your content to train models, to improve detection, or
           for any purpose other than returning your result.
         </P>
 
-        <H2>What we store if you create an account</H2>
-        <P>An account is optional. The tool works without one.</P>
+        <H2>What we keep a record of, and for how long</H2>
         <P>
-          If you create one, we store your email address, your name, and a
-          profile picture URL if your sign-in method supplies one, along with
-          the dates your account was created and last updated. Database access
-          rules restrict each account to its own record.
+          We keep no copy of what you submit. We do keep a record that you
+          submitted something, because that is how a credit balance works.
+        </P>
+        <P>
+          Each time you clean something, one line is added to your credit
+          history. It records the date and time, whether the input was a file or
+          pasted text, how many words it contained, and how many credits it
+          cost, along with what the run cost us to perform. If you have an
+          account you can read your own history at any time on your account
+          page. It never contains your text, your file, or the name of your
+          file.
+        </P>
+        <P>
+          We keep that history for as long as we hold your account. Nothing
+          deletes it automatically after that, and we would rather say so than
+          state a period we do not enforce. Ask us to delete it and we will.
+        </P>
+        <P>
+          Our servers also keep ordinary technical logs of each request: the
+          time, how long it took, the size of the input, the file type, and how
+          many words it had. These carry no file names and no content. They sit
+          with our hosting company, which keeps them for a limited period set by
+          its platform rather than by us.
+        </P>
+
+        <H2>What we store about your account</H2>
+        <P>
+          An account is optional and the tool works without one. But the moment
+          you clean something, even signed out, we create a guest account for
+          your browser so your free credits have somewhere to live. It holds no
+          name, no email address and nothing about you: only an identifier, your
+          credit balance, and the history described above. Your browser
+          remembers it with a cookie called{' '}
+          <code className={'text-foreground font-mono text-[13px]'}>
+            uc-guest
+          </code>{' '}
+          that lasts a year. Clear your browser data and it is gone for good,
+          along with any credits on it, because we have no way to connect it
+          back to you.
+        </P>
+        <P>
+          If you create a real account, we store your email address, your name,
+          and a profile picture URL if your sign-in method supplies one, along
+          with the dates your account was created and last updated. Any credits
+          left on your guest account move across to it. Database access rules
+          restrict each account to its own record.
         </P>
         <P>
           If you sign in with Google, Google gives us your email address, your
@@ -141,6 +225,25 @@ async function PrivacyPolicyPage() {
         <H2>Cookies and browser storage</H2>
         <P>We use no advertising cookies, and no advertising trackers.</P>
         <P>
+          Three things are stored on your device, and all three are there to run
+          the tool you asked for: a guest session, the{' '}
+          <code className={'text-foreground font-mono text-[13px]'}>
+            uc-guest
+          </code>{' '}
+          cookie that finds it again so your free credits survive until you come
+          back, and, once you sign in, the session cookies that keep you signed
+          in. The full list, with lifetimes, is on the{' '}
+          <Link
+            href={'/cookie-policy'}
+            className={
+              'text-foreground font-medium underline underline-offset-2'
+            }
+          >
+            cookie policy
+          </Link>
+          .
+        </P>
+        <P>
           We do measure visits, using PostHog. It is configured to store nothing
           at all on your device: no cookies, no local storage. That is why this
           site has no cookie consent banner. It means we cannot recognise you
@@ -152,28 +255,19 @@ async function PrivacyPolicyPage() {
           We also record which steps of the tool you use, so we can see where it
           is going wrong: that a scan finished, how many hidden characters it
           found, that a clean started or failed, that you reached the point
-          where free uses run out. These are counts and yes-or-no answers about
-          the tool, never about you and never about what you submitted. File
-          names are reduced to a file type before anything is recorded, and
+          where free credits run out. These are counts and yes-or-no answers
+          about the tool, never about you and never about what you submitted.
+          File names are reduced to a file type before anything is recorded, and
           lengths and timings are recorded as ranges rather than exact figures.
         </P>
-        <List
-          items={[
-            <>
-              Session cookies, set only after you sign in, keep you signed in.
-              Signing out removes them.
-            </>,
-            <>
-              One item of local browser storage,{' '}
-              <code className={'text-foreground font-mono text-[13px]'}>
-                uc.free-sanitises.v1
-              </code>
-              , counts how many free uses you have taken. It holds a number
-              only, never leaves your browser, and clearing your browser data
-              removes it.
-            </>,
-          ]}
-        />
+        <P>
+          Every page also runs a background check from Cloudflare that tells
+          real people apart from automated scripts. It is there because free
+          credits are worth money and would otherwise be farmed by a program. It
+          sees your IP address and some ordinary details about your browser, and
+          it stores nothing on your device under our domain. It is not
+          advertising and it does not follow you around the internet.
+        </P>
 
         <H2>Who else is involved</H2>
         <Table
@@ -186,8 +280,13 @@ async function PrivacyPolicyPage() {
             ],
             [
               'Supabase',
-              'Stores accounts and handles sign-in',
-              'Your account record',
+              'Stores accounts and credit balances, and handles sign-in',
+              'Your account record and your credit history',
+            ],
+            [
+              'Cloudflare',
+              'Tells real visitors apart from automated scripts, on every page',
+              'Your IP address and ordinary details about your browser. No content, and nothing about what you submitted',
             ],
             [
               'PostHog',
@@ -195,7 +294,7 @@ async function PrivacyPolicyPage() {
               'Pages viewed, rough location from IP address, browser and device type, and which actions you took in the tool with counts of what was found. Nothing stored on your device, and never the content you submit, your file names, or your text',
             ],
             [
-              'Mistral, via Vercel AI Gateway',
+              'Mistral, reached through Vercel AI Gateway',
               'Performs the optional rewrite',
               'The text you submitted for rewriting, at the moment it runs',
             ],
@@ -207,6 +306,10 @@ async function PrivacyPolicyPage() {
           ]}
         />
         <P>
+          All of these companies are based in the United States, so if you are
+          in the UK or EU, your information is processed there.
+        </P>
+        <P>
           We do not sell your information, share it for advertising, or transfer
           it to anyone not listed above.
         </P>
@@ -214,16 +317,33 @@ async function PrivacyPolicyPage() {
         <H2>Your rights</H2>
         <P>
           Wherever you live, you may ask us to show you what we hold about you,
-          correct it, or delete it. Deleting your account removes your account
-          record, and we will delete any correspondence you have sent us on
-          request. Because we do not retain submitted content, there is nothing
-          else to delete. Write to us at the address below and we will respond
-          within 30 days.
+          correct it, delete it, receive a copy of it in a portable form, or
+          object to how we use it. Write to us at the address below and we will
+          respond within 30 days. We do not currently offer a one-click download
+          of your data. Ask us and we will send it to you.
+        </P>
+        <P>
+          You can delete your account yourself at any time, from your account
+          settings. That removes your sign-in for good and you will not be able
+          to reach the account again. It does not by itself erase the record we
+          hold: your account record and your credit history stay in our database
+          until we remove them, so write to us and we will. Because we do not
+          retain submitted content, there is nothing else to delete.
+        </P>
+        <P>
+          Deleting your account also ends any credits still on it, and unused
+          credits are not refunded on deletion. If you want a refund, ask for it
+          first.
         </P>
         <P>
           If you are in the UK or EU: our lawful basis is performance of a
-          contract for account data, and legitimate interest in operating a
-          working service for server logs.
+          contract for your account, your credits and the rewrite, and
+          legitimate interest in keeping the service working and free from
+          abuse, which covers our server logs, the anti-script check and our
+          measurement of how the site is used. You have the right to complain to
+          a data protection authority: in the UK that is the Information
+          Commissioner&rsquo;s Office, and in the EU it is the authority in your
+          own country.
         </P>
 
         <H2>Children</H2>

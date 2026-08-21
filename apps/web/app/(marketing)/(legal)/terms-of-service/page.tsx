@@ -20,10 +20,43 @@ export async function generateMetadata() {
  * There is no company and no legal entity behind Un-Claude, so there is nothing
  * to name as a party and nowhere to seat a dispute. Inventing a jurisdiction
  * would be a false statement in the one document that most needs to be true.
- * It gets added when an entity exists, alongside payments. 04 entry 54.
+ * It gets added when an entity exists, alongside payments. 04 entry 54, and
+ * decision D1 of the legal reconciliation, which is the thing that blocks
+ * taking money.
  *
  * The "currently free and no payment method is collected" sentence in Payment is
  * the other line with an expiry on it. 06 row 46.
+ *
+ * REWRITTEN 21 AUGUST 2026, from `docs/session-notes/legal-reconciliation.md`
+ * sections 1.3 and 2C. Two things had gone false when the credit ledger shipped
+ * on 20 and 21 August, and one was imprecise against the code:
+ *
+ *   - "Accounts and free use" said the free allowance "is enforced in your
+ *     browser and is not a security measure". It was replaced by a server-side
+ *     ledger enforced inside a locking database transaction. That sentence was
+ *     false in the direction that UNDERSTATES the product, which is the one a
+ *     payments reviewer would notice.
+ *   - Nothing mentioned guest accounts, guest credits, or what clearing browser
+ *     data does to them, so the free tier the terms described no longer existed.
+ *   - The credit price did not match `costFor` in workbench/credits.ts or the
+ *     server's own arithmetic in api/tool/clean/route.ts. A file is one flat
+ *     credit EXCEPT a plain text file being rewritten, which is priced by its
+ *     words. The old sentence, "a file with no words costs one credit", implied
+ *     word count decides a file's price. It does not.
+ *
+ * WHAT THIS REWRITE DELIBERATELY DID NOT TOUCH. "What we can and cannot
+ * promise" is the claims boundary and it is the strongest section on the site:
+ * layers A and metadata are provable, the rewrite is best effort, and a
+ * contract promising removal of "AI watermarking" without that split would be a
+ * false claim in a document Jon signs. "Acceptable use" is left exactly as it
+ * is for the same reason: naming the legitimate uses BEFORE the prohibition is
+ * what makes the prohibition credible, and broadening it to look safer would
+ * prohibit the product's own most common use. 04 entry 54 rulings 3 and 4.
+ *
+ * STILL OUTSTANDING, and both are Jon's rather than a drafting job: the entity
+ * and jurisdiction section (D1), and a suspension sentence in "Ending your use"
+ * covering what happens to a balance when an account is suspended (D4). Neither
+ * is invented here.
  */
 async function TermsOfServicePage() {
   const t = await getTranslations();
@@ -36,7 +69,7 @@ async function TermsOfServicePage() {
       />
 
       <Prose>
-        <Updated date={'19 August 2026'} />
+        <Updated date={'21 August 2026'} />
 
         <H2>What Un-Claude does</H2>
         <P>
@@ -96,14 +129,15 @@ async function TermsOfServicePage() {
         <P>
           You keep all rights to anything you submit. We claim no ownership and no
           licence beyond what is needed to process your request and return the
-          result. We do not retain it. See the{' '}
+          result. We do not retain what you submit. We do keep a record that you
+          ran a job, so your credit balance means something, and the{' '}
           <Link
             href={'/privacy-policy'}
             className={'text-foreground font-medium underline underline-offset-2'}
           >
             Privacy Policy
-          </Link>
-          .
+          </Link>{' '}
+          explains exactly what that record contains and what it does not.
         </P>
         <P>You are responsible for having the right to submit what you submit.</P>
 
@@ -129,31 +163,68 @@ async function TermsOfServicePage() {
           anyone’s rights, or to attack, overload, or reverse-engineer the service.
         </P>
 
-        <H2>Accounts and free use</H2>
+        <H2>Accounts, credits and free use</H2>
         <P>
-          You may use the tool without an account, subject to a free allowance.
-          That allowance is enforced in your browser and is not a security measure;
-          we may replace it with stronger limits at any time.
+          You can use the tool without an account. The first time you clean
+          something we create a guest account for your browser and give it a small
+          number of free credits, so you can try the thing you came for before
+          deciding anything. Creating a real account earns a few more, once. The
+          current numbers are on the{' '}
+          <Link
+            href={'/pricing'}
+            className={'text-foreground font-medium underline underline-offset-2'}
+          >
+            pricing page
+          </Link>
+          .
+        </P>
+        <P>
+          Free credits are a courtesy, not an entitlement. They are granted once
+          rather than renewed, we may change the amounts, and we may refuse or
+          reverse them where we believe someone is creating accounts to collect
+          them repeatedly.
+        </P>
+        <P>
+          Guest credits live on the browser that earned them. Clear your browser
+          data and they are gone, and we cannot restore them, because we
+          deliberately hold nothing that would let us recognise you. If you create
+          an account on that browser, whatever is left moves across to it.
         </P>
         <P>
           If you create an account you must give accurate information and keep your
-          credentials secure. You must be at least 18 years old.
+          credentials secure. You are responsible for what happens under your
+          account. You must be at least 18 years old.
         </P>
 
         <H2>Payment, credits and refunds</H2>
         <P>
           The service is currently free to use and no payment method is
           collected. Credit packs and their prices are announced on the pricing
-          page and go on sale when card checkout opens. Nothing is charged
-          without your agreement, and the price of an operation is shown before
-          it runs.
+          page and go on sale when card checkout opens. Prices are in US dollars.
+          Nothing is charged without your agreement, and the price of an operation
+          is shown before it runs.
         </P>
         <P>
-          One credit covers one thousand words of sanitising, and a file with no
-          words costs one credit. Credits never expire. A failed operation costs
-          nothing: any credits it debited are returned to your balance
-          automatically. Unspent credits from a purchase are refundable at the
-          price paid for 30 days from the purchase.
+          One credit covers one thousand words of pasted text. An uploaded file is
+          one flat credit whatever its size, unless it is a plain text file you
+          also send through the rewrite, which is priced by its words in the same
+          way a paste is. Every job rounds up to a whole credit, and credits never
+          expire.
+        </P>
+        <P>
+          A failed operation costs nothing. If a run fails, the credits it took are
+          returned to your balance automatically, and your credit history shows the
+          reversal.
+        </P>
+        <P>
+          Within 30 days of a purchase you may ask for a refund of any credits from
+          it that you have not spent, at the price you paid, and we will not ask
+          you why. Credits you have already spent are not refunded, because the
+          work was done. Refunds are returned to the card that paid.
+        </P>
+        <P>
+          If you delete your account, any credits on it end with it and are not
+          refunded. Ask for the refund before you delete.
         </P>
 
         <H2>Availability</H2>
