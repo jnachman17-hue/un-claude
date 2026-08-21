@@ -57,7 +57,33 @@ export function EmailPasswordSignUpContainer({
           onSignUp(data.user?.id);
         }
       } catch (error) {
-        console.error(error);
+        /*
+         * SPELL THE ERROR OUT. 21 August 2026.
+         *
+         * This was `console.error(error)`, and a Supabase AuthError carries
+         * its message, status and code on the prototype rather than as own
+         * enumerable properties, so the console and the dev server log both
+         * recorded the literal string `{}`.
+         *
+         * A sign-up failed for Jon and the only trace of why was an empty
+         * object, while the visitor was shown the last-resort "check your
+         * internet connection" because the message never reached the pattern
+         * list in auth-error-alert.tsx. Two layers of the diagnostic chain
+         * blind at once, on the most important step in the funnel.
+         */
+        const detail = error as {
+          message?: string;
+          status?: number;
+          code?: string;
+          name?: string;
+        };
+
+        console.error('sign-up failed', {
+          name: detail?.name,
+          status: detail?.status,
+          code: detail?.code,
+          message: detail?.message,
+        });
       } finally {
         resetCaptchaToken();
       }
