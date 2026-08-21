@@ -1499,3 +1499,36 @@ reason.
 `WATERMARKS_REWRITE_*`), which Turbo warns about explicitly: they are set on
 Vercel but were not declared, so they were withheld from the build. Fixed by
 declaring all of them.
+
+## Adding a subdomain: DNS first, certificate about three minutes later
+
+**20 August 2026.** `www.un-claude.com` returned HTTP 000 — no response at
+all, not an error page — while the apex `un-claude.com` served fine.
+
+**Two causes, in sequence.**
+
+**One: `@` is not a wildcard.** The Squarespace DNS had a single A record,
+host `@`, pointing at Vercel's `76.76.21.21`. That covers the bare domain and
+**nothing else**. Subdomains do not inherit it. `www` needs its own record,
+same type and same value, with `www` in the host field. Vercel already listed
+both `www.un-claude.com` and `un-claude.com` on the project, so nothing was
+wrong on that side; the record simply did not exist.
+
+**Two: the certificate lags the DNS.** Once `www` resolved, Vercel still had
+to issue a certificate covering it, and until it did, the TLS handshake failed
+and curl reported HTTP 000 — indistinguishable from the original problem.
+Measured here: **150 seconds** between the record propagating and `www`
+answering 200.
+
+**The tell, and the reason this is worth writing down:** during that window a
+browser may succeed while curl fails, because of caching and because the two
+requests land either side of issuance. That looks like a disagreement about
+whether the site works. It isn't. Check the certificate's subjectAltName
+rather than guessing:
+
+    echo | openssl s_client -servername www.example.com \
+      -connect www.example.com:443 2>/dev/null \
+      | openssl x509 -noout -ext subjectAltName
+
+If the SAN lists only the apex, the certificate has not been issued yet.
+Wait, do not re-diagnose.
