@@ -3,16 +3,64 @@
  *
  * The browser's only way to reach the engine's clean. Adds the shared key
  * server side. See the scan route for why this is not at /api/clean.
+ *
+ * CREDITS ARE ENFORCED HERE, 04 entry 97, and here rather than in the
+ * interface because the interface is a suggestion. Until this session,
+ * anyone with curl could run rewrites on our bill; now the order of events
+ * on every request is:
+ *
+ *   1. A session, or 401. The browser creates an anonymous session on first
+ *      use and retries; curl without cookies gets nothing.
+ *   2. Grants, idempotent, so a first-time guest is holding their welcome
+ *      credits by the time the price is checked.
+ *   3. The rewrite needs a real account: anonymous + layer_b is 403. The
+ *      free guest credits deliberately only reach the layers that cost us
+ *      nothing to run.
+ *   4. The price, computed HERE from the payload, never trusted from the
+ *      client: a file is one credit, prose is one per 1,000 words rounded
+ *      up, and anything being rewritten is priced by its words even if it
+ *      arrived wearing a file name.
+ *   5. spend_credits, atomic in the database, or 402 with the exact numbers
+ *      ("needed 3, have 2") for the interface to show.
+ *   6. The engine. If it fails after the spend, the credits go straight
+ *      back: "a failed operation costs nothing" is a pricing page promise.
+ *
+ * The scan route stays free and sessionless on purpose: scanning is the
+ * hook, and it costs us nothing.
  */
+import { cookies } from 'next/headers';
+
+import { getSupabaseServerClient } from '@kit/supabase/server-client';
+
 import { clean } from '~/lib/engine/client';
 import { buildReceipt } from '~/lib/engine/receipt';
+import {
+  countWords,
+  creditsForWords,
+  devBypass,
+  ensureGrants,
+  refund,
+  spend,
+} from '~/lib/server/credits';
+import { clientIp, rateLimit } from '~/lib/server/rate-limit';
 
 /**
- * Layer B costs real money on every single run and the credit gate that has to
- * sit in front of it does not exist yet. 06 rows 37 and 38.
- *
- * So it is OFF in production unless somebody deliberately turns it on, and on
- * everywhere else. Deploying this file cannot start a bill on its own.
+ * Layer that costs credits: ~10 requests per minute per account. Keyed on the
+ * account, not the IP, so a shared campus or office network (hundreds of real
+ * students behind one IP — this product's core audience) is never throttled as
+ * a group. security-audit.md finding 4.
+ */
+const CLEAN_PER_MINUTE = 10;
+
+/** Where the signed-out browser remembers which guest account is its. */
+const GUEST_COOKIE = 'uc-guest';
+
+/** Cookie lifetime: a year. The guest's credits should outlive a holiday. */
+const GUEST_COOKIE_SECONDS = 60 * 60 * 24 * 365;
+
+/**
+ * Layer B costs real money on every single run. It stays flag-gated in
+ * production so deploying this file cannot start a bill on its own.
  */
 function layerBAllowed(): boolean {
   // Trimmed and lowercased. A value set from a shell without care arrives as
@@ -25,8 +73,8 @@ function layerBAllowed(): boolean {
   return process.env.VERCEL_ENV !== 'production';
 }
 
-function fail(code: string, message: string, status = 400) {
-  return Response.json({ ok: false, code, message }, { status });
+function fail(code: string, message: string, status = 400, extra?: object) {
+  return Response.json({ ok: false, code, message, ...extra }, { status });
 }
 
 export async function POST(request: Request) {
@@ -49,8 +97,8 @@ export async function POST(request: Request) {
   }
 
   // The engine caps uploads at 5 MB; this refuses anything over that cap
-  // before it costs a network round trip, memory, or, once layer B is on in
-  // production, money. Base64 inflates by 4/3, so 7.5M characters is ~5.5 MB.
+  // before it costs a network round trip, memory, or money. Base64 inflates
+  // by 4/3, so 7.5M characters is ~5.5 MB.
   if (file.length > 7_500_000) {
     return fail(
       'too_large',
@@ -69,12 +117,151 @@ export async function POST(request: Request) {
     );
   }
 
+  const inputName = typeof name === 'string' ? name : 'paste.txt';
+  const isFile = inputName !== 'paste.txt';
+  const bypass = devBypass(request);
+
+  const supabase = getSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let charged = 0;
+  let balance: number | null = null;
+
+  if (!bypass) {
+    if (!user) {
+      return fail(
+        'no_session',
+        'Your session expired. Please try again.',
+        401,
+      );
+    }
+
+    const isAnonymous = user.is_anonymous === true;
+
+    // Per-account rate limit on the credit-spending path. Before any grant or
+    // spend, so a hammering account is turned away cheaply. Keyed on the
+    // account so shared IPs are unaffected. security-audit.md finding 4.
+    if (!(await rateLimit(`clean:acct:${user.id}`, CLEAN_PER_MINUTE, 60))) {
+      return fail(
+        'rate_limited',
+        'You are going a little fast. Wait a moment and try again.',
+        429,
+      );
+    }
+
+    // Read the guest cookie before granting so a real account continuing a
+    // guest session (a conversion) is not paid the welcome grant twice.
+    // security-audit.md finding 2.
+    const cookieStore = await cookies();
+    const guestId = cookieStore.get(GUEST_COOKIE)?.value;
+    const isConversion =
+      !isAnonymous &&
+      !!guestId &&
+      /^[0-9a-f-]{36}$/.test(guestId) &&
+      guestId !== user.id;
+
+    await ensureGrants({
+      id: user.id,
+      isAnonymous,
+      email: user.email,
+      isConversion,
+      ip: clientIp(request),
+    });
+
+    if (isAnonymous) {
+      // The coat-check ticket: this cookie is how the guest's credits find
+      // them again on the next visit, and how they follow them into a real
+      // account later. HttpOnly because no script has any business reading it.
+      cookieStore.set(GUEST_COOKIE, user.id, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: GUEST_COOKIE_SECONDS,
+        path: '/',
+      });
+
+      /*
+       * THE REWRITE IS NO LONGER WALLED OFF FROM GUESTS, and this reverses
+       * both entry 67's "signed out: no rewrite" and this session's own
+       * first cut of it. 04 entry 98.
+       *
+       * Jon hit the collision immediately: the box said "2 free credits",
+       * he pasted 700 words, and the only thing he could do with those
+       * credits was be told to make an account. Pasted text always carries
+       * prose, so a guest's credits could never buy anything they came for.
+       * A promise of credits that cannot be spent is worse than no promise.
+       *
+       * The cost of opening it is genuinely small: the rewrite runs at
+       * about 0.06 cents per 1,000 words, so a guest's entire welcome
+       * allowance is roughly a tenth of a cent, and Turnstile now guards
+       * anonymous sign-in against scripted farming. Against that, the
+       * product's main event becomes experienceable before signup, which is
+       * the antidote to Jon's own worry that nobody will pay for a rewrite
+       * they have never seen work.
+       */
+    }
+
+    /**
+     * The price, from the payload itself, matching what the engine will
+     * actually do. The engine runs the rewrite only on text-kind inputs,
+     * measured in server.py (06 row 74): containers and images silently skip
+     * layer B whatever the request says. So:
+     *
+     *   prose, and any text-like file the rewrite WILL run on:
+     *     one credit per 1,000 words, rounded up. Pricing by words here is
+     *     also what stops a 40,000 word paste renamed "essay.txt" from
+     *     buying a 40 credit rewrite for 1.
+     *   every other file (docx, png, jpg): one flat credit, 04 entry 71,
+     *     because the work done on it costs us nothing either way.
+     */
+    const textLike = !isFile || /\.(txt|md|markdown|text)$/i.test(inputName);
+
+    let wordsIn = 0;
+
+    if (textLike) {
+      try {
+        wordsIn = countWords(Buffer.from(file, 'base64').toString('utf8'));
+      } catch {
+        wordsIn = 0;
+      }
+    }
+
+    const cost =
+      textLike && wantsRewrite ? creditsForWords(wordsIn) : isFile ? 1 : creditsForWords(wordsIn);
+
+    const spent = await spend(user.id, cost, {
+      endpoint: 'clean',
+      inputKind: isFile ? 'file' : 'text',
+      wordsIn,
+    });
+
+    if (!spent.ok) {
+      return fail(
+        'insufficient_credits',
+        `This needs ${spent.needed} ${spent.needed === 1 ? 'credit' : 'credits'} and you have ${spent.have}.`,
+        402,
+        { needed: spent.needed, have: spent.have, isAnonymous },
+      );
+    }
+
+    charged = cost;
+    balance = spent.balance;
+  }
+
   const result = await clean(
-    { file, name: typeof name === 'string' ? name : 'paste.txt' },
+    { file, name: inputName },
     { layer_b: wantsRewrite },
   );
 
   if (!result.ok) {
+    // The promise on the pricing page: a failed operation costs nothing.
+    if (!bypass && user && charged > 0) {
+      await refund(user.id, charged);
+      balance = balance === null ? null : balance + charged;
+    }
+
     return Response.json(result, { status: 400 });
   }
 
@@ -100,5 +287,8 @@ export async function POST(request: Request) {
     }
   }
 
-  return Response.json(result, { status: 200 });
+  return Response.json(
+    { ...result, credits: { charged, balance } },
+    { status: 200 },
+  );
 }
