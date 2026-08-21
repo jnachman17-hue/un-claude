@@ -92,6 +92,12 @@ the Closed section with the reason, rather than deleted.
 | 78 | **[T1] Overriding a theme colour needs `--color-*`, not the bare token, and one whole feature was built on the wrong one** | technical | **Measured 19 Aug 2026.** Setting `--mark` on a wrapper element changes nothing; setting `--color-mark` changes everything | `theme.css` declares `--color-mark: var(--mark)` at `:root`. **A custom property resolves its own `var()` where it is DECLARED**, so `--color-mark` computes against the root's `--mark` and then inherits already-resolved. Overriding `--mark` lower in the tree is a no-op. The theme bench at `/dev/preview` was built this way and showed three identical buttons; **Jon caught it before this session did**, reporting "literally zero difference between the three". Proof: `setProperty('--mark', …)` left the button at `oklch(0.597 …)` for all three variants, `setProperty('--color-mark', …)` produced `0.597 / 0.673 / 0.672` | **Fixed. Recorded because it will recur:** anything that themes a subtree — a dark section, a preview, a per-plan accent — must override the `--color-*` tokens |
 
 | 79 | **[T1] White on the accent orange is 3.12:1 and fails WCAG AA for normal text** | risk | **Known, chosen, and measured before shipping, not discovered after.** `04` entry 75 | White on `#d97757` passes AA for large text and fails for normal text, which includes every button label on the site at 13-15px. **Jon compared it against the compliant alternative and preferred it**; the nearest passing orange on the same hue is `#ab5e45` at 4.75:1 and reads brown. **The cheap middle exists if this is ever revisited:** keep `#d97757` for tints, gradients and highlight halos, where no text sits on it, and use a deeper shade ONLY behind small white labels. That keeps everything Jon chose and fixes the one place it fails | **An accessibility pass before launch, or the first complaint.** Do not "fix" it by silently darkening the accent - that reverses a ruling |
+| 80 | **Whether a credit pack is "digital content" or a "service" for the 14-day cancellation right** | legal | **Treat it as digital content supplied immediately**, take express consent plus an acknowledgement at checkout, and send a confirmation email. `session-notes/legal-research.md` §3c | The two characterisations give different answers and one of them is expensive. As digital content the right dies at purchase once the three-part waiver is taken. **As a service, [CRD Art 16(a)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011L0083-20220528) only kills it once the service is "fully performed" — and a pack with credits left in it never is**, so a customer could spend 9 of 10 credits on day 13 and cancel for a full refund. I hold the digital-content reading with moderate confidence, not high | **One hour of a consumer solicitor, before the first EU sale.** It is item 1 on the professional-advice list and the one worth paying for first |
+| 81 | **Whether publishing only a trading name satisfies DMCC s.230(6)** | legal | **Publish "Jonathan [surname], trading as un-claude".** Fallback if Jon refuses: trading name plus service address, name on request | **The statute and the regulator disagree and I will not average them.** [DMCC s.230(6)](https://www.legislation.gov.uk/ukpga/2024/13/section/230) defines a trader's identity as "(a) the name of the trader, and (b) if different, the name under which the trader trades" — both. [CMA207 ¶4.16](https://assets.publishing.service.gov.uk/media/691b9bd821ef5aaa6543ee6f/Unfair_commercial_practices_CMA207_18_Nov_2025__2_.pdf) glosses the same section as "their personal **or** trading name". In force since 6 April 2025, so there is little practice to read | **Jon's ruling, and it blocks both legal pages** — every draft in `legal-research.md` §9 has two versions until it is made. A solicitor may know how the CMA is applying it in practice, which cannot be found from outside |
+| 82 | **Whether a Stripe email receipt discharges Companies Act 2006 s.1202(1)(c)** | legal | **Assume not, and send our own confirmation email.** It is needed anyway | [s.1202(1)(c)](https://www.legislation.gov.uk/ukpga/2006/46/section/1202) requires the trader's own name and service address on **receipts**, and the Stripe receipt is the receipt. Stripe's customer-visible fields are the business (DBA) name, support email, phone and address — **could not establish whether a separate legal-name line is possible** | **Already resolved in practice by the reg 16 confirmation email**, which section 9D drafts. One email discharges the durable-medium confirmation, the third limb of the waiver, and this. Only revisit if that email is dropped |
+| 83 | **Whether professional indemnity / tech E&O is underwritable for a watermark remover** | risk | **Unknown. Ask a broker early.** Insurance is the only substitute for the limited company Jon has decided against, so this is the highest-value item on the risk list | Cover for solo UK software operators is widely sold, but "AI watermark removal" is a category an underwriter may decline or load, and **I could not establish appetite from public sources**. **A refusal would itself be information about the risk, not just about insurance** | **Before the first sale.** Long lead time, and the answer may change how much money Jon wants running through the site |
+| 84 | **Selling to EU consumers triggers VAT from the first sale, with no threshold** | legal | **Decide deliberately rather than by default.** Either register for the non-Union OSS or use a merchant-of-record — the second conflicts with the Stripe decision | UK VAT has a [£90,000 threshold](https://www.gov.uk/register-for-vat), but there is none for digital services to EU consumers: VAT is due in the customer's country from sale one, via the [non-Union One Stop Shop](https://vat-one-stop-shop.ec.europa.eu/one-stop-shop/declare-and-pay-oss_en). It also brings a **mandatory phone number** ([CRD Art 6(1)(c)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011L0083-20220528) as amended, where the UK still says "where available") and the three-part Art 16(m) waiver | **An accountant's question, alongside the record-retention number D2 already sends there.** Before the first EU sale |
+| 85 | **Whether "un-claude" is a trade mark problem, given "Claude" is Anthropic's mark** | legal | **Not researched. No position taken.** Recorded so it is not mistaken for something this session covered | The legal research session covered consumer disclosure, distance selling, liability, Stripe and the contract-cheating offences. **Trade mark was explicitly out of scope and remains completely unexamined**, as does whether removing a provider's provenance marks breaches that provider's own terms of service | **Its own session, before any spend on marketing the name.** Worth a real professional rather than a model's opinion, same as `06` row 34 |
 
 ---
 
@@ -346,3 +352,131 @@ done.**
   page was built for SEO tonight beyond what Next.js already does (robots.ts and
   a sitemap exist). **Trigger for revisiting: after launch**, as its own session,
   covering metadata, structured data, and the copy's search surface.
+
+## Where sign-up should land you, opened 20 August 2026
+
+**Jon, on completing the first real sign-up in production:** "now when you
+sign up it brings you to this weird page instead of just back to the home
+page."
+
+The starter sends a new account to `/home`, its wallet page. That is correct
+for a dashboard product and wrong for this one: nobody arrives at un-claude.com
+wanting to look at a balance, they arrive wanting a document cleaned, and they
+only signed up because the tool asked them to. Landing them on a ledger drops
+them out of the job they were doing.
+
+**Working position: send a new account back to the tool**, with the new balance
+visible in the header so the 3 credits register. The wallet stays reachable
+from the account menu for anyone who wants the history. **Not yet implemented.**
+Revisit with the credits UX work (family 3), since it shares the same files as
+the paywall and balance chip.
+
+## The welcome grant is paid twice, found 20 August 2026
+
+**The ledger after Jon's first real sign-up:**
+
+    3100a55e (guest)  +2 anon_grant, -1 spend, -1 spend   = 0
+    2a7c662a (guest)  +2 anon_grant, -1 spend, -1 spend   = 0
+    f17969e2 (real)   +2 anon_grant, +3 signup_grant      = 5
+
+Entry 97 ratified **2 + 3 = 5 free credits**. What actually happens is that a
+visitor receives 2 as a guest, spends them, signs up, and is then granted the
+welcome *again* on the real account alongside the signup grant. **The real
+total is 7, and it is unbounded across browsers**: clearing cookies mints
+another guest and another 2.
+
+`grantOnce` is doing its job — it prevents a *second* welcome per account. The
+gap is that guest and real accounts are separate accounts, so the per-account
+guarantee does not add up to a per-person one.
+
+**This is not urgent while nothing costs money except layer B, and it is the
+generous direction rather than the dangerous one.** But it is the exact shape of
+the credit-farming problem, so it belongs to the security pass rather than being
+patched ad hoc. **Working position: leave it, and decide it alongside the
+per-IP cap on anonymous grants**, so both are solved by one mechanism instead of
+two competing ones.
+
+## The double grant is closed, 21 August 2026
+
+**Resolved by the security pass, as the working position above asked for: one
+mechanism, not two.** Both routes now read the guest cookie *before* granting,
+so a real account continuing a guest session is not paid the welcome grant a
+second time. Both arrival paths land on the ratified **5**: sign up cold and it
+is 2 + 3; arrive as a guest and it is the guest's 2 (spent or merged) plus 3.
+Beside it, the signup grant is now keyed to a normalised email **inbox** rather
+than an address, so `student+1@` and `student+2@` collect it once. See `04`
+entry 110 and `docs/session-notes/security-fixes.md`.
+
+**The code half is done and committed. The email-dedupe half needs migration
+`20260821120300_signup_grant_email_dedupe.sql` applied before it does anything**
+— until then the code detects the missing column and grants without the dedupe
+rather than failing, so nothing breaks, but the door is still open.
+
+## Should deleting an account delete the ledger? Opened 21 August 2026
+
+**The question, in plain English.** When someone deletes their account, their
+sign-in goes. Their account record and their credit history do not.
+
+**Why it is open rather than a bug.** `public.accounts.id` carries no foreign
+key to `auth.users`, so `auth.admin.deleteUser()` removes the login and leaves
+the account row and every `credit_ledger` row standing. **Verified, not
+assumed** — the schema shows no such key, and the live database has an orphan
+`accounts` row with no matching auth user. **The privacy policy already
+describes this accurately**, so nothing on the site is false today; a previous
+session found the same thing and wrote the honest sentence rather than the
+expected one.
+
+**Working position: leave it.** The record is small (no document content, only a
+history of jobs and amounts), the page tells the truth about it, and changing it
+alters the deletion semantics of every account.
+
+**The fix when it is wanted** is a foreign key from `public.accounts.id` to
+`auth.users(id) on delete cascade`. The append-only trigger added on 21 August
+was deliberately written to allow that cascade, so it will not stand in the way.
+
+**Trigger for revisiting:** any of — a user asking for their data to be erased,
+a GDPR/CCPA obligation being taken on, or the ledger starting to carry anything
+more identifying than it does now. **The privacy policy must be edited in the
+same deployment as the foreign key**, because that page's wording depends on
+this behaviour.
+
+## Guest credits carry over once, ever — RATIFIED 21 August 2026
+
+**Jon's ruling.** An account absorbs a guest balance exactly once in its life.
+Enforced by the `guest_conversions` table and the locking SQL function from
+`20260821140000_guest_conversion_once.sql`.
+
+**What it buys:** it closes the farming hole. Before this, you could sign out,
+collect a fresh guest grant, sign back in, and repeat indefinitely, and the
+ratified 2 + 3 = 5 drifted to 7 and upward.
+
+**What it costs:** a returning signed-out user who accumulates guest credits and
+then signs into an existing account keeps nothing. That is a real person losing
+something they were given. Accepted deliberately as the cheaper of the two
+errors, because the alternative is unbounded.
+
+**Verified on the live database**, four invariants: no doubled transfers, no
+negative balances, every transfer has a record, and no welcome grant after
+conversion. Three real conversions on record at the time of ratification.
+
+## The confirmation email opened on a different device — OPEN
+
+**Not a bug in anything, and nothing errors. It is how people read email.**
+
+Someone uses the tool on a laptop, is given a guest account with credits, and
+spends one. They sign up; the confirmation email arrives; they open it on their
+phone. The link confirms the account and creates the session **on the phone**,
+which has never seen the tool and holds no `uc-guest` cookie. **The merge cannot
+fire** — the guest exists only on the laptop. Back on the laptop they are still
+a signed-out guest, and their remaining credit is stranded on an account they
+can no longer reach.
+
+**Nobody has looked at this.** It is the most likely real-world failure left in
+the funnel, because reading email on a phone is the normal case rather than the
+edge case.
+
+**Directions worth considering, none chosen:** carry the guest id in the
+confirmation link so the merge can run wherever it is opened; or make the
+laptop's still-open session notice the account was confirmed elsewhere; or
+accept it and make the carry-over promise conditional in the copy. **Deciding
+this needs a view on how often it happens, which nothing currently measures.**
