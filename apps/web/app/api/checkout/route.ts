@@ -23,6 +23,31 @@
  * a refund request and a dispute waiting to happen, and there is no email
  * address to send a receipt to either. 402 sends them to sign up first, which
  * is also where the 3 signup credits are.
+ *
+ * WHY THIS ROUTE REFUSES WITHOUT A CONSENT FLAG, ADDED 22 August 2026.
+ * A UK or EU consumer has a statutory 14 day right to cancel a distance
+ * purchase and get ALL of it back, credits they already spent included. Our
+ * voluntary 30 day refund covers UNSPENT credits only, so it does not discharge
+ * that right, and being more generous does not either: the two cover different
+ * money. 04 entry 113.
+ *
+ * The right is lost only where the buyer expressly consents to immediate
+ * supply, acknowledges that this loses them the right, AND receives
+ * confirmation of both on a durable medium. Credits land the instant the
+ * payment succeeds, so supply IS immediate whether or not anybody papered it.
+ * The dialog in `pricing/_components/buy-button.tsx` collects the first two.
+ * Stripe's receipt email is the third and already exists.
+ *
+ * SO THE FLAG IS REQUIRED RATHER THAN RECORDED-IF-PRESENT. A checkout that
+ * quietly proceeded without it would take money under a consent nobody gave,
+ * and the resulting sale would look identical to an honest one — the same shape
+ * of defect as accepting a price from the browser. Refusing is one line and it
+ * makes the ceremony impossible to skip by accident.
+ *
+ * IT IS ALSO WRITTEN DOWN ON STRIPE'S SIDE, because a consent nobody can
+ * produce later is not worth collecting: onto the session AND the charge as
+ * metadata, so a dispute opened months from now still carries it, and restated
+ * beside Stripe's own pay button through `custom_text`.
  */
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
@@ -100,6 +125,21 @@ export async function POST(request: Request) {
 
   if (!pack) return fail('unknown_pack', 400);
 
+  /*
+   * The consent, checked before a Checkout Session exists. See the file header.
+   * Strictly `true`: a missing field, a string, or any other truthy-ish value is
+   * not consent.
+   */
+  if (
+    (body as { agreedToImmediateSupply?: unknown })?.agreedToImmediateSupply !== true
+  ) {
+    return fail('consent_required', 400);
+  }
+
+  // Recorded to the second, because "when" is half of what makes a consent
+  // record evidence rather than an assertion.
+  const consentAt = new Date().toISOString();
+
   const origin = siteOrigin(request);
 
   const session = await stripe().checkout.sessions.create({
@@ -159,12 +199,16 @@ export async function POST(request: Request) {
       account_id: user.id,
       pack_id: pack.id,
       credits: String(pack.credits),
+      consent_immediate_supply: 'accepted',
+      consent_immediate_supply_at: consentAt,
     },
     payment_intent_data: {
       metadata: {
         account_id: user.id,
         pack_id: pack.id,
         credits: String(pack.credits),
+        consent_immediate_supply: 'accepted',
+        consent_immediate_supply_at: consentAt,
       },
     },
 
@@ -182,6 +226,24 @@ export async function POST(request: Request) {
      */
     consent_collection: {
       terms_of_service: 'required',
+    },
+
+    /*
+     * The immediate-supply acknowledgement, restated where the money actually
+     * leaves. Stripe has no field for this consent — `consent_collection`
+     * offers terms of service and marketing and nothing else — so it is
+     * collected on our page and repeated here, above Stripe's own pay button,
+     * so the buyer reads it once more at the moment of paying.
+     *
+     * The wording tracks the checkbox and the terms sentence deliberately.
+     * Three surfaces saying the same thing in three different ways is how a
+     * consent record gets argued with.
+     */
+    custom_text: {
+      submit: {
+        message:
+          'You asked for your credits to be delivered immediately and confirmed that this ends your 14 day right to cancel. Our separate 30 day refund of unspent credits still applies.',
+      },
     },
 
     success_url: `${origin}/home?purchase=success`,

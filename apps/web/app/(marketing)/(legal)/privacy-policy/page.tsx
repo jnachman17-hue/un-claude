@@ -11,6 +11,15 @@ export async function generateMetadata() {
 
   return {
     title: t('marketing.privacyPolicy'),
+    /*
+     * ITS OWN DESCRIPTION, ADDED 22 August 2026. All three legal pages
+     * inherited the site-wide one, so a search result for this page read
+     * "Scan text and files free for hidden AI watermarks", which describes
+     * the product rather than the page. Written here rather than in
+     * `lib/root-metdata.ts`, which belongs to the SEO session.
+     */
+    description:
+      'What Un-Claude does with your text and files. Nothing you submit is kept, the optional rewrite is the only thing that leaves, and here is what we store.',
   };
 }
 

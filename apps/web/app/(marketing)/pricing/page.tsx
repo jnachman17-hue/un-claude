@@ -476,8 +476,7 @@ function Pricing() {
                 </p>
 
                 <BuyButton
-                  packId={pack.id}
-                  packName={pack.name}
+                  pack={pack}
                   className={[
                     'relative mt-6 rounded-[11px] px-4 py-3.5 text-center text-[14px] font-semibold text-nowrap transition-transform active:scale-[0.98]',
                     pack.featured
@@ -530,6 +529,44 @@ function Pricing() {
               </li>
             ))}
           </ul>
+
+          {/* ------------------------------------------------------------
+              THE TWO LINES THE TRUST GRID CANNOT CARRY, ADDED 22 August 2026.
+
+              The four reassurances above are OUR promises and they are set as
+              promises. These two are neither: one is what the checkout
+              arithmetic does, and the other is a right the law gives the buyer
+              and we do not define. Putting them in the grid would give them the
+              grammar of a selling point, and the second one would then read as
+              "our cancellation policy", which is the exact false register 04
+              entry 113 ruled against. So they sit under the rule as small
+              print, which is what they are.
+
+              THE 14 DAY RIGHT IS SUMMARISED IN ONE LINE AND LINKED, NOT
+              EXPLAINED. The terms carry it in full, the checkout consent
+              collects it, and a paragraph of statutory detail under a price
+              grid helps nobody. What this line owes the visitor is the
+              existence of the thing and a route to the rest.
+             ------------------------------------------------------------ */}
+          <p
+            className={
+              'text-muted-foreground mt-7 max-w-[72ch] text-[12.5px] leading-[1.6]'
+            }
+          >
+            Prices are in US dollars, and the price on the card is the total you
+            pay. We add nothing at checkout, no tax and no fee. Separately from
+            our 30 day refund, buyers in the UK and the EU have a 14 day legal
+            right to cancel, which ends once credits are delivered.{' '}
+            <Link
+              href={'/terms-of-service'}
+              className={
+                'text-foreground font-medium underline underline-offset-2'
+              }
+            >
+              Both are set out in the terms
+            </Link>
+            .
+          </p>
         </div>
       </section>
 
