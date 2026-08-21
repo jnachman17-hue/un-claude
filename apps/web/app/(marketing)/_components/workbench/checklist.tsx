@@ -10,7 +10,6 @@ import {
   MinusIcon,
   PaperclipIcon,
   PlusIcon,
-  XIcon,
 } from 'lucide-react';
 
 /**

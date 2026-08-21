@@ -1118,7 +1118,6 @@ export function Workbench() {
                 name={loaded.name}
                 scanning={busy}
                 downloadUrl={done ? downloadUrl : null}
-                onDownload={() => track.resultDownloaded({ name: loaded.name })}
                 onClear={startOver}
               />
             </div>
@@ -1581,13 +1580,13 @@ function FileSummary({
   name,
   scanning,
   downloadUrl,
-  onDownload,
   onClear,
 }: {
   name: string;
   scanning: boolean;
+  /** Only used to say "sanitised" on the card. The download itself, and the
+      event that records it, live in the action bar above. */
   downloadUrl: string | null;
-  onDownload: () => void;
   onClear: () => void;
 }) {
   /*

@@ -218,6 +218,46 @@ the screen is wide enough to carry it.
 
 ---
 
+## The tool itself, run at both widths after all of this
+
+Because everything above touched the surface the product lives on, the product
+was run rather than assumed. Pasted text carrying a real zero width space and a
+real word joiner, scanned, at 1280px and at 390px in the same pass.
+
+**Both widths, identical result:**
+
+    Hidden characters                       2 FOUND
+      Zero width space  ·  Invisible, no width at all
+      Word joiner       ·  Takes a position, takes no space
+    Statistical watermark                   PRESUMED PRESENT
+    Button                                  Sanitise it (2)   1 credit
+
+**And the one difference between the two is exactly the change that was made
+to them.** At 1280px the hidden characters row reads:
+
+    Hidden characters
+    Lives invisibly between your words
+    2 FOUND
+
+At 390px the same row reads:
+
+    Hidden characters
+    2 FOUND
+
+That is S3 working: the teaching line is off the phone, the finding and the
+count are not, and the + on the row still opens the full explanation. The
+statistical row's honest wording, including "no tool can show the mark in
+place", is present in full at both widths.
+
+**Console:** clean. The only entries are React DevTools' own dev-mode badge
+logging, which is not ours and does not ship.
+
+**Typecheck and lint:** `tsc --noEmit` exit 0, and `oxlint` reports zero errors
+across `apps/web` and `packages`. Two warnings remain, both in files this
+session did not touch.
+
+---
+
 ## What was deliberately NOT done
 
 **`docs/CURRENT-HANDOFF.md` was not rewritten,** which `CLAUDE.md` section 6
