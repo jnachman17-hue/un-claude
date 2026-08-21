@@ -2,11 +2,25 @@
  * -------------------------------------------------------
  * Rate limiting, counted in Postgres (no new service, no new dependency)
  * -------------------------------------------------------
- * security-audit.md finding 4. proxy.ts excludes /api/* from the middleware, so
- * there is no site-wide place a limiter can live; each route has to ask for a
- * count itself. This gives it something to count with, using the Postgres we
- * already have — CLAUDE.md §5 forbids adding a service or a package without
- * Jon's say-so, and this needs neither.
+ * security-audit.md finding 4. proxy.ts excludes everything under /api from the
+ * middleware, so there is no site-wide place a limiter can live; each route has
+ * to ask for a count itself. This gives it something to count with, using the
+ * Postgres we already have.
+ *
+ * THE PREVIOUS SENTENCE WROTE THAT PATH WITH A TRAILING WILDCARD, AND THAT ONE
+ * CHARACTER PAIR MADE THIS WHOLE FILE UNRUNNABLE. Postgres NESTS block
+ * comments, unlike C: a slash immediately followed by a star opens a SECOND
+ * comment, so the first closing delimiter below shut that inner one instead of
+ * this outer one, and the rest of the file stayed commented out to the end.
+ *
+ * The editor reports it as an unterminated comment at line 1 and says nothing
+ * at all about the path, which is why it is worth writing down here.
+ *
+ * It survived a security review and a handoff because nobody had ever run it.
+ * Never put a slash immediately followed by a star inside a SQL comment.
+ *
+ * CLAUDE.md §5 forbids adding a service or a package without Jon's say-so, and
+ * this needs neither.
  *
  * A FIXED-WINDOW COUNTER. Time is chopped into windows of p_window_seconds;
  * each (key, window) has one row whose `hits` counts calls. A call is allowed
