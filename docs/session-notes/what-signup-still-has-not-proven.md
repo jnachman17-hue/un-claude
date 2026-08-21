@@ -106,3 +106,79 @@ Only Jon can do the authenticating half. The division is clean:
 Until that runs, the honest statement is: **the signup grant works, the
 wallet's data is correct, and what happens to a visitor's leftover credits
 when they sign up is unknown.**
+
+---
+
+# UPDATE, later the same night, with captcha off again
+
+## PROVEN: the guest cookie, which is the merge's only input
+
+A fresh phone-shaped browser, one sanitise, then the cookie jar read directly:
+
+    uc-guest before any sanitise : not set
+    uc-guest after  one sanitise : 6853e8c5
+    balance on screen            : 1 left
+    cookie flags                 : httpOnly=true  sameSite=Lax  expires in 365 days
+
+And the ledger for that same run:
+
+    174   6853e8c5   +2  anon_grant
+    175   6853e8c5   -1  spend  clean  file
+
+**The cookie value IS the guest account id**, so the input the merge reads is
+real, correctly scoped and long lived. That was previously read from source
+and is now observed.
+
+## PROVEN, and it arrived by accident: a COLD sign-up pays the ratified 5
+
+While testing, a real account appeared in the ledger:
+
+    172   7c376386   +2  anon_grant       16:55:29
+    173   7c376386   +3  signup_grant     16:55:30
+
+**Both grants, one second apart, no transfer rows. That is correct**, and it
+is worth being clear about why, because at a glance it looks like the
+double-grant bug the security audit closed. `isConversion` is
+`!isAnonymous && hasGuest`. This browser carried no guest cookie, so it was
+not a conversion, so the welcome grant was properly paid: **sign up cold and
+you hold 2 + 3 = 5**, exactly as `04` entry 97 ratified.
+
+**The other half of that rule, the one where a guest converts and must NOT be
+paid the welcome twice, is still the untested one.**
+
+## STILL NOT PROVEN: the merge itself. Zero adjustment rows
+
+Unchanged. Every part of the machinery around it is now proven and the
+transfer at the centre has still never run.
+
+## A migration that has NOT been run, found on the way
+
+**`credit_ledger.grant_email` does not exist in the hosted database**, but
+`20260821120300_signup_grant_email_dedupe.sql` adds it and the parallel
+session's code writes it.
+
+**This does not break anything, and I checked rather than assumed.** The
+insert fails with `PGRST204`, and `grantOnce` has an explicit fallback for
+exactly that code which retries without the column. Verified by sending the
+real row shape and reading the error back:
+
+    error code : PGRST204
+    fallback catches 42703 or PGRST204 -> YES, signup grant survives
+
+**What it does mean: the per-inbox dedupe is inactive.** Plus-addressed and
+dotted variants of one Gmail inbox can each still claim a signup grant until
+that migration is pasted. That is the parallel session's security finding 1,
+fixed in code and not yet in the database.
+
+## The remaining wrinkle for testing the merge, which is real
+
+The merge fires when a REAL account calls `/api/credits` **in the same browser
+that still holds the guest cookie**. On a dev server reached by IP address the
+sign-up confirmation email would carry a link back to
+`http://192.168.68.57:3000/auth/callback`, and **Supabase will only redirect to
+URLs on its allow list.** If the LAN origin is not on it, the confirmation
+lands on the production Site URL instead, in a browser context with no guest
+cookie, and the merge cannot fire no matter how correct the code is.
+
+**So if the sign-up does not confirm instantly, that allow list is the next
+thing to check, not the merge code.**
