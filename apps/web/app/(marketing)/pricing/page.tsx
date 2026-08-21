@@ -496,7 +496,7 @@ function Pricing() {
           their own document into it.
          ------------------------------------------------------------------ */}
       <section className={'border-border/70 border-t'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8 lg:py-18'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14 lg:py-18'}>
           <h2
             className={
               'text-foreground text-[24px] leading-[1.15] font-semibold tracking-[-0.026em] text-balance sm:text-[30px]'
@@ -524,7 +524,7 @@ function Pricing() {
           rather than as the reason not to buy.
          ------------------------------------------------------------------ */}
       <section className={'border-border/70 border-t'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8 lg:py-18'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14 lg:py-18'}>
           <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
             <div className={'lg:col-span-5'}>
               <h2
@@ -661,7 +661,7 @@ function Pricing() {
           where a pricing page usually breaks it.
          ------------------------------------------------------------------ */}
       <section className={'border-border/70 border-t'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8 lg:py-18'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14 lg:py-18'}>
           <h2
             className={
               'text-foreground text-[24px] leading-[1.15] font-semibold tracking-[-0.026em] text-balance sm:text-[30px]'
@@ -731,7 +731,7 @@ function Pricing() {
           the whole block works before a line of JavaScript arrives.
          ------------------------------------------------------------------ */}
       <section className={'border-border/70 border-t'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8 lg:py-18'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14 lg:py-18'}>
           <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
             <div className={'lg:col-span-4'}>
               <h2

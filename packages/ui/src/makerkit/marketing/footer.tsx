@@ -49,7 +49,16 @@ export const Footer: React.FC<FooterProps> = ({
             </div>
           </div>
 
-          <div className="flex w-full flex-1 flex-col gap-y-4 lg:flex-row lg:justify-end lg:gap-x-6 lg:gap-y-0 xl:gap-x-12">
+          {/*
+            THREE COLUMNS ON A PHONE, NOT THREE STACKS. 21 August 2026.
+
+            Stacked, these three short lists ran to twelve rows and half a
+            phone screen of footer on every page of the site. They are two,
+            three and four items long, so they fit side by side at 390px
+            without a single label wrapping. Same links, a third of the
+            height. From `sm` upward nothing about the old layout changes.
+          */}
+          <div className="grid w-full flex-1 grid-cols-3 gap-x-4 gap-y-4 sm:flex sm:flex-col lg:flex-row lg:justify-end lg:gap-x-6 lg:gap-y-0 xl:gap-x-12">
             {sections.map((section, index) => (
               <div key={index}>
                 <div className="flex flex-col gap-y-1">

@@ -23,7 +23,7 @@ const ANTHROPIC_POST = 'https://www.anthropic.com/news/claude-text-watermark';
 export function StakesSection() {
   return (
     <section className={'border-border/70 border-t'}>
-      <div className={'mx-auto max-w-[1180px] px-5 py-20 sm:px-8'}>
+      <div className={'mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-20'}>
         <div className={'grid gap-14 lg:grid-cols-2 lg:gap-12'}>
           <div>
             <h2

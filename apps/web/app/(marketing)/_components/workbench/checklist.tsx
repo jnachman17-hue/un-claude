@@ -93,9 +93,17 @@ const BADGE: Record<
     className: 'bg-emerald-600 text-white',
     label: 'removed',
   },
+  /*
+   * OPAQUE, NOT TRANSLUCENT. This was `bg-emerald-600/45`, and 45% green over
+   * an orange row tint mixed into a muddy half-and-half that Jon read as a
+   * badge only half filled in. A badge states a fact and must look the same
+   * on every background, so the softness now comes from a lighter green
+   * rather than from letting the row show through. Same rule applies to every
+   * badge here: all of them are solid.
+   */
   absent: {
     icon: CheckIcon,
-    className: 'bg-emerald-600/45 text-white',
+    className: 'bg-emerald-500 text-white',
     label: 'none found',
   },
   skipped: {
@@ -120,9 +128,18 @@ const BADGE: Record<
    * did not. It also keeps Jon's one-loud-thing rule: on arrival only the
    * characters row is lit, because it is the only claim the example can prove.
    */
+  /*
+   * `certain` now lights like `found`. 04 entry 81 renamed the state
+   * "presumed present" and kept it deliberately grey; Jon's framework ruling
+   * of 20 August 2026 (04 entry 95) overrides the colour: on pasted text this
+   * mark is the one the visitor came about, and a grey badge read as "not a
+   * concern" when the honest message is the opposite. The LABEL still says
+   * presumed, and the row's own text still explains why nobody can point at
+   * it, so the finding-versus-presumption distinction survives in words.
+   */
   certain: {
     icon: AlertTriangleIcon,
-    className: 'bg-foreground/45 text-white',
+    className: 'bg-mark-strong text-white',
     label: 'presumed present',
   },
 };
@@ -136,11 +153,40 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
         const Symbol = SYMBOL[row.id];
         const badge = BADGE[row.state];
         const Badge = badge.icon;
-        // Lit means "this is still in your document". A removed mark is
-        // deliberately NOT lit: going quiet is how the panel shows it worked.
-        const lit = row.state === 'found';
+        /*
+          THE STATE FRAMEWORK. Jon's ruling, 20 August 2026, 04 entry 95, and
+          it is one rule per surface so every input type reads the same way:
+
+            THE ICON TILE answers: did this check apply to your input?
+              grey and faded   it cannot apply (metadata on pasted text,
+                               characters or the rewrite on an image)
+              neutral          nothing loaded yet
+              Claude orange    it applies, and this row is in play
+              green            it applied, and sanitising handled it
+
+            THE BADGE answers: what is the state of this mark right now?
+              invisible dash   not scanned yet
+              grey dash        does not apply here
+              alert, orange    in your document now (found, or presumed for
+                               the statistical mark on text)
+              soft green tick  we looked, none found
+              solid green tick it was there, it is gone
+
+            THE ROW TINT answers: is something still in your document?
+              orange           yes (found or presumed)
+              green            it was, and it is handled
+              faint            this row is out of play
+              neutral          in play, nothing found
+
+          So on pasted text the eye and fingerprint tiles burn orange and the
+          paperclip stays grey; on an image only the paperclip lights; and
+          after sanitising, whatever was in play turns green. Relevance in
+          the tile, finding in the badge, urgency in the tint.
+        */
+        const alert = row.state === 'found' || row.state === 'certain';
         const done = row.state === 'removed';
         const faded = row.state === 'skipped' || row.state === 'pending';
+        const inPlay = alert || row.state === 'absent';
         const hasItems = Boolean(row.items && row.items.length > 0);
         const isOpen = open === row.id;
 
@@ -149,7 +195,7 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
             key={row.id}
             className={[
               'animate-rise rounded-[11px] transition-colors',
-              lit
+              alert
                 ? 'bg-mark/[0.15]'
                 : done
                   ? 'bg-emerald-600/[0.07]'
@@ -164,11 +210,13 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 <span
                   className={[
                     'grid size-[28px] place-items-center rounded-[8px] transition-colors',
-                    lit
-                      ? 'bg-mark text-mark-foreground'
-                      : faded
-                        ? 'bg-foreground/[0.05] text-foreground/30'
-                        : 'bg-foreground/[0.07] text-foreground/50',
+                    done
+                      ? 'bg-emerald-600 text-white'
+                      : inPlay
+                        ? 'bg-mark text-mark-foreground'
+                        : faded
+                          ? 'bg-foreground/[0.05] text-foreground/30'
+                          : 'bg-foreground/[0.07] text-foreground/50',
                   ].join(' ')}
                 >
                   <Symbol
@@ -222,7 +270,22 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                 a figure it knows is noise; every competitor prints the figure
                 anyway. docs/09 section 4.
               */}
-              <div className={'flex min-w-0 flex-1 items-center gap-3'}>
+              {/*
+                LABEL OVER STATUS ON A PHONE, 21 August 2026.
+
+                Side by side at 390px the status was taking a third of the
+                row, so "Hidden characters" and "Statistical watermark" both
+                broke across two lines and the row read as rubble. Stacked,
+                the label gets the full width, never wraps, and the status
+                sits under it where it reads as the answer to the label
+                rather than as competition for it. The row is the same
+                height either way. From `sm` this is the original layout.
+              */}
+              <div
+                className={
+                  'flex min-w-0 flex-1 flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-3'
+                }
+              >
                 <span className={'min-w-0 flex-1'}>
                   <span
                     className={
@@ -231,20 +294,39 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                   >
                     {row.label}
                   </span>
+                  {/*
+                    WHERE THE MARK LIVES IS A PHONE CASUALTY, 21 August 2026.
+
+                    At 390px the label, this line and the status were three
+                    pieces of text competing for one row, so "Statistical
+                    watermark" wrapped to three lines and the status printed
+                    beside the wreckage. Jon: "on mobile the text hangs over
+                    so much worse and obscures the icons for everything else."
+
+                    It is hidden below `sm` rather than shortened, because it
+                    is teaching rather than status and the teaching already
+                    has a home on this row: the + opens the three-column
+                    table that explains this mark properly. That is exactly
+                    the trade Jon asked for: "really utilise plus icons to
+                    expand sections if you actually want to look at them."
+
+                    So a phone gets one clean line per mark, and the detail is
+                    one tap away. Nothing is lost and nothing is weakened.
+                  */}
                   <span
                     className={
-                      'text-muted-foreground block text-[11.5px] leading-tight'
+                      'text-muted-foreground hidden text-[11.5px] leading-tight sm:block'
                     }
                   >
                     {row.where}
                   </span>
                 </span>
 
-                <span className={'shrink-0 text-right'}>
+                <span className={'shrink-0 text-left sm:text-right'}>
                   <span
                     className={[
                       'block font-mono text-[10.5px] tracking-wide uppercase tabular-nums',
-                      lit
+                      alert
                         ? 'text-foreground font-semibold'
                         : faded
                           ? 'text-muted-foreground/55'
@@ -300,13 +382,19 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
             >
               <div className={'overflow-hidden'}>
                 <div className={'px-3 pt-0.5 pb-3 pl-[52px]'}>
-                  <p
-                    className={
-                      'text-muted-foreground text-[12.5px] leading-[1.55]'
-                    }
-                  >
-                    {row.detail}
-                  </p>
+                  {/* In teach mode the sentence duplicated the first card, so
+                      the cards stand alone. Jon's note, 20 August 2026. Live
+                      findings keep the sentence: there it reports the result
+                      rather than re-describing the mark. */}
+                  {hasItems && row.teach ? null : (
+                    <p
+                      className={
+                        'text-muted-foreground text-[12.5px] leading-[1.55]'
+                      }
+                    >
+                      {row.detail}
+                    </p>
+                  )}
 
                   {hasItems && row.teach ? (
                     /*
@@ -317,13 +405,23 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                       One template on all three rows, so the eye learns it
                       once. Columns stack on a phone, headers keep the tint.
                     */
+                    /*
+                      EQUAL HEIGHTS, ROUNDED ALL ROUND. Jon's note, 20 August
+                      2026: the three cards ended at their own text, so a short
+                      card had square lower corners where the tint ran out
+                      while the grid cell kept going. Each card is now a
+                      column and the body tint stretches to fill it, so all
+                      three share one bottom edge and the container's rounding
+                      shows at every corner. Shorter text just gets quiet
+                      space inside its own tint.
+                    */
                     <div
                       className={'mt-3 grid gap-2 sm:grid-cols-3 sm:gap-2.5'}
                     >
                       {row.items!.map((item, itemIndex) => (
                         <div
                           key={item.key}
-                          className={'overflow-hidden rounded-[9px]'}
+                          className={'flex flex-col overflow-hidden rounded-[9px]'}
                         >
                           <p
                             className={[
@@ -339,7 +437,7 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                           </p>
                           <p
                             className={[
-                              'text-foreground/85 px-3 py-2 text-[12.5px] leading-[1.55]',
+                              'text-foreground/85 flex-1 px-3 py-2 text-[12.5px] leading-[1.55]',
                               itemIndex === 0
                                 ? 'bg-mark/[0.03]'
                                 : itemIndex === 1
@@ -353,24 +451,34 @@ export function Checklist({ rows }: { rows: ChecklistRow[] }) {
                       ))}
                     </div>
                   ) : hasItems ? (
-                    <ul
-                      className={'border-border mt-2.5 space-y-2 border-l pl-3'}
-                    >
+                    /*
+                      ONE LINE PER FINDING. Jon, 20 August 2026, on opening a
+                      scanned image: "I need to read this in one glance. I
+                      don't want a blobber of words." The head used to be a
+                      block above a full sentence, so three findings became six
+                      stacked lines of prose. Now each finding is a dot, its
+                      name, and a short phrase on the same line, and the
+                      section is roughly half the height it was.
+                    */
+                    <ul className={'mt-2.5 space-y-1'}>
                       {row.items!.map((item) => (
-                        <li key={item.key}>
+                        <li key={item.key} className={'flex gap-2'}>
                           <span
+                            aria-hidden
                             className={
-                              'text-foreground block text-[12px] font-medium'
+                              'bg-mark-strong mt-[6px] size-[4px] shrink-0 rounded-full'
                             }
-                          >
-                            {item.head}
-                          </span>
-                          <span
-                            className={
-                              'text-muted-foreground text-[12px] leading-snug'
-                            }
-                          >
-                            {item.body}
+                          />
+                          <span className={'text-[12px] leading-[1.5]'}>
+                            <span className={'text-foreground font-medium'}>
+                              {item.head}
+                            </span>
+                            {item.body ? (
+                              <span className={'text-muted-foreground'}>
+                                {' · '}
+                                {item.body}
+                              </span>
+                            ) : null}
                           </span>
                         </li>
                       ))}

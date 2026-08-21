@@ -52,7 +52,7 @@ export function FaqSection() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={'mx-auto max-w-[1180px] px-5 py-20 sm:px-8'}>
+      <div className={'mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-20'}>
         <div className={'grid gap-10 lg:grid-cols-12 lg:gap-14'}>
           <div className={'lg:col-span-4'}>
             <h2

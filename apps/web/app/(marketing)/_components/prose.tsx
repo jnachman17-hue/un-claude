@@ -12,7 +12,7 @@ export function PageHeader({
 }) {
   return (
     <header className={'border-border/70 border-b'}>
-      <div className={'mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20'}>
+      <div className={'mx-auto max-w-[1180px] px-5 py-11 sm:px-8 sm:py-16 lg:py-20'}>
         {eyebrow ? (
           <p className={'text-muted-foreground mb-4 text-[12px] font-medium tracking-wide uppercase'}>
             {eyebrow}
@@ -42,7 +42,7 @@ export function Section({
 }: React.PropsWithChildren<{ title: string; aside?: React.ReactNode }>) {
   return (
     <section className={'border-border/70 border-b'}>
-      <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+      <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14'}>
         <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
           <div className={'lg:col-span-4'}>
             <h2

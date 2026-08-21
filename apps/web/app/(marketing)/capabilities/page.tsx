@@ -174,7 +174,7 @@ function Capabilities() {
 
       {/* The matrix. Find your input, read your row. */}
       <section className={'border-border/70 border-b'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14'}>
           <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
             <div className={'lg:col-span-4'}>
               <h2
@@ -334,7 +334,7 @@ function Capabilities() {
 
       {/* What each removal claims, in one grammar. */}
       <section className={'border-border/70 border-b'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14'}>
           <div className={'grid gap-8 sm:grid-cols-3 sm:gap-10'}>
             {CLAIMS.map((claim) => (
               <div key={claim.head} className={'flex flex-col items-start'}>
@@ -370,7 +370,7 @@ function Capabilities() {
 
       {/* The commitments. */}
       <section className={'border-border/70 border-b'}>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14'}>
           <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
             <div className={'lg:col-span-4'}>
               <h2

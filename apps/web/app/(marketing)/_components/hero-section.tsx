@@ -1,10 +1,9 @@
 import {
-  CheckIcon,
-  EyeOffIcon,
+  EraserIcon,
   FileTextIcon,
-  FingerprintIcon,
+  GiftIcon,
   ImageIcon,
-  PaperclipIcon,
+  LayersIcon,
   TypeIcon,
 } from 'lucide-react';
 
@@ -57,7 +56,7 @@ export function HeroSection() {
 
       <div
         className={
-          'relative mx-auto max-w-[1180px] px-5 pt-7 pb-14 sm:px-8 lg:pt-12'
+          'relative mx-auto max-w-[1180px] px-5 pt-6 pb-8 sm:px-8 sm:pb-14 lg:pt-12'
         }
       >
         {/*
@@ -75,12 +74,55 @@ export function HeroSection() {
               'animate-rise order-1 lg:col-span-5 lg:col-start-1 lg:row-start-1 lg:pt-6'
             }
           >
+            {/*
+              REWORKED 20 August 2026, Jon's styling pass. Three changes:
+              smaller (he read the old size as "glaringly loud"), "Claude" in
+              the brand's own orange so the product it targets is named in its
+              own colour, and "it's marked" carries a translucent red
+              highlight, the GPTZero pattern of marking the finding in colour
+              rather than in weight.
+
+              CORRECTED TWICE same session. First pass: the highlight span
+              had no line-height of its own, so its background painted the
+              full line box the h1 set, not the glyphs inside it.
+              `leading-none` narrowed that but did not fix it, because even
+              at line-height 1 an inline element's background still follows
+              the FONT's internal ascent and descent metrics, not the ink
+              of the letters — there is no line-height value that crops to
+              glyph bounds, because that is not what line-height means.
+
+              The actual fix: a bar sized in fixed em units and centred by
+              percentage, positioned absolutely BEHIND the text rather than
+              painted as the text's own background. Its height answers to
+              nothing but the number given to it, so it can be tuned to sit
+              just outside the cap-height-to-baseline box of this specific
+              phrase (no descenders in "it's marked") rather than to
+              whatever headroom the font ships with.
+            */}
             <h1
               className={
-                'text-foreground text-[34px] leading-[1.06] font-semibold tracking-[-0.03em] text-balance sm:text-[44px] lg:text-[54px] lg:leading-[1.04] lg:tracking-[-0.032em]'
+                'text-foreground text-[28px] leading-[1.2] font-semibold tracking-[-0.028em] text-balance sm:text-[36px] lg:text-[44px] lg:leading-[1.18] lg:tracking-[-0.03em]'
               }
             >
-              If Claude wrote it, it&rsquo;s marked.
+              If <span className={'text-mark-strong'}>Claude</span> wrote it,{' '}
+              <span className={'relative inline-block leading-none'}>
+                <span
+                  aria-hidden
+                  className={
+                    'bg-destructive/[0.16] absolute inset-x-[-4px] rounded-[4px]'
+                  }
+                  style={{
+                    top: '50%',
+                    height: '0.78em',
+                    transform: 'translateY(-50%)',
+                  }}
+                />
+                {/* The period lives INSIDE the highlighted span so the
+                    bar runs past it and stops, matching the way it already
+                    overhangs the "i" at the start. Outside the span it cut
+                    off mid-sentence and looked clipped. */}
+                <span className={'relative'}>it&rsquo;s marked.</span>
+              </span>
             </h1>
 
             <p
@@ -92,59 +134,57 @@ export function HeroSection() {
             </p>
 
             {/*
-              THE AUTHORITY STRIP. Jon's call, the GPTZero pattern: icons and
-              hard claims, one glance, no reading. Written for someone who does
-              not yet know what the three marks are: the icons plant that there
-              are three, the middle claim carries the authority, the last one
-              removes the risk of trying.
+              THE AUTHORITY STRIP, REDONE TWICE. Round one used a three-icon
+              cluster for the first line and generic checkmarks for the
+              other two, which was two symbol systems doing two jobs. Round
+              two fixed the icons but turned all three into pill chips,
+              which Jon read as horizontally stretched and unnecessary:
+              "just have that text with the logos right there."
+
+              This pass: no pills, no border, no fill. Plain icon-then-text
+              lines, stacked, so nothing runs wide. The three-icon cluster
+              is retired for a single `LayersIcon` — the codebase's own word
+              for what the three marks are (`ENGINE.md`, `04` entries
+              throughout, all call them layers), so the glyph now names the
+              same concept the product's own vocabulary uses, rather than
+              improvising three unrelated icons stacked together.
             */}
-            {/* Stacked, not flowed: three flat lines read as a system;
-                wrapped inline items read as two accidents. */}
-            <ul className={'mt-5 space-y-2 lg:mt-6'}>
+            {/* Desktop only, Jon's ruling 20 August 2026: on a phone these
+                three lines cost vertical space the tool needs, same logic as
+                the counter and validity block (04 entry 84 ruling 3). */}
+            <ul className={'hidden space-y-2 lg:mt-6 lg:block'}>
               <li
                 className={
-                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.005em]'
                 }
               >
-                <span className={'inline-flex shrink-0 items-center gap-1'}>
-                  <EyeOffIcon
-                    className={'text-mark-strong size-[14px]'}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                  <PaperclipIcon
-                    className={'text-mark-strong size-[14px]'}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                  <FingerprintIcon
-                    className={'text-mark-strong size-[14px]'}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </span>
+                <LayersIcon
+                  className={'text-mark-strong size-[15px] shrink-0'}
+                  strokeWidth={2}
+                  aria-hidden
+                />
                 Every kind of watermark
               </li>
               <li
                 className={
-                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.005em]'
                 }
               >
-                <CheckIcon
-                  className={'text-mark-strong size-[14px] shrink-0'}
-                  strokeWidth={2.4}
+                <EraserIcon
+                  className={'text-mark-strong size-[15px] shrink-0'}
+                  strokeWidth={2}
                   aria-hidden
                 />
                 100% of detectable marks removed
               </li>
               <li
                 className={
-                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.01em]'
+                  'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.005em]'
                 }
               >
-                <CheckIcon
-                  className={'text-mark-strong size-[14px] shrink-0'}
-                  strokeWidth={2.4}
+                <GiftIcon
+                  className={'text-mark-strong size-[15px] shrink-0'}
+                  strokeWidth={2}
                   aria-hidden
                 />
                 Free. No account needed.

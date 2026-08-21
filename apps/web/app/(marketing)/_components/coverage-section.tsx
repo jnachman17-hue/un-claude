@@ -206,7 +206,7 @@ function Cell({ mark }: { mark: Mark }) {
 
 export function CoverageSection() {
   return (
-    <section className={'mx-auto max-w-[1180px] px-5 py-20 sm:px-8'}>
+    <section className={'mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-20'}>
       <div className={'grid gap-10 lg:grid-cols-12 lg:gap-14'}>
         <div className={'lg:col-span-4'}>
           <h2

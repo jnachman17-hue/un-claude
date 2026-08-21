@@ -58,7 +58,7 @@ const RECEIPT = [
 export function MoatSection() {
   return (
     <section className={'border-border/70 border-t'}>
-      <div className={'mx-auto max-w-[1180px] px-5 py-20 sm:px-8'}>
+      <div className={'mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-20'}>
         <div className={'max-w-[62ch]'}>
           <h2
             className={
