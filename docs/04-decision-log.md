@@ -3798,3 +3798,39 @@ spacing problem.
 **The date is 20 August 2026,** taken from the page's own source header, which
 is the day the prose was written. The page carried no visible date before this
 pass, so this is the first time a reader sees one.
+
+### 106. The contact page's privacy line, and the policy section behind it
+
+**Jon, 20 August 2026:** remove the standalone blurb under the form, put the
+privacy line in its place as the reference layout had it, and update the privacy
+policy to cover this use.
+
+**The privacy line is worded for a mailto, not for a form, and that is the whole
+point of the entry.** The reference layout says "Your address is used to reply
+and nothing else", which is the right promise for a form that posts an address
+to a server. **This page has no address to post.** The button hands a draft to
+the visitor's own mail app, so their address arrives in the mail headers rather
+than from a box on the page. Copying the reference sentence alone would have
+described a collection that does not happen. The line now says both halves:
+nothing is sent from the page and nothing typed there is stored, and once the
+mail does arrive the address is used to reply and for nothing else.
+
+**The policy gained a section called "When you write to us", and the same
+distinction drives it.** First paragraph: the page sends nothing and stores
+nothing, and the message does not exist anywhere until they send it themselves
+from their own app. Second: what arrives is ordinary email, the address is used
+to reply and is not added to a list or joined to an account or to anything they
+have scanned, correspondence is kept only as long as it is useful, and it is
+deleted on request.
+
+**One real disclosure that was easy to miss: the inbox is Gmail, so Google holds
+the mail.** The "Who else is involved" table listed Google for sign-in only.
+That row now reads "Runs the inbox you write to, and sign-in if you choose it",
+because a visitor writing to us is handing their message to Google whether or
+not they ever sign in. **"Your rights" also gained the promise to delete
+correspondence**, since before this there was genuinely nothing to delete and
+now there is.
+
+**Date bumped to 20 August 2026**, per the page's own Changes section and the
+discipline set at entry 46's analytics change: the policy and the behaviour ship
+together or the policy is a false statement.

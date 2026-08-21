@@ -29,7 +29,12 @@ export async function generateMetadata() {
  *
  * ANALYTICS ARRIVED 19 AUGUST 2026 and this page changed in the same commit,
  * which was the whole discipline: a privacy policy claiming no tracking while
- * tracking is a false statement in a legal document. 06 row 46.
+ * tracking is a false statement in a legal document. 06 row 46. THE CONTACT
+ * PAGE ARRIVED 20 AUGUST 2026 and was handled the same way: see "When you write
+ * to us" below and 04 entry 106. The interesting fact there is that the page
+ * itself collects nothing, because the button composes a draft in the
+ * visitor's own mail app, and the policy has to say so rather than describe a
+ * form submission that never happens.
  *
  * The claim that remains, and that must stay true: PostHog is configured to store
  * NOTHING on the visitor's device. If that configuration ever changes, this page
@@ -46,7 +51,7 @@ async function PrivacyPolicyPage() {
       />
 
       <Prose>
-        <Updated date={'19 August 2026'} />
+        <Updated date={'20 August 2026'} />
 
         <H2>The short version</H2>
         <Lead>
@@ -57,7 +62,8 @@ async function PrivacyPolicyPage() {
           of the tool they use, with a tool that stores nothing on your device.
           We record that a scan ran and what kind of mark it found. Never the
           text or the file it ran on. If you create an account, we hold your
-          email address and name and nothing else.
+          email address and name and nothing else. If you write to us, we use
+          your address to reply and for nothing else.
         </Lead>
 
         <H2>What happens to text and files you submit</H2>
@@ -112,6 +118,24 @@ async function PrivacyPolicyPage() {
         <P>
           If you sign in with a password, we store your email address and a
           scrambled version of your password that cannot be reversed.
+        </P>
+
+        <H2>When you write to us</H2>
+        <P>
+          The contact page does not send anything to us. When you press Send
+          message it builds a draft in your own email app, filled in with the
+          subject and message you typed, and your app sends it. Nothing you type
+          on that page reaches us, and nothing is stored anywhere, until you
+          send it yourself.
+        </P>
+        <P>
+          What arrives is an ordinary email. We use your address to reply to you
+          and for nothing else: we do not add it to a mailing list, and we do
+          not connect it to any account or to anything you have scanned. Our
+          inbox is a Gmail account, so Google holds those messages the way it
+          holds any mail sent to a Gmail address. We keep correspondence only
+          for as long as it is useful for answering you, and you can ask us to
+          delete it.
         </P>
 
         <H2>Cookies and browser storage</H2>
@@ -177,8 +201,8 @@ async function PrivacyPolicyPage() {
             ],
             [
               'Google',
-              'Only if you choose Google sign-in',
-              'That you signed in to our site',
+              'Runs the inbox you write to, and sign-in if you choose it',
+              'Any email you send us, and that you signed in to our site',
             ],
           ]}
         />
@@ -191,7 +215,8 @@ async function PrivacyPolicyPage() {
         <P>
           Wherever you live, you may ask us to show you what we hold about you,
           correct it, or delete it. Deleting your account removes your account
-          record. Because we do not retain submitted content, there is nothing
+          record, and we will delete any correspondence you have sent us on
+          request. Because we do not retain submitted content, there is nothing
           else to delete. Write to us at the address below and we will respond
           within 30 days.
         </P>

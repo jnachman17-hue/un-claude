@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 /**
@@ -121,9 +122,24 @@ export function ContactForm() {
         </p>
       </div>
 
+      {/*
+        THE PRIVACY LINE, and it is worded for a mailto rather than for a form.
+        This page collects nothing: the button hands a draft to the visitor's
+        own mail app, so there is no submission to store and their address
+        arrives in the mail headers rather than from a box on this page. The
+        promise that matters is therefore about the mail once it reaches us,
+        which is what the linked policy now covers under "When you write to us".
+      */}
       <p className={'text-muted-foreground max-w-[62ch] text-[13.5px] leading-[1.6]'}>
-        Send message opens your own mail app with the draft ready. Nothing is
-        sent from this page and nothing you type here is stored.
+        Nothing is sent from this page and nothing you type here is stored. Your
+        address is used to reply and nothing else. The{' '}
+        <Link
+          href={'/privacy-policy'}
+          className={'text-foreground underline decoration-1 underline-offset-2'}
+        >
+          privacy policy
+        </Link>{' '}
+        covers what happens to it.
       </p>
     </div>
   );
