@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
 import {
+  BanknoteIcon,
   CheckIcon,
   ClockIcon,
-  CreditCardIcon,
   FileIcon,
   InfinityIcon,
   RotateCcwIcon,
@@ -14,6 +14,7 @@ import {
 import { CtaBand } from '../_components/cta-band';
 import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { CreditCoin } from '../_components/workbench/credit-chip';
+import { BuyButton } from './_components/buy-button';
 import { CreditCalculator } from './_components/credit-calculator';
 import {
   FREE_CREDITS,
@@ -51,13 +52,20 @@ import {
  * card check out opens shortly and faqs all the small callouts... Just listen
  * to me on this." All three are gone and the buttons read "Purchase now".
  *
- * SO THE BUTTONS PROMISE A PURCHASE AND CURRENTLY DELIVER A SIGN-UP FORM.
- * That is the shape Jon asked for: "guides you to create your account then
- * brings you to payment." The second half does not exist yet, and the
- * sign-up route carries no return path without editing shared auth in
- * `packages/features/auth`, which is another session's. When Stripe lands,
- * change `href` on the three pack buttons to the checkout route. Nothing else
- * on the page needs to move.
+ * THE BUTTONS NOW ACTUALLY SELL. 04 entry 112, 21 August 2026. They were
+ * `<Link>`s to the sign-up form wearing the label "Purchase now"; they are now
+ * `<BuyButton>`, which POSTs to /api/checkout and hands the visitor to Stripe's
+ * hosted payment page. **The className is unchanged**, so the card heights
+ * measured and signed off at 390px in entry 109 have not moved.
+ *
+ * A SIGNED-OUT VISITOR STILL REACHES THE SIGN-UP FORM, and that is correct
+ * rather than left over: credits live on an account, and a guest account is
+ * remembered only by a cookie in one browser, so selling to one is a refund
+ * request waiting to happen. The route answers 401 or 402 and the button routes
+ * to sign-up. What is still missing is the return path — the chosen pack is lost
+ * at sign-up, because carrying it through means editing shared auth in
+ * `packages/features/auth`, which is another session's. The wallet's "Get
+ * credits" button closes the loop, one click wider than it should.
  *
  * ONE THING REMOVED AGAINST THE GOVERNING DOCUMENT, RECORDED RATHER THAN
  * DONE QUIETLY. `03-pricing.md` section 8 names one sentence as the one that
@@ -79,10 +87,17 @@ import {
  * which is why the three layers are set out below in one shared grammar with
  * their proof status attached to each.
  *
- * THE 30 DAY MONEY REFUND IS DELIBERATELY ABSENT. 03-pricing.md P6 proposes
- * it, entry 67 ratified "pricing and free credits" and did not reach it, so
- * it is not a ruled policy and must not appear on a live page as though it
- * were. Flagged for Jon.
+ * THE 30 DAY REFUND IS NOW ON THE PAGE, AND THE FLAG THAT PUT IT THERE WORKED.
+ * This comment used to say it was deliberately absent, because `03-pricing.md`
+ * P6 proposed it and entry 67 never ratified it, so a live page could not
+ * advertise it. Jon ruled on it 21 August 2026 (04 entry 113) after that flag
+ * surfaced a day later, alongside the fact that the LIVE TERMS ALREADY PROMISED
+ * IT word for word — the policy was binding while the page withheld it.
+ *
+ * IT IS WORDED AS OUR POLICY AND MUST STAY THAT WAY. Our 30 day refund covers
+ * UNSPENT credits. The UK/EU statutory right of withdrawal is a different thing
+ * that covers everything including spent credits, is not ours to define, and is
+ * carried separately by the checkout consent flow. See the TRUST entry below.
  */
 export const metadata = {
   title: 'Pricing',
@@ -117,10 +132,29 @@ const TRUST = [
     title: 'A failed run costs nothing',
     body: 'The credits go straight back to your balance.',
   },
+  /*
+   * THE REFUND, ADDED 21 August 2026 ON JON'S RULING. 04 entry 113.
+   *
+   * IT SAYS "OUR", AND THAT WORD IS DOING LEGAL WORK. This is a VOLUNTARY
+   * POLICY covering unspent credits. It is NOT the UK/EU statutory right of
+   * withdrawal, which is not ours to define and which refunds everything
+   * including credits already spent. Jon's instruction was explicit: the page
+   * describes our policy in our words, and the statutory right is carried
+   * separately by the checkout consent flow. Writing this line as "your right
+   * to cancel" would be a false claim in a legal register.
+   *
+   * IT REPLACED "No subscription" RATHER THAN BEING ADDED AS A FIFTH ITEM, for
+   * two reasons. The grid is `sm:grid-cols-2 lg:grid-cols-4`, so a fifth item
+   * leaves one orphan on its own row at desktop. And the standfirst 200px above
+   * already says "No subscription, no monthly reset, nothing to cancel" —
+   * duplication of exactly the kind 04 entry 109 removed from this page when it
+   * took the credit rule out of the standfirst. The refund is new information;
+   * the line it replaced was not.
+   */
   {
-    icon: CreditCardIcon,
-    title: 'No subscription',
-    body: 'You buy a pack once. There is nothing to cancel.',
+    icon: BanknoteIcon,
+    title: 'Our 30 day refund',
+    body: 'Unspent credits go back at the price you paid. We will not ask why.',
   },
   {
     icon: ScanLineIcon,
@@ -441,8 +475,9 @@ function Pricing() {
                   {pack.covers}
                 </p>
 
-                <Link
-                  href={'/auth/sign-up'}
+                <BuyButton
+                  packId={pack.id}
+                  packName={pack.name}
                   className={[
                     'relative mt-6 rounded-[11px] px-4 py-3.5 text-center text-[14px] font-semibold text-nowrap transition-transform active:scale-[0.98]',
                     pack.featured
@@ -451,7 +486,7 @@ function Pricing() {
                   ].join(' ')}
                 >
                   Purchase now
-                </Link>
+                </BuyButton>
 
               </div>
             ))}

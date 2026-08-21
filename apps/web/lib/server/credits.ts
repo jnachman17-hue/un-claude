@@ -441,3 +441,140 @@ export function devBypass(request: Request): boolean {
     request.headers.get('x-uc-dev') === '1'
   );
 }
+
+/**
+ * -------------------------------------------------------
+ * Paid credits. 04 entry 112, session 11.
+ * -------------------------------------------------------
+ *
+ * These two are called ONLY by the Stripe webhook, never by a browser and
+ * never by a page. They are here rather than in `stripe.ts` for the reason
+ * stated at the top of this file: every credit decision the server makes lives
+ * in one place, so the answer to "what can change a balance" is one file long.
+ */
+
+/**
+ * Pay for a completed Stripe payment, exactly once.
+ *
+ * IDEMPOTENCY IS THE WHOLE JOB, and it is enforced by two database indexes
+ * rather than by anything this function does. Stripe delivers every webhook AT
+ * LEAST once, so a repeat delivery is a certainty:
+ *
+ *   - `credit_ledger_stripe_event_id_uniq` catches the SAME event arriving
+ *     twice, which is what a Stripe retry is.
+ *   - `credit_ledger_purchase_payment_intent_uniq` catches the same PAYMENT
+ *     arriving under a different event id, which is what a second handler for a
+ *     second event type would produce. See 20260821150000_stripe_purchases.sql.
+ *
+ * Either one firing means "already paid", which is a success, not a failure.
+ * Returns whether this call was the one that actually granted the credits, so
+ * the route can log the difference between a first delivery and a retry instead
+ * of reporting both as new sales.
+ */
+export async function recordPurchase(params: {
+  accountId: string;
+  credits: number;
+  eventId: string;
+  paymentIntentId: string | null;
+  priceCents: number;
+}): Promise<{ granted: boolean }> {
+  const { error } = await admin().from('credit_ledger').insert({
+    account_id: params.accountId,
+    delta: params.credits,
+    reason: 'purchase',
+    stripe_event_id: params.eventId,
+    stripe_payment_intent_id: params.paymentIntentId,
+    price_cents: params.priceCents,
+  });
+
+  if (!error) return { granted: true };
+
+  // Already paid, by either index. The correct response to Stripe is 200: the
+  // event WAS handled, just not by this delivery of it.
+  if (error.code === UNIQUE_VIOLATION) return { granted: false };
+
+  throw new Error(`recordPurchase failed: ${error.message}`);
+}
+
+/**
+ * Take back the credits a refunded payment bought.
+ *
+ * The clamping, the locking and the reasoning all live in the database
+ * function `refund_purchase`; see the migration for why a negative balance is
+ * never an acceptable outcome. This wrapper exists to translate a missing
+ * migration into a loud, actionable failure rather than a silent one, because
+ * the consequence of this step not running is a customer holding both their
+ * money and their credits.
+ *
+ * Returns the number of credits actually removed, which is LESS than asked
+ * whenever the customer had already spent some of them.
+ */
+export async function refundPurchase(params: {
+  accountId: string;
+  /**
+   * The TOTAL credits that should stand removed for this payment once this
+   * call is done — NOT the number to remove now.
+   *
+   * This is the shape it is because Stripe's `charge.amount_refunded` is a
+   * RUNNING TOTAL, and the first version of this treated it as the amount of
+   * the current refund. Two $3 refunds against a $9.99 pack removed 8 credits
+   * and then 16, for a total of 24 out of 25, against a correct total of 16.
+   * See 20260821160000_refund_cumulative.sql.
+   */
+  targetTotal: number;
+  paymentIntentId: string;
+  eventId: string;
+  refundCents: number | null;
+}): Promise<number> {
+  const { data, error } = await admin().rpc('refund_purchase', {
+    target_account: params.accountId,
+    target_total: params.targetTotal,
+    payment_intent: params.paymentIntentId,
+    event_id: params.eventId,
+    refund_cents: params.refundCents,
+  });
+
+  if (!error) return (data as number) ?? 0;
+
+  // A repeat delivery of the same refund event. Already handled.
+  if (error.code === UNIQUE_VIOLATION) return 0;
+
+  if (isMissingFunction(error.code)) {
+    throw new Error(
+      'refund_purchase (target_total signature) is missing — run migration ' +
+        '20260821160000_refund_cumulative.sql. A refund was issued in Stripe ' +
+        'and the credits it bought are STILL ON THE ACCOUNT.',
+    );
+  }
+
+  throw new Error(`refundPurchase failed: ${error.message}`);
+}
+
+/**
+ * The account a Stripe payment belongs to, read back off the purchase row.
+ *
+ * WHY THE REFUND PATH CANNOT JUST TRUST THE WEBHOOK. A `charge.refunded` event
+ * describes a charge, not an account: Stripe has no idea what an un-claude
+ * account is. The link between the two was written into the ledger at purchase
+ * time, so this reads it back rather than trusting anything in the refund
+ * event, and returns null when no purchase row exists — which is the correct
+ * answer for a refund of something that never granted credits here.
+ */
+export async function purchaseByPaymentIntent(
+  paymentIntentId: string,
+): Promise<{ accountId: string; credits: number } | null> {
+  const { data, error } = await admin()
+    .from('credit_ledger')
+    .select('account_id, delta')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .eq('reason', 'purchase')
+    .limit(1);
+
+  if (error) throw new Error(`purchaseByPaymentIntent failed: ${error.message}`);
+
+  const row = Array.isArray(data) ? data[0] : null;
+
+  if (!row) return null;
+
+  return { accountId: row.account_id as string, credits: row.delta as number };
+}

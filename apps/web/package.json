@@ -53,6 +53,7 @@
     "react-hook-form": "catalog:",
     "recharts": "catalog:",
     "sonner": "catalog:",
+    "stripe": "catalog:",
     "tailwind-merge": "catalog:",
     "zod": "catalog:"
   },

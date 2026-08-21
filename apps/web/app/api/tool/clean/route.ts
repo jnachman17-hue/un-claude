@@ -39,6 +39,7 @@ import {
   creditsForWords,
   devBypass,
   ensureGrants,
+  hasConverted,
   refund,
   spend,
 } from '~/lib/server/credits';
@@ -54,6 +55,49 @@ const CLEAN_PER_MINUTE = 10;
 
 /** Where the signed-out browser remembers which guest account is its. */
 const GUEST_COOKIE = 'uc-guest';
+
+/*
+ * WHICH FILES THE ENGINE TREATS AS TEXT, and therefore which ones the paid
+ * rewrite actually runs on.
+ *
+ * THIS LIST MUST MIRROR `TEXT_EXTS` IN engine/format_dispatch.py. When it did
+ * not, the price and the work disagreed in BOTH directions, and both were
+ * found by the payment audit on 21 August 2026:
+ *
+ *   - The route recognised only .txt/.md/.markdown/.text. The engine also
+ *     treats .csv .json .js .py .rs .go .css .yaml .yml .toml as text. So a
+ *     100,000-word essay saved as `essay.csv` was priced as "a file, one flat
+ *     credit" while the engine ran the full rewrite on it: a 100x undercharge
+ *     on the only operation that costs us real money.
+ *
+ *   - In the other direction, .md and .markdown are CONTAINERS to the engine
+ *     (CONTAINER_EXTS), and the container path never runs layer B at all. The
+ *     route charged per 1,000 words for a rewrite that was silently not
+ *     performed — the customer paying and not receiving.
+ *
+ * `.mdx` is in the engine's container set too and was never in this route's
+ * list, so it was already priced correctly as a flat file.
+ */
+const ENGINE_TEXT_EXTS = [
+  '.txt',
+  '.text',
+  '.css',
+  '.js',
+  '.py',
+  '.rs',
+  '.go',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.csv',
+];
+
+function isEngineText(name: string): boolean {
+  const lower = name.toLowerCase();
+
+  return ENGINE_TEXT_EXTS.some((ext) => lower.endsWith(ext));
+}
 
 /** Cookie lifetime: a year. The guest's credits should outlive a holiday. */
 const GUEST_COOKIE_SECONDS = 60 * 60 * 24 * 365;
@@ -151,16 +195,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Read the guest cookie before granting so a real account continuing a
-    // guest session (a conversion) is not paid the welcome grant twice.
-    // security-audit.md finding 2.
+    /*
+     * IS THIS A REAL ACCOUNT CONTINUING A GUEST SESSION? If so the welcome
+     * grant is withheld, because the guest account was already paid it.
+     *
+     * THIS USED TO READ THE COOKIE ALONE, AND THAT WAS THE BUG — the same one
+     * `guest-merge-double-runs.md` records as defect 2, fixed in /api/credits
+     * and missed here. `/api/credits` DELETES `uc-guest` the moment the merge
+     * completes, so by the time anyone sanitises, the cookie is gone, this
+     * route concluded "not a conversion", and `ensureGrants` paid the +2
+     * welcome the account had just been correctly denied. Every converting
+     * user collected 2 free credits, spendable on the rewrite, which is the
+     * only layer that costs real money. Found by the payment audit,
+     * 21 August 2026; `ensureGrants`' own docblock warns against exactly this.
+     *
+     * The durable `guest_conversions` record is the source of truth. The cookie
+     * survives only as the pre-migration fallback, matching /api/credits.
+     */
     const cookieStore = await cookies();
     const guestId = cookieStore.get(GUEST_COOKIE)?.value;
+    const cookieSaysConversion =
+      !!guestId && /^[0-9a-f-]{36}$/.test(guestId) && guestId !== user.id;
+
     const isConversion =
-      !isAnonymous &&
-      !!guestId &&
-      /^[0-9a-f-]{36}$/.test(guestId) &&
-      guestId !== user.id;
+      !isAnonymous && (cookieSaysConversion || (await hasConverted(user.id)));
 
     await ensureGrants({
       id: user.id,
@@ -216,7 +274,7 @@ export async function POST(request: Request) {
      *   every other file (docx, png, jpg): one flat credit, 04 entry 71,
      *     because the work done on it costs us nothing either way.
      */
-    const textLike = !isFile || /\.(txt|md|markdown|text)$/i.test(inputName);
+    const textLike = !isFile || isEngineText(inputName);
 
     let wordsIn = 0;
 
