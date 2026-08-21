@@ -3834,3 +3834,129 @@ now there is.
 **Date bumped to 20 August 2026**, per the page's own Changes section and the
 discipline set at entry 46's analytics change: the policy and the behaviour ship
 together or the policy is a false statement.
+
+### 108. The pricing page rebuilt: the price is the hero, the credit is taught before it is spent, and no button pretends to sell
+
+**Jon, 20 August 2026, ordering the rebuild:** *"we need to do an overhaul of
+our pricing page. It looks terrible. Like it is, it truly couldn't be worse."*
+Plus the brief: it must be beautiful, the price must **jump out**, it must be
+obvious what a dollar buys, and it must hold up on a phone.
+
+**THE AUDIT FIRST, because the shape of the fix follows from it.** Six defects,
+and the first one was live and wrong rather than merely ugly.
+
+1. **It advertised a free tier that no longer existed.** "Three sanitises on us
+   before you sign up, and two more credits the moment you do" is entry 67's
+   split, which **entry 97 reversed to 2 + 3** the same week. A live page was
+   promising the wrong numbers in both directions.
+2. **The headline sold the free thing.** "Scanning is free. Forever." at 52px on
+   the one page whose job is a purchase, with the first number 380px lower.
+3. **The prices did not read as prices.** 34px in a mono face that spaced them
+   **"$4 . 99"**, three near-identical grey boxes, and the page's only colour
+   spent on the least important element in the middle card.
+4. **A credit was never translated into anything a student owns.** "10 credits,
+   50¢ per credit" and nothing else. The conversion from dollars to their own
+   document, which is the single most persuasive thing available on this page,
+   appeared as an abstract feature bullet 400px below the buttons.
+5. **Three dead buttons.** "Get Starter", "Get Plus" and "Get Pro" all quietly
+   delivered a sign-up form, with the explanation set as 12.5px grey text
+   underneath, after the click decision.
+6. **On a phone it was four stacked full-width slabs**, the free banner eating
+   the entire first screen and the first price roughly 900px down.
+
+**WHAT REPLACED IT, and the ordering is the argument.**
+
+**The unit is taught before it is spent.** A card in the hero reads
+`① = 1,000 words of pasted text`, `① = one Word document, any length`,
+`① = one PNG or JPG, any size`. Same grammar three times. Every price below that
+point is quoted in credits, and a term used before it is taught is a defect the
+messaging skill names explicitly.
+
+**The headline carries a number.** "5 credits free. Packs from $4.99", the $4.99
+in the product's own orange. The price is on the first phone screen, in the
+headline, before any card is reached.
+
+**The price is the hero of each card.** 56px to 62px against 15px body, set as
+three pieces (`$`, the figures, `.99`) with `tabular-nums`, so the decimal sits
+tight and the three prices stack straight. The rate sits directly under the
+price because it qualifies the price, not the quantity. The Plus card is a full
+orange gradient with a white button, which is the page's colour moment and lands
+on the element that should win.
+
+**A slider answers Jon's actual question.** "Work out what you actually need"
+takes a word count and returns the credits, the smallest pack that covers it,
+and the change left over. **Its arithmetic is the server's arithmetic**, mirrored
+from `costFor`: `max(1, ceil(words / 1000))`. Verified live at three points: 500
+words is 1 credit and the free five cover it, 8,000 is 8 credits and Starter with
+2 left over, 100,000 is 100 credits and Pro exactly.
+
+**NO BUTTON ON THIS PAGE PRETENDS TO SELL, which was Jon's instruction and is
+also the researched answer.** All three read **"Create free account"**, which is
+exactly what they do, and a status bar sits **above** the grid rather than
+apologising below it: *"Card checkout opens shortly. These prices are locked in.
+Create your free account now, take 3 more credits with you, and buying is one
+click the day it opens."* **A disabled button was rejected on evidence**: NN/g
+and Smashing both document that users abandon rather than investigate, and a
+tooltip does not exist on a phone, which is where this traffic is.
+**Wiring Stripe is three hrefs, three labels and deleting the status bar. No
+layout moves.**
+
+**THE CLAIMS BOUNDARY GOT THE MOST CAREFUL BLOCK ON THE PAGE**, because a
+pricing table is the easiest place in this project to write a sentence true of
+one layer as though it were true of all three. The three layers run in **one
+shared shape**: what it is, what happens to it, and a status pill.
+**Invisible characters: "Proven on every run". File metadata: "Proven on every
+run". The statistical watermark: "Best effort, and not verifiable yet"**, in an
+outlined pill rather than a solid one, so the difference is visible before it is
+read. `03-pricing.md` section 8's strongest sentence is set at 19px rather than
+as a footnote.
+
+**FLAGGED FOR JON, AND IT IS THE ONE THING DELIBERATELY LEFT OFF.**
+`03-pricing.md` **P6 proposes a 30 day no-questions refund of unspent credits**,
+and the reasoning is good: a refund costs 56 cents where a dispute costs about
+$24.50. **Entry 67 ratified "pricing and free credits" and did not reach P6**, so
+it is not a ruled policy and it does not appear on a live page as though it
+were. **It is the strongest trust line still available on this page.** One word
+from Jon puts it on.
+
+**ALSO FLAGGED: the pack names depart from entry 67 and this is the second
+session to do it.** Entry 67's table names them **Taster, Standard, Pro**; the
+shipped page has used **Starter, Plus, Pro** since it was built. Kept, because
+"Taster" reads British to a US college student, but recorded rather than left
+silent, since `CLAUDE.md` section 2 makes the document govern where it decided
+something. **Jon's call.**
+
+**Researched rather than guessed.** A background agent measured live pricing
+pages in a browser at 390px. Three findings changed the build. **Card height is
+the whole mobile problem**: Canva fits three tiers in 1.5 viewports at 375px per
+card by keeping feature lists out of them, while ChatGPT's run 598 to 683px and
+ElevenLabs' 786px, burying tier three two swipes down. **Ours are 345 to 349px
+and tier three starts at y=1640 on a 390x844 phone**, inside the second screen.
+**`tabular-nums` is the emerging standard** on prices (ChatGPT and ElevenLabs
+both set it) and the old page did not. **Superscript cents have no evidence
+base**: GoodUI aggregates two tests over 222,414 visitors and calls it
+inconclusive, so the cents are full-size decimals.
+
+**Two research findings were noted and NOT acted on, deliberately.** The web
+reference class tops out at about **2x body size** for a price and this page runs
+**3.7x**; that is a departure taken on purpose, and Huang (2025) supports it for
+exactly this cell, an unknown brand with genuinely small numbers. And **fading in
+an LCP element delays LCP**, which the hero's `animate-rise` does; it is left
+because it is the whole site's motion grammar and changing it here alone would
+make this page the odd one out. **Both are Jon's to overrule.**
+
+**RENDERED AND LOOKED AT, at 1280px, 768px and 390px.** Tap targets measured at
+49px for the pack buttons and 40px for the calculator chips, against Apple's
+44pt guidance. No horizontal overflow at 390px, `scrollWidth` equal to
+`innerWidth`. No console errors. Three pack cards of equal height on one line
+each, no wrapped buttons.
+
+**Files:** `app/(marketing)/pricing/page.tsx`,
+`app/(marketing)/pricing/_components/pricing-data.ts` (the prices in one place),
+`app/(marketing)/pricing/_components/credit-calculator.tsx`. **Nothing outside
+`/pricing` was touched**; the closing band reuses `CtaBand` unchanged.
+
+**One trap worth recording:** `_components/workbench/credits.ts` carries a
+`'use client'` directive, so a Server Component importing `WELCOME_CREDITS` from
+it gets a client reference back rather than the number. The three constants are
+restated in `pricing-data.ts` with a comment saying why and to keep them in step.
