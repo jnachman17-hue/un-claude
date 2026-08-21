@@ -20,6 +20,25 @@ const INTERNAL_PACKAGES = [
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  /**
+   * PHONE TESTING OVER THE LOCAL NETWORK. Added 21 August 2026.
+   *
+   * Next.js 16 refuses to serve its dev resources to any origin other than
+   * localhost. Open the dev server from a phone at http://<mac-ip>:3000 and
+   * the HTML arrives fine while EVERY JavaScript chunk is blocked, so the page
+   * renders and nothing on it works: no Scan it, no Try an example, no menu.
+   *
+   * That failure is indistinguishable from a broken build unless you read
+   * apps/web/.next/dev/logs/next-development.log, where it says so 146 times.
+   * Jon hit it on his own phone before this line existed.
+   *
+   * DEVELOPMENT ONLY, and it has no production equivalent: a deployed build
+   * serves its assets normally and this key is ignored. The wildcard covers a
+   * whole private subnet, so a new DHCP lease does not silently break phone
+   * testing again. Nothing outside a local network can reach the dev server
+   * in the first place.
+   */
+  allowedDevOrigins: ['192.168.*.*', '10.*.*.*', '172.16.*.*', '*.local'],
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: INTERNAL_PACKAGES,
   images: {
