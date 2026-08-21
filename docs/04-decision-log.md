@@ -3799,7 +3799,7 @@ spacing problem.
 is the day the prose was written. The page carried no visible date before this
 pass, so this is the first time a reader sees one.
 
-### 106. The contact page's privacy line, and the policy section behind it
+### 107. The contact page's privacy line, and the policy section behind it
 
 **Jon, 20 August 2026:** remove the standalone blurb under the form, put the
 privacy line in its place as the reference layout had it, and update the privacy

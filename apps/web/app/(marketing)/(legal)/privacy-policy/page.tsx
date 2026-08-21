@@ -31,7 +31,7 @@ export async function generateMetadata() {
  * which was the whole discipline: a privacy policy claiming no tracking while
  * tracking is a false statement in a legal document. 06 row 46. THE CONTACT
  * PAGE ARRIVED 20 AUGUST 2026 and was handled the same way: see "When you write
- * to us" below and 04 entry 106. The interesting fact there is that the page
+ * to us" below and 04 entry 107. The interesting fact there is that the page
  * itself collects nothing, because the button composes a draft in the
  * visitor's own mail app, and the policy has to say so rather than describe a
  * form submission that never happens.
