@@ -141,6 +141,18 @@ export async function getBalance(accountId: string): Promise<number> {
 const UNDEFINED_COLUMN = '42703';
 const POSTGREST_SCHEMA_CACHE_MISS = 'PGRST204';
 
+/**
+ * The same idea one level up: "that FUNCTION does not exist (yet)". Postgres
+ * says 42883; PostgREST says PGRST202 when the function is absent from its
+ * schema cache. Both mean the migration has not been run.
+ */
+const UNDEFINED_FUNCTION = '42883';
+const POSTGREST_FUNCTION_MISSING = 'PGRST202';
+
+function isMissingFunction(code: string | undefined | null): boolean {
+  return code === UNDEFINED_FUNCTION || code === POSTGREST_FUNCTION_MISSING;
+}
+
 async function grantOnce(
   accountId: string,
   delta: number,
@@ -229,11 +241,16 @@ export async function ensureGrants(user: {
    */
   ip?: string | null;
   /**
-   * True when this is a REAL account continuing a guest session already held by
-   * this browser (the guest cookie is present). On a conversion the welcome
-   * grant is skipped: the guest account was already paid it and mergeGuestInto
-   * carries its leftover across. Paying it again is finding 2's double grant
-   * (7 credits instead of the ratified 5).
+   * True when this is a REAL account continuing a guest session. On a
+   * conversion the welcome grant is skipped: the guest account was already
+   * paid it and mergeGuestInto carries its leftover across. Paying it again is
+   * finding 2's double grant (7 credits instead of the ratified 5).
+   *
+   * THE CALLER MUST DERIVE THIS FROM `hasConverted`, NOT FROM THE COOKIE
+   * ALONE. The cookie is deleted by the same request that reads it, so it is
+   * true exactly once and false for ever afterwards — which is how an account
+   * came to be paid this grant 46 seconds after being correctly denied it.
+   * guest-merge-double-runs.md, defect 2.
    */
   isConversion?: boolean;
 }): Promise<void> {
@@ -329,47 +346,88 @@ export async function refund(accountId: string, amount: number): Promise<void> {
 
 /**
  * Move whatever is left on a browser's guest account onto the real account
- * that just signed in on the same browser. Two adjustment rows, marked as a
- * transfer in the endpoint column so the wallet history can say what happened.
+ * that just signed in on the same browser, EXACTLY ONCE.
  *
- * The guest id arrives from a cookie, which a hostile visitor could set to a
- * guessed value; the checks below make that worth at most another welcome
- * grant of the free layers: the source must be a real anonymous account, and
- * only a positive remainder moves.
+ * This function used to do the work itself: read the guest's balance, write a
+ * negative row to the guest, write a positive row to the account. That is
+ * three steps with no lock and no record that it had run, so two requests
+ * arriving together both read the same balance and both performed the
+ * transfer. It happened every single time, because two components each fetch
+ * GET /api/credits on page load. See guest-merge-double-runs.md for the
+ * ledger rows, and 20260821140000_guest_conversion_once.sql for the fix.
+ *
+ * All of it now lives in `merge_guest_credits`, for the same reason `spend`
+ * lives in `spend_credits`: the check and the write have to be one indivisible
+ * step under a lock, and no amount of care in TypeScript can make them one.
+ * The hostile-cookie check moved down there too, so it cannot be bypassed by a
+ * future caller that forgets it.
+ *
+ * Returns the number of credits carried across, or NULL meaning "did not run
+ * at all" — see the migration-missing branch below. Null is not zero: zero is
+ * a completed conversion that had nothing to move, and the caller must tell
+ * them apart before it clears the guest cookie.
  */
 export async function mergeGuestInto(
   guestId: string,
   accountId: string,
-): Promise<number> {
-  if (guestId === accountId) return 0;
-
-  const { data: guestUser } = await admin().auth.admin.getUserById(guestId);
-
-  if (!guestUser?.user || guestUser.user.is_anonymous !== true) return 0;
-
-  const remaining = await getBalance(guestId);
-
-  if (remaining <= 0) return 0;
-
-  const { error: outError } = await admin().from('credit_ledger').insert({
-    account_id: guestId,
-    delta: -remaining,
-    reason: 'adjustment',
-    endpoint: 'transfer_out',
+): Promise<number | null> {
+  const { data, error } = await admin().rpc('merge_guest_credits', {
+    guest_account: guestId,
+    target_account: accountId,
   });
 
-  if (outError) throw new Error(`transfer out failed: ${outError.message}`);
+  if (!error) return (data as number) ?? 0;
 
-  const { error: inError } = await admin().from('credit_ledger').insert({
-    account_id: accountId,
-    delta: remaining,
-    reason: 'adjustment',
-    endpoint: 'transfer_in',
+  // The migration has not been run yet. Do NOTHING and say so, rather than
+  // falling back to the old in-TypeScript transfer: the old path is the bug,
+  // and a merge that has not happened is recoverable — the credits are still
+  // sitting on the guest account and the caller keeps the cookie — whereas a
+  // doubled one mints credits. Same reasoning as the grant_email fallback
+  // above, landing on the opposite answer because the risks are not symmetric.
+  if (isMissingFunction(error.code)) {
+    console.error(
+      'merge_guest_credits is missing — run migration ' +
+        '20260821140000_guest_conversion_once.sql. The guest merge is ' +
+        'INACTIVE until it lands; credits stay on the guest account.',
+    );
+
+    return null;
+  }
+
+  throw new Error(`guest merge failed: ${error.message}`);
+}
+
+/**
+ * Has this account already carried credits over from a guest session?
+ *
+ * WHY THIS EXISTS. The welcome grant is withheld from an account that is
+ * continuing a guest session, because the guest was already paid it. That
+ * decision used to read the guest cookie — and the same request then DELETED
+ * that cookie, so the next balance check no longer knew, and paid the grant
+ * after all. The account reached 7 credits against a ratified 5, which is the
+ * exact failure security-audit.md finding 2 was written to prevent.
+ *
+ * A cookie was the wrong place to keep a permanent fact. This reads the
+ * conversion record instead, which is written once and never removed while the
+ * account exists.
+ */
+export async function hasConverted(accountId: string): Promise<boolean> {
+  const { data, error } = await admin().rpc('has_converted', {
+    target_account: accountId,
   });
 
-  if (inError) throw new Error(`transfer in failed: ${inError.message}`);
+  if (!error) return data === true;
 
-  return remaining;
+  // Before the migration lands there is no record to read, and the caller
+  // falls back to the cookie exactly as it did before. Saying "true" here
+  // would deny the welcome grant to every cold signup.
+  if (isMissingFunction(error.code)) return false;
+
+  // Any other failure: claim it IS a conversion, so the worst case is a missed
+  // giveaway rather than a double one. Same rule as hasGrant above.
+  console.warn(`has_converted failed, assuming converted: ${error.message}`);
+
+  return true;
 }
 
 /**
