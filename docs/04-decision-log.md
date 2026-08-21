@@ -3767,3 +3767,34 @@ already carries it in its headers. The two fields a draft actually needs are
 subject and message, which is also less to scroll. **If this ever becomes a
 server send, the email and name fields come back with it**, because at that
 point they stop being decorative.
+
+### 106. The mission page is set as a document, not a landing page section
+
+**Jon, 20 August 2026, on the previous layout:** "I hate the look. It looks so
+awful, like the massive 'why I built this' at top then the massive space gap...
+Give it a title and a date smaller underneath and go right into it." And
+separately, on the rule under the hero: "that bar that separates the header and
+the bottom, I know it doesn't look good. Make it look cleaner."
+
+**Layout only. Not a word of the prose changed.** The argument and the voice
+were ratified in entries 92 and 93 and were not reopened.
+
+**What changed.** The full-bleed hero band with `py-16 lg:py-20` and its bottom
+border is gone, and so is the second bordered section under it. The page is now
+one card panel (`bg-card`, one point of lightness above the page background,
+same relationship as the boxes on the home page) sitting on the page with an
+860px outer column. Inside it: the title at 27px rising to 32px, the date at
+13px directly beneath with 6px between them, then the opening paragraph. The
+small bold stacked headers Jon asked for in entry 93 stayed; only the spacing
+around them changed, from 40px between blocks to 28px, and from 12px under a
+header to 8px.
+
+**The measure is the point, and it is the reason this page is not full width.**
+Body text is held at 68 characters a line, measured at 714px on a 16px face,
+which sits inside the 65 to 75 that prose needs to be readable. An essay set
+across a 1180px container is the defect the old page had underneath the
+spacing problem.
+
+**The date is 20 August 2026,** taken from the page's own source header, which
+is the day the prose was written. The page carried no visible date before this
+pass, so this is the first time a reader sees one.
