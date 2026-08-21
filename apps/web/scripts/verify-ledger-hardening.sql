@@ -39,10 +39,14 @@ rollback;
 -- public.accounts and public.credit_ledger, with its delete rule.
 --
 -- EXPECTED, and the point of the check:
---   credit_ledger.account_id -> accounts.id      delete_rule = CASCADE   (present)
---   accounts.id              -> auth.users.id    ** expected to be ABSENT **
--- If the second row is absent, deleting an auth user leaves the accounts row
--- and the whole ledger behind, and the privacy promise is not being kept.
+--   credit_ledger.account_id -> accounts.id      delete_rule = CASCADE
+--   accounts.id              -> auth.users.id    delete_rule = CASCADE
+-- The second row was ABSENT until 21 August 2026, and its absence WAS the
+-- account-deletion defect: deleting an auth user left the accounts row and the
+-- whole ledger behind. 20260821130000_account_deletion_cascade.sql adds it.
+-- If you run this and the second row is missing, that migration has not been
+-- applied to this database and the privacy policy's deletion promise is false.
+-- See docs/session-notes/account-deletion-fix.md.
 -- ============================================================================
 select
     con.conname                                as constraint_name,
@@ -66,6 +70,13 @@ order by child_table, constraint_name;
 -- PART B  (run AFTER applying all four migrations)  —  prove every fix
 -- ============================================================================
 begin;
+
+-- The fixtures below are accounts with no matching auth.users row, which the
+-- accounts_id_fkey added on 21 August 2026 forbids. This harness is about the
+-- LEDGER, not that key, so the key is dropped for the duration. DDL is
+-- transactional in Postgres, so the ROLLBACK at the foot of this file puts it
+-- back exactly as it was. Nothing here survives the rollback.
+alter table public.accounts drop constraint if exists accounts_id_fkey;
 
 -- ---- throwaway fixtures (all rolled back) ----------------------------------
 insert into public.accounts (id, name, email) values

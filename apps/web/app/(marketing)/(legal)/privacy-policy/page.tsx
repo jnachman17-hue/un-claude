@@ -49,15 +49,32 @@ export async function generateMetadata() {
  *     falsified a legal page. It now names the provider and commits to a rule
  *     instead: the table is updated before a new company sees submitted text.
  *
- * THE ACCOUNT DELETION SENTENCE IS NOT THE ONE THE REPORT DRAFTED, and the
- * difference is deliberate. The report expected deletion to take the credit
- * history with it. It does not. `credit_ledger.account_id` does cascade from
- * `public.accounts`, but `public.accounts.id` carries NO foreign key to
- * `auth.users` and there is no delete trigger, so `auth.admin.deleteUser` in
- * `delete-personal-account.service.ts` removes the sign-in and leaves both the
- * account row and the ledger standing. Saying otherwise would be a false
- * statement in a legal document, so this page says what the code does. When the
- * cascade is added, this sentence changes in the same deployment.
+ * THE ACCOUNT DELETION SENTENCES ARE NOW THE STRONGER ONES, 21 AUGUST 2026,
+ * and this is the change the previous comment here said to make. Two paragraphs
+ * moved: the credit-history retention paragraph, and the deletion paragraph
+ * under "Your rights". They used to say that deleting your account removes the
+ * sign-in but does not by itself erase the record, and to write in for erasure.
+ * That was accurate. The chain had three links and only two existed:
+ * `credit_ledger.account_id` cascaded from `public.accounts`, but
+ * `public.accounts.id` carried no foreign key to `auth.users` at all, so
+ * `auth.admin.deleteUser` in `delete-personal-account.service.ts` destroyed the
+ * sign-in and left the account row, holding the person's email address and
+ * name, and the whole ledger standing.
+ *
+ * `20260821130000_account_deletion_cascade.sql` adds the missing link, so the
+ * page can now promise the simple thing: deleting your account deletes your
+ * account record and your entire credit history with it. Written up with the
+ * before-and-after proof in `docs/session-notes/account-deletion-fix.md`.
+ *
+ * THESE TWO PARAGRAPHS ARE ONLY TRUE ONCE THAT MIGRATION IS APPLIED TO THE
+ * HOSTED DATABASE. It is SQL a person pastes into the Supabase editor, and it
+ * is not carried by a deploy. So the order is: run the SQL first, deploy
+ * second. Shipping this page ahead of the migration puts a false statement in a
+ * legal document, which is the exact failure 06 row 46 exists to prevent.
+ * `node scripts/verify-account-deletion.mjs` from `apps/web` answers which
+ * state the database is actually in: it creates a throwaway account, deletes
+ * it through the real path, prints every surviving row, and cleans up after
+ * itself. It exits 0 when this page is telling the truth.
  *
  * The claim that remains, and that must stay true: PostHog is configured to store
  * NOTHING on the visitor's device. If that configuration ever changes, this page
@@ -146,9 +163,9 @@ async function PrivacyPolicyPage() {
           file.
         </P>
         <P>
-          We keep that history for as long as we hold your account. Nothing
-          deletes it automatically after that, and we would rather say so than
-          state a period we do not enforce. Ask us to delete it and we will.
+          We keep that history for as long as you have an account. Delete your
+          account and your whole history is deleted with it, automatically and
+          at the same moment. You do not have to ask us.
         </P>
         <P>
           Our servers also keep ordinary technical logs of each request: the
@@ -324,11 +341,12 @@ async function PrivacyPolicyPage() {
         </P>
         <P>
           You can delete your account yourself at any time, from your account
-          settings. That removes your sign-in for good and you will not be able
-          to reach the account again. It does not by itself erase the record we
-          hold: your account record and your credit history stay in our database
-          until we remove them, so write to us and we will. Because we do not
-          retain submitted content, there is nothing else to delete.
+          settings. Deleting your account deletes your account record and your
+          entire credit history with it. Your email address, your name and every
+          line of your history are removed from our database in that moment, not
+          marked for removal later, and your sign-in is destroyed with them.
+          Because we do not retain submitted content, there is nothing else to
+          delete.
         </P>
         <P>
           Deleting your account also ends any credits still on it, and unused
