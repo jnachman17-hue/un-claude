@@ -14,22 +14,10 @@ import { Trans } from '@kit/ui/trans';
 import { SiteNavigationItem } from './site-navigation-item';
 
 /**
- * Add your navigation links here
- *
- * @example
- *
- * {
- *   FAQ: {
- *     label: 'marketing.faq',
- *     path: '/faq',
- *   },
- *   Pricing: {
- *     label: 'marketing.pricing',
- *     path: '/pricing',
- *   },
- * }
+ * The header navigation. Labels resolve through `marketing.json`. This row is
+ * prime space and holds the four pages that sell; everything else lives in the
+ * footer.
  */
-
 const links: Record<
   string,
   {

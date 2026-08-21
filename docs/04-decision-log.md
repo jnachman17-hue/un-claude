@@ -3642,3 +3642,90 @@ auth flow on a clean browser.
 answered separately and is not this bug.** Turnstile is working on the live
 domain and produces an 816-character token; that was verified before this was
 found.
+
+### 102. The /faq route, deleted a second time
+
+**Jon, 20 August 2026:** "FAQ button at bottom makes no sense, routes you to a
+weirdly formatted FAQ page stealing the original template format. Just delete
+that page and section altogether. We already have FAQ at the bottom of the
+landing page."
+
+**One correction to the premise, made before executing.** The template
+formatting he saw had already been replaced. Entry 89 deleted the route for
+exactly that reason, entry 90 rebuilt it the same day at his instruction with
+the real nine answers and proper page furniture. **What he clicked on was the
+rebuilt page, not the starter one.** His second reason stands on its own
+regardless: the answers are already at the bottom of the landing page, and a
+footer link that leaves the page to show the same nine answers is a leak in the
+funnel rather than a service.
+
+**So the route is gone, and this time the reasoning is his, not a formatting
+defect.** Deleted: `app/(marketing)/faq/`, the footer link, the `/faq` entry in
+`sitemap.xml`, the `marketing.faq` label, and the grouping metadata in
+`faq-items.tsx` that only the page used.
+
+**The one thing that did NOT die with it: the FAQPage structured data.** That
+markup is why entry 90 wanted the page, and it is invisible to a visitor, so it
+moved into `faq-section.tsx` on the landing page. The nine answers stay eligible
+for the long-tail searches they were written for, on a URL that also sells.
+
+**`faq-items.tsx` stays as a file even with one reader.** It holds the words
+rather than the markup, and merging it back into the section would be churn for
+nothing.
+
+### 103. The footer tagline: rewritten rather than cut
+
+**Jon, 20 August 2026, on the old line:** "Either remove it or make it more in
+line with our current messaging." The line was: "We find the marks that identify
+text and files as AI written, and remove them. Three kinds of mark, and we tell
+you plainly which ones we can prove we removed."
+
+**The recommendation was to rewrite, and here is why cutting lost.** The footer
+column is logo, description, copyright. Strip the description and the logo sits
+on a copyright line with nothing between them, and the site loses its one plain
+statement of what it is at the exact point a visitor who scrolled the whole page
+is deciding.
+
+**What was actually wrong with the old line was the second sentence, and the
+diagnosis matters more than the replacement.** "Three kinds of mark, and we tell
+you plainly which ones we can prove we removed" is a caveat about provability.
+**A footer is the wrong place for a caveat**: it is the last thing read, it has
+no room to explain, and a hedge with no argument around it reads as doubt rather
+than as honesty. The honest hedging belongs where it already is, in the FAQ and
+on /how-it-works, with the mechanism beside it. The first sentence had its own
+defect: **"three kinds of mark" is a count used before it is taught**, which is
+the left-to-right rule in `unclaude-messaging`, and the footer is the one place
+on the site where nothing further can teach it.
+
+**The replacement: "AI tools mark what they make, invisibly and without telling
+you. Un-Claude finds those marks and sanitises them."** It is Jon's own register,
+recorded in the skill as the approved restrained framing. It uses "sanitise"
+rather than "remove the watermark", entry 70. It carries no count and no caveat,
+and it is true of the whole service, which is what a whole-service slot requires.
+
+### 104. Contact: a page, an address, and a mailto rather than a mailer
+
+**Jon, 20 August 2026:** "you just click contact and it brings you to a portal
+where it gives you my email, or a box you can fill out with an email subject
+line and message box, you send it and it goes to my email." The address is
+`help@unclaudeapp.com`, given by him in the same message. **It is not guessed and
+not scraped, and it is in one place in the code.**
+
+**Both halves shipped: the address is printed in full and selectable at the top,
+and the form is under it.** The form takes a subject and a message.
+
+**THE SEND IS A MAILTO COMPOSITION, NOT A SERVER SEND, AND THE NEXT SESSION
+SHOULD NOT TREAT THAT AS AN OVERSIGHT.** This monorepo has no mailer:
+`packages/` holds features, i18n, next, shared, supabase and ui, and nothing in
+`apps/web/.env` names an SMTP host or a mail provider. A real send needs a
+dependency and a paid key, and `CLAUDE.md` section 5 makes that Jon's call.
+
+**The tradeoff, stated plainly because it is a real cost.** The button hands the
+visitor's own mail app a pre-filled draft. On a phone with only a webmail app
+and no configured mail client, pressing it may do nothing. **That is exactly why
+the address is printed above the form rather than hidden behind the button**, so
+there is always a path that works. When Jon wants a true send, the component
+becomes a POST to a route handler and nothing else on the page changes.
+
+**The page is deliberately the smallest on the site.** No CTA band, no argument.
+Somebody who reached contact has already decided to write to us.
