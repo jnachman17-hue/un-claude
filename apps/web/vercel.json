@@ -5,5 +5,18 @@
       "maxDuration": 60,
       "memory": 1024
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.un-claude.com" }],
+      "destination": "https://un-claude.com/$1",
+      "permanent": true
+    },
+    {
+      "source": "/dev/:path*",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }
