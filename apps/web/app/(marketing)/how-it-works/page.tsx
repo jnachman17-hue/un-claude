@@ -17,7 +17,8 @@ import { PageHeader } from '../_components/prose';
 export const metadata = {
   title: 'How it works',
   description:
-    'The three kinds of AI watermark, where each one hides, and exactly what Un-Claude does to each: found and counted, stripped and byte verified, or sanitised by an engineered rewrite.',
+    'Three kinds of AI watermark, where each hides, and what Un-Claude does to each: found and counted, stripped and byte verified, or sanitised by rewrite.',
+  alternates: { canonical: '/how-it-works' },
 };
 
 const ANTHROPIC_POST = 'https://www.anthropic.com/news/claude-text-watermark';

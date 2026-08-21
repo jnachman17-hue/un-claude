@@ -1,8 +1,25 @@
+import appConfig from '~/config/app.config';
+
 import { ClaudeBand } from './_components/claude-band';
 import { CoverageMarquee } from './_components/coverage-marquee';
 import { CoverageSection } from './_components/coverage-section';
 import { FaqSection } from './_components/faq-section';
 import { HeroSection } from './_components/hero-section';
+
+/**
+ * `title` is `absolute` so the root layout's title template (`%s · brand`)
+ * does not append the brand name a second time onto a title that already
+ * carries it. Every other page's `title` is a bare string that the template
+ * appends to. `description` is trimmed to stay under Google's ~155-160
+ * character truncation point without dropping any of the three watermark
+ * layers it names.
+ */
+export const metadata = {
+  title: { absolute: appConfig.title },
+  description:
+    'Scan text and files free for hidden AI watermarks: invisible characters, C2PA metadata and the mark in the words themselves. Sanitise in seconds.',
+  alternates: { canonical: '/' },
+};
 
 /**
  * The Un-Claude landing page, radically cut 19 August 2026 on Jon's order:

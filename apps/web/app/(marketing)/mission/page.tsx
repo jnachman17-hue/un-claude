@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Our mission',
   description:
     'Why Un-Claude exists: a mark you cannot see, never agreed to, and cannot answer is not transparency. Written by the person who built it.',
+  alternates: { canonical: '/mission' },
 };
 
 /**

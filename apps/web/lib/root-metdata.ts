@@ -13,7 +13,13 @@ import appConfig from '~/config/app.config';
  */
 export const generateRootMetadata = (): Metadata => {
   return {
-    title: appConfig.title,
+    title: {
+      // The homepage sets its own `absolute` title so it keeps this exact
+      // string instead of the template appending the brand a second time.
+      // Every other page passes a bare string through the template below.
+      default: appConfig.title,
+      template: `%s · ${appConfig.name}`,
+    },
     description: appConfig.description,
     metadataBase: new URL(appConfig.url),
     applicationName: appConfig.name,
