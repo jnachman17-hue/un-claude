@@ -3,9 +3,8 @@ import Link from 'next/link';
 import {
   CheckIcon,
   ClockIcon,
-  FileTextIcon,
   CreditCardIcon,
-  ImageIcon,
+  FileIcon,
   InfinityIcon,
   RotateCcwIcon,
   ScanLineIcon,
@@ -44,12 +43,31 @@ import {
  * signup, 5 in total), entry 71 for a file costing one flat credit, entry 98
  * for the coin that makes a credit a currency rather than a word.
  *
- * CHECKOUT IS NOT WIRED AND THE PAGE SAYS SO OUT LOUD. Jon's instruction was
- * no dead button. So no button on this page promises a purchase: all three
- * pack buttons say "Create your free account", which is exactly what they do,
- * and a status bar directly above the grid explains why and commits to the
- * prices. When Stripe lands, three hrefs and three labels change and the
- * status bar is deleted. Nothing else moves.
+ * THE PAGE READS AS LIVE, AND THAT IS JON'S RULING RATHER THAN THIS
+ * SESSION'S. The first build said out loud that checkout was not connected: a
+ * status bar above the grid, a caption under every button, and an FAQ entry.
+ * Jon, 20 August 2026: "make this seem like it is live universally. Remove
+ * card check out opens shortly and faqs all the small callouts... Just listen
+ * to me on this." All three are gone and the buttons read "Purchase now".
+ *
+ * SO THE BUTTONS PROMISE A PURCHASE AND CURRENTLY DELIVER A SIGN-UP FORM.
+ * That is the shape Jon asked for: "guides you to create your account then
+ * brings you to payment." The second half does not exist yet, and the
+ * sign-up route carries no return path without editing shared auth in
+ * `packages/features/auth`, which is another session's. When Stripe lands,
+ * change `href` on the three pack buttons to the checkout route. Nothing else
+ * on the page needs to move.
+ *
+ * ONE THING REMOVED AGAINST THE GOVERNING DOCUMENT, RECORDED RATHER THAN
+ * DONE QUIETLY. `03-pricing.md` section 8 names one sentence as the one that
+ * carries the most weight here: "Two of the three checks are provable, and we
+ * show you the proof. The third is best effort and we say so." Jon instructed
+ * its removal, along with the link to /capabilities beside it. CLAUDE.md
+ * section 2 puts his instruction above the document, so it is gone. THE
+ * BOUNDARY ITSELF SURVIVES INTACT in the three layer cards below, where the
+ * statistical watermark still carries "Best effort, and not verifiable yet"
+ * in its own pill: the removed sentence was a summary of what those pills
+ * already say one by one.
  *
  * WHAT THIS PAGE MUST NEVER SAY, per 03-pricing.md section 8 and the
  * unclaude-messaging skill: any success rate or score for layer B, any
@@ -71,11 +89,19 @@ export const metadata = {
     'Five credits free, then packs from $4.99. One credit sanitises 1,000 words, a file is one credit whatever its size, and credits never expire. No subscription.',
 };
 
-/** What a credit buys, in one grammar, taught before any price is shown. */
+/**
+ * What a credit buys, in one grammar, taught before any price is shown.
+ *
+ * TWO ROWS, NOT THREE. Jon, 20 August 2026: "let's just make this universal.
+ * 1 credit = 1,000 words of text. 1 credit = 1 file." A Word document on one
+ * row and a PNG on the next taught the visitor to look for their own file
+ * type in a list, and a list invites the question of what is missing from it.
+ * One rule for files, whatever the file is, is both simpler and truer to what
+ * the server actually charges: a flat credit per file entry, 04 entry 71.
+ */
 const UNIT = [
-  { icon: TypeIcon, label: '1,000 words of pasted text' },
-  { icon: FileTextIcon, label: 'One Word document, any length' },
-  { icon: ImageIcon, label: 'One PNG or JPG, any size' },
+  { icon: TypeIcon, label: '1,000 words of text' },
+  { icon: FileIcon, label: 'One file, whatever its size' },
 ];
 
 /** The four reassurances that sit under the buy buttons. All four are ruled. */
@@ -133,10 +159,6 @@ const FAQ = [
   {
     q: 'What exactly is a credit?',
     a: 'One credit sanitises 1,000 words of pasted text. A file is one flat credit whatever its size, because stripping a 4 MB photograph and a 40 KB one is the same piece of work. Every job rounds up to a whole credit.',
-  },
-  {
-    q: 'Can I buy a pack right now?',
-    a: 'Not this second. Card checkout is the next thing being connected, and the prices above are final. A free account gets you three more credits today, and they are waiting for you when checkout opens.',
   },
   {
     q: 'Do my credits expire?',
@@ -201,9 +223,8 @@ function Pricing() {
                 'text-muted-foreground mt-5 max-w-[54ch] text-[16px] leading-[1.65]'
               }
             >
-              One credit sanitises 1,000 words of text. A file is one credit,
-              whatever its size. Buy a pack once, use it whenever you like, and
-              it never expires. There is no subscription.
+              Buy a pack once, use it whenever you like, and it never expires.
+              No subscription, no monthly reset, nothing to cancel.
             </p>
 
             <div className={'mt-7 flex flex-wrap items-center gap-3'}>
@@ -276,8 +297,8 @@ function Pricing() {
                   'border-border/70 text-muted-foreground mt-5 border-t pt-4 text-[13px] leading-[1.6] sm:mt-6 sm:pt-5'
                 }
               >
-                Scanning costs nothing and always will. Credits are only spent
-                when you sanitise.
+                Word documents, PNG and JPG. Scanning costs nothing and always
+                will, so credits are only spent when you sanitise.
               </p>
             </div>
           </div>
@@ -290,35 +311,7 @@ function Pricing() {
          ------------------------------------------------------------------ */}
       <section id={'packs'} className={'scroll-mt-20'}>
         <div className={'mx-auto max-w-[1180px] px-5 py-10 sm:px-8 sm:py-14 lg:py-18'}>
-          {/* The honest status of the buttons below, said before they are
-              read rather than apologised for underneath them. */}
-          <div
-            className={
-              'border-mark/25 bg-mark/[0.07] flex items-start gap-3 rounded-[14px] border px-4 py-4 sm:items-center sm:gap-3.5 sm:px-5'
-            }
-          >
-            <span
-              className={
-                'bg-mark text-mark-foreground mt-[1px] grid size-[26px] shrink-0 place-items-center rounded-full sm:mt-0'
-              }
-            >
-              <ClockIcon className={'size-[14px]'} strokeWidth={2.4} aria-hidden />
-            </span>
-            <p
-              className={'text-foreground text-[13.5px] leading-[1.55] sm:text-[14px]'}
-            >
-              <span className={'font-semibold'}>
-                Card checkout opens shortly.
-              </span>{' '}
-              <span className={'text-muted-foreground'}>
-                These prices are locked in. Create your free account now, take{' '}
-                {SIGNUP_CREDITS} more credits with you, and buying is one click
-                the day it opens.
-              </span>
-            </p>
-          </div>
-
-          <div className={'mt-6 grid gap-4 md:grid-cols-3 lg:gap-5'}>
+          <div className={'grid gap-4 md:grid-cols-3 lg:gap-5'}>
             {PACKS.map((pack) => (
               <div
                 key={pack.id}
@@ -456,17 +449,9 @@ function Pricing() {
                       : 'bg-foreground text-background hover:bg-foreground/90',
                   ].join(' ')}
                 >
-                  Create free account
+                  Purchase now
                 </Link>
 
-                <p
-                  className={[
-                    'relative mt-3 text-center text-[12px]',
-                    pack.featured ? 'text-white/70' : 'text-muted-foreground',
-                  ].join(' ')}
-                >
-                  Checkout opens shortly
-                </p>
               </div>
             ))}
           </div>
@@ -738,32 +723,6 @@ function Pricing() {
             ))}
           </ul>
 
-          {/* The sentence 03-pricing.md section 8 says carries the most
-              weight on this page, given the size it deserves rather than
-              set as a footnote. */}
-          <div
-            className={
-              'border-border/70 mt-10 flex flex-col gap-4 border-t pt-9 lg:flex-row lg:items-end lg:justify-between'
-            }
-          >
-            <p
-              className={
-                'text-foreground max-w-[52ch] text-[17px] leading-[1.5] font-medium tracking-[-0.015em] text-balance sm:text-[19px]'
-              }
-            >
-              Two of the three checks are provable, and we show you the proof.
-              The third is best effort and we say so.
-            </p>
-
-            <Link
-              href={'/capabilities'}
-              className={
-                'text-foreground shrink-0 underline decoration-1 underline-offset-4 text-[14px] font-semibold'
-              }
-            >
-              Exactly what we can and cannot do
-            </Link>
-          </div>
         </div>
       </section>
 

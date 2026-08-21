@@ -3960,3 +3960,79 @@ each, no wrapped buttons.
 `'use client'` directive, so a Server Component importing `WELCOME_CREDITS` from
 it gets a client reference back rather than the number. The three constants are
 restated in `pricing-data.ts` with a comment saying why and to keep them in step.
+
+### 109. Jon's pass on the new pricing page: one universal credit rule, the page reads as live, and the boundary summary comes off
+
+**Four rulings, 20 August 2026, immediately after `04` entry 108 shipped.**
+Recorded separately because two of them override things this project had
+previously decided, and one of those is the governing document.
+
+**1. ONE UNIVERSAL RULE FOR FILES.** His words: *"let's just make this
+universal. 1 credit = 1,000 words of text. 1 credit = 1 file. We don't need to
+separate word document on one row and then png/jpg on next row."* The hero card
+is now two rows instead of three.
+
+**He is right and the reason is better than brevity.** A Word row and a PNG row
+taught the visitor to hunt for their own file type in a list, and **a list
+invites the question of what is missing from it**, which on this product is
+PDFs, the one thing the page may not discuss at all. One rule for every file is
+also closer to what the server actually does: `costFor` charges a flat credit
+per file entry regardless of kind, `04` entry 71. The accepted types moved to
+the card's footer line, where they read as an answer rather than as a menu.
+
+**2. THE CREDIT RULE COMES OUT OF THE STANDFIRST**, because the card beside it
+now says the same thing in two lines: *"remove this from text at top because
+diagram box at right shows you this."* The standfirst is now about the offer
+rather than the unit: buy once, never expires, no subscription, no monthly
+reset, nothing to cancel. **The duplication was real and this is the right half
+to keep.**
+
+**3. THE PAGE READS AS LIVE. Jon's ruling, against this session's design and
+stated as final in advance:** *"make this seem like it is live universally.
+Remove card check out opens shortly and faqs all the small callouts that say
+checkout opens shortly. Just listen to me on this."* Removed: the status bar
+above the pack grid, the caption under all three buttons, and the FAQ entry
+"Can I buy a pack right now?". **The word "checkout" no longer appears anywhere
+on the page**, verified in the rendered DOM.
+
+**The buttons now read "Purchase now" and route to sign-up.** That is his shape:
+*"if you click it guides you to create your account then brings you to
+payment."* **The second half does not exist yet.** He was told plainly that
+this means a button promising a purchase currently delivers a sign-up form, and
+he ruled anyway, which is his call to make. **This reverses entry 108's "no
+button pretends to sell" and it is the one line to change the day Stripe lands:
+the three `href` values, nothing else.**
+
+**Not done, and worth knowing why:** routing them back to /pricing after sign-up
+would be the honest halfway house, but `app/auth/sign-up/page.tsx` hardcodes
+`pathsConfig.app.home` as the destination and carrying a return path through
+means editing `packages/features/auth`, which is another session's. **Left
+alone rather than reached into.**
+
+**4. THE BOUNDARY SUMMARY SENTENCE COMES OFF, AND THIS OVERRIDES THE GOVERNING
+DOCUMENT.** He instructed the removal of *"Two of the three checks are provable,
+and we show you the proof. The third is best effort and we say so"* along with
+the "Exactly what we can and cannot do" link beside it.
+
+**`03-pricing.md` section 8 names that exact sentence as the one carrying the
+most weight on this page**, and calls it a competitive advantage rather than a
+disclaimer, because no competitor can write it. **Surfaced rather than resolved
+quietly, per `CLAUDE.md` section 2, which also puts Jon above the document.
+Removed.**
+
+**THE BOUNDARY ITSELF IS UNTOUCHED AND THAT IS WHY THIS IS NOT A CLAIMS
+PROBLEM.** The three layer cards still run one shared shape with a status pill
+each, and **the statistical watermark still carries "Best effort, and not
+verifiable yet"** in an outlined pill against the other two solid "Proven on
+every run" pills. **The removed sentence was a summary of what those three
+pills already say one at a time.** Nothing on the page now claims layer B is
+proven, and nothing claims a watermark was removed. **If a future session wants
+the sentence back, this entry is the argument for it, and section 8 is the
+document that wants it.**
+
+**MEASURED AFTER THE CHANGES, at 390x844.** Pack cards **315, 319 and 319px**,
+down from 345 to 349, and **tier three now starts at y=1393**, down from y=1640,
+because the status bar and three captions came out. Buttons 49px. No horizontal
+overflow, `scrollWidth` 390. No console errors. The only remaining
+`/capabilities` links on the page are the shared header and footer navigation,
+which are not this page's and were not touched.
