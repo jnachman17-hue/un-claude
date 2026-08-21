@@ -316,6 +316,33 @@ export function paywallSignUpClicked(): void {
 }
 
 // ---------------------------------------------------------------------------
+// The empty balance
+// ---------------------------------------------------------------------------
+
+/**
+ * The offer that fires on reaching nought, rather than on failing an attempt.
+ * 21 August 2026, session 10: the balance hitting zero used to say only
+ * "0 left" and the signup grant was reachable only by pressing a button that
+ * would not work. `just_ran_out` separates the two populations that see this:
+ * somebody whose last credit was just spent, and somebody arriving on a
+ * balance that was already empty.
+ */
+export function outOfCreditsShown(properties: {
+  isGuest: boolean;
+  justRanOut: boolean;
+}): void {
+  send('out_of_credits_shown', {
+    is_guest: properties.isGuest,
+    just_ran_out: properties.justRanOut,
+  });
+}
+
+/** They took the offer from the empty balance rather than from the wall. */
+export function outOfCreditsClicked(properties: { isGuest: boolean }): void {
+  send('out_of_credits_clicked', { is_guest: properties.isGuest });
+}
+
+// ---------------------------------------------------------------------------
 // Signing up
 // ---------------------------------------------------------------------------
 

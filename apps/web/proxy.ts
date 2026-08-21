@@ -86,11 +86,12 @@ function getPatterns() {
         // check if we need to verify MFA (user is authenticated but needs to verify MFA)
         const isVerifyMfa = req.nextUrl.pathname === pathsConfig.auth.verifyMfa;
 
-        // If user is logged in and does not need to verify MFA,
-        // redirect to home page.
+        // If user is logged in and does not need to verify MFA, send them
+        // where signing in sends everybody: the tool, not the wallet.
+        // See `afterAuth` in config/paths.config.ts.
         if (!isVerifyMfa) {
           return NextResponse.redirect(
-            new URL(pathsConfig.app.home, req.nextUrl.origin).href,
+            new URL(pathsConfig.app.afterAuth, req.nextUrl.origin).href,
           );
         }
       },

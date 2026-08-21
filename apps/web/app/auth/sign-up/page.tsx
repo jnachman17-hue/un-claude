@@ -18,9 +18,18 @@ export const generateMetadata = async () => {
   };
 };
 
+/**
+ * Sign-up lands on the tool, not the wallet. See `afterAuth` in
+ * paths.config.ts for the reasoning.
+ *
+ * `appHome` is the OAuth return path, which the provider carries as a `next`
+ * search parameter and the callback route redirects to verbatim, so the
+ * welcome flag is safe to include here. The email path picks the same flag up
+ * in app/auth/confirm/route.ts instead.
+ */
 const paths = {
   callback: pathsConfig.auth.callback,
-  appHome: pathsConfig.app.home,
+  appHome: `${pathsConfig.app.afterAuth}?welcome=1`,
 };
 
 function SignUpPage() {

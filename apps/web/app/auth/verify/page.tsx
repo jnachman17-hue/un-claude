@@ -58,7 +58,7 @@ async function VerifyChallenge(props: Props) {
   }
 
   const nextPath = (await props.searchParams).next;
-  const redirectPath = nextPath ?? pathsConfig.app.home;
+  const redirectPath = nextPath ?? pathsConfig.app.afterAuth;
 
   return (
     <MultiFactorChallengeContainer

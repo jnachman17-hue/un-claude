@@ -9,7 +9,6 @@ import { Button } from '@kit/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,11 +33,7 @@ export function PasswordSignUpForm({
 
   displayTermsCheckbox?: boolean;
 
-  onSubmit: (params: {
-    email: string;
-    password: string;
-    repeatPassword: string;
-  }) => unknown;
+  onSubmit: (params: { email: string; password: string }) => unknown;
   loading: boolean;
 }) {
   const t = useTranslations();
@@ -48,7 +43,6 @@ export function PasswordSignUpForm({
     defaultValues: {
       email: defaultValues?.email ?? '',
       password: '',
-      repeatPassword: '',
     },
   });
 
@@ -106,33 +100,11 @@ export function PasswordSignUpForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name={'repeatPassword'}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                <Trans i18nKey={'auth.repeatPassword'} />
-              </FormLabel>
-
-              <FormControl>
-                <Input
-                  required
-                  data-test={'repeat-password-input'}
-                  type="password"
-                  placeholder={''}
-                  {...field}
-                />
-              </FormControl>
-
-              <FormMessage />
-
-              <FormDescription className={'pb-2 text-xs'}>
-                <Trans i18nKey={'auth.repeatPasswordHint'} />
-              </FormDescription>
-            </FormItem>
-          )}
-        />
+        {/*
+          THE REPEAT PASSWORD FIELD IS GONE, Jon's instruction, 21 August
+          2026. See the note on PasswordSignUpSchema for why. The hint that
+          sat under it ("Type your password again below") went with it.
+        */}
 
         <If condition={displayTermsCheckbox}>
           <TermsAndConditionsFormField />

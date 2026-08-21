@@ -20,7 +20,7 @@ export const generateMetadata = async () => {
 
 const paths = {
   callback: pathsConfig.auth.callback,
-  home: pathsConfig.app.home,
+  home: pathsConfig.app.afterAuth,
 };
 
 function SignInPage() {

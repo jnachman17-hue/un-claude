@@ -3,18 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  CopyIcon,
   DownloadIcon,
+  FileTextIcon,
   FileUpIcon,
+  ImageIcon,
   SparklesIcon,
   UploadCloudIcon,
-  XIcon,
   WandSparklesIcon,
+  XIcon,
 } from 'lucide-react';
-import { CopyIcon } from 'lucide-react';
 
 import type { CleanResult, ScanResult } from '~/lib/engine/types';
 
-import { CHECK_CLASSES, explain, prettyName } from './characters';
+import { CHECK_CLASSES, prettyName, shortExplain } from './characters';
 import { Checklist, type ChecklistRow } from './checklist';
 import {
   ACCEPTED_FILES,
@@ -24,7 +26,20 @@ import {
 } from './encode';
 import { MarkedText } from './marked-text';
 import { detectProducer, provenanceItems } from './producer';
-import { FREE_SANITISES, recordUse, remaining } from './free-uses';
+import { useCaptchaToken } from '@kit/auth/captcha/client';
+import { useSupabase } from '@kit/supabase/hooks/use-supabase';
+
+import { CreditChip, CreditCoin } from './credit-chip';
+import {
+  type CreditsState,
+  WELCOME_CREDITS,
+  costFor,
+  countWords,
+  devMode,
+  ensureSession,
+  fetchCredits,
+} from './credits';
+import { OutOfCredits, SignedInWelcome } from './credit-offer';
 import { Paywall } from './paywall';
 import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { ReceiptPanel } from './receipt-panel';
@@ -97,7 +112,45 @@ export function Workbench() {
   /** Two-second confirmation after the clean text is copied. */
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [left, setLeft] = useState(FREE_SANITISES);
+  /**
+   * What the server says this browser holds. `balance: null` means no account
+   * exists yet, which is every fresh visitor: the interface shows the static
+   * welcome figure, which is true by definition because nothing has been
+   * spent. The first sanitise creates the guest account and from then on the
+   * number is the ledger's. 04 entry 97.
+   */
+  const [credits, setCredits] = useState<CreditsState>({
+    balance: null,
+    isAnonymous: true,
+  });
+  /** Which paywall to show while phase is 'locked', and with what numbers. */
+  const [wall, setWall] = useState<{
+    variant: 'account' | 'buy';
+    needed?: number;
+    have?: number;
+  }>({ variant: 'account' });
+  /**
+   * THE DEAD END, WATCHED FOR. 21 August 2026, Jon: "Most people will see 2
+   * free scans, then give up because they see their token at zero and not
+   * even try again."
+   *
+   * True is "the balance reached nought while they were sitting here", which
+   * is the moment the offer should arrive with a bit of movement. False with
+   * a balance of nought means they walked in already empty, and the same
+   * offer is shown, still, but without the animation: motion that fires on
+   * page load reads as decoration rather than as news.
+   */
+  const [justRanOut, setJustRanOut] = useState(false);
+  const previousBalance = useRef<number | null>(null);
+  /**
+   * Whether this page load is the one straight after signing in. Set by the
+   * auth routes; see app/auth/welcome.ts.
+   *
+   * Read from `window.location` inside an effect rather than through
+   * `useSearchParams`, which would pull this whole tree behind a Suspense
+   * boundary and take the landing page's static render with it.
+   */
+  const [welcoming, setWelcoming] = useState(false);
 
   /**
    * Seconds spent on the current sanitise.
@@ -113,6 +166,9 @@ export function Workbench() {
   const fileInput = useRef<HTMLInputElement>(null);
   const textArea = useRef<HTMLTextAreaElement>(null);
   const inFlight = useRef<AbortController | null>(null);
+
+  const supabase = useSupabase();
+  const { captchaToken } = useCaptchaToken();
 
   const runScan = useCallback(async (next: Loaded, fromSample = false) => {
     // A counter comparing "is this still the newest call" would work, but an
@@ -204,8 +260,61 @@ export function Workbench() {
   }, [phase]);
 
   useEffect(() => {
-    setLeft(remaining());
+    void fetchCredits().then(setCredits);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (new URLSearchParams(window.location.search).get('welcome') !== '1') {
+      return;
+    }
+
+    setWelcoming(true);
+
+    // The flag has been read, so it comes off the address bar. Otherwise a
+    // reload, a share or a back button replays the greeting.
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('welcome');
+    window.history.replaceState(null, '', clean.pathname + clean.search);
+  }, []);
+
+  /**
+   * The watch itself. It runs on every balance the server hands back, so it
+   * catches the drop to nought whether it came from a finished sanitise or
+   * from a refetch after a 402.
+   */
+  useEffect(() => {
+    const now = credits.balance;
+    const before = previousBalance.current;
+
+    previousBalance.current = now;
+
+    if (now !== 0) {
+      if (now !== null && now > 0) setJustRanOut(false);
+      return;
+    }
+
+    // Nought, and it was something else a moment ago: that is the event.
+    if (before !== null && before > 0) setJustRanOut(true);
+  }, [credits.balance]);
+
+  /** One event per arrival at the empty balance, not one per render. */
+  const reportedEmpty = useRef(false);
+
+  useEffect(() => {
+    if (credits.balance !== 0) {
+      reportedEmpty.current = false;
+      return;
+    }
+    if (reportedEmpty.current) return;
+
+    reportedEmpty.current = true;
+    track.outOfCreditsShown({
+      isGuest: credits.isAnonymous,
+      justRanOut,
+    });
+  }, [credits.balance, credits.isAnonymous, justRanOut]);
 
   const scanText = () => {
     if (text.trim().length === 0) {
@@ -239,24 +348,57 @@ export function Workbench() {
     const wantsRewrite = carriesProse;
 
     const kind: track.InputKind = isFile ? 'file' : 'text';
+    const bypass = devMode();
 
-    // EVERY sanitise is charged, not only a rewrite. 04 entry 63.
-    //
-    // This was `wantsRewrite && remaining() <= 0` until 19 August 2026, which
-    // meant an image never reached the check and never spent a use: `wantsRewrite`
-    // is false for anything that is not prose. Jon sanitised three files in a row
-    // on the live site, never saw the paywall, and could have gone on for ever.
-    // The gate has to sit in front of the work, and all three layers are work.
-    if (remaining() <= 0) {
-      // Nothing is sent. Blurring a real result would mean paying for work the
-      // visitor never sees.
-      setPhase('locked');
-      track.paywallShown({ inputKind: kind, name: loaded.name });
-      return;
+    /**
+     * PRE-FLIGHT, FROM WHAT THE INTERFACE ALREADY KNOWS. The server is the
+     * authority on every one of these and re-checks them all; failing fast
+     * here just saves the visitor a round trip when the answer is already
+     * certain. EVERY sanitise is charged, not only a rewrite, 04 entry 63:
+     * the gate sits in front of the work, and all three layers are work.
+     */
+    if (!bypass) {
+      const cost = costFor({
+        isFile,
+        name: loaded.name,
+        wantsRewrite,
+        words: countWords(loaded.text || text),
+      });
+
+      /*
+       * A guest's credits buy the rewrite too, 04 entry 98. The block that
+       * used to sit here made the welcome credits unspendable on pasted
+       * text, which is the only thing most visitors bring.
+       */
+      if (credits.balance !== null && credits.balance < cost) {
+        setWall({
+          variant: credits.isAnonymous ? 'account' : 'buy',
+          needed: cost,
+          have: credits.balance,
+        });
+        setPhase('locked');
+        track.paywallShown({ inputKind: kind, name: loaded.name });
+        return;
+      }
     }
 
     setPhase('cleaning');
     setMessage(null);
+
+    /**
+     * A session, before any work is attempted. First use creates the guest
+     * account here, lazily, so a visitor who never sanitises never becomes a
+     * row anywhere. The captcha token rides along when the site has one.
+     */
+    if (!bypass) {
+      const haveSession = await ensureSession(supabase, captchaToken);
+
+      if (!haveSession) {
+        setMessage('We could not start a session. Please try again.');
+        setPhase('error');
+        return;
+      }
+    }
 
     // Counted from here rather than from the click, so the number is the wait
     // the visitor actually sits through and not the paywall check in front of it.
@@ -268,12 +410,15 @@ export function Workbench() {
       inputKind: kind,
       name: loaded.name,
       rewriteIncluded: wantsRewrite,
-      freeRewritesLeft: remaining(),
+      freeRewritesLeft: credits.balance ?? WELCOME_CREDITS,
     });
 
     const result = await fetch('/api/tool/clean', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(bypass ? { 'x-uc-dev': '1' } : {}),
+      },
       // The payload is the one already loaded. An earlier version rebuilt it and
       // sent an empty string for files, which surfaced as "nothing was sent"
       // over a file that was plainly on screen.
@@ -289,8 +434,35 @@ export function Workbench() {
         message: 'We could not reach the service. Please try again.',
       }));
 
+    /**
+     * THE SERVER'S VERDICTS, each with its own door. 402 carries the exact
+     * numbers so the wall can say "needs 3, have 2"; 403 is the rewrite
+     * asking for an account; 401 means the session died mid-visit, and the
+     * kindest handling is a fresh balance fetch and the normal error path.
+     */
+    if (result?.code === 'insufficient_credits') {
+      setWall({
+        variant: result.isAnonymous === false ? 'buy' : 'account',
+        needed: result.needed,
+        have: result.have,
+      });
+      setPhase('locked');
+      track.paywallShown({ inputKind: kind, name: loaded.name });
+      void fetchCredits().then(setCredits);
+      return;
+    }
+
+    if (result?.code === 'requires_account') {
+      setWall({ variant: 'account', have: credits.balance ?? undefined });
+      setPhase('locked');
+      track.paywallShown({ inputKind: kind, name: loaded.name });
+      return;
+    }
+
     if (result?.ok) {
-      const finished = result as CleanResult;
+      const finished = result as CleanResult & {
+        credits?: { charged: number; balance: number | null };
+      };
       setCleaned(finished);
 
       if (isFile) {
@@ -304,10 +476,16 @@ export function Workbench() {
         setCleanedText(base64ToText(finished.cleaned));
       }
 
-      // Counted for every completed sanitise, and only on success: a failed run
-      // costs the visitor nothing. 04 entries 16 and 66.
-      recordUse();
-      setLeft(remaining());
+      // The server answers with the new balance on every success, so the
+      // number on screen is the ledger's, not an optimistic guess.
+      if (typeof finished.credits?.balance === 'number') {
+        setCredits((previous) => ({
+          ...previous,
+          balance: finished.credits!.balance,
+        }));
+      } else {
+        void fetchCredits().then(setCredits);
+      }
 
       setPhase('cleaned');
 
@@ -514,9 +692,10 @@ export function Workbench() {
   const panelCaption = done
     ? 'Read the result before you use it'
     : idle
-      ? // Pre-empt the clean result before anyone scans, so finding nothing
-        // reads as a working tool rather than a broken one. docs/09 section 8.
-        'Plenty of scans come back clean. That is a real answer.'
+      ? // The balance moved out of this caption and into the coin chip
+        // beside it, 04 entry 98. Scanning being free is the thing worth
+        // saying next to a balance.
+        'Scanning is always free'
       : busy || !scan
         ? 'All three, every time'
         : isSample && anythingFound
@@ -574,16 +753,16 @@ export function Workbench() {
         {
           key: 'what',
           head: 'What it is',
-          body: 'Real characters with zero width. They sit between your words and nothing shows on the page.',
+          body: 'Invisible spaces and joiners: real characters that hold a position in your text and display as nothing.',
         },
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'ChatGPT leaves them behind, and they survive copy, paste and export.',
+          body: 'Many major AI models leave them behind, and they survive copy, paste and export.',
         },
         {
           key: 'we',
-          head: 'What we do',
+          head: 'How we remove it',
           body: 'Find every one, show you where it sat, remove it, and prove none are left.',
         },
       ],
@@ -601,34 +780,34 @@ export function Workbench() {
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'Claude signs every image it makes. So do OpenAI, Google and Adobe.',
+          body: 'Every major AI model signs its files. Claude included.',
         },
         {
           key: 'we',
-          head: 'What we do',
+          head: 'How we remove it',
           body: 'Strip the record and show you the file before and after, byte for byte.',
         },
       ],
     },
     statistical: {
       status: 'Awaiting text',
-      detail: 'The watermark hidden in the order of your words.',
+      detail: 'The watermark hidden in the sequence of your words.',
       teach: true,
       items: [
         {
           key: 'what',
           head: 'What it is',
-          body: 'Not a character. The mark is the exact order Claude chose your words in. No tool can show it. Yet.',
+          body: 'Nothing is added to your text. The mark is the pattern of word choices itself, and no tool can show it. Yet.',
         },
         {
           key: 'who',
           head: 'Who puts it there',
-          body: 'Anthropic, on Claude models, everywhere, with no off switch.',
+          body: 'Claude and other major models, everywhere, with no off switch.',
         },
         {
           key: 'we',
-          head: 'What we do',
-          body: 'Rebuild every sentence, keep every fact and your length, and hand you the receipts.',
+          head: 'How we sanitise it',
+          body: 'A structurally engineered rebuild of every sentence that keeps your facts and your length, and hands you the receipts.',
         },
       ],
     },
@@ -639,27 +818,37 @@ export function Workbench() {
       {
         id: 'characters',
         label: 'Hidden characters',
-        where: 'Between your words',
+        where: 'Lives invisibly between your words',
+        // An image has no text, so this check cannot apply to it. `skipped`
+        // before anything else, exactly like the statistical row: a grey row
+        // for an irrelevant check, never a green "none found" that implies
+        // the check ran. Jon's framework, 20 August 2026, 04 entry 95.
         state:
           busy || !scan
             ? 'pending'
-            : done
-              ? 'removed'
-              : foundCount > 0
-                ? 'found'
-                : 'absent',
+            : !carriesProse
+              ? 'skipped'
+              : done
+                ? 'removed'
+                : foundCount > 0
+                  ? 'found'
+                  : 'absent',
         status:
           busy || !scan
             ? waitingStatus
-            : done
-              ? foundCount > 0
-                ? `${actuallyRemoved} of ${foundCount} removed`
-                : 'none found'
-              : foundCount > 0
-                ? `${foundCount} found`
-                : 'none found',
+            : !carriesProse
+              ? 'No text to check'
+              : done
+                ? foundCount > 0
+                  ? `${actuallyRemoved} of ${foundCount} removed`
+                  : 'none found'
+                : foundCount > 0
+                  ? `${foundCount} found`
+                  : 'none found',
 
-        detail: done
+        detail: !carriesProse
+          ? 'An image carries no text, so there are no characters to hide between. This check runs on pasted text and documents.'
+          : done
           ? foundCount === 0
             ? 'There were none in this to begin with.'
             : stillPresent > 0
@@ -679,8 +868,11 @@ export function Workbench() {
           !busy && !done && hits.length > 0
             ? hits.map((hit) => ({
                 key: hit.codepoint,
+                // Name, count, and a phrase. The long-form explanation was a
+                // sentence per finding, which stacked into a wall on any text
+                // carrying more than one. 04 entry 96.
                 head: `${prettyName(hit.label, hit.codepoint)}${hit.count > 1 ? ` x${hit.count}` : ''}`,
-                body: explain(hit.codepoint, hit.kind),
+                body: shortExplain(hit.codepoint, hit.kind),
               }))
             : undefined,
       },
@@ -721,7 +913,7 @@ export function Workbench() {
               : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
             : provenanceFound
               ? producer
-                ? `Made by ${producer}. The file says so in a signed record that free tools can read. We take it out and show you the file before and after.`
+                ? `This file names ${producer} as its maker, in a signed record anyone can read with a free tool.`
                 : 'This file carries a record of the tool that made it.'
               : 'No content credentials, generator tags or AI metadata in this file.',
         items:
@@ -732,13 +924,29 @@ export function Workbench() {
                   head: 'Removed',
                   body: action,
                 }))
-              : provenanceItems(report)
+              : // THE PRODUCER LEADS, and in one line. Jon's note on testing
+                // with a ChatGPT image: opening the found row should say what
+                // made the file first, then the marks, and all of it readable
+                // at a glance. "Made by X" is the moment the visitor watches
+                // the tool read their own document, 04 entry 70.
+                [
+                  ...(producer
+                    ? [
+                        {
+                          key: 'producer',
+                          head: `Made by ${producer}`,
+                          body: 'Named in the file itself',
+                        },
+                      ]
+                    : []),
+                  ...provenanceItems(report),
+                ]
             : undefined,
       },
       {
         id: 'statistical',
         label: 'Statistical watermark',
-        where: 'The order of your words',
+        where: 'The exact sequence of your words',
         state:
           busy || !scan
             ? 'pending'
@@ -765,7 +973,7 @@ export function Workbench() {
           ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
             ? `Rewritten. The longest stretch of your original wording left is ${receipt.longestRun} words in a row. The mark rides only on unbroken stretches of your original words.`
-            : 'It is not hidden in your words. It is your words: the exact order Claude chose them in. Another AI swaps a few and leaves the rest alone, and whatever it leaves alone still carries the mark. We rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
+            : 'Presumed present, because Claude marks what it writes and no tool can show the mark in place. It is not hidden in your words. It is your words: the exact sequence they were chosen in. Ask another AI to reword and whatever it leaves alone still carries the mark, so we rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
       },
     ] satisfies ChecklistRow[]
   ).map((row) =>
@@ -884,33 +1092,51 @@ export function Workbench() {
                 'Paste your text here, or drop a file anywhere in this box.'
               }
               className={
-                'text-foreground placeholder:text-muted-foreground/60 min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[14.5px] leading-[1.75] tracking-[-0.005em] outline-none'
+                'text-foreground placeholder:text-muted-foreground/60 max-h-[280px] min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[14.5px] leading-[1.75] tracking-[-0.005em] outline-none'
               }
             />
           ) : phase === 'locked' ? (
-            <Paywall onDismiss={() => setPhase('scanned')} />
+            <Paywall
+              variant={wall.variant}
+              needed={wall.needed}
+              have={wall.have}
+              onDismiss={() => setPhase('scanned')}
+            />
+          ) : isFile ? (
+            /*
+              A LOADED FILE IS A DIV, NOT A BUTTON, and the difference cost a
+              real bug. This view used to live inside the click-to-edit button
+              with `disabled={isFile}`, and a disabled button swallows every
+              click on its children, so Remove and Download inside FileSummary
+              could be clicked and did nothing. Jon found it by clicking
+              Remove. It was also a button inside a button, which is invalid
+              HTML. A file is not editable text, so nothing here needs the
+              edit affordance at all.
+            */
+            <div className={'px-4 py-3.5'}>
+              <FileSummary
+                name={loaded.name}
+                scanning={busy}
+                downloadUrl={done ? downloadUrl : null}
+                onDownload={() => track.resultDownloaded({ name: loaded.name })}
+                onClear={startOver}
+              />
+            </div>
           ) : (
             <button
               type={'button'}
               onClick={startEditing}
-              disabled={isFile}
               aria-label={'Edit this text'}
-              className={
-                'block w-full cursor-text px-4 py-3.5 text-left disabled:cursor-default'
-              }
+              className={'block w-full cursor-text px-4 py-3.5 text-left'}
             >
-              <div className={'min-h-[184px]'}>
-                {isFile ? (
-                  <FileSummary
-                    name={loaded.name}
-                    scanning={busy}
-                    downloadUrl={done ? downloadUrl : null}
-                    onDownload={() =>
-                      track.resultDownloaded({ name: loaded.name })
-                    }
-                    onClear={startOver}
-                  />
-                ) : done ? (
+              {/*
+                CAPPED, AND SCROLLING INSIDE. Jon's note, 20 August 2026: a
+                long paste made the whole box grow with it and pushed the page
+                around. The box now holds its footprint and the text scrolls
+                within it, the way the empty state already implied it would.
+              */}
+              <div className={'max-h-[280px] min-h-[184px] overflow-y-auto'}>
+                {done ? (
                   <MarkedText text={cleanedText} hits={[]} animate={false} />
                 ) : (
                   <div className={isSample ? 'opacity-55' : ''}>
@@ -923,6 +1149,54 @@ export function Workbench() {
               </div>
             </button>
           )}
+
+          {/*
+            THE MODEL STRIP, Jon's placement, 20 August 2026: inside the box,
+            bottom left, visible before any scroll on any screen. A first-time
+            visitor arrives thinking in models ("will this work on ChatGPT?"),
+            not in watermark types, and nothing above the fold named a model
+            until the vendor table far below. Four recognisable marks answer it
+            without a sentence.
+
+            It behaves like the placeholder: present while the box is empty,
+            gone the moment the first character lands or a file loads. It never
+            takes a click, so typing straight through it works.
+          */}
+          {text === '' && !isFile && loaded.text === '' && phase !== 'locked' ? (
+            <div
+              className={
+                'pointer-events-none absolute bottom-3 left-4 flex flex-wrap items-center gap-x-2 gap-y-1'
+              }
+            >
+              <span className={'flex items-center gap-1.5'} aria-hidden>
+                {[
+                  { src: '/images/vendors/claude.svg', mono: false },
+                  { src: '/images/vendors/chatgpt.svg', mono: true },
+                  { src: '/images/vendors/gemini.svg', mono: false },
+                  { src: '/images/vendors/grok.svg', mono: true },
+                ].map((logo) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={logo.src}
+                    src={logo.src}
+                    alt={''}
+                    loading={'lazy'}
+                    decoding={'async'}
+                    className={[
+                      'size-[13px] object-contain',
+                      logo.mono ? 'opacity-60 dark:invert' : 'opacity-90',
+                    ].join(' ')}
+                  />
+                ))}
+              </span>
+              {/* Dark, not placeholder-grey: Jon wants this line to jump out
+                  while the box is empty. It still clears with the first
+                  character, so it never competes with the visitor's text. */}
+              <span className={'text-foreground text-[11px] font-medium'}>
+                Sanitises Claude, ChatGPT, Gemini, Grok and every other model
+              </span>
+            </div>
+          ) : null}
 
           {/* The line that ties the marked bars in the sample to the row
               beneath. Without it they read as cursor artefacts, which is what
@@ -1025,64 +1299,32 @@ export function Workbench() {
               />
               Try an example
             </button>
-          ) : (
-            <button
-              type={'button'}
-              onClick={() => void sanitise()}
-              disabled={busy || done}
-              className={
-                'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
-              }
-            >
-              <SparklesIcon
-                className={'size-[14px]'}
-                strokeWidth={2.2}
-                aria-hidden
-              />
-              {phase === 'cleaning'
-                ? carriesProse
-                  ? 'Rewriting'
-                  : 'Sanitising'
-                : done
-                  ? 'Sanitised'
-                  : // The count lives in the verb: one control that is the call
-                    // to action, the finding and the proof at once. The
-                    // statistical mark is deliberately not counted, because it
-                    // has no count. docs/09 section 8.
-                    markCount > 0
-                    ? `Sanitise it (${markCount})`
-                    : 'Sanitise it'}
-            </button>
-          )}
-
-          <button
-            type={'button'}
-            onClick={() => fileInput.current?.click()}
-            className={
-              'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
-            }
-          >
-            <FileUpIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
-            Upload a file
-          </button>
-
-          <p className={'text-muted-foreground ml-auto text-[11.5px]'}>
-            {phase === 'error' ? (
-              <span className={'text-destructive font-medium'}>{message}</span>
-            ) : done && downloadUrl ? (
+          ) : done ? (
+            /*
+              THE RESULT DESERVES A REAL BUTTON. Jon's note, 20 August 2026:
+              once the output exists, taking it away is the whole point, and
+              it was a small underlined link in the corner. The primary slot
+              now hands over the result: copy for text, download for a file.
+              The greyed "Sanitised" button it replaces said only that the
+              work was over; this says what to do next.
+            */
+            isFile && downloadUrl ? (
               <a
                 href={downloadUrl}
                 download={`cleaned-${loaded.name}`}
                 onClick={() => track.resultDownloaded({ name: loaded.name })}
                 className={
-                  'text-foreground font-semibold underline underline-offset-2'
+                  'bg-foreground text-background inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-transform active:scale-[0.98]'
                 }
               >
+                <DownloadIcon
+                  className={'size-[14px]'}
+                  strokeWidth={2.2}
+                  aria-hidden
+                />
                 Download the clean file
               </a>
-            ) : done ? (
-              /* A human wants a button, not an instruction to go select text.
-                 Jon's test-like-a-human order, 20 August 2026. */
+            ) : (
               <button
                 type={'button'}
                 onClick={() => {
@@ -1092,16 +1334,98 @@ export function Workbench() {
                   });
                 }}
                 className={
-                  'text-foreground inline-flex items-center gap-1.5 font-semibold underline underline-offset-2'
+                  'bg-foreground text-background inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-transform active:scale-[0.98]'
                 }
               >
                 <CopyIcon
-                  className={'size-[12px]'}
+                  className={'size-[14px]'}
                   strokeWidth={2.2}
                   aria-hidden
                 />
                 {copied ? 'Copied' : 'Copy the clean text'}
               </button>
+            )
+          ) : (
+            <button
+              type={'button'}
+              onClick={() => void sanitise()}
+              disabled={busy}
+              className={
+                'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
+              }
+            >
+              <SparklesIcon
+                className={'size-[14px]'}
+                strokeWidth={2.2}
+                aria-hidden
+              />
+              {phase === 'cleaning' ? (
+                carriesProse ? (
+                  'Rewriting'
+                ) : (
+                  'Sanitising'
+                )
+              ) : (
+                // The count lives in the verb: one control that is the call
+                // to action, the finding and the proof at once. The
+                // statistical mark is deliberately not counted, because it
+                // has no count. docs/09 section 8. The price rides on the
+                // same button, quieter, so the cost is known at the moment
+                // of commitment. 04 entry 97.
+                <>
+                  {markCount > 0 ? `Sanitise it (${markCount})` : 'Sanitise it'}
+                  {/* The coin rides the button, so the cost is on the
+                      control being pressed, not only near it. */}
+                  <span
+                    className={
+                      'bg-mark-foreground/20 ml-0.5 inline-flex items-center gap-1 rounded-full px-1.5 py-[2px] text-[11.5px] tabular-nums'
+                    }
+                  >
+                    <CreditCoin className={'size-[12px]'} />
+                    {costFor({
+                      isFile,
+                      name: loaded.name,
+                      wantsRewrite: carriesProse,
+                      words: countWords(loaded.text || text),
+                    })}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+
+          {done ? (
+            <button
+              type={'button'}
+              onClick={startOver}
+              className={
+                'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
+              }
+            >
+              <XIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
+              Start over
+            </button>
+          ) : (
+            <button
+              type={'button'}
+              onClick={() => fileInput.current?.click()}
+              className={
+                'text-foreground/70 hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium transition-colors active:scale-[0.98]'
+              }
+            >
+              <FileUpIcon className={'size-[13px]'} strokeWidth={2} aria-hidden />
+              Upload a file
+            </button>
+          )}
+
+          <p className={'text-muted-foreground ml-auto text-[11.5px]'}>
+            {/* Copy and download moved into the primary button slot on the
+                left, 20 August 2026, so this line no longer repeats them.
+                When the work is done it says so, plainly. */}
+            {phase === 'error' ? (
+              <span className={'text-destructive font-medium'}>{message}</span>
+            ) : done ? (
+              <span className={'text-emerald-700 font-medium'}>Sanitised</span>
             ) : phase === 'cleaning' ? (
               // The existing sentence, with the clock appended once it is worth
               // asking whether anything is still happening. Below three seconds
@@ -1118,10 +1442,39 @@ export function Workbench() {
                   </span>
                 ) : null}
               </>
-            ) : left > 0 ? (
-              `${left} free ${left === 1 ? 'credit' : 'credits'} left. Scanning is always free.`
+            ) : loaded.text || text || isFile ? (
+              /*
+                THE PRICE, BEFORE THE BUTTON IS PRESSED. 03-pricing 11c: the
+                cost must be known before committing. The words and the coin
+                sit in one line, which is what teaches the unit: a visitor
+                reads "867 words" next to one coin and never has to be told
+                the conversion. 04 entry 98.
+              */
+              (() => {
+                const words = countWords(loaded.text || text);
+                const price = costFor({
+                  isFile,
+                  name: loaded.name,
+                  wantsRewrite: carriesProse,
+                  words,
+                });
+
+                return (
+                  <span className={'inline-flex items-center gap-1.5'}>
+                    {isFile
+                      ? '1 file'
+                      : `${words.toLocaleString('en-US')} ${words === 1 ? 'word' : 'words'}`}
+                    <span className={'text-muted-foreground/60'}>=</span>
+                    <CreditChip amount={price} tone={'spend'} />
+                  </span>
+                );
+              })()
             ) : (
-              'Scanning is free and unlimited. Sanitising needs credits.'
+              // Empty with an empty box: the panel caption beside the coin
+              // already says scanning is free, and saying it twice on one
+              // screen was the first thing to look wrong after the chip
+              // landed.
+              ''
             )}
           </p>
         </div>
@@ -1134,7 +1487,7 @@ export function Workbench() {
           'border-border bg-foreground/[0.035] rounded-b-[18px] border-t px-4 py-4 sm:px-5'
         }
       >
-        <div className={'mb-2 flex items-baseline justify-between gap-3'}>
+        <div className={'mb-2 flex items-center justify-between gap-3'}>
           <h2
             className={
               'text-foreground text-[11.5px] font-semibold tracking-[0.06em] uppercase'
@@ -1142,10 +1495,66 @@ export function Workbench() {
           >
             {panelHeading}
           </h2>
-          <span className={'text-muted-foreground text-[11px]'}>
-            {panelCaption}
+
+          {/*
+            THE BALANCE, AS A TOKEN. 04 entry 98. This was 11px grey text
+            saying "2 free credits", which Jon read as far too quiet for the
+            thing the whole funnel turns on. It is now the coin and the
+            count, present from the first frame, and it is the same coin
+            that appears on the price of the job and on the file card.
+          */}
+          <span className={'flex shrink-0 items-center gap-2'}>
+            {panelCaption ? (
+              <span className={'text-muted-foreground hidden text-[11px] sm:inline'}>
+                {panelCaption}
+              </span>
+            ) : null}
+
+            <CreditChip
+              amount={credits.balance ?? WELCOME_CREDITS}
+              label={credits.balance === null ? 'free' : 'left'}
+              size={'lg'}
+              tone={credits.balance === 0 ? 'empty' : 'neutral'}
+            />
           </span>
         </div>
+
+        {/*
+          THE OFFER AT NOUGHT, WITHOUT WAITING FOR A FAILED PRESS.
+          21 August 2026, session 10, and it is the single biggest conversion
+          leak this session was sent to fix. Jon:
+
+            "after you complete 2 scans and use your 2 free credits it just
+            says 0 left. Have an icon pop up somewhere prompting you to
+            create an account to get 3 free more, because you only know this
+            exists if you try again and click scan and then get the locked
+            message."
+
+          It sits immediately under the balance it explains, so the eye that
+          just read "0 left" lands on the answer in the same movement. Not
+          shown while the paywall is up, because that screen is already
+          making the identical offer inside the box above.
+        */}
+        {welcoming && typeof credits.balance === 'number' && credits.balance > 0 ? (
+          <div className={'mb-3'}>
+            <SignedInWelcome
+              balance={credits.balance}
+              onDismiss={() => setWelcoming(false)}
+            />
+          </div>
+        ) : null}
+
+        {credits.balance === 0 && phase !== 'locked' ? (
+          <div className={'mb-3'}>
+            <OutOfCredits
+              isGuest={credits.isAnonymous}
+              justRanOut={justRanOut}
+              onSignUpClick={() =>
+                track.outOfCreditsClicked({ isGuest: credits.isAnonymous })
+              }
+            />
+          </div>
+        ) : null}
 
         <Checklist rows={rows} />
 
@@ -1154,6 +1563,7 @@ export function Workbench() {
             <ReceiptPanel receipt={receipt} />
           </div>
         ) : null}
+
       </div>
     </div>
   );
@@ -1180,53 +1590,92 @@ function FileSummary({
   onDownload: () => void;
   onClear: () => void;
 }) {
+  /*
+   * REBUILT 20 August 2026 to Jon's note: "the font is weird, the loaded is
+   * weird, the remove. Make it look structured and cleaner."
+   *
+   * What was wrong: a bare grey word ("Loaded"), the filename in monospace at
+   * a size nothing else on the surface used, and two controls floating under
+   * them with no relationship to anything. It read as three unrelated
+   * fragments stacked in the middle of an empty box.
+   *
+   * What it is now: one card. A typed icon tile, the name in the interface
+   * face at reading size with its own truncation, the file type and state
+   * under it, and Remove as a real control on the right of the same row where
+   * a person expects to find it. The download lives in the main action bar
+   * with copy, so this row is identity and removal only.
+   */
+  const extension = name.includes('.')
+    ? (name.split('.').pop() ?? '').toUpperCase()
+    : 'FILE';
+  const isImage = /\.(png|jpe?g|webp|gif)$/i.test(name);
+
   return (
-    <div
-      className={'flex h-[184px] flex-col items-start justify-center gap-1.5'}
-    >
-      <span className={'text-muted-foreground text-[12px]'}>
-        {scanning ? 'Reading' : 'Loaded'}
-      </span>
-      <span className={'font-mono text-[15px] font-medium'}>{name}</span>
+    <div className={'flex min-h-[184px] items-center'}>
+      <div
+        className={
+          'border-border/70 bg-foreground/[0.02] flex w-full items-center gap-3 rounded-[12px] border p-3'
+        }
+      >
+        <span
+          className={
+            'bg-foreground/[0.06] text-foreground/70 grid size-[38px] shrink-0 place-items-center rounded-[10px]'
+          }
+        >
+          {isImage ? (
+            <ImageIcon className={'size-[18px]'} strokeWidth={1.8} aria-hidden />
+          ) : (
+            <FileTextIcon className={'size-[18px]'} strokeWidth={1.8} aria-hidden />
+          )}
+        </span>
 
-      {!scanning ? (
-        <div className={'mt-2 flex flex-wrap items-center gap-2'}>
-          {downloadUrl ? (
-            <a
-              href={downloadUrl}
-              download={`cleaned-${name}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDownload();
-              }}
-              className={
-                'bg-foreground text-background inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold transition-transform active:scale-[0.98]'
-              }
-            >
-              <DownloadIcon
-                className={'size-[13px]'}
-                strokeWidth={2.2}
-                aria-hidden
-              />
-              Download the clean file
-            </a>
-          ) : null}
-
-          <button
-            type={'button'}
-            onClick={(event) => {
-              event.stopPropagation();
-              onClear();
-            }}
+        <span className={'min-w-0 flex-1'}>
+          <span
             className={
-              'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.045] inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium transition-colors'
+              'text-foreground block truncate text-[14px] font-medium tracking-[-0.01em]'
+            }
+            title={name}
+          >
+            {name}
+          </span>
+          {/* The file pricing rule, taught at the exact moment it applies:
+              the card says "1 credit" instead of anything explaining it.
+              04 entry 97. */}
+          {/* The file pricing rule, taught at the exact moment it applies:
+              the card wears the coin instead of explaining anything.
+              04 entries 97 and 98. */}
+          <span
+            className={
+              'text-muted-foreground flex items-center gap-1.5 text-[12px]'
             }
           >
-            <XIcon className={'size-[13px]'} strokeWidth={2.2} aria-hidden />
-            Remove
+            {extension} file
+            {scanning ? (
+              ' · reading'
+            ) : downloadUrl ? (
+              ' · sanitised'
+            ) : (
+              <>
+                <span className={'text-muted-foreground/60'}>=</span>
+                <CreditChip amount={1} tone={'spend'} />
+              </>
+            )}
+          </span>
+        </span>
+
+        {!scanning ? (
+          <button
+            type={'button'}
+            onClick={onClear}
+            aria-label={'Remove this file'}
+            className={
+              'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] grid size-[30px] shrink-0 place-items-center rounded-[8px] transition-colors'
+            }
+          >
+            <XIcon className={'size-[15px]'} strokeWidth={2.2} aria-hidden />
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
