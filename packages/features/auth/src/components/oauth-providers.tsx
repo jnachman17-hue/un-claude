@@ -11,6 +11,7 @@ import { Trans } from '@kit/ui/trans';
 
 import { AuthErrorAlert } from './auth-error-alert';
 import { AuthProviderButton } from './auth-provider-button';
+import { TermsAcceptanceNotice } from './terms-acceptance-notice';
 
 /**
  * @name OAUTH_SCOPES
@@ -110,6 +111,16 @@ export function OauthProviders(props: {
             );
           })}
         </div>
+
+        {/*
+          `shouldCreateUser` is true on the sign-up page and false on the
+          sign-in page, so this is exactly the case where pressing the button
+          creates an account. Same sentence, same words, as the one under the
+          email sign-up button. See terms-acceptance-notice.tsx.
+        */}
+        <If condition={props.shouldCreateUser}>
+          <TermsAcceptanceNotice />
+        </If>
 
         <AuthErrorAlert error={signInWithProviderMutation.error} />
       </div>

@@ -19,6 +19,7 @@ import { Input } from '@kit/ui/input';
 import { Trans } from '@kit/ui/trans';
 
 import { PasswordSignUpSchema } from '../schemas/password-sign-up.schema';
+import { TermsAcceptanceNotice } from './terms-acceptance-notice';
 import { TermsAndConditionsFormField } from './terms-and-conditions-form-field';
 
 export function PasswordSignUpForm({
@@ -133,6 +134,13 @@ export function PasswordSignUpForm({
             <Trans i18nKey={'auth.signingUp'} />
           </If>
         </Button>
+
+        {/*
+          Under the button, not above it: the last thing read before an
+          account is created. The Google button carries the identical
+          sentence. See terms-acceptance-notice.tsx.
+        */}
+        <TermsAcceptanceNotice />
       </form>
     </Form>
   );
