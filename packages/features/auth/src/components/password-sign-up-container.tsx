@@ -71,19 +71,25 @@ export function EmailPasswordSignUpContainer({
          * list in auth-error-alert.tsx. Two layers of the diagnostic chain
          * blind at once, on the most important step in the funnel.
          */
-        const detail = error as {
-          message?: string;
-          status?: number;
-          code?: string;
-          name?: string;
-        };
-
-        console.error('sign-up failed', {
-          name: detail?.name,
-          status: detail?.status,
-          code: detail?.code,
-          message: detail?.message,
-        });
+        /*
+         * PRINT THE VALUE, NOT ITS PROPERTIES, and this is the correction to
+         * the first attempt at this fix. `useSignUpWithEmailAndPassword`
+         * does `throw response.error.message`, so what arrives here is a bare
+         * STRING. Reading .name/.status/.code/.message off a string returns
+         * undefined four times, which is what the log showed and why it still
+         * said nothing useful.
+         *
+         * The same string reaches auth-error-alert.tsx, which handles a
+         * string correctly but can only map it to one of our sentences if it
+         * matches a pattern in that file's list. When it does not, the
+         * visitor gets the last-resort "check your internet connection" for
+         * what may be an entirely different problem. So whatever this prints
+         * belongs in that pattern list.
+         */
+        console.error(
+          'sign-up failed:',
+          typeof error === 'string' ? error : JSON.stringify(error, Object.getOwnPropertyNames(error ?? {})),
+        );
       } finally {
         resetCaptchaToken();
       }
