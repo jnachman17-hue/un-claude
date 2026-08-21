@@ -30,9 +30,22 @@ export function AuthLayoutShell({
           className,
         )}
       >
+        {/*
+          NO PANEL BEHIND THE FORM. Jon, 21 August 2026: "there's like a weird
+          white text box around create the account going all the way down
+          instead of the orange gradient in the back of the website. Remove
+          the white text box to make all the content just be against this sort
+          of cream orange gradient that's the website's default."
+
+          `bg-background` painted an opaque sheet the full height of the form,
+          which on a phone is most of the screen, and the page's own warm
+          gradient (styles/theme.css) stopped at its edges. Nothing needed it:
+          the form has no card, no border and no shadow, so the fill was
+          drawing a container that does not exist.
+        */}
         <div
           className={cn(
-            'bg-background flex w-full max-w-[23rem] flex-col gap-y-4 md:w-8/12 lg:w-5/12 xl:w-4/12',
+            'flex w-full max-w-[23rem] flex-col gap-y-4 md:w-8/12 lg:w-5/12 xl:w-4/12',
             contentClassName,
           )}
         >
