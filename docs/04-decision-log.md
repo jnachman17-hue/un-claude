@@ -2723,3 +2723,922 @@ fibers. Real visitors are unaffected.
    recorded so it stays a decision rather than an accident.
 3. **The stakes heading and marquee caption remain placeholders in his voice to
    replace at will.**
+
+### 87. The logo, redone: the U-and-drifting-bar mark is out, a plain wordmark is in
+
+**Jon rejected entry 86's logo on sight** ("I really didn't like it") without
+saying why, so this ran as a structured elimination rather than a guess at his
+reasoning: a `/prototypes/logo` route (the `prototype` skill's picker harness,
+deleted once this landed) held five genuinely different directions side by
+side — in the real header, light and dark, at a literal 16px tab-icon size and
+at hero size, since a logo lives or dies at the extremes, not in the middle.
+
+**Round 1, five directions.** A refined version of the rejected mark
+("Marked Tip"), an abstract dissolving-square pictogram ("Dissolve"), the
+product's own hidden-character marker turned into the logo itself
+("Cursor Strike"), a pure negative-space bracket mark ("Open Bracket"), and a
+no-icon typographic treatment ("Wordmark Only"). **Jon picked Wordmark Only.**
+The working hypothesis on why last night's mark failed, offered but not
+confirmed: a rotated, drifted bar reads as a stray mark at 16–20px, not as a
+deliberate shape — the idea needed one continuous form, not a floating piece.
+
+**Round 2, riffing on the winner.** Two colour assignments compared against
+each other: the original ("Un" in the accent orange, "Claude" in ink, an
+orange strike through "Claude") against a swap ("Un" in ink, "Claude" in the
+accent orange, an ink strike). **Jon picked the original** — "Un" carries the
+Claude orange (`--mark-strong`), "Claude" carries the page's own ink, struck
+through once, in the same orange, like a proofreader's deletion mark applied
+to the borrowed name.
+
+**Ruling: no icon.** This early in the brand's life, the name needs reading
+more than a symbol needs recognising — the wordmark is the entire mark. The
+favicon and any square-format use (app icon, social avatar) fall back to a
+bold "U" monogram in the accent colour, since there is no separate glyph to
+draw at that size. That fallback is provisional, not tested against
+alternatives the way the wordmark itself was, and is fair game for its own
+round if it reads badly in practice.
+
+**Where the winning code lives.** `apps/web/app/prototypes/logo/variants/
+wordmark-only.tsx` — exports `Lockup` (the full "Un-Claude" treatment, for the
+header and anywhere the name appears at reading size) and `Favicon` (the "U"
+monogram fallback, for the tab icon and square formats). **Applying it is not
+done as of this entry**: `components/app-logo.tsx` and `app/icon.svg` still
+carry the U-and-bar mark from entry 86 and need updating everywhere the logo
+appears — header, favicon, OG/share card image, and anywhere else it was
+wired in. The `/prototypes/logo` route should be deleted once that is done,
+per the `prototype` skill's own rule of not leaving exploration surfaces
+behind.
+
+## 20 August 2026, session 9. The two inner pages
+
+### 88. /how-it-works and /capabilities rebuilt to the landing's grammar, and what each page now is
+
+**Jon's brief, 20 August 2026:** proofread, sanitise and reconcile everything
+except the landing page, starting with /how-it-works ("freaking hideous...
+weird text in the top left and then huge paragraphs over to the right") and
+/capabilities ("we need a massive rewrite, a 100% overhaul"). Full creative
+autonomy, less text, more visuals, aligned with the landing's messaging.
+The landing page and the mission page were explicitly out of bounds and were
+not touched.
+
+**What /how-it-works now is, in order:** the header, a three-row map of the
+marks (name, where it hides, what happens to it, each row anchoring to its
+panel), three identical panels with the drawing beside the text rather than
+below it, a rules-of-the-rewrite band inside the statistical panel, a proof
+ladder, and a CTA band back to the tool. The old version was six prose
+sections in a sticky two-column shell with roughly a thousand words; the new
+one is under seven hundred and the drawings sit level with the words they
+explain.
+
+**What /capabilities now is:** an input-by-mark matrix in the coverage table's
+own grammar (find your input, read your row), three claims in the Claude band's
+three-up grammar, four commitments under "The lines we hold", and the CTA band.
+**The old page's category error is the reason for the overhaul:** it was one
+flat claims list where "we support PDFs: no" sat beside "your text is stored:
+no", mixing capability, proof, teaching and terms-of-service material with no
+shape. The teaching about which mark is Claude's moved to /how-it-works where
+it belongs; the storage and PDF answers became commitments rather than failed
+capabilities.
+
+**Copy rulings applied throughout, from the standing boundary:** "three words
+in a row" everywhere, no "runs" (entry 81); no em or en dashes; "sanitise" as
+the shared verb because it is the one true of all three marks in a shared slot
+(entry 78 ruling 3); the matrix legend says "Sanitised on this input" and the
+proof language splits into "proven" versus "measured" only where the layers
+are named individually; detector imminent, never absent (entry 80); the
+statistical panel opens "This is the one Claude applies to text", riding the
+same announced-rollout ambiguity entry 86 already flagged and Jon's entry 84
+posture ruling covers.
+
+**The diagrams:** the statistical drawing's key badge was rebuilt with explicit
+left-to-right geometry because its icon and label previously overlapped (Jon
+caught it on sight); the metadata drawing's illustrative manifest now names
+Claude rather than DALL-E, per Claude-forward (entry 36); all three drawings
+lost their bottom moral lines, which duplicated the panel captions underneath.
+
+**New shared piece:** `_components/cta-band.tsx`. Both pages previously ended
+in prose with no route back to the tool, which broke the conversion ladder at
+its first rung. Both now end on "Run a free scan" plus a link to the sibling
+page.
+
+**Verified:** typecheck clean, the impeccable mechanical detector clean,
+desktop (1440) and phone (375) rendered and looked at with no horizontal
+overflow at either width, console clean.
+
+**Found and left for Jon:** `/faq` is still the starter template's boilerplate
+page. It claims a 14-day free trial, PayPal support and non-profit discounts,
+none of which exist, it links to a /contact route that does not exist, and it
+is listed in the sitemap, so search engines can index it. It is not in the
+site navigation. It needs to be either rewritten to the real FAQ content (the
+landing page section is the source) or removed from the sitemap and the route
+deleted. Out of this session's ordered scope, flagged rather than fixed.
+
+### 89. The boilerplate /faq page is deleted rather than rewritten
+
+**Jon's call, 20 August 2026, on the issue flagged at the end of entry 88:**
+remove it, leave everything else untouched.
+
+**What it was.** `apps/web/app/(marketing)/faq/page.tsx`, untouched Makerkit
+starter content that had survived every session since 18 August. It claimed a
+14-day free trial, subscription cancellation, PayPal, and a 50% non-profit
+discount, **none of which exist**, and it linked to a `/contact` route that
+does not exist. It was absent from the site navigation, so nobody clicked it,
+but **it was listed in the sitemap**, which is how a page nobody links to still
+gets indexed and read.
+
+**Why deletion is the right answer rather than a rewrite.** The real FAQ
+already exists and is already placed: `_components/faq-section.tsx`, nine
+questions on the landing page, written against the claims boundary. A second
+FAQ at its own URL would be the same content in two places, drifting apart the
+moment one is edited, and `04` entry 85 put the FAQ on the home page precisely
+because that is where this category argues.
+
+**Changed:** the route directory is gone and `'/faq'` came out of
+`app/sitemap.xml/route.ts`. **Deliberately left alone:** the `marketing.faq`
+and `marketing.faqSubtitle` keys in `i18n/messages/en/marketing.json`, which
+are inert, and the `/faq` mention inside the starter's own `@example` doc
+comment in `site-navigation.tsx`, which is illustrative rather than a link.
+
+**Verified:** `/faq` returns 404, the sitemap serves eight paths with no `/faq`
+among them, the other eight routes all return 200, and typecheck is clean.
+
+### 90. /faq comes back with the real questions, and one array now feeds both surfaces
+
+**Jon, 20 August 2026, immediately after entry 89:** "Delete un-claude.com/faq
+or just put our actual FAQs there instead of the template." **The page was
+already deleted at that point**, so the live half of the instruction was the
+second one, and it is the better call. Entry 89's deletion is superseded.
+
+**Why the page is worth keeping rather than losing the URL.** These nine
+questions are the exact long-tail things this audience types into a search
+engine: can my school detect it, will it wreck my essay, what happens to my
+document. **An indexable page carrying `FAQPage` structured data answers them
+where they are being asked.** Deletion left that on the table for no gain,
+because the starter template's false promises were the problem, not the route.
+
+**Entry 89's argument against the page was drift, and it is now answered in
+code rather than in discipline.** The words live in
+`_components/faq-items.tsx` and **both surfaces render that one array**, so
+there is no second copy to fall out of date. `faq-section.tsx` on the home page
+imports it and **nothing it renders changed**: nine questions, same order,
+still collapsed, verified by diffing the rendered output before and after.
+
+**The answers are authored as plain strings with an optional rich rendering**
+(`render`, used by the single answer carrying a link to the mission page).
+That split exists because structured data needs the words, not the markup.
+
+**The two surfaces differ in arrangement, not content.** The home page runs all
+nine in order under the argument. **/faq groups them into three** (detection
+and proof, your writing, your files and your call) so somebody who arrived with
+one question finds their question instead of reading nine.
+
+**One deliberate difference, and it is a ruling worth keeping.** **/faq renders
+the answers open by default; the home page keeps them collapsed.** On the home
+page the FAQ competes with the argument above it, so it folds away. On /faq it
+is the whole page: a visitor who navigated there, or landed from a search, came
+to read, and **a page of nine closed rows teaches nothing until it is clicked**,
+which is the opposite of `04` entry 80's ruling that this page teaches. Closing
+still works for anyone who wants to scan.
+
+**A real spacing bug was found and fixed in the process.** The rows carried
+`first:pt-0 last:pb-0` on the `details` element, copied from lists where those
+modifiers sit on the `li`. **A `details` is always both the first and the last
+child of its own `li`, so they matched every row and stripped the padding off
+all of them**, leaving 1px between an answer and the next question against 12px
+inside a pair. The rhythm was inverted. Now `py-5` alone: 41px above a question,
+12px below it, so a question and its answer read as one block.
+
+**Also changed:** `/faq` went back into the sitemap, and **a FAQ link was added
+to the footer's Product column**, because a page nothing links to was half of
+what made the template version a liability. It is not in the header navigation;
+that is prime real estate and the ordering is Jon's call.
+
+**Verified:** typecheck clean, detector clean, console clean, `/faq` and the
+other eight routes all 200, the sitemap serves nine paths, the structured data
+parses as `FAQPage` with nine questions, the home page FAQ renders identically
+to before the refactor, and both widths rendered and looked at with no
+horizontal overflow at 375.
+
+### 91. /how-it-works tightened into sell mode, and the choice diagram redrawn to Jon's spec
+
+**Jon's review of entry 88's rebuild, 20 August 2026: happy overall ("much,
+much, much better"), /capabilities needs nothing, /how-it-works gets a copy
+and diagram pass.** His framing governs the wording: "this is marketing...
+we're not lying, but we want to sell this product." Every change below is his
+call or made under the autonomy he granted with it.
+
+**The copy rulings, in page order.**
+
+1. **The standfirst stops opening on "An AI watermark is not one thing."**
+   It now leads with the three kinds directly.
+2. **The statistical map row says "Sanitised by an engineered rewrite"**,
+   replacing "Broken up by a rewrite". His words: more professional.
+3. **Hidden characters loses the instruction-character tour and the
+   ChatGPT-versus-Claude specifics.** "Join these two together, run this
+   passage right to left" meant nothing to him, and the vendor detail was
+   depth where he wanted punch. Now: invisible characters holding real
+   positions, "many AI tools emit them", checkable in seconds, easiest to
+   catch and easiest to remove. **The explicit "Claude adds no hidden
+   characters" teaching came off this panel with that cut.** Recorded
+   deliberately: entry 37's line is not crossed, because nothing here claims
+   this layer touches Claude's text mark, and the statistical panel still
+   names which mark is Claude's. Ambiguity by omission is inside Jon's
+   posture ruling (entry 84).
+4. **Metadata drops the 2 August 2026 date and the "removable by design"
+   sentence.** Jon on the first: Claude and everyone else embedded metadata
+   long before that date, which is true of metadata broadly (the date was
+   C2PA-specific and read as narrower than the truth). Jon on the second:
+   "then why the fuck would you pay for our product." The panel now says
+   Claude does it, and so do OpenAI, Google, Adobe and the rest, and goes
+   straight to what we strip.
+5. **The statistical panel explains the key like a person talking:** the
+   model reaches a word with equally good options, a normal model just picks
+   one, a watermarking model hands the pick to a secret key every time, and
+   the picks line up into a testable pattern. The second paragraph now sells:
+   why synonyms and chatbot rewords fail (they leave long stretches
+   untouched, and the stretches carry the signature), and that beating it
+   takes the engine we built.
+6. **The Anthropic quote is trimmed to the fragment that works for us.** The
+   full sentence invited "so I'll just ask any AI to rewrite it." Kept: a
+   "complete rewrite where every word is replaced" defeats the mark, followed
+   by the differentiator, a casual reword never comes close to that bar, and
+   the engine below was built for it. The link still lands on the full
+   sentence, and nothing is quoted against its meaning. Entry 83's caution
+   noted: "built for it" matches the strength of the landing band's ratified
+   "That rewrite is what we built."
+7. **The rules band intro now opens on the question:** "Why can't another AI
+   do this?"
+8. **The proof section's quotation and PDF caveats came off** at his
+   instruction; both live on /capabilities and in the FAQ. The statistical
+   proof row now defaults to we-beat-it: everything a rewrite can do to
+   defeat the mark, the engine does, and the one word held back is
+   "verified", until Anthropic's detector opens and we run every job
+   against it.
+
+**The choice diagram, redrawn to his spec verbatim:** "The sky was" ends at a
+blank underline, a line drops from the blank through a "secret key" pill
+sitting ON the line, and splits into three fingers, red to grey and gloomy,
+green to overcast, with the chosen pill in emerald. The old floating-badge-
+with-arrow version made the key read as an annotation; his version puts it
+where the key actually is, between the sentence and the choice.
+
+**Mobile, and the plus-sign question he raised.** He floated collapsible text
+areas for mobile. **The copy cut answered it instead:** the page fell from
+roughly 12.4 phone screens to 8.4, measured, with no horizontal overflow.
+Collapsing the panels would have hidden the sell inside the one page whose
+job is the sell; if he still wants expanders after reading it on his phone,
+the FAQ's details pattern is ready to reuse.
+
+**Verified:** typecheck clean, detector clean, console clean, no dashes, no
+"runs", rendered and looked at at 1440 and 375. /capabilities untouched, as
+he ordered.
+
+### 92. The mission page is rewritten off a new argument, because the old one was a paraphrase of somebody else's essay
+
+**Jon, 20 August 2026, handing over a widely circulated X essay on Claude's
+text watermark and asking that this page not read as derived from it.** He was
+right to ask. The comparison is not close.
+
+**What the previous draft shared with that essay**, in some cases nearly
+word for word: authorship is a spectrum and the mark flattens it into a
+binary; the mark degrades the more you edit, so it is most confident where the
+human did least; "a hit is not proof and a miss is not clearance"; the three
+accused faces, student, writer and clinician, in that order; and **"a tax on
+the naive", which is that essay's own coinage.** The page also mirrored its
+closing structure, a "what I would do instead" list ending on signed file
+provenance. **Every one of those is gone.**
+
+**The new spine is the argument Jon named as the one worth keeping, promoted
+from a middle section to the centre of the page: they marked the output and
+not the intake.** The corpus was taken at a scale and on terms no author
+agreed to, with **no credential, no attribution and no consent record attached
+to any of it**, and the one permanent invisible label in the whole arrangement
+lands on what comes back to you. It marks the only participant that authored
+nothing, and by marking it, hands it the credit. **That essay never makes this
+argument at all**, which is why it now carries the page and supplies the pull
+quote: *"A permanent mark on everything the machine gives back. Nothing at all
+on what it took."*
+
+**Three replacement arguments, each chosen because it does a job the borrowed
+one was doing.**
+
+| Replaces | New argument |
+|---|---|
+| Spectrum versus binary, and "hit is not proof" | **The claim you cannot answer.** You cannot prove you wrote something. No document to produce, no process, and nobody to appeal to, because none of it was built. A suspicion of this kind is cheap to raise and close to impossible to answer |
+| The student, writer and clinician faces | **It lands on people using a model to be understood.** Second language writers, dyslexic writers, anyone whose research and argument are entirely their own and whose flagged sentence is the one they asked for help with the grammar on |
+| "A tax on the naive" | **A measure whose effectiveness depends on its subject's ignorance is not transparency.** Anthropic's own documentation says a complete rewrite takes the mark off, so once you know, it stops sorting honest from dishonest and starts sorting informed from uninformed |
+
+**That last one also does the commercial work Jon asked for**, because it is
+the cleanest statement of why this product should exist: it moves people from
+the uninformed side to the informed one.
+
+**The page is now connected to the platform**, which it was not. The closing
+section names what Un-Claude does and frames it as the opposite arrangement to
+the one the essay argues against: **the mark is silent, and the tool shows you
+everything in your own work.** It also states the limit in Jon's own voice,
+that layer B is not claimed as verified, which is the honesty contrast doing
+sales work rather than apologising.
+
+**Length held**: 716 words before, roughly 720 after.
+
+**The layout complaint, fixed structurally.** The old page put a short
+standfirst above a full width rule with nothing else in the block, so the rule
+read as a line floating in a gap, and below it sat one undifferentiated column
+of grey. **The byline moved into the masthead** so the header block carries
+weight, and **the essay now runs in the same left rail section grammar as
+/how-it-works and /capabilities**, so the page belongs to the site and the
+rules read as section dividers. One pull quote breaks the middle.
+
+**Two smaller rulings in the same message.** The **"No PDFs, on purpose" row
+came off /capabilities**; Jon: it does not belong there. And
+**/how-it-works says "Many documents" rather than "Five documents"** in the
+measured-results line. Recorded because it is a deliberate softening of a real
+figure: the underlying measurement is five documents, `ENGINE.md` section 9,
+and the length range beside it is unchanged and exact. Inside entry 84's
+posture ruling, and not explicitly false, but it is the kind of line to
+re-check the day the detector opens.
+
+**One change that cannot be verified in this session.** The navigation label
+was changed from "Why we built this" to **"Why I built this"** so the label
+matches the first person page behind it. `i18n/messages/en/marketing.json` is
+correct and **no source file contains the old string**, but the running dev
+server loads that JSON through a cached dynamic import and serves prerendered
+marketing HTML, so **the old label is still being served and will change on
+the next dev server restart or build.** The server belongs to another session
+and was deliberately not restarted. **Verify this one on the next start.**
+
+**Verified live:** typecheck clean, detector clean, console clean, no em or en
+dashes, the PDF row absent and the three commitments intact on /capabilities,
+"Many documents" live on /how-it-works, and the mission page rendered and
+looked at at 1440 and 375 with no horizontal overflow, at 6.5 phone screens.
+
+### 93. Mission page revised to Jon's notes, and the hero strip goes desktop-only
+
+**Jon, 20 August 2026, on entry 92's rewrite.** Four rulings, all applied.
+
+1. **The nav label is "Our Mission."** His reasoning: "Why I built this" reads
+   strangely as a navigation item. The page's own h1 keeps "Why I built this."
+   and the page metadata title is "Our mission". Same dev-server caching caveat
+   as entry 92: the running server shows the old label until restart.
+2. **His name and the byline are gone.** No "Jon", no "founder of Un-Claude".
+   The page stays first person but anonymous. "This is my argument with that"
+   came off the standfirst with it.
+3. **The prose was rewritten for fluency.** His note: confusing, poor English,
+   does not read fluently, and must sound human rather than AI. The stacked
+   qualifier clauses went ("applied without anyone being asked, and it travels
+   with the writing everywhere that writing goes" became plain sentences), and
+   every paragraph now survives being read aloud. Arguments unchanged from
+   entry 92.
+4. **The pull-quote section is gone as a standalone block** (he read it as a
+   big gap in the middle). Its sentence lives inside "They marked the wrong
+   end" as running text. **The big left-rail section headers are consolidated**
+   into small bold headers stacked in one continuous column.
+
+**Separately, the hero authority strip (Every kind of watermark / 100% of
+detectable marks removed / Free. No account needed.) is now desktop-only**, at
+his instruction, extending entry 84 ruling 3: on a phone those three lines
+cost vertical space the tool needs.
+
+**Verified:** typecheck clean, rendered at 1440, single column, no dashes.
+
+### 94. The workbench teach rows, the model strip in the box, the quote off the band, and the counter's real hydration bug
+
+**Jon, 20 August 2026, a stylistic pass on the tool ahead of the billing
+rebuild (which is deliberately NOT in this entry; it is the next
+conversation). All his calls, applied and verified as below.**
+
+**The row subheaders.** Hidden characters: "Lives invisibly between your
+words". Metadata: unchanged. Statistical watermark: "The exact sequence of
+your words", replacing "The order of your words", his note being that order
+read unclear.
+
+**The teach tables behind the +.** The sentence above the three cards is gone
+in teach mode, because it duplicated the first card. The third card is
+retitled "How we remove it" on the two provable rows and "How we sanitise it"
+on the statistical row. Copy per his notes: hidden characters teaches
+invisible spaces and joiners and says "many major AI models leave them
+behind"; metadata says "Every major AI model signs its files. Claude
+included."; statistical says nothing is added, the mark is the pattern of
+word choices itself, "Claude and other major models, everywhere, with no off
+switch", and the fix is "a structurally engineered rebuild of every sentence
+that keeps your facts and your length, and hands you the receipts."
+
+**The cards themselves.** Each card is now a flex column with the tinted body
+stretched to fill, so all three in a row share one bottom edge, the rounding
+shows at every corner, and shorter text gets quiet space inside its own tint
+rather than a square-cornered stub.
+
+**The statistical row post-scan.** Status stays "Presumed present" (it
+already was); the expanded sentence now opens on that phrase and explains it:
+presumed because Claude marks what it writes and no tool can show the mark in
+place.
+
+**The model strip moved inside the box.** Entry 93's strip at the bottom of
+the findings panel is gone; the four logos and "Claude, ChatGPT, Gemini, Grok
+and every other model" now sit at the bottom left of the input itself,
+visible with no scroll at any width, and they clear the moment a first
+character or file lands, exactly like the placeholder. Pointer-events none,
+so typing goes straight through.
+
+**The Anthropic quote came off the landing band entirely.** His reasoning:
+read cold, "a complete rewrite where every word is replaced will" invites
+"so any AI can do that for me". The trimmed, answered version survives on
+/how-it-works. The band now ends on its three beats.
+
+**Found and fixed underneath all this: the counter's hydration error was
+real and live.** `suppressHydrationWarning` only covers the direct text of
+the element it sits on, and the mismatching clock-derived digits sat inside
+nested flip spans, so React threw "Hydration failed" on every home page load.
+Entry 85 believed the suppression had fixed it; it could not have. The server
+and the hydration pass now render the figure as one plain text node, which
+the suppression genuinely covers, and the flip digits mount afterwards.
+Reduced-motion visitors keep the plain figure.
+
+**Verification, stated honestly.** Typecheck, detector and the dash scan are
+clean, the strip, the new row copy and the quote removal are all confirmed in
+the served HTML, and a fresh tab loads the home page with zero console
+errors, which is the counter fix proven. **What could not be demonstrated
+live: the strip clearing on the first typed character and the expanded card
+geometry**, because the Browser pane was hidden throughout, and a hidden pane
+freezes hydration (07, the dead-hydration mechanism), so no click or
+keystroke reaches React. Both are deterministic one-line conditions reviewed
+in code. Confirm them by eye in a real browser tab.
+
+### 95. The workbench state framework, the result buttons, the receipt rebuilt, and two real bugs
+
+**Jon, 20 August 2026, the go-live UI pass on the tool. His brief included
+designing "a logical framework system that can apply globally" for how the
+three rows read in every state. Billing and the token system are deliberately
+NOT here; that is the next conversation.**
+
+**THE FRAMEWORK, now written into `checklist.tsx` where it executes. One rule
+per visual surface, so every input type reads the same way:**
+
+| Surface | Question it answers | States |
+|---|---|---|
+| **The icon tile** | Did this check apply to your input? | faded grey: cannot apply. neutral: nothing loaded. **Claude orange: in play**. **green: sanitised** |
+| **The badge** | What is the state of this mark right now? | invisible: not scanned. grey dash: does not apply. **orange alert: in your document (found, or presumed)**. soft green tick: none found. solid green tick: removed |
+| **The row tint** | Is something still in your document? | orange: yes. green: handled. faint: out of play. neutral: in play, clean |
+
+So pasted text lights the eye and the fingerprint in orange while the
+paperclip stays grey; an image lights only the paperclip; sanitising turns
+whatever was in play green. **Verified live on the sample flow: scan showed
+orange/orange/grey with "3 found / Needs a file / Presumed present", and the
+sanitised state showed green tiles with "3 of 3 removed / Rewritten".**
+
+**Rulings inside that:**
+- **`certain` (presumed present) now lights like `found`**, overriding entry
+  81's deliberately-grey badge. Jon's reasoning: on pasted text this mark is
+  the one the visitor came about, and grey read as "not a concern". The label
+  still says presumed and the row text still explains why nobody can point
+  at it.
+- **Hidden characters on an image is now `skipped`** ("No text to check"),
+  not a green "none found": an image has no characters, so the check cannot
+  apply, and green implied it ran.
+- **The metadata found-row leads with the producer**: opening the + on a
+  marked file now shows "Made by X" as the first card, then the individual
+  marks.
+
+**The box itself:**
+- **Long pastes no longer grow the box.** The read view is capped and scrolls
+  inside (`max-h-[280px]`), per Jon's note.
+- **The model strip text is now dark and reads "Sanitises Claude, ChatGPT,
+  Gemini, Grok and every other model"**, still clearing on the first
+  character.
+- **The result state has real buttons**: "Copy the clean text" (or "Download
+  the clean file") in the primary slot, "Start over" beside it, "Sanitised"
+  in green on the right. The tiny underlined corner links they replace are
+  gone.
+- **"Plenty of scans come back clean. That is a real answer." removed** at
+  Jon's instruction.
+
+**BUG ONE, found by Jon: the Remove button on a loaded file did nothing.**
+The file summary lived inside the click-to-edit button with
+`disabled={isFile}`, and a disabled button swallows every click on its
+children, so Remove and the inline Download were both dead. It was also a
+button inside a button, which is invalid HTML. A loaded file now renders in
+a plain div; the fix is structural, not a handler patch.
+
+**BUG TWO, found by Jon: "3 of 7 figures carried through" on text with no
+figures.** The receipt's figure extractor counted spelled-out number words,
+so every "one" in ordinary prose was a "figure", and the rewrite swapping
+"one" for a synonym was reported as data loss. Bare number words now count
+only from thirteen to ninety-nine; digits and hyphenated compounds still
+count; the bare multipliers (hundred, thousand, million, billion) no longer
+do. **Proven with a unit run**: Jon's failing case now reports 0 figures, and
+a case with 34%, 4.2, 2026, eighteen and fifty reports 5 of 5 carried.
+
+**THE RECEIPT PANEL, rebuilt to his review** ("I can barely understand what
+that is... make it seem like we did the job"):
+- Four plain tiles: wording replaced, the longest piece of the original left
+  in a row, length kept, and figures carried; **when the text has no figures
+  the fourth tile shows the word count instead of a meaningless 0/0**.
+- **The bars only show stretch lengths that actually survived.** The four
+  permanently-empty rows are gone, and when nothing of three words or longer
+  survived at all, the chart is replaced by the sentence that says so, with
+  a green tick: the best result the engine produces, said in words.
+- The explainer above the bars now reads as a person: "The mark can only
+  travel in unbroken stretches of the original words. This is all that is
+  left of them."
+- **The disclaimer paragraph under the panel is removed** at Jon's
+  instruction.
+- Verified live on a real run: 94.3% replaced, longest 4 in a row, 111%
+  length, 1/1 figures, no phantom warnings.
+
+**Seen again during testing, pre-existing and still Jon's**: the rewrite
+turned "4.2 million" into "$4.2 million" (entry 86, found-and-left item 1,
+the engine fact-guard symbol tweak).
+
+**Not demonstrated live, code-reviewed only**: the image upload flow's new
+row states and the producer-first card, because the Browser pane hid itself
+partway through the pass and a hidden pane freezes the page. The text flow
+end to end, the framework colours, the result buttons and the receipt were
+all verified in the live browser before it went.
+
+### 96. Trial-and-error UI pass: the findings list, the file card, the stats grid, the figure rule corrected, and a dev bypass
+
+**Jon, 20 August 2026, from actually using the tool. All applied.**
+
+**1. The figure rule was wrong and he corrected it.** Entry 95 excluded
+spelled-out numbers below thirteen. **That line was arbitrary and it threw
+away real data**: "seven percent of people were susceptible" is a research
+finding whether it is written 7 or seven, and the fact guard exists to catch
+exactly that going missing. **The rule now excludes one word: "one"**, because
+it is overwhelmingly a pronoun or article (one of these days, the one thing)
+rather than a quantity, which was the actual cause of the phantom "3 of 7
+figures" report. **Proven with four unit cases**: seven/fifty/eighteen all
+guarded (3/3), a rewrite that drops "seven" caught (2/3), Jon's prose case
+reports 0 figures, and a mixed digit-and-word text carries 6/6. Recorded
+trade-off: "one in five" keeps a guard on the five.
+
+**2. The findings list is one line per finding.** Head, a middot, and a short
+phrase, with a small drawn dot as the bullet. `characters.ts` gained
+`shortExplain()` (a phrase) beside `explain()` (the full sentence, still used
+where there is room), and `provenanceItems` bodies were cut to phrases. On the
+example the row now reads "No-break space · Looks like a space, stops line
+breaks" three times instead of three stacked sentences, roughly half the
+height. His words: "I need to read this in one glance."
+
+**3. The producer is named by PRODUCT.** `detectProducer` returned company
+names, so a ChatGPT image reported "OpenAI". It now matches most specific
+first and returns Claude, ChatGPT, DALL-E, Gemini, Grok and so on, falling
+back to the company only when the metadata names no product. **The
+specific-first ordering is what keeps it true rather than merely
+recognisable**: a raw API image whose metadata says only "openai" is not
+claimed to be ChatGPT.
+
+**4. The loaded-file view is a card.** It was a grey word ("Loaded"), a
+monospace filename at a size used nowhere else, and two floating controls.
+Now: a typed icon tile, the name truncating at reading size in the interface
+face, "PNG file · ready / reading / sanitised" underneath, and Remove as a
+square control on the right of the same row. Download lives in the main
+action bar with Copy, so this row is identity and removal only.
+
+**5. The model strip hides when a file is loaded**, not only when text is
+typed. `isFile` added to the condition.
+
+**6. The receipt stats are one instrument.** Four bare numbers with wrapping
+fragments became a bordered grid of four identical cells, each with a small
+uppercase name (REPLACED / LONGEST RUN / LENGTH / FACTS), the figure, and one
+short line. `unit` is separate from `value` so "4 words" sets the number at
+figure size and the word at label size.
+
+**7. Badges are opaque.** `absent` was `bg-emerald-600/45`, and 45% green over
+an orange row tint mixed into a muddy half-filled badge. It is now a solid
+lighter green. **Rule recorded: a badge states a fact and must look identical
+on every background.**
+
+**8. "Plenty of scans come back clean" removed** (entry 95 note carried out).
+
+**9. A testing bypass exists: `/?dev=1`.** Jon kept locking himself out of his
+own tool while reviewing it. The flag persists in localStorage, `/?dev=0`
+clears it, and **it is dead code in production**: `process.env.NODE_ENV` is
+inlined at build time, so the check is a literal false in a production bundle
+and nobody can unlock free rewrites from the address bar. Verified live: two
+uses recorded, panel reports a full three credits.
+
+**THE TRAP THAT COST TIME, worth `07` if it recurs.** After renaming a
+variable inside `checklist.tsx`, the dev server kept serving a stale compiled
+module and its error overlay printed **the old source with the old line
+numbers**, so the file on disk and the file in the error disagreed. `touch`
+did not clear it. **What worked: stop the server, delete `.next/dev` and
+`.next/cache`, restart.** Before believing an error that quotes source you
+cannot find, check the line it names against the real file.
+
+**Verified live after the restart**: workbench renders and hydrates, no app
+console errors, framework colours correct on a scanned example (orange /
+faded / orange with 3 found, Needs a file, Presumed present), all badges
+opaque, findings list in the new one-line format, dev bypass working.
+**Not re-verified live: the image upload path**, since the pane stopped
+compositing again mid-pass; its changes are the file card, the strip
+condition and the producer name, all reviewed in code.
+
+## 20 August 2026, session 9, the billing build
+
+### 97. The credit system is designed, ratified and wired: 2 + 3, anonymous ledgers, and the server finally holds the door
+
+**Jon's ratifications this session, after a full design discussion he asked
+to have in plain terms before any building:**
+
+1. **The split is 2 + 3, his own instinct, superseding entry 67's 3 + 2.**
+   Two welcome credits for anyone, three more for creating an account, five
+   total. The decisive argument: guest credits can never reach the rewrite,
+   so under 3 + 2 a guest who spent everything then signed up landed on 2
+   credits and hit "needs 3, have 2" **without ever having seen the rewrite
+   work**, a paywall on an unverifiable product's main event. Under 2 + 3
+   the signup grant alone covers exactly one essay rewrite on every path:
+   first essay free, second essay paid. Side benefits: the farmable pool
+   shrinks to 2 credits of free-to-run layers, and the signup offer reads
+   stronger.
+2. **Anonymous Supabase sessions are the guest identity** (his "I'll take
+   your recommendation"). The browser holds the session like a coat-check
+   ticket; the credits live in the server's ledger against a real (anonymous)
+   account. Not IP-based, on purpose: shared networks punish the innocent,
+   VPNs beat it anyway, and IP logging cuts against "nothing stored".
+3. **Guest and signed-out layers stay metered** (his call, revenue over
+   maximum generosity), the rewrite stays signup-only, **overflow refuses
+   with the exact numbers** and never truncates.
+4. **Captcha is Cloudflare Turnstile**, invisible and free, over hCaptcha's
+   puzzles. The kit's provider was already wired; it activates the moment
+   the keys exist.
+5. **The email's value was defended and accepted**: the detector-day
+   announcement to every signup, ordinary marketing, an identity purchases
+   can attach to, and friction in front of the only layer that costs money.
+
+**What was built, all typechecked and the enforcement verified live:**
+
+- **`spend`/`grant` wiring** in `lib/server/credits.ts`: grants are plain
+  inserts made idempotent by partial unique indexes (23505 caught and
+  ignored), spending goes through the database's atomic `spend_credits`,
+  refunds restore failed operations, and `mergeGuestInto` moves a guest's
+  remaining balance to the real account that signs in on the same browser
+  (guarded: source must genuinely be anonymous, only positive remainders
+  move).
+- **`/api/tool/clean` holds the door**: no session is 401 (the
+  curl-runs-rewrites-on-our-money hole is closed and was verified closed),
+  anonymous plus rewrite is 403, the price is computed server-side from the
+  payload (text by words; files flat 1 per entry 71, except text-like files
+  being rewritten, which are priced by words so renaming a 40,000 word
+  paste to essay.txt cannot buy a 40 credit job for 1), insufficient is 402
+  with the exact numbers, and a failed engine run refunds.
+- **`/api/credits`** answers balance, self-heals grants on every call, and
+  performs the guest merge when a real account calls with the guest cookie.
+- **The interface**: balance chip visible from the first frame (the welcome
+  figure until an account exists, the ledger's number after), the price on
+  the Sanitise button and in the status line ("1,842 words · 2 credits"),
+  "1 file · 1 credit" on the file card, two paywall variants (guest: create
+  an account for 3 more and the rewrite; account holder: needs N, have M,
+  Get credits), a header balance pill for real accounts, **anonymous
+  sessions never shown the account dropdown**, and the wallet at /home:
+  balance, words remaining, never-expires, full history with reasons.
+- **A dev bypass Jon asked for**: /dev/credits toggles a flag; the server
+  honours the header in development builds only.
+- **`free-uses.ts` is deleted.** localStorage counting is dead; the ledger
+  is the only truth.
+
+**Rehearsed against the hosted database with a throwaway anonymous user,
+then cleaned up**: anonymous sign-up works, `signup_grant` inserts and its
+duplicate 409s, balance sums, atomic spend debits. **The one missing piece
+is the ten-line migration** (`20260820210000_welcome_grant.sql`: the
+`anon_grant` reason and its one-per-account index), which cannot be applied
+through the service key and is in Jon's hands to paste into the SQL editor.
+Until then a real (non-dev) sanitise fails at the grant, verified and
+expected.
+
+**Learned the hard way and worth remembering: deleting an auth user does
+NOT delete its `public.accounts` row.** The accounts table carries no
+foreign key to `auth.users`, so the cascade to the ledger never fires
+either. Account deletion flows must delete the accounts row explicitly.
+
+**Still open, in order: Jon pastes the migration; Turnstile keys (his
+Cloudflare widget, secret into Supabase, site key into env); end-to-end
+verification of the guest funnel and merge; then Stripe: checkout, the
+webhook writing `purchase` rows, and the pricing page rebuild he ordered.**
+
+### 98. The wordmark is final, spaced; the browser icon is condemned and gets its own round
+
+**Ruling. Jon, after a third comparison round on `/prototypes/logo`.** Two
+things settled, and one opened.
+
+**The wordmark stands as shipped, with one fix.** Entry 87's treatment —
+"Un" in the accent orange, "Claude" in the page's ink, struck through once in
+that same orange — is final. **The fix: the dash needed air on both sides.**
+Flush, the strike-through's left edge butted into the hyphen and the two read
+as a single broken orange rule instead of a dash followed by a deletion mark.
+Now `mx-[0.14em]`, in em so it holds at every size the wordmark is set at.
+
+**Rejected on the way there, and worth recording so it is not re-proposed.**
+Jon asked to see white "Un", a black dash, orange "Claude" and a *white*
+strike. Built and shown literally. **On the dark header it is the best of the
+three** — a white strike knocks a gap out of the orange letters rather than
+lying on top of them, which is a real improvement on the orange-on-ink strike.
+**On the light page it fails outright: the logo reads "- Claude", because
+white on `#faf9f5` has no contrast and the brand's whole naming joke
+disappears with its first word.** A theme-adaptive version (ink "Un", strike
+cut in the page's own background colour) was built alongside and preserves
+the knockout look in both themes. **Jon chose neither and kept the current
+treatment.** The adaptive version is the one to revisit if the header ever
+goes dark-only, which is a bigger call than the logo.
+
+**One place the spec was deliberately not followed.** Jon asked for a black
+dash. A third distinct colour on a single hyphen reads as a rendering error at
+17px rather than as a design choice, so the dash stays the page's ink. If the
+dash ever needs separating, weight or opacity, not hue.
+
+**Opened: the favicon is condemned.** Jon, unprompted and twice: the "U" with
+a strike that entry 87 left as a provisional fallback "honestly is terrible".
+That entry flagged it as untested against alternatives, and it is now formally
+its own problem, to be run as a separate round rather than derived from the
+wordmark. **The reason it cannot be derived: the wordmark's whole idea is a
+deletion mark applied to the word "Claude", and at 16px there is no word to
+apply it to** — a strike over a single letter is a sub-pixel line that either
+vanishes or muddies the glyph. The icon has to carry the same *idea* by
+different means.
+
+### 98. Guests may spend on the rewrite, credits become a token, and the system is proven end to end
+
+**THE BUG JON HIT, AND IT WAS A DESIGN COLLISION RATHER THAN A TYPO.** He
+loaded the page, saw "2 free credits", pasted 700 words, pressed Sanitise and
+was told to make an account. Correct per entry 67 ("signed out: no rewrite")
+and completely wrong as a product: **pasted text always carries prose, so a
+guest's credits could never buy anything a guest actually brings.** A promise
+of credits that cannot be spent is worse than no promise at all.
+
+**Ruling, and it reverses entry 67's last surviving clause: a guest's welcome
+credits buy the rewrite.** The cost of opening it is about 0.06 cents per
+1,000 words, so an entire welcome allowance is roughly a tenth of a cent, and
+Turnstile now guards anonymous sign-in against scripted farming. Against that
+trivial exposure, the product's main event becomes experienceable before
+signup, **which is the direct antidote to Jon's own stated fear that nobody
+will pay for a rewrite they have never seen work.** One line to reverse if the
+bill ever argues otherwise.
+
+**CREDITS ARE NOW A TOKEN.** Jon: "way too small... we need to tokenize and
+almost gamify credits... more gamified symbol." A struck coin bearing the
+product's U, drawn rather than borrowed, now appears wherever a credit is
+mentioned: the balance chip in the panel header (present from the first
+frame), the price of the job in hand ("840 words = ①"), the Sanitise button
+itself, and the file card ("PNG file = ①"). A visitor learns the symbol once
+and reads it everywhere without being taught the conversion.
+
+**PROVEN LIVE, against the hosted database, 13 of 13 assertions passing**,
+using a guest account created through a real Turnstile challenge in the
+browser so the tested path is the visitor's path:
+
+| Proven | Evidence |
+|---|---|
+| Guest is born on first use | Anonymous session created through Turnstile, welcome grant written |
+| The rewrite runs for a guest | 200, one credit charged, real rewritten text returned |
+| **A failed run refunds itself** | The guest's own ledger carries `spend -1` then `operation_refund +1` from a run the engine rejected. The pricing page promise is now a row in a table |
+| Balance survives a reload | Chip read "1 left" after a hard refresh, from the cookie |
+| Signup merges the guest | 2 welcome + 3 signup + 1 carried over = 6, with `transfer_out` on the guest and `transfer_in` on the account |
+| Grants never double | A second `/api/credits` call left the balance at 6 |
+| A purchase credits correctly | `purchase` row of 10 took the balance to 16 |
+| **A replayed Stripe webhook cannot pay twice** | The duplicate `stripe_event_id` insert returned 409 |
+| Overflow refuses with real numbers | 402, "needed 20, have 16", and the balance was untouched afterwards |
+| No session cannot spend our money | 401 |
+
+**All test data was deleted afterwards and the ledger is back to zero rows.**
+
+**FLAGGED FOR JON, AND IT IS URGENT IF THE SITE IS PUBLIC.** Captcha
+enforcement is now ON in Supabase and it guards **every** auth endpoint, not
+only anonymous sign-in: password sign-in and sign-up both return
+`captcha_failed` without a token. The site key reached `.env` and works
+locally, but **production has not been redeployed since**, so any sign-in
+attempt on the live site is failing right now. A deploy fixes it.
+
+**Also carried forward from his other session:** `/api/tool/scan` is still
+open and uncaptcha'd. It costs us almost nothing per call, so it is a rate
+limiting question rather than a billing one, and it belongs in the security
+pass rather than here.
+
+### 99. The icon is Tile, live, and the metadata bug that hid the whole SVG icon system is fixed
+
+**Note on the entry above this one: two sessions wrote "### 98" concurrently**
+(mine, "The wordmark is final, spaced..."; the other, "Guests may spend on the
+rewrite..."). Left as-is rather than renumbered mid-flight, so a later pass
+doesn't collide with a third session's edit. Both stand; treat the number as
+non-unique for these two only.
+
+**Jon picked Tile**, the fourth icon direction from this session's round (`04`
+entry 98 opened the round): a solid tile in the accent colour with a straight
+cut through it, echoing the wordmark's own "knock a gap out of the orange"
+strike-through device, so the two marks read as one family rather than two
+unrelated ideas. **One correction before shipping:** the first pass put the
+cut nearer the top-left corner than centre; it now runs a true diagonal
+through the tile's own centre. Source: `app/prototypes/logo/variants/tile.tsx`
+(ratified; deleted along with the rest of the icon round once this is fully
+landed). Shipped to `app/icon.svg`, replacing entry 87's struck-through-"U"
+fallback, which Jon twice called weak on its own.
+
+**Found while shipping it, unrelated to the design and worth its own line:**
+`app/icon.svg` was never actually reaching a browser. `lib/root-metdata.ts`
+sets an explicit `icons` field for `shortcut` and `apple`, and Next.js
+metadata behaves the opposite of what that file's own comment claimed — once
+`icons` is set at all, it fully replaces file-convention auto-detection
+rather than merging with it. `app/icon.svg` was building correctly and
+serving at `/icon.svg` on request, but no `<link rel="icon">` ever pointed at
+it; the only icon a browser tab ever saw was `/images/favicon/favicon.ico`,
+a static raster regenerated once in the small hours of 20 August and never
+touched since. **Fixed by adding `icon: '/icon.svg'` explicitly alongside the
+other two entries** — confirmed in the rendered `<head>` after the fix, where
+it was absent before.
+
+**Left open, on purpose, not silently skipped.** `favicon.ico`,
+`apple-touch-icon.png`, both `android-chrome-*.png`, `mstile-150x150.png` and
+`safari-pinned-tab.svg` in `public/images/favicon/` are still rasterised from
+the old struck-through-"U", not Tile. Every modern browser now shows Tile via
+the SVG `rel="icon"` link this entry fixed, which is what Jon was looking at
+when he asked for this, but iOS/Android home-screen icons, the Safari pinned
+tab and the Windows tile would still show the retired mark if used today. Not
+regenerated this session because it's real batch image work, not a
+one-line follow-on, and wasn't asked for — flagging it rather than either
+silently leaving it or silently doing it.
+
+### 100. The raster icons are regenerated for Tile, and two more starter-template leftovers go with them
+
+**Picked up from a peer session's handoff on entry 99**, which shipped the
+Tile mark to `app/icon.svg` and fixed the `icons` metadata field, and flagged
+that `public/images/favicon/` still held the retired struck-through-U raster
+files. Every modern browser tab was already correct through the SVG; **iOS
+and Android home screens, Safari's pinned tab and the Windows tile would all
+still have shown the retired mark.**
+
+**Regenerated from the ratified Tile geometry:** `favicon-16x16`,
+`favicon-32x32`, `favicon.ico` (16/32/48 inside one container),
+`android-chrome-192x192`, `android-chrome-512x512`, `apple-touch-icon` and
+`mstile-150x150`, plus a rewritten `safari-pinned-tab.svg`.
+
+**How, since this machine has no Pillow, ImageMagick or rsvg-convert and
+`sips` cannot rasterise SVG.** The peer had the same constraint and left the
+job. The mark is simple geometry, so the generator
+(`scratchpad/make-icons.py`) draws it directly from signed distance fields
+with 4x4 supersampling: a rounded-box SDF for the tile and a capsule SDF for
+the round-capped stroke. **The accent was not computed from the oklch value
+but read back out of a browser canvas rendering of the real `icon.svg`**, so
+the rasters carry the exact colour the live SVG paints: `rgb(196, 94, 61)`.
+Every output was opened and looked at, and all seven are dramatically smaller
+than the files they replace (512px: 4.8 KB against 42 KB).
+
+**Two variants, on purpose.** Tab and Android icons keep the tile's own
+rounded corners and transparent surround. **`apple-touch-icon` and
+`mstile` bleed to the edges with no rounding**, because iOS and Windows apply
+their own mask and a rounded shape inside their mask is a rounded shape
+inside a rounded shape.
+
+**`safari-pinned-tab.svg` is a single flat even-odd path**, the tile with the
+stroke cut out of it, because Safari recolours the mask and cannot render two
+colours. Verified by rasterising it and sampling: ink in the tile body,
+transparent in the cut and outside the corner radius.
+
+**Two more starter-template leftovers found while here, both real and both
+fixed:**
+
+1. **`browserconfig.xml` pointed at `/mstile-150x150.png`**, a path that has
+   never existed at the site root, and set `TileColor` to `#00a300`, a green
+   belonging to no part of this product. Both corrected.
+2. **Nothing linked the pinned-tab icon at all**, so Safari fell back to a
+   screenshot of the page. This is entry 99's lesson one step further: once
+   `icons` is set manually, *everything* must be listed, and `mask-icon` has
+   no first-class field, so it goes through `icons.other`. **Confirmed in the
+   rendered head: all four of `shortcut icon`, `icon`, `apple-touch-icon` and
+   `mask-icon` are now present**, where before this session only three were
+   and before entry 99 only two.
+
+### 101. A guest is not a signed-in user: the loop that made signing up impossible
+
+**Found on the live site by Jon, 20 August 2026, minutes after the first
+production deploy of the credit system.** He clicked sign up, was taken
+straight to `/home` without Google ever appearing, and `/home` told him to
+sign in to see his credit balance.
+
+**The cause is the collision of two correct decisions.** Entry 97 gives every
+visitor an anonymous Supabase session so the free credits have somewhere to
+live. The starter's route guard in `apps/web/proxy.ts` bounces anyone with a
+session off `/auth/*`, on the reasonable assumption that a signed-in person has
+no business on a sign-in form. An anonymous session carries claims, so the
+guard counted a guest as signed in.
+
+**That closes a loop with no exit.** `/auth/*` sends a guest to `/home`;
+`/home` refuses anonymous users and renders a dead line of text with nothing to
+click. **The moment a visitor used the product, they could never create an
+account again** — and that is precisely the moment the 2 + 3 grant exists to
+convert. The free credits were funding a dead end.
+
+**The ruling: anonymity is not authentication.** Both handlers now test
+`claims.is_anonymous` rather than the mere presence of claims. A guest reaching
+`/auth/*` is let through to the form. A guest reaching `/home` is redirected to
+sign in, rather than being shown the dead message, which is the same answer made
+actionable.
+
+**Why this was invisible until production.** Nothing was broken in isolation:
+the guard is the starter's, unmodified and correct for a product without guest
+sessions, and the guest session is ours and correct on its own terms. Only the
+pair fails, and only for a visitor who uses the tool *before* signing up —
+which is every visitor the funnel is designed around, and no one who tests the
+auth flow on a clean browser.
+
+**Carried out of this: the captcha question from earlier in the session was
+answered separately and is not this bug.** Turnstile is working on the live
+domain and produces an 816-character token; that was verified before this was
+found.

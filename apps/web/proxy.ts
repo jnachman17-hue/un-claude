@@ -64,8 +64,22 @@ function getPatterns() {
       handler: async (req: NextRequest, res: NextResponse) => {
         const { data } = await getUser(req, res);
 
-        // the user is logged out, so we don't need to do anything
-        if (!data?.claims) {
+        // A guest is not a signed-in user for the purposes of these pages.
+        //
+        // Every visitor who uses the tool is given an anonymous Supabase
+        // session, because the free credits have to be held somewhere. That
+        // session carries claims, so the original check counted it as logged
+        // in and redirected it to /home -- which refuses anonymous users and
+        // renders "sign in to see your credit balance".
+        //
+        // The result was a closed loop: the moment someone tried the product,
+        // they could never reach the sign-up form again. That is exactly the
+        // moment they are most likely to want an account, so this was costing
+        // every conversion the free credits were meant to earn.
+        const isGuest = data?.claims?.is_anonymous === true;
+
+        // the user is logged out, or is only a guest, so let them through
+        if (!data?.claims || isGuest) {
           return;
         }
 
@@ -89,8 +103,11 @@ function getPatterns() {
         const origin = req.nextUrl.origin;
         const next = req.nextUrl.pathname;
 
-        // If user is not logged in, redirect to sign in page.
-        if (!data?.claims) {
+        // If the visitor is signed out, or is only an anonymous guest, send
+        // them to sign in. A guest who reached the wallet used to be shown a
+        // dead "sign in to see your credit balance" line with nothing to
+        // click; the same answer, made usable.
+        if (!data?.claims || data.claims.is_anonymous === true) {
           const signIn = pathsConfig.auth.signIn;
           const redirectPath = `${signIn}?next=${next}`;
 
