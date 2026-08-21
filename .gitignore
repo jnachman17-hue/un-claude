@@ -118,3 +118,8 @@ __pycache__/
 # which silently blocked this file and made every deployment fail for hours
 # while the old build kept serving. See docs/07-runbook.md.
 !apps/web/.env
+
+# Ledger backups written by apps/web/scripts/backup-credit-ledger.mjs. These are
+# real account data (account ids, balances, job history) and must never enter
+# git history. The whole point of the script is a copy kept OUTSIDE the repo.
+apps/web/credit-ledger-backups/
