@@ -182,3 +182,49 @@ cookie, and the merge cannot fire no matter how correct the code is.
 
 **So if the sign-up does not confirm instantly, that allow list is the next
 thing to check, not the merge code.**
+
+---
+
+# Why the confirmation link fails from the phone, and where to run this instead
+
+**Jon clicked the sign-up confirmation link and got "Sorry, we could not
+authenticate you."** Two independent causes, both properties of reaching a dev
+server at `http://<lan-ip>:3000`, and neither is a defect in the site.
+
+## 1. The callback never arrived here at all
+
+    requests to /auth/confirm or /auth/callback on this dev server: 0
+
+The email's link did not come back to `192.168.68.57:3000`. **Supabase only
+redirects to URLs on its allow list**, and the LAN origin is not on it, so the
+link resolved to the project's Site URL instead: production, running last
+week's build, in a browser context holding none of the sign-up's state.
+
+## 2. A LAN IP over http is not a secure context, so PKCE degrades
+
+    WebCrypto API is not supported. Code challenge method will default to
+    use plain instead of sha256.          (logged 4 times)
+
+`crypto.subtle` exists only in a secure context: `https://`, `http://localhost`
+or `http://127.0.0.1`. **`http://192.168.x.x` is none of those.** Supabase's
+sign-up flow is PKCE, so the code verifier and challenge degrade, and the
+verifier is in any case stored against the origin that started the flow. A
+link that lands on a different origin cannot complete the exchange whatever
+the challenge method.
+
+**Turnstile fails on the same origin for the same family of reason:** error
+`110200`, the host is not on the widget's allowed list.
+
+## Where to run it instead: localhost, on the Mac
+
+**`http://localhost:3000` is a secure context.** WebCrypto works, PKCE is
+sha256, and localhost is on Supabase's redirect allow list by default. **The
+merge is server-side logic and does not need a phone at any point.**
+
+## NONE OF THIS AFFECTS REAL USERS, and that is worth stating plainly
+
+Production is `https://un-claude.com`. It is a secure context, it is the
+project's Site URL, and it is on the Turnstile widget's hostname list. Every
+one of the three failures above is an artefact of the temporary
+phone-over-LAN arrangement built tonight so Jon could look at the mobile work
+early. **Do not chase any of them as product bugs.**
