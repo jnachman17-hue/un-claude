@@ -3729,3 +3729,41 @@ becomes a POST to a route handler and nothing else on the page changes.
 
 **The page is deliberately the smallest on the site.** No CTA band, no argument.
 Somebody who reached contact has already decided to write to us.
+
+### 105. Contact, rebuilt smaller, and the address corrected
+
+**Jon, 20 August 2026, on the first build:** "Make contact page much cleaner...
+Should be less scroll lengths and a small or email unclaudeapp@gmail.com in
+bottom corner... less massive header that takes up so much space and less lines
+separating sections." He supplied a screenshot of a contact page he wanted
+mirrored, keeping our fonts and colours.
+
+**THE ADDRESS IS `unclaudeapp@gmail.com`.** Entry 104 recorded
+`help@unclaudeapp.com`, read off "unclaudeapp.com is help email btw". That was
+wrong and is superseded here. The address lives in exactly one place in the
+code, `CONTACT_EMAIL` in `contact-form.tsx`.
+
+**What made the first build too tall, which is the reusable part.** It used the
+shared `PageHeader`, and `PageHeader` is a full-bleed band with `py-16 lg:py-20`
+and a bottom border, sized for a reading page that has to establish a subject
+before a visitor commits to scrolling. **A contact page has no subject to
+establish.** It also split the address off from the form with a rule, which
+turned one short task into two sections. Both are gone: the page is now a single
+column with its own heading, and the whole page including the site footer fits
+in a 900px viewport at desktop and at 375px.
+
+**The send is now the only send.** The address moved to a small line beside the
+button rather than a headline above the form, so "Send message" is the obvious
+action and the address is the fallback for a visitor whose phone has no mail
+client. It still composes a mailto and opens their own mail app, for the reason
+in entry 104: there is no mailer in this monorepo and adding one is Jon's call.
+
+**One deliberate departure from the reference layout, and it is not a
+shortcut.** The reference collects the sender's email address and name, which a
+real server-side form needs in order to reply. **A mailto does not.** The
+address is whatever account their mail app sends from, so a "your email" box
+here would either do nothing or paste an address into the body of a mail that
+already carries it in its headers. The two fields a draft actually needs are
+subject and message, which is also less to scroll. **If this ever becomes a
+server send, the email and name fields come back with it**, because at that
+point they stop being decorative.

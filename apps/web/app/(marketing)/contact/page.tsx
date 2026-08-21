@@ -1,36 +1,47 @@
 import { ContactForm } from '../_components/contact-form';
-import { PageHeader } from '../_components/prose';
 
 export const metadata = {
   title: 'Contact',
   description:
-    'Reach Un-Claude. Email us directly, or write a subject and message here and send it from your own mail app.',
+    'Reach Un-Claude. Write a subject and a message here and send it from your own mail app, or email us directly.',
 };
 
 /**
- * Contact, 20 August 2026, at Jon's instruction. `04` entry 104.
+ * Contact, 20 August 2026, at Jon's instruction. `04` entry 104, rebuilt the
+ * same day against a layout he supplied, entry 105.
  *
- * IT IS DELIBERATELY THE SMALLEST PAGE ON THE SITE. A contact page has one
- * job, and a visitor who reached it has already decided to write to us: there
- * is nothing left to sell here, so there is no CTA band and no argument. The
- * address, the form, and out.
+ * IT IS DELIBERATELY THE SMALLEST PAGE ON THE SITE, and the first build was
+ * not small enough. Gone: the shared `PageHeader`, which is a full-bleed
+ * bordered band sized for a reading page and pushed the first field below the
+ * fold, and the rules that split the address off from the form. What is left is
+ * one column, one heading, two fields, and the row that sends it. A visitor who
+ * reached contact has already decided to write to us, so there is nothing to
+ * sell here and no reason to make them scroll.
  */
 function ContactPage() {
   return (
-    <div className={'flex flex-col'}>
-      <PageHeader
-        title={'Talk to us.'}
-        standfirst={
-          'A question about a scan, a file we would not take, a bill, or anything else. One person reads this inbox, so write plainly and we will answer the same way.'
-        }
-      />
+    <section>
+      <div className={'mx-auto max-w-[46rem] px-5 py-12 sm:px-8 sm:py-16'}>
+        <h1
+          className={
+            'text-foreground text-[32px] leading-[1.08] font-semibold tracking-[-0.03em] text-balance sm:text-[38px]'
+          }
+        >
+          Get in touch
+        </h1>
 
-      <section>
-        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
-          <ContactForm />
-        </div>
-      </section>
-    </div>
+        <p
+          className={
+            'text-muted-foreground mt-3 max-w-[54ch] text-[16px] leading-[1.6]'
+          }
+        >
+          Ask anything about Un-Claude, tell us a question this site should
+          answer, or say something else entirely. Every message is read.
+        </p>
+
+        <ContactForm />
+      </div>
+    </section>
   );
 }
 
