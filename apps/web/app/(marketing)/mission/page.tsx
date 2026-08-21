@@ -1,46 +1,73 @@
-import { PageHeader } from '../_components/prose';
+import { CtaBand } from '../_components/cta-band';
 
 export const metadata = {
-  title: 'Why I built this',
+  title: 'Our mission',
   description:
-    'Why Un-Claude exists: a statistical watermark misidentifies its subject, punishes the diligent, and spares the malicious.',
+    'Why Un-Claude exists: a mark you cannot see, never agreed to, and cannot answer is not transparency. Written by the person who built it.',
 };
 
 /**
- * Jon's mission statement. His draft, refined at his instruction on the
- * night of 19 August 2026: first person, creator's voice, aligned with the
- * rest of the site. His arguments and his strongest sentences are kept
- * whole; the refinement tightened, cut all but one em dash per his rule,
- * and tied the closing to what the product actually does.
+ * The mission page. Rewritten 20 August 2026 (04 entry 92, then revised the
+ * same day to Jon's notes, entry 93).
+ *
+ * VOICE: first person, anonymous. Jon removed his byline and name; the page
+ * still reads as the builder speaking, per entry 80 ruling 9. This is the one
+ * page allowed to be adversarial in its own voice. No em dashes.
+ *
+ * PROSE: rewritten for fluency at Jon's instruction ("doesn't read fluently
+ * ... it still must sound human"). Short sentences, spoken rhythm, no stacked
+ * qualifier clauses. The arguments are unchanged from entry 92, which chose
+ * them specifically to not derive from the circulated X essay on this
+ * subject: intake versus output, the unanswerable claim, who actually gets
+ * flagged, and ignorance-dependent enforcement.
+ *
+ * LAYOUT: relaid out 20 August 2026 to Jon's note ("I hate the look ... the
+ * massive 'why I built this' at top then the massive space gap"). The oversized
+ * hero and the rule under it are gone. Title, a small date directly beneath it,
+ * then straight into the first paragraph, all inside one paper panel sitting on
+ * the page background so it reads as a written document rather than a landing
+ * page module. Measure is held at 68ch, which lands in the 65 to 75 characters
+ * a line that an essay needs to be readable. Not one word of the prose changed
+ * in this pass.
  */
-const PARAGRAPHS: Array<{ head?: string; body: string[] }> = [
+const SECTIONS: Array<{ head: string; body: string[] }> = [
   {
+    head: 'What I object to',
     body: [
-      'I am not against knowing where a text came from. I am against this particular method of establishing it, and the two are constantly confused.',
-      'A statistical watermark tells you one fact: a machine was somewhere in the pipeline. It cannot tell you whether the machine drafted the argument or fixed the commas. Whether it wrote the paper or translated it. Whether the human contributed everything or nothing. Authorship has always been a spectrum. Collaborators, editors, researchers, translators: every mature institution we have for handling credit knows this. The mark flattens that spectrum into a binary, then hands the binary to people who will treat it as a verdict.',
-      'And the mark degrades exactly as human contribution increases. Rewrite the output, restructure it, argue with the model and win, and the signal thins into noise. Leave it untouched and the signal is crisp. The technique is most confident precisely where the human did least, and least confident where the human did most. That is not a bug awaiting a patch. That is the shape of the thing.',
+      'I am not against knowing where writing comes from. I am against the way the labs have chosen to do it.',
+      'A statistical watermark is not a label you can read. It is a pattern pressed into the words themselves. You cannot see it, you were never asked about it, and it stays in your writing wherever that writing goes. There is no notice when it happens, no record you can look up afterwards, and no expiry date.',
     ],
   },
   {
-    head: 'It stamps the only participant that authored nothing.',
+    head: 'They marked the wrong end',
     body: [
-      'There is a second inversion underneath the first, and it is the one that turned my discomfort into opposition. The model has no independent access to reality. It has never seen a sunset or sat with grief. It knows those things only because millions of people wrote them down first. Every weight in it is an inheritance, and its entire universe is bounded by a corpus of human work ingested at a scale, and on terms, that no individual author agreed to.',
-      'So when the system generates a paragraph, it is recombining human expression: a mosaic assembled from tiles other people made. Which means the watermark misattributes at both ends of the chain at once. It marks the output as machine-origin when the material is human in provenance, and it marks it as machine-origin when the editing, the judgment and the accountability are human too. It stamps the one participant in the process that authored nothing, and by stamping it, quietly awards it the credit.',
+      'A model knows nothing on its own. It has never seen a sunset or sat with grief. It can only write about these things because millions of people wrote about them first, and all of that writing was taken to train it, at a scale nobody agreed to and on terms nobody was offered.',
+      'Nothing was attached to any of that work on the way in. No credit, no permission, no mark of any kind. The only permanent, invisible label in this whole arrangement is the one stamped on what comes back out. A permanent mark on everything the machine gives back, and nothing at all on what it took.',
+      'And look at who gets marked. Everything of substance in a generated paragraph came from people. The mark records the machine, the one participant that authored nothing, and by recording it, quietly hands it the credit.',
     ],
   },
   {
-    head: 'The cost lands on the honest.',
+    head: 'The claim you cannot answer',
     body: [
-      'This is where the argument stops being philosophical. Detection is probabilistic. A hit is not proof and a miss is not clearance, and any threshold you pick trades false accusations against missed ones. Push it toward catching more marked text and you accuse more people who did nothing wrong.',
-      'Every one of those errors has a face. A student who wrote her own paper. A writer who agonised over an article. A clinician whose reviewed and signed record now carries the implication that a machine, rather than the accountable professional, is responsible for it.',
-      'Meanwhile the people this transparency regime was built to stop face no obstacle at all. The fraud operations, the influence campaigns, the spam mills: they paraphrase, they translate, they publish. The mark survives only on the text of people who do not know it is there. It is a tax on the naive. Maximum friction for the honest, and approximately zero for the adversary it was justified by.',
+      'Anthropic is careful about this in its own documentation. A detected mark means Claude was involved somewhere, not that Claude wrote it. Proofreading leaves a mark. Translation leaves a mark. So does getting help with one paragraph of something you wrote yourself.',
+      'None of that nuance survives the trip to a dashboard. What shows up on the other end is a flag, and a flag reads like a verdict. And here is the part nobody built: there is no way to prove you wrote something. No document to show, no process to follow, no one to appeal to. An accusation like this costs nothing to make and is nearly impossible to answer.',
     ],
   },
   {
-    head: 'What honest transparency looks like.',
+    head: 'It lands on the wrong people',
     body: [
-      'I would rather have transparency that survives contact with reality. Signed provenance at the file level, attached at generation, legible to any tool that cares to look — which is exactly what it is today, and this site will show it to you inside your own file. Plain disclosure by the person doing the publishing. And a watermark treated as what its own documentation admits it is: a weak hint, never evidence, never grounds for an accusation.',
-      'So this is why I built an AI watermark removal tool. Not to hide machine involvement. To refuse a fingerprint that misidentifies its subject, punishes the diligent, spares the malicious, and was never something any of us agreed to carry.',
+      'Think about who actually asks a model to clean up a paragraph. Often it is someone writing in their second language, or someone with dyslexia, or anyone using the tool to be understood rather than to skip the work. Proofreading and translation are exactly the uses that leave a mark. The research is yours, the argument is yours, the essay is yours, and the sentence that gets you flagged is the one you asked for help with.',
+      'Meanwhile the people this was supposedly built to catch are fine. Spam operations and influence campaigns rewrite everything as a matter of routine, and they publish clean.',
+      'Anthropic’s own documentation says a full rewrite removes the mark. So the whole system only works on people who do not know it exists. That is not transparency. Once you know about it, it stops sorting honest from dishonest and starts sorting people who know from people who do not.',
+    ],
+  },
+  {
+    head: 'So I built this',
+    body: [
+      'What I want instead is simple. Disclosure the author can see and control, made at the point of publishing, with a name on it. If a lab wants to record what its model produced, it can put that record in the file, where anyone can read it, and be honest that it is a claim about a file, not a verdict on a person.',
+      'Until that exists, this is the most useful thing I could do. Un-Claude finds the marks in your text and your files, names every one of them, and shows you exactly what was there and what came off. Nothing about your own writing is hidden from you. That is the whole point.',
+      'One thing I will not do is overclaim. Nobody can currently verify that a statistical watermark is gone, so I will not tell you it is verified. You get the engineering and the measurements from every run, and the day Anthropic opens its detector, every job gets checked against it.',
+      'I did not build this to hide that a machine was involved. I built it because a mark you cannot see, never agreed to, and cannot answer is not transparency. It is ink you did not choose.',
     ],
   },
 ];
@@ -48,48 +75,65 @@ const PARAGRAPHS: Array<{ head?: string; body: string[] }> = [
 function Mission() {
   return (
     <div className={'flex flex-col'}>
-      <PageHeader
-        title={'Why I built this.'}
-        standfirst={
-          'A statistical watermark tells you a machine was in the room. It cannot tell you who did the work.'
-        }
-      />
+      <article className={'mx-auto w-full max-w-[860px] px-4 py-10 sm:px-8 sm:py-14'}>
+        <div
+          className={
+            'bg-card border-border/60 rounded-[14px] border px-5 py-9 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:px-10 sm:py-12'
+          }
+        >
+          <header>
+            <h1
+              className={
+                'text-foreground text-[27px] leading-[1.15] font-semibold tracking-[-0.024em] text-balance sm:text-[32px]'
+              }
+            >
+              Why I built this.
+            </h1>
 
-      <section className={'mx-auto w-full max-w-[1180px] px-5 py-16 sm:px-8'}>
-        <div className={'max-w-[68ch]'}>
-          {PARAGRAPHS.map((block, blockIndex) => (
-            <div key={blockIndex} className={blockIndex > 0 ? 'mt-12' : ''}>
-              {block.head ? (
+            <p className={'text-muted-foreground mt-1.5 text-[13px] tracking-[0.01em]'}>
+              20 August 2026
+            </p>
+          </header>
+
+          {/* One continuous column. Small bold headers, stacked, no rail. */}
+          <div className={'mt-6 max-w-[68ch]'}>
+            <p className={'text-foreground/85 text-[16px] leading-[1.72]'}>
+              AI companies now write an invisible mark into what they produce.
+              They did not ask, they do not show you, and it stays in your work
+              after you have made it your own.
+            </p>
+
+            {SECTIONS.map((section) => (
+              <div key={section.head} className={'mt-7'}>
                 <h2
                   className={
-                    'text-foreground text-[22px] leading-[1.2] font-semibold tracking-[-0.022em]'
+                    'text-foreground text-[15px] leading-[1.35] font-semibold tracking-[-0.012em]'
                   }
                 >
-                  {block.head}
+                  {section.head}
                 </h2>
-              ) : null}
-              {block.body.map((paragraph, i) => (
-                <p
-                  key={i}
-                  className={
-                    'text-foreground/80 mt-5 text-[15.5px] leading-[1.75]'
-                  }
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          ))}
 
-          <p
-            className={
-              'text-muted-foreground border-border/70 mt-12 border-t pt-6 text-[13.5px]'
-            }
-          >
-            Jon, founder of Un-Claude. August 2026.
-          </p>
+                <div className={'mt-2 space-y-3.5'}>
+                  {section.body.map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 24)}
+                      className={'text-foreground/85 text-[16px] leading-[1.72]'}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+      </article>
+
+      <CtaBand
+        heading={'See what your own writing is carrying.'}
+        sub={'Free, in seconds, and nothing you paste is stored.'}
+        secondary={{ href: '/how-it-works', label: 'How it works' }}
+      />
     </div>
   );
 }
