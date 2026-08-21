@@ -60,7 +60,10 @@ PROMPTS = {
         "4. Keep every claim. Add nothing, remove nothing.\n"
         "5. Copy numbers and dates in exactly the form the original used, in both "
         "directions. Words stay words, digits stay digits.\n"
-        "6. Output only the rewritten text, with no preamble or commentary."
+        "6. Keep the layout exactly as it arrived: the same number of paragraphs, in "
+        "the same order, separated by a blank line. Never merge or split a paragraph. "
+        "A short line on its own is a heading — keep it on its own line and keep it.\n"
+        "7. Output only the rewritten text, with no preamble or commentary."
         "\n\n---\n{TEXT}"
     ),
     "unclaude": (
@@ -94,7 +97,15 @@ PROMPTS = {
         "6. Use ordinary phrasing. Prefer a plain common word over an unusual synonym. "
         "Never reach for an odd construction just to avoid the original wording: write "
         "'five-year deal', never 'semi-decade pact'.\n"
-        "7. Output only the rewritten text, with no preamble or commentary."
+        "7. KEEP THE LAYOUT EXACTLY AS IT ARRIVED. Return the same number of "
+        "paragraphs, in the same order, separated by a blank line. Never merge two "
+        "paragraphs into one and never split one into two. A short line standing on "
+        "its own is a heading or a title: keep it on its own line and keep it — "
+        "never fold it into the paragraph below it and never delete it. Keep every "
+        "line break inside a paragraph where it is, and keep list markers in the "
+        "form the original used: '1.' stays '1.', '-' stays '-', a bullet stays a "
+        "bullet.\n"
+        "8. Output only the rewritten text, with no preamble or commentary."
         "\n\n---\n{TEXT}"
     ),
     "paraphrase": (

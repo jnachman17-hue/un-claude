@@ -29,6 +29,12 @@ MIN_RATIO = 0.70         # Jon's ruling: we are a watermark remover, not a
 # limited, and paid credits are now in place.
 MAX_WORKERS = int(os.environ.get("UC_LAYER_B_WORKERS", "8"))
 RETRIES = int(os.environ.get("UC_LAYER_B_RETRIES", "8"))  # per chunk
+# Extra attempts a chunk may spend PURELY on getting its paragraphs back, when
+# the facts already survived. Deliberately tiny and deliberately separate from
+# RETRIES: a re-roll for structure costs a model call and seconds against the
+# function ceiling, so it is capped at one by default rather than sharing the
+# fact guard's budget of eight. Set to 0 to turn structure re-rolls off.
+STRUCTURE_RETRIES = int(os.environ.get("UC_LAYER_B_STRUCTURE_RETRIES", "1"))
 BACKOFF = 2.5            # seconds, multiplied each attempt, plus jitter
 
 
@@ -102,22 +108,111 @@ def _numbers(text: str) -> set[str]:
     return out
 
 
-def split_paragraphs(text: str) -> list[str]:
-    """Group paragraphs into chunks of roughly TARGET_WORDS, never splitting one."""
-    paras = [p for p in re.split(r"\n\s*\n", text) if p.strip()]
-    chunks: list[list[str]] = []
-    current: list[str] = []
+# A paragraph break: a newline, then at least one more newline, with only
+# spaces or tabs allowed in between. A single newline inside a paragraph is a
+# soft wrap and is NOT a break.
+#
+# WHY THE SEPARATORS ARE CAPTURED RATHER THAN DISCARDED. This module used to
+# split on r"\n\s*\n" without a capturing group and rejoin every paragraph with
+# a flat "\n\n". That threw away the document's real spacing before the model
+# ever saw it: three blank lines became one, an indented block lost its indent,
+# and the leading and trailing whitespace of the whole document disappeared.
+# The separators are now kept and put back exactly where they were.
+_PARA_BREAK = re.compile(r"(\n[^\S\n]*(?:\n[^\S\n]*)+)")
+
+
+def _split_blocks(text: str) -> tuple[str, list[str], list[str], str]:
+    """Take a document apart into (lead, paragraphs, separators, tail).
+
+    `lead` and `tail` are the document's own leading and trailing whitespace,
+    held aside so the model never sees them and cannot eat them. `separators`
+    holds the exact run of newlines that sat between each pair of paragraphs, so
+    len(separators) == len(paragraphs) - 1 and the original text is recoverable
+    character for character by interleaving the two.
+    """
+    body = text.strip("\n")
+    lead = text[: len(text) - len(text.lstrip("\n"))]
+    tail = text[len(text.rstrip("\n")) :] if text.strip("\n") else ""
+    parts = _PARA_BREAK.split(body)
+    paras, seps = parts[0::2], parts[1::2]
+    # A whitespace-only paragraph would break the one-to-one pairing with its
+    # separator, so drop it and the separator that follows it together.
+    keep = [i for i, para in enumerate(paras) if para.strip()]
+    if len(keep) != len(paras):
+        paras = [paras[i] for i in keep]
+        seps = ["\n\n"] * max(0, len(paras) - 1)
+    return lead, paras, seps, tail
+
+
+def _plan_chunks(paras: list[str], seps: list[str]) -> list[dict]:
+    """Group paragraphs into chunks of roughly TARGET_WORDS, never splitting one.
+
+    Each chunk carries the separators that belong INSIDE it and the one that
+    follows it, so the exact spacing can be rebuilt after the rewrite.
+    """
+    groups: list[list[int]] = []
+    current: list[int] = []
     count = 0
-    for p in paras:
-        n = len(p.split())
+    for index, para in enumerate(paras):
+        n = len(para.split())
         if current and count + n > TARGET_WORDS:
-            chunks.append(current)
+            groups.append(current)
             current, count = [], 0
-        current.append(p)
+        current.append(index)
         count += n
     if current:
-        chunks.append(current)
-    return ["\n\n".join(c) for c in chunks] or [text]
+        groups.append(current)
+
+    plan: list[dict] = []
+    for group in groups:
+        inner = [seps[i] for i in group[:-1]]
+        after = seps[group[-1]] if group[-1] < len(seps) else ""
+        plan.append({
+            "paras": [paras[i] for i in group],
+            "inner": inner,
+            "after": after,
+        })
+    return plan
+
+
+def _weave(paras: list[str], seps: list[str]) -> str:
+    """Paragraphs and their separators back into one string."""
+    out = []
+    for i, para in enumerate(paras):
+        out.append(para)
+        if i < len(seps):
+            out.append(seps[i])
+        elif i < len(paras) - 1:
+            out.append("\n\n")
+    return "".join(out)
+
+
+def _restore(rewritten: str, inner: list[str], wanted: int) -> tuple[str, bool]:
+    """Put the chunk's original paragraph spacing back onto the model's output.
+
+    Returns (text, structure_kept). When the model returned the same number of
+    paragraphs it was given, the original separators go back exactly and the
+    answer is True. When it merged or split paragraphs there is no honest way to
+    align the two, so its own layout is kept unchanged and the answer is False —
+    surfaced in the report rather than papered over. Guessing where a paragraph
+    break belongs in somebody's document is not something this engine does.
+    """
+    parts = _PARA_BREAK.split(rewritten)
+    paras = [p for p in parts[0::2] if p.strip()]
+    if len(paras) == wanted:
+        return _weave(paras, inner), True
+    return rewritten, False
+
+
+def split_paragraphs(text: str) -> list[str]:
+    """Group paragraphs into chunks of roughly TARGET_WORDS, never splitting one.
+
+    Kept as the plain-text view of `_plan_chunks` for callers and tests that
+    only want the chunk boundaries.
+    """
+    _lead, paras, seps, _tail = _split_blocks(text)
+    plan = _plan_chunks(paras, seps)
+    return [_weave(c["paras"], c["inner"]) for c in plan] or [text]
 
 
 def _merge_usage(total: dict, part: dict) -> dict:
@@ -145,7 +240,15 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
 
     Raises TruncatedRewrite if any chunk, or the whole, comes back too short.
     """
-    chunks = split_paragraphs(text)
+    lead, paragraphs, separators, tail = _split_blocks(text)
+    plan = _plan_chunks(paragraphs, separators)
+    if not plan:
+        # Nothing but whitespace. There is no rewrite to do and no structure to
+        # lose, so hand it straight back rather than sending blanks to a model.
+        return text, {"chunks": 0, "parallel": False, "words_in": 0, "words_out": 0,
+                      "usage": {"chunks": 0, "retries": 0}, "figures_to_check": [],
+                      "paragraphs_in": 0, "paragraphs_out": 0, "structure_kept": True}
+    chunks = [_weave(c["paras"], c["inner"]) for c in plan]
 
     results: list[str | None] = [None] * len(chunks)
     infos: list[dict] = [{} for _ in chunks]
@@ -173,8 +276,12 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         best_out = None
         best_info: dict = {}
         best_missing: list[str] = []
+        best_kept = False
+        structure_rerolls = 0
         last_err = None
         usage = usages[i]
+        wanted = len(plan[i]["paras"])
+        inner = plan[i]["inner"]
         for attempt in range(RETRIES):
             # Counted before the call, so an attempt that raises is still an
             # attempt. `attempts` is the retry story and `model_calls`, filled in
@@ -196,20 +303,43 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                     time.sleep(0.4)
                     continue
                 raise
+            # The chunk's own paragraph spacing goes back on here, before any
+            # guard reads it, so every path below returns the restored text.
+            out, kept = _restore(out, inner, wanted)
             try:
                 _guard_facts(chunks[i], out, i)     # facts: advisory, keep the best
-                return i, out, info, [], usage
+                if kept or structure_rerolls >= STRUCTURE_RETRIES or attempt >= RETRIES - 1:
+                    return i, out, info, [], usage, kept
+                # Facts survived but paragraphs did not. The model merged or split
+                # something, and because the rewrite is non-deterministic another
+                # roll usually lands it. One roll, then take whichever is better
+                # and move on: a merged paragraph is a blemish, not a reason to
+                # spend the request's whole time budget.
+                structure_rerolls += 1
+                if best_out is None or (best_missing == [] and not best_kept):
+                    best_out, best_info, best_missing, best_kept = out, info, [], kept
+                time.sleep(0.4)
+                continue
             except FactsLost as e:
-                if best_out is None or len(e.missing) < len(best_missing):
+                # Fewer dropped figures wins. Where two attempts dropped the same
+                # number of figures, the one that kept the paragraphs wins — a
+                # free tie-break on retries that were happening anyway, which is
+                # why structure never triggers a model call of its own.
+                better = (
+                    best_out is None
+                    or len(e.missing) < len(best_missing)
+                    or (len(e.missing) == len(best_missing) and kept and not best_kept)
+                )
+                if better:
                     # The info of the attempt actually being kept. This used to
                     # return an empty dict here, which threw away the model name
                     # and every figure belonging to the run that was returned.
-                    best_out, best_info, best_missing = out, info, e.missing
+                    best_out, best_info, best_missing, best_kept = out, info, e.missing, kept
                 if attempt < RETRIES - 1:
                     time.sleep(0.4)
                     continue
         if best_out is not None:
-            return i, best_out, best_info, best_missing, usage
+            return i, best_out, best_info, best_missing, usage, best_kept
         raise RuntimeError(
             f"chunk {i + 1} failed after {RETRIES} attempts: "
             f"{type(last_err).__name__}") from last_err
@@ -238,7 +368,8 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
 
     try:
         if len(chunks) == 1:
-            _, out, info, missing, _usage = one(0)
+            _, out, info, missing, _usage, kept = one(0)
+            out = lead + out + tail
             info = dict(info or {})
             # words_in and words_out used to be set on the multi-chunk path only,
             # so they were absent on anything under roughly 350 words, which is
@@ -247,16 +378,28 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             info.update(chunks=1, parallel=False,
                         words_in=len(text.split()), words_out=len(out.split()),
                         usage=totals(),
-                        figures_to_check=[m for m in missing if m not in _numbers(out)])
+                        figures_to_check=[m for m in missing if m not in _numbers(out)],
+                        paragraphs_in=len(paragraphs),
+                        paragraphs_out=len(_split_blocks(out)[1]),
+                        structure_kept=bool(kept))
             return out, info
 
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
             at_risk: list[str] = []
-            for i, out, info, missing, _usage in pool.map(one, range(len(chunks))):
+            all_kept = True
+            for i, out, info, missing, _usage, kept in pool.map(one, range(len(chunks))):
                 results[i], infos[i] = out, (info or {})
                 at_risk.extend(missing)
+                all_kept = all_kept and kept
 
-        joined = "\n\n".join(r for r in results if r is not None)
+        # Chunks are rejoined with the separator that ACTUALLY sat between them,
+        # not a flat blank line. The chunk boundary is always a paragraph
+        # boundary, so this half of the document's spacing is exact whatever the
+        # model does inside a chunk.
+        joined = lead + "".join(
+            (r if r is not None else "") + (plan[i]["after"] if i < len(plan) - 1 else "")
+            for i, r in enumerate(results)
+        ) + tail
         _guard(text, joined, -1)
         merged = dict(infos[0])
         # Figures the rewrite could not be shown to preserve inside their own chunk.
@@ -270,7 +413,10 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         merged.update(chunks=len(chunks), parallel=True,
                       words_in=len(text.split()), words_out=len(joined.split()),
                       usage=totals(),
-                      figures_to_check=still_missing)
+                      figures_to_check=still_missing,
+                      paragraphs_in=len(paragraphs),
+                      paragraphs_out=len(_split_blocks(joined)[1]),
+                      structure_kept=bool(all_kept))
         return joined, merged
     except Exception as failure:
         # A failed layer B run is the most expensive thing this engine can do:
