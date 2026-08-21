@@ -7,6 +7,11 @@ import Link from 'next/link';
  * it links to a real piece from that outlet about the watermark. No article, no
  * entry. All nine came from Jon's own list with their links.
  *
+ * The items are not clickable. `href` is kept on each `Article` as the record
+ * of which real piece justifies the name being here, per the rule above, but
+ * it is never rendered as a link — Jon does not want this banner taking
+ * visitors off the site.
+ *
  * The caption is not decoration. Publication names sitting under our own tool,
  * unlabelled, read as "as seen in", which would be false. Nobody has covered
  * Un-Claude. The caption says what the strip actually is, and it links through to
@@ -45,11 +50,6 @@ const ARTICLES: Article[] = [
     logo: { src: '/images/outlets/cnn.svg', plate: true, tall: true },
   },
   {
-    outlet: 'NPR',
-    href: 'https://www.npr.org/2026/08/17/nx-s1-5928211/anthropics-new-invisible-watermark-marks-content-generated-by-ai-chatbot-claude',
-    logo: { src: '/images/outlets/npr.png', plate: true },
-  },
-  {
     outlet: 'ABC News',
     href: 'https://www.youtube.com/watch?v=R01_-MkxFws',
     logo: { src: '/images/outlets/abc.svg', plate: true },
@@ -65,24 +65,31 @@ const ARTICLES: Article[] = [
     logo: { src: '/images/outlets/fortune.svg', mono: true },
   },
   {
-    outlet: 'Axios',
-    href: 'https://www.axios.com/2026/08/12/anthropic-claude-watermarks-ai-detection',
-    logo: { src: '/images/outlets/axios.png', mixed: true },
-  },
-  {
-    outlet: 'TechCrunch',
-    href: 'https://techcrunch.com/2026/08/11/anthropic-says-it-will-watermark-text-generated-by-its-ai-models/',
-    logo: { src: '/images/outlets/techcrunch.png', mixed: true },
-  },
-  {
     outlet: 'CNET',
     href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/',
     logo: { src: '/images/outlets/cnet.png', mono: true },
   },
   {
-    outlet: 'The Register',
-    href: 'https://www.theregister.com/ai-and-ml/2026/08/11/anthropic-pledges-to-embed-watermarks-to-help-discern-ai-slop-in-sop-to-eu/5285792',
-    logo: { src: '/images/outlets/register.png', plate: true },
+    outlet: 'The Wall Street Journal',
+    href: 'https://www.wsj.com/tech/ai/openai-tool-chatgpt-cheating-writing-135b755a',
+    logo: { src: '/images/outlets/wsj.svg', mono: true },
+  },
+  {
+    outlet: 'The Guardian',
+    href: 'https://www.theguardian.com/technology/2026/aug/17/claude-watermark-ai-text-quality-worse',
+    logo: { src: '/images/outlets/guardian.svg', mono: true },
+  },
+  {
+    outlet: 'Wired',
+    href: 'https://www.wired.com/story/coders-say-they-already-found-workarounds-to-claudes-invisible-watermarks/',
+    logo: { src: '/images/outlets/wired.svg', mono: true },
+  },
+  {
+    outlet: 'The New York Times',
+    href: 'https://www.nytimes.com/2026/08/13/technology/personaltech/pangram-ai-detector-test.html',
+    // Real wordmark on transparent, supplied 20 August 2026 to replace the
+    // padded square icon that rendered illegibly small at a fixed height.
+    logo: { src: '/images/outlets/nyt.svg', mono: true },
   },
 ];
 
@@ -112,7 +119,7 @@ export function CoverageMarquee() {
         </p>
       </div>
 
-      {/* Pauses on hover so a name can be clicked, which is the detail GPTZero's
+      {/* Pauses on hover so a name can be read, which is the detail GPTZero's
           own implementation gets right. The two copies are what makes the loop
           seamless, and the spacing is wide enough that the same outlet is never
           on screen twice at once. */}
@@ -133,15 +140,10 @@ export function CoverageMarquee() {
               aria-hidden={copy === 1}
             >
               {ARTICLES.map((article) => (
-                <a
+                <div
                   key={`${copy}-${article.outlet}`}
-                  href={article.href}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  tabIndex={copy === 1 ? -1 : undefined}
-                  aria-label={`${article.outlet} on the AI watermark story`}
                   className={
-                    'inline-flex shrink-0 items-center px-9 opacity-65 transition-opacity duration-300 hover:opacity-100 sm:px-12'
+                    'inline-flex shrink-0 items-center px-9 opacity-65 sm:px-12'
                   }
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -164,7 +166,7 @@ export function CoverageMarquee() {
                         : '',
                     ].join(' ')}
                   />
-                </a>
+                </div>
               ))}
             </div>
           ))}
