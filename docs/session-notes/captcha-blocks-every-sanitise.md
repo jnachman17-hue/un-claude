@@ -70,3 +70,28 @@ allowed hostname or development uses Cloudflare's documented always-pass test
 pair. **Working position: add `localhost` to the real widget**, because a test
 key that always passes is a thing that can ship by accident and a hostname
 entry is not. Not implemented, and it is Jon's Cloudflare account.
+
+---
+
+## CORRECTION AND RESOLUTION, 21 August 2026, later the same day
+
+**Captcha protection is back ON, and a real sanitise works on localhost with it
+on.** Jon switched it on and ran one. The blocker is closed.
+
+**This note's diagnosis of the CAUSE was wrong, and the wrong part is the
+sentence "it is simply not valid for `localhost`".** Jon confirms `localhost`
+is, and always has been, in the Turnstile widget's allowed hostnames in
+Cloudflare. So whatever `600010` means here, it is not a missing hostname.
+
+**The `600010` console warning still appears on every page load and is not
+fatal.** Verified after switching protection on: the warning is present in a
+fresh browser, and a sanitise still completes. So it is noise rather than the
+chain this note describes.
+
+**What remains unexplained:** why Turnstile logs `600010` at all when the
+hostname is allowed and the flow works. Not chased, because nothing is broken by
+it. Worth a look only if sign-in or sanitising starts failing in production,
+where this warning would be the first place to look.
+
+**The open question at the end of this note is therefore CLOSED:** no test-key
+arrangement is needed, and the real widget is in use on localhost.
