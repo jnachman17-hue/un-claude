@@ -50,6 +50,28 @@ browsers, which needs Jon under `CLAUDE.md` section 5). `chromium.launch({
 channel: 'chrome' })` uses `/Applications/Google Chrome.app`, which is already
 there. That one option is the whole trick.
 
+## A SECOND OPERATIONAL FACT, and this one nearly misattributed somebody's work
+
+**Two Claude sessions running in the same folder share one git index.** A
+`git add` in the other session leaves that path staged for BOTH, and the next
+`git commit` in this one sweeps it in, even when the commit stages its files by
+explicit path.
+
+**It happened tonight.** The other session's `docs/session-notes/
+operations-setup.md` landed inside a commit of mine about the capabilities
+page. Caught by reading the tool's own output rather than by assuming the
+staged list matched the requested one.
+
+**The fix, and it is clean:** `git rm --cached <their-path>` then
+`git commit --amend --no-edit`. The commit is rewritten without the file and
+the file stays on disk, untracked, exactly as its owner left it. Nothing of
+theirs is lost and nothing of theirs is attributed to me.
+
+**The habit worth keeping: read what `git diff --cached --name-only` prints
+before committing, every time.** Staging by explicit path is necessary here
+and it is not sufficient.
+
+
 ---
 
 ## The ledger
@@ -193,3 +215,15 @@ at.**
 one sentence deleted to get there.** Everything that came off the visible page
 is behind a labelled control, at phone width only, and back inline the moment
 the screen is wide enough to carry it.
+
+---
+
+## What was deliberately NOT done
+
+**`docs/CURRENT-HANDOFF.md` was not rewritten,** which `CLAUDE.md` section 6
+asks for at session end. A second session is running in this folder tonight
+and that file is a single shared document with no natural place for two
+authors. The session-notes convention exists for exactly this collision, so
+the three notes from tonight (`credits-ux.md`, `density-cuts.md`, this one)
+carry the full record instead. **Whoever merges these into `04` and `07`
+should rewrite the handoff at the same time.**
