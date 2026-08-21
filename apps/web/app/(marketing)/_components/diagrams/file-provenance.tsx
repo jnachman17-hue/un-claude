@@ -1,16 +1,22 @@
 /**
- * What provenance is, and where it lives.
+ * What metadata is, and where it lives. (The file keeps its historical name;
+ * the visitor-facing word is Metadata, 04 entry 78.)
  *
  * The single misunderstanding this drawing exists to prevent: the mark is not in
  * the picture. It is in the wrapper around the picture. Removing it does not
  * touch a single pixel, which is why this layer is provable to the byte.
+ *
+ * REVISED 20 August 2026: the illustrative manifest names Claude rather than
+ * DALL-E, because the site is Claude forward (04 entry 36) and Claude has
+ * signed C2PA onto its files since 2 August 2026. The three moral lines at the
+ * bottom duplicated the panel caption and came out.
  */
 export function FileProvenanceDiagram({ className }: { className?: string }) {
-  const fields = ['c2pa manifest', 'Software: DALL-E 3', 'digitalSourceType', 'trainedAlgorithmicMedia'];
+  const fields = ['c2pa manifest', 'Software: Claude', 'digitalSourceType', 'trainedAlgorithmicMedia'];
 
   return (
     <svg
-      viewBox={'0 0 460 230'}
+      viewBox={'0 0 460 150'}
       className={className}
       role={'img'}
       aria-label={
@@ -18,7 +24,7 @@ export function FileProvenanceDiagram({ className }: { className?: string }) {
       }
     >
       <defs>
-        <marker id={'arrow-right'} markerWidth={8} markerHeight={8} refX={7} refY={4} orient={'auto'}>
+        <marker id={'fp-arrow-right'} markerWidth={8} markerHeight={8} refX={7} refY={4} orient={'auto'}>
           <path d={'M 0 0 L 7 4 L 0 8'} className={'fill-none stroke-foreground/45'} strokeWidth={1.4} />
         </marker>
       </defs>
@@ -68,7 +74,7 @@ export function FileProvenanceDiagram({ className }: { className?: string }) {
           className={'stroke-foreground/45'}
           strokeWidth={1.4}
           fill={'none'}
-          markerEnd={'url(#arrow-right)'}
+          markerEnd={'url(#fp-arrow-right)'}
         />
         <text x={299} y={64} fontSize={10} className={'fill-muted-foreground'}>
           sanitise
@@ -82,16 +88,6 @@ export function FileProvenanceDiagram({ className }: { className?: string }) {
         <path d={'M 354 106 L 382 74 L 400 92 L 410 82 L 422 106 Z'} className={'fill-foreground/25'} />
         <text x={348} y={130} fontSize={10.5} className={'fill-muted-foreground'}>
           byte for byte identical
-        </text>
-
-        <text x={16} y={172} fontSize={12} className={'fill-muted-foreground'}>
-          The mark is not in the picture. It is in the record attached to it.
-        </text>
-        <text x={16} y={190} fontSize={12} className={'fill-muted-foreground'}>
-          Removing it changes no pixel, and the file is re-read afterwards to
-        </text>
-        <text x={16} y={208} fontSize={12} className={'fill-muted-foreground'}>
-          confirm nothing was left behind.
         </text>
       </g>
     </svg>

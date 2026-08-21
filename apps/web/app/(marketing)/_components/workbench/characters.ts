@@ -70,6 +70,46 @@ export function explain(codepoint: string, kind: string): string {
   );
 }
 
+/**
+ * THE SHORT FORM, for the list inside the tool.
+ *
+ * Jon, 20 August 2026: the expanded row was a wall of sentences. `explain()`
+ * above is a full explanation and is right for a page with room; this is a
+ * phrase, so three findings read as three lines rather than a paragraph.
+ * Nothing is dumbed down, it is only shortened: the official character name
+ * still sits beside it.
+ */
+const SHORT_BY_CODEPOINT: Record<string, string> = {
+  'U+200B': 'Invisible, no width at all',
+  'U+200C': 'Invisible, stops two letters joining',
+  'U+200D': 'Invisible, glues characters together',
+  'U+202F': 'Looks exactly like a normal space',
+  'U+00A0': 'Looks like a space, stops line breaks',
+  'U+FEFF': 'Invisible marker left by export tools',
+  'U+00AD': 'Hidden hyphen, shows only if the word breaks',
+  'U+2009': 'A space thinner than normal',
+  'U+2028': 'An invisible line separator',
+  'U+180E': 'An invisible separator, drawn as nothing',
+};
+
+const SHORT_BY_KIND: Record<string, string> = {
+  zwj_family: 'Takes a position, takes no space',
+  space: 'An unusual space, identical to a normal one',
+  bidi: 'A direction mark, never drawn',
+  tag_chars: 'An invisible alphabet that can spell out data',
+  variation_selector: 'Invisibly changes how the character before it looks',
+  private_use: 'An undefined slot, shows as nothing',
+  confusable: 'A lookalike letter from another alphabet',
+  strip: 'A formatting instruction, never shown',
+  other_cf: 'An invisible instruction to the text',
+};
+
+export function shortExplain(codepoint: string, kind: string): string {
+  return (
+    SHORT_BY_CODEPOINT[codepoint] ?? SHORT_BY_KIND[kind] ?? 'Invisible on the page'
+  );
+}
+
 /** "U+00A0 NO-BREAK SPACE (Zs)" becomes "No-break space". */
 export function prettyName(label: string, codepoint: string): string {
   const stripped = label

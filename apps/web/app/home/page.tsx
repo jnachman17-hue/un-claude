@@ -1,7 +1,11 @@
+import { Suspense } from 'react';
+
 import Link from 'next/link';
 import { connection } from 'next/server';
 
 import { PageBody, PageHeader } from '@kit/ui/page';
+
+import { PurchaseBanner } from './_components/purchase-banner';
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
 /**
@@ -116,12 +120,43 @@ export default async function HomePage() {
   const balance = (balanceData as number) ?? 0;
   const history = (rows ?? []) as LedgerRow[];
 
+  /*
+   * Has a purchase landed recently? This is the ONLY reliable signal the
+   * post-checkout banner can use, and working it out here rather than in the
+   * browser is what makes it reliable: the server can see the ledger, and the
+   * browser cannot see what the balance was before the purchase it just made.
+   *
+   * The 15 minute window scopes it to "the purchase they have just returned
+   * from" rather than any purchase they have ever made. It is a heuristic, and
+   * the alternative — threading the Stripe session id through the redirect and
+   * storing it on the ledger row — is a schema change for a banner. If a
+   * customer somehow reaches /home?purchase=success within 15 minutes of an
+   * unrelated purchase, the worst outcome is a correct message at a slightly
+   * odd moment.
+   */
+  const RECENT_MS = 15 * 60 * 1000;
+  const latestPurchase = history.find((row) => row.reason === 'purchase');
+  const purchaseLanded =
+    !!latestPurchase &&
+    Date.now() - new Date(latestPurchase.created_at).getTime() < RECENT_MS;
+
   return (
     <>
       <PageHeader description={'Your credits'} />
 
       <PageBody>
         <div className={'flex max-w-[640px] flex-col gap-6'}>
+          {/*
+            The post-checkout confirmation. Suspense because PurchaseBanner
+            reads the query string with useSearchParams, which Next requires be
+            wrapped so the rest of the wallet can render without waiting on it.
+            It renders nothing at all unless `?purchase=` is present, so on an
+            ordinary visit this boundary costs nothing.
+          */}
+          <Suspense fallback={null}>
+            <PurchaseBanner purchaseLanded={purchaseLanded} />
+          </Suspense>
+
           <div
             className={
               'border-border/70 flex flex-col gap-4 rounded-[16px] border p-6 sm:flex-row sm:items-center sm:justify-between'

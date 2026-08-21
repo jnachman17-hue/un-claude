@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -44,18 +46,60 @@ export function SiteHeaderAccountSection() {
   const signOut = useSignOut();
   const { data: user } = useUser();
 
-  if (!user) {
+  /*
+   * AN ANONYMOUS SESSION IS NOT A SIGNED-IN PERSON. 04 entry 97: every
+   * visitor who sanitises holds a guest account, so `user` exists for most
+   * of the site's traffic. Showing them the account dropdown would present
+   * an account they never created and cannot sign back into. Guests see the
+   * ordinary Sign In / Sign Up buttons, which is also the ladder's next rung.
+   */
+  if (!user || user.is_anonymous === true) {
     return <AuthButtons />;
   }
 
   return (
-    <PersonalAccountDropdown
-      showProfileName={false}
-      paths={paths}
-      features={features}
-      user={user}
-      signOutRequested={() => signOut.mutateAsync()}
-    />
+    <div className={'flex items-center gap-2.5'}>
+      <BalancePill />
+
+      <PersonalAccountDropdown
+        showProfileName={false}
+        paths={paths}
+        features={features}
+        user={user}
+        signOutRequested={() => signOut.mutateAsync()}
+      />
+    </div>
+  );
+}
+
+/**
+ * The balance, always one glance away for an account holder, linking to the
+ * wallet. Renders nothing until the fetch answers, so the header never shows
+ * a number it is not sure of.
+ */
+function BalancePill() {
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    void fetch('/api/credits', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data: { balance: number | null }) => {
+        if (typeof data.balance === 'number') setBalance(data.balance);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  if (balance === null) return null;
+
+  return (
+    <Link
+      href={paths.home}
+      className={
+        'bg-foreground/[0.05] text-foreground hover:bg-foreground/[0.09] rounded-full px-3 py-1.5 text-[12.5px] font-semibold tabular-nums transition-colors'
+      }
+    >
+      {balance} {balance === 1 ? 'credit' : 'credits'}
+    </Link>
   );
 }
 

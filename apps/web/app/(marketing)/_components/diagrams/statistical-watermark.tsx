@@ -1,109 +1,127 @@
 /**
- * How the statistical watermark is put in, and how a rewrite takes it out.
+ * How the statistical watermark is put in.
  *
- * Jon described this picture almost exactly: a token, a key with an arrow down
- * into it, three synonyms, and the key steering the choice. That is the correct
- * mental model and it is worth drawing properly, because every wrong intuition
- * about this product comes from imagining the mark as something added between
- * the words rather than as the choice of the words themselves.
+ * REDRAWN TO JON'S OWN SPEC, 20 August 2026, and it is the better drawing:
+ * the sentence stops at a blank, a line drops from the blank through a secret
+ * key pill, and splits into three fingers, one per candidate word. The fingers
+ * to the rejected words are red, the finger to the chosen word is green. The
+ * old version put the key in a floating badge with an arrow, which made the
+ * key look like an annotation; here the key sits ON the line between the
+ * sentence and the choice, which is where it actually is.
  *
  * Sourced from ENGINE.md section 2. Anthropic uses a variant of SynthID-Text:
  * the preceding few words plus a secret key seed a function, candidates are
- * sampled from the model's real distribution, and a tournament picks the winner.
- * Signal survives only where runs of consecutive words survive, which is why the
- * attack is breaking runs rather than changing vocabulary.
+ * sampled from the model's real distribution, and a tournament picks the
+ * winner. The signal survives only in unbroken stretches of the original
+ * words, which is why the attack is breaking the sequence, not the vocabulary.
  */
 export function StatisticalWatermarkDiagram({ className }: { className?: string }) {
-  const candidates = [
-    { word: 'grey', chosen: false },
-    { word: 'overcast', chosen: true },
-    { word: 'gloomy', chosen: false },
+  // Pill row geometry, shared by the fingers and the pills themselves.
+  const pills = [
+    { word: 'grey', x: 24, chosen: false },
+    { word: 'overcast', x: 168, chosen: true },
+    { word: 'gloomy', x: 312, chosen: false },
   ];
+  const pillWidth = 128;
+  const pillTop = 150;
+  const blankCenterX = 159;
+  const branchY = 124;
 
   return (
     <svg
-      viewBox={'0 0 460 320'}
+      viewBox={'0 0 460 282'}
       className={className}
       role={'img'}
       aria-label={
-        'A secret key steering the model between three equally good synonyms, repeated across a sentence to form a signature'
+        'A sentence stopping at a blank, with a line running from the blank through a secret key and splitting toward three candidate words, green to the chosen word and red to the rejected ones'
       }
     >
-      <defs>
-        <marker id={'arrow-down'} markerWidth={7} markerHeight={7} refX={3.5} refY={6} orient={'auto'}>
-          <path d={'M 0 0 L 3.5 6 L 7 0'} className={'fill-none stroke-foreground/45'} strokeWidth={1.4} />
-        </marker>
-      </defs>
-
       <g fontFamily={'var(--font-sans), sans-serif'}>
-        <text x={24} y={26} fontSize={11} className={'fill-muted-foreground'}>
-          1. The model reaches a word where several choices are equally good
+        <text x={24} y={24} fontSize={11} className={'fill-muted-foreground'}>
+          At many words, several choices read equally well
         </text>
 
+        {/* The sentence, stopping at a blank where the next word goes. */}
         <text
           x={24}
-          y={62}
+          y={58}
           fontSize={15}
           fontFamily={'var(--font-mono), monospace'}
           className={'fill-foreground'}
         >
           The sky was
         </text>
-
-        {/* The key, sitting above the choice it steers. */}
-        <g transform={'translate(232, 74)'}>
-          <rect x={-58} y={0} width={116} height={30} rx={8} className={'fill-foreground'} />
-          <circle cx={-38} cy={15} r={5.5} className={'fill-none stroke-background'} strokeWidth={2} />
-          <path d={'M -33 15 L -21 15 M -25 15 L -25 20 M -21 15 L -21 21'} className={'stroke-background'} strokeWidth={2} fill={'none'} strokeLinecap={'round'} />
-          <text x={4} y={20} fontSize={11.5} textAnchor={'middle'} className={'fill-background font-medium'}>
-            secret key
-          </text>
-        </g>
-
         <path
-          d={'M 232 106 L 232 128'}
-          className={'stroke-foreground/45'}
-          strokeWidth={1.4}
+          d={'M 132 63 L 186 63'}
+          className={'stroke-foreground/60'}
+          strokeWidth={1.5}
+          strokeLinecap={'round'}
           fill={'none'}
-          markerEnd={'url(#arrow-down)'}
         />
 
-        {candidates.map((candidate, index) => {
-          const x = 24 + index * 148;
-          return (
-            <g key={candidate.word}>
-              <rect
-                x={x}
-                y={138}
-                width={132}
-                height={38}
-                rx={9}
-                className={candidate.chosen ? 'fill-mark animate-chosen' : 'fill-foreground/[0.045]'}
-              />
-              <text
-                x={x + 66}
-                y={162}
-                textAnchor={'middle'}
-                fontSize={14}
-                fontFamily={'var(--font-mono), monospace'}
-                className={candidate.chosen ? 'fill-mark-foreground font-medium' : 'fill-foreground/55'}
-              >
-                {candidate.word}
-              </text>
-            </g>
-          );
-        })}
+        {/* The trunk, dropping from the blank, with the key pill sitting ON it. */}
+        <path
+          d={`M ${blankCenterX} 70 L ${blankCenterX} ${branchY}`}
+          className={'stroke-foreground/40'}
+          strokeWidth={1.4}
+          fill={'none'}
+        />
 
-        <text x={24} y={200} fontSize={11} className={'fill-muted-foreground'}>
-          2. The key picks one. Nothing was added, and the sentence reads normally
+        {/* Three fingers, one per candidate. Red to the rejected words, green
+            to the one the key picks. */}
+        {pills.map((pill) => (
+          <path
+            key={`finger-${pill.word}`}
+            d={`M ${blankCenterX} ${branchY} L ${pill.x + pillWidth / 2} ${pillTop}`}
+            className={pill.chosen ? 'stroke-emerald-600' : 'stroke-rose-500/70'}
+            strokeWidth={pill.chosen ? 1.8 : 1.4}
+            strokeLinecap={'round'}
+            fill={'none'}
+          />
+        ))}
+
+        {/* The key pill, overlapping the trunk. */}
+        <rect x={111} y={84} width={96} height={26} rx={13} className={'fill-foreground'} />
+        <g className={'stroke-background'} strokeWidth={1.8} fill={'none'} strokeLinecap={'round'}>
+          <circle cx={126} cy={97} r={4.5} />
+          <path d={'M 130.5 97 L 141 97 M 136 97 L 136 101.5 M 141 97 L 141 102'} />
+        </g>
+        <text x={147} y={101} fontSize={10.5} className={'fill-background font-medium'}>
+          secret key
         </text>
 
-        {/* The chain across a whole paragraph. */}
-        <text x={24} y={236} fontSize={11} className={'fill-muted-foreground'}>
-          3. Repeated at every such word, the run of choices becomes the signature
+        {pills.map((pill) => (
+          <g key={pill.word}>
+            <rect
+              x={pill.x}
+              y={pillTop}
+              width={pillWidth}
+              height={38}
+              rx={9}
+              className={pill.chosen ? 'fill-emerald-600 animate-chosen' : 'fill-foreground/[0.045]'}
+            />
+            <text
+              x={pill.x + pillWidth / 2}
+              y={pillTop + 24}
+              textAnchor={'middle'}
+              fontSize={14}
+              fontFamily={'var(--font-mono), monospace'}
+              className={pill.chosen ? 'fill-white font-medium' : 'fill-foreground/55'}
+            >
+              {pill.word}
+            </text>
+          </g>
+        ))}
+
+        <text x={24} y={216} fontSize={11} className={'fill-muted-foreground'}>
+          The key makes the pick. The sentence reads normally either way
         </text>
 
-        <g transform={'translate(24, 248)'}>
+        <text x={24} y={242} fontSize={11} className={'fill-muted-foreground'}>
+          Repeated across a passage, the pattern of picks becomes the signature
+        </text>
+
+        <g transform={'translate(24, 252)'}>
           {Array.from({ length: 14 }).map((_, index) => (
             <rect
               key={index}
@@ -119,13 +137,6 @@ export function StatisticalWatermarkDiagram({ className }: { className?: string 
             />
           ))}
         </g>
-
-        <text x={24} y={296} fontSize={11} className={'fill-muted-foreground'}>
-          4. A rewrite that never repeats more than three of your words in a row
-        </text>
-        <text x={24} y={312} fontSize={11} className={'fill-muted-foreground'}>
-          breaks the run the signature is carried in. That is what sanitising does.
-        </text>
       </g>
     </svg>
   );

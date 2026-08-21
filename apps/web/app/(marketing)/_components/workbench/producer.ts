@@ -11,17 +11,41 @@
  * kind of claim this product is built not to make.
  */
 
+/**
+ * PRODUCT NAMES FIRST, ordered most specific to least.
+ *
+ * Jon, 20 August 2026, testing with a ChatGPT-generated image: it should say
+ * ChatGPT, because that is the thing he used and the name he recognises.
+ * Nobody thinks "I made this in OpenAI". The coverage table already leads with
+ * the product for the same reason, `04` entry 50.
+ *
+ * Specific patterns run first so the name stays TRUE rather than merely
+ * recognisable: a file whose metadata says DALL-E is reported as DALL-E, and
+ * only a file that names the company and no product falls back to the company.
+ * Claiming "ChatGPT" over a raw API image would be a guess, and this is the one
+ * place the product speaks with certainty about somebody's own file.
+ */
 const VENDORS: Array<[RegExp, string]> = [
-  [/anthropic|claude/i, 'Anthropic'],
-  [/openai|dall[\s-]?e|gpt/i, 'OpenAI'],
-  [/google|gemini|imagen|synthid|vertex/i, 'Google'],
-  [/adobe|firefly/i, 'Adobe Firefly'],
+  [/claude/i, 'Claude'],
+  [/anthropic/i, 'Anthropic'],
+  [/chat[\s-]?gpt/i, 'ChatGPT'],
+  [/dall[\s-]?e/i, 'DALL-E'],
+  [/gpt|openai/i, 'ChatGPT'],
+  [/gemini/i, 'Gemini'],
+  [/imagen/i, 'Imagen'],
+  [/google|synthid|vertex/i, 'Google'],
+  [/firefly/i, 'Adobe Firefly'],
+  [/adobe/i, 'Adobe'],
   [/midjourney/i, 'Midjourney'],
-  [/stability|stable[\s-]?diffusion/i, 'Stability AI'],
-  [/black[\s-]?forest|flux/i, 'Black Forest Labs'],
-  [/microsoft|designer|copilot/i, 'Microsoft'],
+  [/stable[\s-]?diffusion/i, 'Stable Diffusion'],
+  [/stability/i, 'Stability AI'],
+  [/flux/i, 'FLUX'],
+  [/black[\s-]?forest/i, 'Black Forest Labs'],
+  [/copilot|designer/i, 'Microsoft Designer'],
+  [/microsoft/i, 'Microsoft'],
   [/canva/i, 'Canva'],
-  [/grok|xai/i, 'xAI'],
+  [/grok/i, 'Grok'],
+  [/xai/i, 'xAI'],
 ];
 
 /**
@@ -58,12 +82,19 @@ export function provenanceItems(
 
   const items: Array<{ key: string; head: string; body: string }> = [];
 
+  /*
+   * ONE LINE EACH, SCANNABLE AT A GLANCE. Jon, 20 August 2026, opening this on
+   * a ChatGPT image: "I need to read this in one glance and easily. I don't
+   * want a blobber of words." Each entry is now a label and a short phrase
+   * rather than a label and a sentence, and the checklist renders them as a
+   * tight list. The teaching about what C2PA is lives on /how-it-works, where
+   * somebody who wants it has room for it.
+   */
   if (report.has_c2pa === true) {
     items.push({
       key: 'c2pa',
       head: 'Content credentials',
-      body:
-        'A signed record of what made this file, attached by the tool that generated it. This is the industry standard and it is removable by design.',
+      body: 'A signed record naming the tool that made this file',
     });
   }
 
@@ -71,14 +102,14 @@ export function provenanceItems(
     items.push({
       key: 'ai-meta',
       head: 'Generator tags',
-      body: 'Fields inside the file naming the software that produced it.',
+      body: 'Fields naming the software that produced it',
     });
   }
 
   const findings = Array.isArray(report.findings) ? (report.findings as unknown[]) : [];
   findings.slice(0, 4).forEach((finding, index) => {
     if (typeof finding !== 'string') return;
-    items.push({ key: `finding-${index}`, head: 'Found', body: finding });
+    items.push({ key: `finding-${index}`, head: 'Also found', body: finding });
   });
 
   return items;
