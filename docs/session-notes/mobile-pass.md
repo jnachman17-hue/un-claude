@@ -78,6 +78,15 @@ and it is not sufficient.
 
 Every change, current state to new state, for Jon to ratify.
 
+**And there is a picture of it.** `docs/mobile-before-after.png` is every page
+at 390px, before and after, side by side, same phone and same scale, taken the
+same evening. **That is the thing to look at first.** It is deliberately
+outside this folder so it survives when these notes are merged and deleted.
+
+To regenerate it after further changes: `cd apps/e2e && node mobile-shots.mjs
+<path> <outdir>` for each page into a before and an after directory, then
+compose. Both scripts are committed and carry their own instructions.
+
 ### Shared, so every page gets it
 
 | # | What | Before | After |
