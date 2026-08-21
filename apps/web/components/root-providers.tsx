@@ -12,7 +12,6 @@ import { VersionUpdater } from '@kit/ui/version-updater';
 
 import { AnalyticsProvider } from '~/components/analytics-provider';
 import { AuthProvider } from '~/components/auth-provider';
-import appConfig from '~/config/app.config';
 import authConfig from '~/config/auth.config';
 import featuresFlagConfig from '~/config/feature-flags.config';
 
@@ -35,14 +34,12 @@ const CaptchaTokenSetter = dynamic(async () => {
 export function RootProviders({
   locale,
   messages,
-  theme = appConfig.theme,
   children,
 }: React.PropsWithChildren<{
   // The locale to use for the app
   locale: string;
   // The i18n messages
   messages: AbstractIntlMessages;
-  theme?: string;
 }>) {
   return (
     <ReactQueryProvider>
@@ -53,11 +50,22 @@ export function RootProviders({
           <AnalyticsProvider />
 
           <AuthProvider>
+            {/* Dark mode retired, 20 August 2026: Jon's instruction was
+                direct ("get rid of dark version... we don't need dark
+                version anymore"). `enableSystem` is off so the OS
+                preference can no longer flip the site into it, and the
+                toggle that let a visitor switch manually is gone from the
+                header. The `dark:` utility classes elsewhere in the
+                codebase are left in place rather than stripped file by
+                file — with no `.dark` class ever applied, they are inert,
+                and removing hundreds of them individually risked breaking
+                something for no visible gain. */}
             <ThemeProvider
               attribute="class"
-              enableSystem
+              enableSystem={false}
               disableTransitionOnChange
-              defaultTheme={theme}
+              defaultTheme={'light'}
+              forcedTheme={'light'}
               enableColorScheme={false}
             >
               {children}

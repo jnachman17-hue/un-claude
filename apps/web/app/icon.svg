@@ -1,8 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26">
-  <style>
-    .u { stroke: #292524; }
-    @media (prefers-color-scheme: dark) { .u { stroke: #e7e5e4; } }
-  </style>
-  <path class="u" d="M5 4.5 V13 a8 8 0 0 0 16 0 V10.5" fill="none" stroke-width="3.6" stroke-linecap="round"/>
-  <rect x="19.4" y="0.6" width="3.4" height="7" rx="1.7" transform="rotate(18 21 4.1)" fill="#C15F3C"/>
+  <!-- The favicon / app-icon mark, `04` entry 99: the wordmark's own idea (a
+       strike through the word "Claude") has no word left to strike at 16px,
+       so this is a deliberately separate concept rather than a derivation of
+       it — a solid tile in the accent colour with a white cut through it,
+       the same "knock a gap out of the orange" device the wordmark's own
+       strike-through uses, so the two marks read as one family.
+
+       Fixed colours, not theme-aware: unlike the wordmark, this tile carries
+       its own background, so it doesn't need to track the page's theme.
+       Replaces the struck-through "U" fallback from entry 87, which Jon
+       twice called out as weak on its own — this is a genuinely separate
+       round, not a fix to that one.
+
+       Ported from the ratified Mark export in
+       app/prototypes/logo/variants/tile.tsx, which is deleted once this and
+       the rest of the icon round land. -->
+  <rect x="1" y="1" width="24" height="24" rx="6" fill="oklch(60% 0.140 38)"/>
+  <path d="M8.25 17.75 L17.75 8.25" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
 </svg>

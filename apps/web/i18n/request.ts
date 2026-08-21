@@ -4,6 +4,13 @@
  *
  * Namespaces live in separate files under `messages/${locale}/`, so adding a
  * namespace means adding a file here and an entry in `namespaces` below.
+ *
+ * Editing a messages JSON alone does not always reach a running dev server:
+ * the marketing pages' cached shells hold the old strings until something in
+ * this module graph actually changes. If a label edit refuses to show up,
+ * restart the dev server rather than hunting a phantom second source; the
+ * JSON files are the only source. Learned 20 August 2026 with
+ * `marketing.mission`.
  */
 import { getRequestConfig } from 'next-intl/server';
 

@@ -5,7 +5,6 @@ import { Toaster } from '@kit/ui/sonner';
 import { cn } from '@kit/ui/utils';
 
 import { RootProviders } from '~/components/root-providers';
-import appConfig from '~/config/app.config';
 import { heading, mono, sans } from '~/lib/fonts';
 import { generateRootMetadata } from '~/lib/root-metdata';
 
@@ -35,11 +34,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={getClassName()} suppressHydrationWarning>
       <body>
-        <RootProviders
-          theme={appConfig.theme}
-          locale={locale}
-          messages={messages}
-        >
+        <RootProviders locale={locale} messages={messages}>
           {children}
 
           {/* inside the providers so it can follow next-themes reactively */}
