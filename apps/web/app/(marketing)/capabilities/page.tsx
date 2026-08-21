@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { CtaBand } from '../_components/cta-band';
+import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { PageHeader } from '../_components/prose';
 
 export const metadata = {
@@ -350,9 +351,25 @@ function Capabilities() {
                 >
                   {claim.head}
                 </h2>
-                <p className={'text-muted-foreground mt-1.5 max-w-[38ch] text-[14px] leading-[1.6]'}>
-                  {claim.body}
-                </p>
+                {/*
+                  THE HEAD IS THE CLAIM, THE BODY IS THE EXPLANATION.
+                  21 August 2026.
+
+                  "Hidden characters: removed and shown", "Metadata: removed
+                  and proven", "Statistical watermark: sanitised and
+                  measured": each head already carries its own strength of
+                  claim, which is what makes it safe to put the four lines
+                  under it behind a plus on a phone. Read the three heads in a
+                  row and the boundary between what is proven and what is
+                  measured is still legible without opening anything.
+                */}
+                <div className={'mt-1.5 w-full sm:contents'}>
+                  <MobileDisclosure label={'What this means'}>
+                    <p className={'text-muted-foreground max-w-[38ch] text-[14px] leading-[1.6] sm:mt-1.5'}>
+                      {claim.body}
+                    </p>
+                  </MobileDisclosure>
+                </div>
                 <Link
                   href={claim.anchor}
                   className={

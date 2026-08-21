@@ -14,7 +14,9 @@ export function AuthLayoutShell({
     <>
       <div
         className={cn(
-          'animate-in fade-in slide-in-from-top-16 zoom-in-95 flex h-screen flex-col items-center justify-center gap-y-8 duration-1000',
+          // `px-5` below `sm`: at 390px the form ran edge to edge and the
+          // inputs touched both sides of the screen. 21 August 2026.
+          'animate-in fade-in slide-in-from-top-16 zoom-in-95 flex h-screen flex-col items-center justify-center gap-y-8 px-5 duration-1000 sm:px-0',
           className,
         )}
       >

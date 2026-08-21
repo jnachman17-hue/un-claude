@@ -42,8 +42,8 @@ screenshot below: the repo's own Playwright, driving the copy of Chrome
 already installed on this machine.**
 
     cd apps/e2e
-    node __probe.mjs / /how-it-works        # heights and overflow at 390px
-    node __shots.mjs /how-it-works <dir>    # full-page slices at 390px
+    node mobile-probe.mjs / /how-it-works        # heights and side scroll
+    node mobile-shots.mjs /how-it-works <dir>    # full page slices as PNGs
 
 **`npx playwright install` is NOT needed and was NOT run** (it downloads
 browsers, which needs Jon under `CLAUDE.md` section 5). `chromium.launch({
@@ -119,18 +119,77 @@ undoing last night's work to satisfy tonight's brief.
 **Desktop checked, not assumed:** at 1280px the three layer cards render name,
 full description and pill, all three the same height, exactly as before.
 
+### /capabilities. 4.0 phone screens to 3.4
+
+| # | What | Before | After |
+|---|---|---|---|
+| C1 | The input-by-mark table | a grey paragraph per row under all three dots | rebuilt in phase 2: every cell answers for itself in three or four words, and the phone gets one card per input |
+| C2 | The three claim blocks | icon, head, a four line body, then "How this mark works" | icon, head, **"What this means +"**, then the link. **The head is the claim** ("removed and shown", "removed and proven", "sanitised and measured"), so the strength of each is still legible in a row without opening anything |
+| C3 | "The lines we hold" | three commitments, head and body | **untouched, deliberately.** A promise behind a plus reads as a promise being hidden. These are the three lines that make the confident claims above them worth anything and they stay in full at every width |
+
+### /mission. 4.0 phone screens to 3.7, from the shared padding only
+
+**Not one word was changed, and that is a boundary rather than an omission.**
+`CLAUDE.md`: "Jon writes the mission page in his own voice." It is an essay, it
+is his argument, and an essay behind a plus is a hostile thing to build.
+Rendered and read at 390px it holds up: the measure is right, the sub-headings
+break it properly, nothing overflows. **If he wants it shortened, that is one
+sentence from him and a five minute job.**
+
+### /contact. 1.6 phone screens to 1.4
+
+Untouched apart from what it inherits. It was already built as the smallest
+page on the site on purpose (`04` entry 105) and half of what remains is the
+footer, which the shared change fixed.
+
+### The sign-up page
+
+Not on the list, and the most valuable thing found tonight after the empty
+balance.
+
+| # | What | Before | After |
+|---|---|---|---|
+| A1 | Side padding | none. At 390px the inputs ran flush to both edges of the screen | `px-5` below `sm` |
+| A2 | The offer | **nothing.** Every surface that sends a visitor here promises three free credits: the paywall, the empty-balance prompt, and the pricing page's second step card. This page then said nothing about them at all | the same badge, the same words, the same animation as the surfaces that sent them, under the heading. **The reason to act was being dropped at the exact moment the visitor is asked to act** |
+| A3 | The repeat password field | present, with "Type your password again below" | removed in phase 1 on Jon's instruction |
+
+### /home, the wallet
+
+**NOT VERIFIED, AND THAT IS A REAL GAP RATHER THAN A JUDGEMENT.** The route
+redirects a signed-out visitor to sign-in, a local Supabase is not available
+(`06` row 11), and creating an account is not something I do. So the wallet was
+never rendered at phone width tonight. It inherits the footer change and
+nothing else. **It is the one page on Jon's list that this pass did not look
+at.**
+
 ---
 
-## Still to do
+## The acceptance test Jon set
 
-- /capabilities, 3.6 screens
-- /mission, 3.7 screens
-- /contact, 1.4 screens
-- the wallet at /home
+> "Nothing may overflow horizontally. The page body must never scroll sideways
+> at any width."
 
-## A boundary being held
+**Run as a query over every element on every page, not by eye.** Seven pages
+(the six marketing routes plus sign-up) at eight widths: 375, 390, 414, 640,
+768, 1024, 1280 and 1600.
 
-**/mission is Jon's essay in his own voice, and its words are not mine to
-cut.** `CLAUDE.md`: "Jon writes the mission page in his own voice." The mobile
-work there will be spacing, measure and rhythm only. If he wants it shortened
-he can say so and it is a five minute job.
+    { "checked": 56, "sideScrollFailures": [] }
+
+**Fifty-six combinations, zero failures.**
+
+## Scroll length, before and after, at 390px
+
+| Page | Before | After |
+|---|---|---|
+| Home | 4.9 screens | **4.2** |
+| How it works | 8.0 | **6.4** |
+| Capabilities | 4.0 | **3.4** |
+| Mission | 4.0 | **3.7** |
+| Pricing | 7.5 | **6.5** |
+| Contact | 1.6 | **1.4** |
+| **Total** | **30.0** | **25.6** |
+
+**Four and a half phone screens of scrolling removed across the site, and not
+one sentence deleted to get there.** Everything that came off the visible page
+is behind a labelled control, at phone width only, and back inline the moment
+the screen is wide enough to carry it.

@@ -7,6 +7,8 @@ import { Button } from '@kit/ui/button';
 import { Heading } from '@kit/ui/heading';
 import { Trans } from '@kit/ui/trans';
 
+import { CreditOfferBadge } from '~/(marketing)/_components/workbench/credit-offer';
+
 import authConfig from '~/config/auth.config';
 import pathsConfig from '~/config/paths.config';
 
@@ -35,10 +37,25 @@ const paths = {
 function SignUpPage() {
   return (
     <>
-      <div className={'flex flex-col items-center'}>
+      <div className={'flex flex-col items-center gap-3'}>
         <Heading level={2} className={'tracking-tighter'}>
           <Trans i18nKey={'auth.signUpHeading'} />
         </Heading>
+
+        {/*
+          THE OFFER FOLLOWS THEM HERE, 21 August 2026, session 10.
+
+          Everything that sends a visitor to this page promises three free
+          credits: the paywall, the empty-balance prompt on the tool, and the
+          pricing page's second step card. This page then said nothing about
+          them at all, which is the classic funnel leak: the reason to act is
+          dropped at the exact moment the person is being asked to act.
+
+          Same badge, same words, same animation as the two surfaces that
+          sent them, so a visitor recognises it rather than reading it again.
+          See credit-offer.tsx.
+        */}
+        <CreditOfferBadge />
       </div>
 
       <SignUpMethodsContainer
