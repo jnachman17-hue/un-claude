@@ -31,8 +31,25 @@
  *
  * The uuid form's default is REMOVED so the two forms can never be ambiguous to
  * PostgREST: a no-argument call resolves to credit_balance(), a one-argument
- * call to credit_balance(uuid). Idempotent: create-or-replace both.
+ * call to credit_balance(uuid).
+ *
+ * WHY THE DROP BELOW IS NOT OPTIONAL. The existing function is declared
+ * `credit_balance(target_account uuid default null)`, and PostgreSQL refuses to
+ * take a default away with CREATE OR REPLACE — it raises
+ * "cannot remove parameter defaults from existing function" and the migration
+ * stops. The old form has to be dropped and recreated. Nothing else in the
+ * database depends on it (no view, no other function), only application code.
+ *
+ * WRAPPED IN A TRANSACTION so there is never a moment where the balance
+ * function is missing while the live site is calling it. Idempotent and safe to
+ * re-run: `drop ... if exists`, then create-or-replace.
  */
+
+begin;
+
+-- Drop the old `uuid default null` form FIRST. Recreated below without the
+-- default, so the no-arg and one-arg forms can never be ambiguous.
+drop function if exists public.credit_balance(uuid);
 
 -- The self-only form any signed-in user may call. No argument, so nothing to
 -- point at another account.
@@ -51,6 +68,7 @@ $$;
 comment on function public.credit_balance() is
     'Credits available to the CALLER. Always resolves to auth.uid(); a signed-in user cannot read anyone else''s balance. security-audit.md finding 5.';
 
+revoke execute on function public.credit_balance() from public, anon;
 grant execute on function public.credit_balance() to authenticated, service_role;
 
 -- The explicit-account form is now service_role only. Default dropped so it is
@@ -71,6 +89,10 @@ $$;
 comment on function public.credit_balance(uuid) is
     'Credits available to a NAMED account. service_role only — used by the server''s own credit code. Not executable by authenticated: that is the finding-5 leak this closes.';
 
--- Close the leak: strip execute from everyone except the server.
-revoke execute on function public.credit_balance(uuid) from public, authenticated;
+-- Close the leak: strip execute from everyone except the server. A freshly
+-- created function is granted EXECUTE to PUBLIC by default, so this revoke is
+-- what actually closes it, not just tidiness.
+revoke execute on function public.credit_balance(uuid) from public, anon, authenticated;
 grant execute on function public.credit_balance(uuid) to service_role;
+
+commit;

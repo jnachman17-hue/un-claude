@@ -17,10 +17,20 @@
  * even the table owner, regardless of what privileges some later migration
  * hands out.
  *
- * THE ONE THING IT MUST NOT BREAK. Deleting an account must still remove that
- * account's ledger rows — the FK is `on delete cascade` and the privacy policy
- * promises deletion really deletes. So the trigger has to tell two kinds of
- * DELETE apart:
+ * THE ONE THING IT MUST NOT BREAK. Deleting a `public.accounts` row must still
+ * remove that account's ledger rows: the FK is `on delete cascade`. So the
+ * trigger has to tell two kinds of DELETE apart:
+ *
+ * (A NOTE ON WHAT THAT CASCADE ACTUALLY REACHES TODAY, verified 21 August 2026
+ * rather than assumed. `credit_ledger.account_id -> accounts.id on delete
+ * cascade` is real. But `public.accounts.id` carries NO foreign key to
+ * `auth.users`, so `auth.admin.deleteUser()` — the product's own delete-account
+ * path — removes the sign-in and leaves the accounts row AND the ledger
+ * standing. The privacy policy already describes this accurately. So nothing
+ * legitimately deletes ledger rows today and this trigger blocks every delete,
+ * which is the intended state; if the missing foreign key is ever added, the
+ * cascade fires and the branch below lets it through. See 06, "Should deleting
+ * an account delete the ledger?")
  *
  *   - a DIRECT delete against credit_ledger (nobody should ever do this) -> REFUSE
  *   - the FK CASCADE fired by deleting the owning account row            -> ALLOW
@@ -42,6 +52,8 @@
  * Idempotent and safe to re-run: `create or replace` the function and
  * `drop trigger if exists` before each `create trigger`.
  */
+
+begin;
 
 create or replace function public.credit_ledger_append_only()
     returns trigger
@@ -96,3 +108,5 @@ create trigger credit_ledger_append_only_truncate
     on public.credit_ledger
     for each statement
 execute function public.credit_ledger_append_only();
+
+commit;

@@ -19,6 +19,8 @@
  * function below, which is service_role only. Idempotent and safe to re-run.
  */
 
+begin;
+
 create table if not exists
     public.rate_limits
 (
@@ -111,3 +113,5 @@ comment on function public.rate_limits_prune is
 
 revoke execute on function public.rate_limits_prune(interval) from public, anon, authenticated;
 grant execute on function public.rate_limits_prune(interval) to service_role;
+
+commit;

@@ -30,6 +30,8 @@
  * Idempotent and safe to re-run.
  */
 
+begin;
+
 alter table public.credit_ledger
     add column if not exists grant_email text;
 
@@ -40,3 +42,5 @@ comment on column public.credit_ledger.grant_email is
 create unique index if not exists credit_ledger_one_signup_grant_per_email
     on public.credit_ledger (grant_email)
     where reason = 'signup_grant' and grant_email is not null;
+
+commit;

@@ -448,7 +448,15 @@ convention; the combined SQL is in the final chat message.
 | `20260821120300_signup_grant_email_dedupe.sql` | `grant_email` column + per-inbox unique index | Only adds a nullable column and a partial index; existing rows are untouched (null `grant_email` is ignored by the index). |
 
 All four are **idempotent and safe to re-run** (`if not exists`,
-`create or replace`, `drop trigger if exists`).
+`create or replace`, `drop trigger if exists`) and each is **wrapped in
+`begin; … commit;`**, so pasting one either fully applies or fully does not.
+
+**One of them drops a function, and that is not optional.**
+`20260821120100` must `drop function public.credit_balance(uuid)` before
+recreating it, because PostgreSQL refuses to take a parameter default away with
+`create or replace` — it raises `cannot remove parameter defaults from existing
+function` and stops. The drop and the recreate are inside the same transaction,
+so there is never a moment where the live site can call a missing function.
 
 **Order:** any order works, but run them **before** deploying the code, or right
 after. The code is written to survive an unmigrated database in both directions:
