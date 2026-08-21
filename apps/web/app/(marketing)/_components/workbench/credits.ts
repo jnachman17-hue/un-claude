@@ -138,3 +138,27 @@ export function devMode(): boolean {
 
   return window.localStorage.getItem(DEV_KEY) === '1';
 }
+
+/**
+ * WHAT IS CURRENTLY LYING TO YOU, so the interface can say so out loud.
+ * Added 21 August 2026.
+ *
+ * Both of these switches make the credit system LOOK broken while working
+ * perfectly: with the bypass on, a sanitise succeeds, charges nothing, creates
+ * no session and writes no ledger row, so the balance sits at its opening
+ * figure for ever. Jon hit exactly that and reasonably read it as a bug,
+ * after being sent to /dev/credits to use the other switch on the same page.
+ *
+ * A testing tool that silently disables the thing under test is a trap. The
+ * workbench now prints this state when either is set. Development only: both
+ * constants are compiled out of a production build.
+ */
+export function devOverrides(): { bypass: boolean; forced: string | null } {
+  if (process.env.NODE_ENV !== 'development') return { bypass: false, forced: null };
+  if (typeof window === 'undefined') return { bypass: false, forced: null };
+
+  return {
+    bypass: window.localStorage.getItem(DEV_KEY) === '1',
+    forced: window.localStorage.getItem(DEV_BALANCE_KEY),
+  };
+}

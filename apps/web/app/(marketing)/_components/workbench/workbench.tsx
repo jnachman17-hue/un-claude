@@ -9,6 +9,7 @@ import {
   FileUpIcon,
   ImageIcon,
   SparklesIcon,
+  TriangleAlertIcon,
   UploadCloudIcon,
   WandSparklesIcon,
   XIcon,
@@ -36,6 +37,7 @@ import {
   costFor,
   countWords,
   devMode,
+  devOverrides,
   ensureSession,
   fetchCredits,
 } from './credits';
@@ -151,6 +153,15 @@ export function Workbench() {
    * boundary and take the landing page's static render with it.
    */
   const [welcoming, setWelcoming] = useState(false);
+  /**
+   * Whether a development switch is currently making the credit system look
+   * broken. Read in an effect so the server render and the first client render
+   * agree. See devOverrides() for why this is worth showing.
+   */
+  const [overrides, setOverrides] = useState<{
+    bypass: boolean;
+    forced: string | null;
+  }>({ bypass: false, forced: null });
 
   /**
    * Seconds spent on the current sanitise.
@@ -261,6 +272,7 @@ export function Workbench() {
 
   useEffect(() => {
     void fetchCredits().then(setCredits);
+    setOverrides(devOverrides());
   }, []);
 
   useEffect(() => {
@@ -1534,6 +1546,43 @@ export function Workbench() {
           shown while the paywall is up, because that screen is already
           making the identical offer inside the box above.
         */}
+        {/*
+          THE TESTING SWITCHES, SAID OUT LOUD. 21 August 2026.
+
+          With the bypass on, a sanitise succeeds and charges nothing, so the
+          balance never moves and the credit system reads as broken while it
+          is in fact switched off. Jon lost a round trip to exactly that.
+          Development only, and the whole block compiles out of production.
+        */}
+        {overrides.bypass || overrides.forced ? (
+          <div
+            className={
+              'border-amber-500/40 bg-amber-500/[0.09] mb-3 flex items-center gap-2.5 rounded-[11px] border px-3 py-2'
+            }
+          >
+            <TriangleAlertIcon
+              className={'size-[15px] shrink-0 text-amber-600'}
+              strokeWidth={2.2}
+              aria-hidden
+            />
+            <span className={'text-foreground min-w-0 flex-1 text-[12px] leading-snug'}>
+              <span className={'font-semibold'}>Testing mode is on.</span>{' '}
+              {overrides.bypass
+                ? 'Sanitising is not being charged and nothing is written to the ledger.'
+                : null}
+              {overrides.forced
+                ? ` The balance is pinned to "${overrides.forced}".`
+                : null}
+            </span>
+            <a
+              href={'/dev/credits'}
+              className={'text-foreground shrink-0 text-[12px] font-semibold underline underline-offset-2'}
+            >
+              Turn off
+            </a>
+          </div>
+        ) : null}
+
         {welcoming && typeof credits.balance === 'number' && credits.balance > 0 ? (
           <div className={'mb-3'}>
             <SignedInWelcome
