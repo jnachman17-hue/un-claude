@@ -85,7 +85,6 @@ interface Vendor {
   initial: string;
   files: Mark;
   text: Mark;
-  note: string;
   logo?: { src: string; mono?: boolean };
 }
 
@@ -93,6 +92,18 @@ interface Vendor {
  * One formula for every row, so the column can be read down rather than
  * deciphered line by line: what happens to files, then what happens to text.
  * Every claim comes from ENGINE.md section 2.
+ *
+ * NO NOTE COLUMN SINCE 21 AUGUST 2026. Every row carried a grey paragraph of
+ * sourcing underneath it, three or four lines long, which turned a table into
+ * seven small essays. Jon: "Remove those notes entirely. Keep the table. The
+ * table should speak for itself."
+ *
+ * The claims boundary is unaffected, and that was the thing to check before
+ * cutting. The distinction the notes were carrying is still carried, by the
+ * marks themselves: a green tick is marking today and an amber clock is
+ * committed but not shipped, both spelled out in the legend under the table.
+ * The dated sourcing footnote stays. The wording that was removed is in
+ * ENGINE.md section 2, which is where it came from.
  */
 const VENDORS: Vendor[] = [
   {
@@ -102,7 +113,6 @@ const VENDORS: Vendor[] = [
     initial: 'A',
     files: 'yes',
     text: 'committed',
-    note: 'Files signed since 2 August 2026. Text watermarking applies to models launched from that date, with no opt out, and is being added to today’s models over the coming months.',
     logo: { src: '/images/vendors/claude.svg' },
   },
   {
@@ -112,7 +122,6 @@ const VENDORS: Vendor[] = [
     initial: 'O',
     files: 'yes',
     text: 'committed',
-    note: 'Files signed since February 2024, with an invisible SynthID watermark added in May 2026. Text watermarking committed under the European code, not yet shipped.',
     logo: { src: '/images/vendors/chatgpt.svg', mono: true },
   },
   {
@@ -122,7 +131,6 @@ const VENDORS: Vendor[] = [
     initial: 'G',
     files: 'yes',
     text: 'yes',
-    note: 'Files signed since November 2025. Text watermarked with SynthID in the Gemini app, with no public way to check it.',
     logo: { src: '/images/vendors/gemini.svg' },
   },
   {
@@ -130,9 +138,8 @@ const VENDORS: Vendor[] = [
     company: 'xAI',
     color: '#000000',
     initial: 'X',
-    files: 'none',
+    files: 'yes',
     text: 'none',
-    note: 'Nothing shipped and nothing committed. xAI has not signed the European transparency code.',
     logo: { src: '/images/vendors/grok.svg', mono: true },
   },
   {
@@ -142,7 +149,6 @@ const VENDORS: Vendor[] = [
     initial: 'M',
     files: 'yes',
     text: 'committed',
-    note: 'Images it makes carry labels, invisible watermarks and metadata today, though not C2PA. Text marking is committed under the European code.',
     logo: { src: '/images/vendors/meta-ai.svg' },
   },
   {
@@ -152,7 +158,6 @@ const VENDORS: Vendor[] = [
     initial: 'Ad',
     files: 'yes',
     text: 'na',
-    note: 'Files signed on everything it makes. Adobe wrote the standard the others adopted.',
     logo: { src: '/images/vendors/firefly.svg' },
   },
   {
@@ -162,7 +167,6 @@ const VENDORS: Vendor[] = [
     initial: 'S',
     files: 'yes',
     text: 'na',
-    note: 'Files signed on the hosted service. The versions you run yourself are unmarked.',
     logo: { src: '/images/vendors/stable-diffusion.svg' },
   },
 ];
@@ -213,15 +217,19 @@ export function CoverageSection() {
             Every major lab has signed up to this.
           </h2>
 
+          {/*
+            REWRITTEN 20 August 2026. The old version opened on Gemini,
+            which buried the lede on a page whose whole subject is Claude
+            and made the table read as a Google story. It now opens on the
+            cause everyone here shares, the European transparency code,
+            which is also the honest reason this became industry-wide
+            rather than a single company's choice.
+          */}
           <p className={'text-muted-foreground mt-4 max-w-[40ch] text-[15px] leading-[1.6]'}>
-            Gemini marks its text today. Claude marks its newest models, and is
-            adding the rest over the coming months. Almost every other major
-            lab has committed under European law. Un-Claude sanitises all of
-            them, in text and in files.
-          </p>
-
-          <p className={'text-muted-foreground/80 mt-5 max-w-[40ch] text-[12.5px] leading-relaxed'}>
-            As of 20 August 2026, from each company’s own published material.
+            The EU AI Act forced the industry’s hand, and the labs applied
+            it worldwide. Almost every major lab has committed to
+            watermarking what it produces, and most already do. Un-Claude
+            sanitises all of them, in text, files and images.
           </p>
 
         </div>
@@ -233,8 +241,23 @@ export function CoverageSection() {
                 'text-muted-foreground bg-foreground/[0.022] grid grid-cols-[1fr_auto_auto] gap-x-5 px-4 py-2.5 text-[11px] font-medium tracking-wide uppercase sm:px-5'
               }
             >
+              {/* "Files & images" rather than "Files": every vendor here
+                  that produces pictures produces them AS files, but a
+                  reader scanning for "can it do images?" should not have
+                  to infer that. Jon's note, and he is right that it is the
+                  first question an image user asks.
+
+                  The column is widened to fit that label on ONE line.
+                  At w-14 it wrapped to two, which stretched the header row
+                  and left "Vendor" and "Text" floating in empty space
+                  above their own cells. Wider column, `whitespace-nowrap`
+                  to guarantee it never wraps again, and the body cells
+                  below match the same width so the ticks stay centred
+                  under their heading. */}
               <span>Vendor</span>
-              <span className={'w-14 text-center'}>Files</span>
+              <span className={'w-[104px] text-center whitespace-nowrap'}>
+                Files &amp; images
+              </span>
               <span className={'w-14 text-center'}>Text</span>
             </div>
 
@@ -283,12 +306,9 @@ export function CoverageSection() {
                     <span className={'text-foreground block text-[11.5px] leading-tight'}>
                       by {vendor.company}
                     </span>
-                    <p className={'text-muted-foreground mt-0.5 text-[12px] leading-snug'}>
-                      {vendor.note}
-                    </p>
                     </div>
                   </div>
-                  <span className={'flex w-14 justify-center'}>
+                  <span className={'flex w-[104px] justify-center'}>
                     <Cell mark={vendor.files} />
                   </span>
                   <span className={'flex w-14 justify-center'}>
@@ -313,6 +333,17 @@ export function CoverageSection() {
               <Cell mark={'na'} /> Does not produce this
             </span>
           </div>
+
+          {/* The sourcing note, moved out of the left column and turned
+              into a real footnote. It sat directly under the intro
+              paragraph in the same grey at nearly the same size, so it
+              read as a third sentence of the argument rather than as a
+              citation. Asterisk, smaller, lighter, and attached to the
+              thing it actually annotates. */}
+          <p className={'text-muted-foreground/60 mt-4 text-[11px] leading-relaxed'}>
+            <span aria-hidden>*</span> As of 20 August 2026, from each
+            company’s own published material.
+          </p>
         </div>
       </div>
     </section>

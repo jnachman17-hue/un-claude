@@ -1,166 +1,430 @@
-import { CheckIcon, MinusIcon, XIcon } from 'lucide-react';
+import Link from 'next/link';
 
-import { PageHeader, Section } from '../_components/prose';
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ClipboardPasteIcon,
+  EyeOffIcon,
+  FileTextIcon,
+  FingerprintIcon,
+  ImageIcon,
+  MinusIcon,
+  PaperclipIcon,
+  TypeIcon,
+} from 'lucide-react';
+
+import { CtaBand } from '../_components/cta-band';
+import { PageHeader } from '../_components/prose';
 
 export const metadata = {
-  title: 'What we can and cannot do',
+  title: 'What we can do',
   description:
-    'A precise statement of what Un-Claude removes, what it can prove, and what no tool in this category can currently verify.',
+    'Give Un-Claude pasted text, a Word document or an image, and this is exactly what happens to each: which marks come off, what comes back, and what we will put our name to.',
 };
 
 /**
- * The precise page.
+ * Rebuilt from scratch, 20 August 2026, on Jon's order. The old page was a
+ * single claims list that mixed capability, proof, teaching and terms-of-service
+ * material in one column, so "we support PDFs: no" sat next to "your text is
+ * stored: no" and neither answered the visitor's actual question.
  *
- * This is not a compliance chore. It is what makes a confident headline
- * defensible: a punchy claim above a page that states exactly what the tool does
- * and does not do is a far stronger position than the claim on its own.
+ * The question is: does it work on my thing? So the page now opens on an
+ * input-by-mark matrix in the landing page's own table grammar, follows with
+ * what each removal claims, and closes on the commitments. The teaching about
+ * which mark is Claude's lives at /how-it-works, where it belongs, and the
+ * pages point at each other.
  *
- * Every line is sourced from ENGINE.md section 9, which separates what was
- * measured from what was not. Nothing here should ever be softened to make the
- * marketing easier. If the two ever disagree, this page is right.
+ * The claims boundary throughout is .claude/skills/unclaude-messaging: the
+ * shared cell label is "sanitised", the one verb true of all three marks
+ * (04 entry 78 ruling 3), and proof language is layer-specific below.
  */
 
-const CLAIMS: Array<{
-  claim: string;
-  verdict: 'yes' | 'no' | 'partial';
-  detail: string;
+type Cell = 'yes' | 'na' | 'paste';
+
+const CELL: Record<Cell, { icon: typeof CheckIcon; className: string; label: string }> = {
+  yes: {
+    icon: CheckIcon,
+    className: 'bg-emerald-600 text-white',
+    label: 'Sanitised on this input',
+  },
+  na: {
+    icon: MinusIcon,
+    className: 'bg-foreground/12 text-foreground/40',
+    label: 'Nothing there to remove',
+  },
+  paste: {
+    icon: ClipboardPasteIcon,
+    className: 'bg-amber-500 text-white',
+    label: 'Paste the text instead',
+  },
+};
+
+/**
+ * THE CELLS CARRY THE ANSWER NOW. Rewritten 21 August 2026, session 10.
+ *
+ * Jon: "the text can't carry over... it expands all the way over into the
+ * right columns where no text should be... on mobile the text hangs over so
+ * much worse and obscures the icons for everything else. This literally needs
+ * to be done in like five words or something."
+ *
+ * Each row used to end in a three-line grey paragraph that answered all three
+ * columns at once, running the full width of the table underneath the dots.
+ * So the reader had to hold three questions in their head and then unpick one
+ * sentence to answer them, and the answer was nowhere near the column it
+ * belonged to.
+ *
+ * Now every intersection says its own answer in three or four words, sitting
+ * beside its own dot. The paragraph is gone.
+ *
+ * THE REGISTER IS NOT DECORATION, IT IS THE CLAIMS BOUNDARY IN SHORTHAND, and
+ * this is the thing to protect if these words are ever edited. The two
+ * provable layers say "with a receipt"; the statistical rewrite says
+ * "measured". Same table, two different strengths of claim, exactly as
+ * `.claude/skills/unclaude-messaging` requires, and short enough that the
+ * distinction is legible rather than buried in a caveat at the end of a
+ * sentence. Do not give the rewrite a receipt word.
+ *
+ * Jon also asked for the "scan it in under a second" line to go. It has.
+ */
+const INPUTS: Array<{
+  input: string;
+  icon: typeof TypeIcon;
+  cells: [Cell, Cell, Cell];
+  says: [string, string, string];
 }> = [
   {
-    claim: 'We remove hidden characters from text and files',
-    verdict: 'yes',
-    detail:
-      'Nine classes, named individually, with the exact position of each. The text is read back afterwards to confirm none remain. This is countable and we show you the count.',
+    input: 'Pasted text',
+    icon: TypeIcon,
+    cells: ['yes', 'na', 'yes'],
+    says: ['Removed, with a receipt', 'No file, no metadata', 'Rewritten, and measured'],
   },
   {
-    claim: 'We remove the hidden metadata from files',
-    verdict: 'yes',
-    detail:
-      'C2PA content credentials, EXIF, XMP and generator tags. Verified against the raw bytes of the file, not by asking the tool whether it worked. The image or document content comes out byte for byte identical.',
+    input: 'Word documents',
+    icon: FileTextIcon,
+    cells: ['yes', 'yes', 'paste'],
+    says: [
+      'Removed, with a receipt',
+      'Removed, with a receipt',
+      'Paste the text instead',
+    ],
   },
   {
-    claim: 'We rewrite text to break up the statistical watermark',
-    verdict: 'partial',
-    detail:
-      'The rewrite runs and we can show you precisely what it changed. Nobody can confirm the watermark is gone yet, because the detector Anthropic has committed to is not open. The day it opens, this becomes checkable by anyone.',
-  },
-  {
-    claim: 'We can prove a statistical watermark was removed',
-    verdict: 'no',
-    detail:
-      'Nobody can, today. Anthropic confirmed in August 2026 that a detection interface is in development, with no ship date and no published terms. Any tool claiming verified removal is claiming something it has no way to check.',
-  },
-  {
-    claim: 'Hidden character removal deals with Claude’s text watermark',
-    verdict: 'no',
-    detail:
-      'It does not, and we will not imply otherwise. Anthropic states directly that no hidden characters are added to Claude’s text. Claude’s text watermark lives in word choice, which is what the rewrite addresses. On a Claude generated file, the metadata layer does remove Claude’s mark.',
-  },
-  {
-    claim: 'We support PDFs',
-    verdict: 'no',
-    detail:
-      'Not in this version, and we will not accept one. Removing data from a PDF properly requires rebuilding the file so the old content cannot be recovered. Without that step a PDF would look clean while still carrying what we said we removed.',
-  },
-  {
-    claim: 'Word documents carry AI marks we can remove',
-    verdict: 'partial',
-    detail:
-      'We can remove generator tags and hidden characters from a Word document, and that is tested. What has not yet been shown is that a document a real person receives from an AI tool carries this metadata at all. Anthropic’s own file signing covers images, not Word documents.',
-  },
-  {
-    claim: 'Your text is stored',
-    verdict: 'no',
-    detail:
-      'What you paste is sent for processing and returned. The rewrite is performed by a third party model provider, chosen specifically because it does not watermark its own output. That provider necessarily sees the text you submit for rewriting.',
+    input: 'PNG and JPG images',
+    icon: ImageIcon,
+    cells: ['na', 'yes', 'na'],
+    says: ['No text to check', 'Removed, with a receipt', 'No text to rewrite'],
   },
 ];
 
-const VERDICT = {
-  yes: { icon: CheckIcon, className: 'bg-emerald-600 text-white', label: 'Yes' },
-  no: { icon: XIcon, className: 'bg-rose-500 text-white', label: 'No' },
-  partial: { icon: MinusIcon, className: 'bg-amber-500 text-white', label: 'Partly' },
-} as const;
+const COLUMNS = ['Hidden characters', 'Metadata', 'Statistical watermark'] as const;
+
+/**
+ * What each removal claims, in the three real names, Claude forward. The
+ * heads share one grammar: the mark, then the verb we stand behind for it.
+ */
+const CLAIMS = [
+  {
+    icon: EyeOffIcon,
+    anchor: '/how-it-works#hidden-characters',
+    head: 'Hidden characters: removed and shown',
+    body: 'Nine classes of invisible character checked on every scan. Each one is named, given its exact position, and the text is read back afterwards to confirm none remain. You see the count.',
+  },
+  {
+    icon: PaperclipIcon,
+    anchor: '/how-it-works#metadata',
+    head: 'Metadata: removed and proven',
+    body: 'C2PA credentials, EXIF, XMP and generator tags come off, verified against the raw bytes of the file. On a file Claude made, this is Claude’s mark coming off, with proof.',
+  },
+  {
+    icon: FingerprintIcon,
+    anchor: '/how-it-works#statistical-watermark',
+    head: 'Statistical watermark: sanitised and measured',
+    body: 'If Claude wrote your text, this mark is in the words themselves. A rewrite engineered for that one mark breaks the word sequences it rides on, holds your facts and length, and hands you the measurements from every run.',
+  },
+] as const;
+
+/**
+ * The commitments. Each one is a line we hold because breaking it would make
+ * the confident claims above worthless.
+ */
+const LINES = [
+  {
+    head: 'Nothing is stored.',
+    body: 'Text and files are processed, returned and deleted. Uploads are held only for the length of the request, and nothing you paste is kept.',
+  },
+  {
+    head: 'No verified-removal claims for the rewrite.',
+    body: 'Anthropic’s public detector is not open yet, so today nobody can check a text watermark, us included. Until it opens, we hand you measurements and say exactly what they are.',
+  },
+  {
+    head: 'The day the detector opens, we check every run.',
+    body: 'Anthropic has committed to a detection API anyone can use. From the day it opens we run our own output against it, and if the rewrite ever fails that check, this page says so and that part stops being sold.',
+  },
+] as const;
 
 function Capabilities() {
   return (
     <div className={'flex flex-col'}>
       <PageHeader
-        title={'Precisely what we can and cannot do.'}
+        title={'What we can do, exactly.'}
         standfirst={
-          'Every tool in this category makes claims nobody can currently check. This page states ours in plain language, including the ones that are inconvenient for us. If anything elsewhere on this site disagrees with this page, this page is correct and the other thing is a mistake.'
+          'Give us pasted text, a Word document or an image, and this page says precisely what happens: which marks come off, what comes back, and what we will put our name to.'
         }
       />
 
+      {/* The matrix. Find your input, read your row. */}
       <section className={'border-border/70 border-b'}>
         <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
-          <ul className={'divide-border/70 divide-y'}>
-            {CLAIMS.map((row) => {
-              const verdict = VERDICT[row.verdict];
-              const Icon = verdict.icon;
+          <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
+            <div className={'lg:col-span-4'}>
+              <h2
+                className={
+                  'text-foreground text-[24px] leading-[1.15] font-semibold tracking-[-0.024em] text-balance sm:text-[28px]'
+                }
+              >
+                Find your input. Read your row.
+              </h2>
+              <p className={'text-muted-foreground mt-3 max-w-[40ch] text-[15px] leading-[1.6]'}>
+                Three kinds of input, three kinds of mark. The columns are the
+                marks, explained mark by mark on{' '}
+                <Link
+                  href={'/how-it-works'}
+                  className={'text-foreground underline decoration-1 underline-offset-2'}
+                >
+                  how it works
+                </Link>
+                .
+              </p>
+            </div>
 
-              return (
-                <li key={row.claim} className={'py-5 first:pt-0 last:pb-0'}>
-                  <div className={'flex items-start gap-3.5'}>
-                    <span
-                      className={`mt-[3px] grid size-[20px] shrink-0 place-items-center rounded-full ${verdict.className}`}
-                    >
-                      <Icon className={'size-[12px]'} strokeWidth={3} aria-hidden />
-                      <span className={'sr-only'}>{verdict.label}</span>
-                    </span>
+            <div className={'lg:col-span-8'}>
+              {/*
+                TWO LAYOUTS, ONE SET OF FACTS. A three-column matrix with
+                readable words in it cannot fit across 375px, and the version
+                that tried is what Jon reported: "on mobile the text hangs
+                over so much worse and obscures the icons for everything
+                else."
 
-                    <div className={'min-w-0'}>
-                      <h2 className={'text-foreground text-[15.5px] font-semibold tracking-[-0.015em]'}>
-                        {row.claim}
-                      </h2>
-                      <p className={'text-muted-foreground mt-1.5 max-w-[72ch] text-[14px] leading-[1.65]'}>
-                        {row.detail}
-                      </p>
-                    </div>
+                So the phone gets the same table turned on its side, one card
+                per input with its three marks listed under it, and the wide
+                screen keeps the matrix. Same rows, same columns, same words.
+                The breakdown by input type is unchanged; only how it is
+                folded is.
+              */}
+              <div className={'border-border/70 overflow-hidden rounded-[14px] border'}>
+                {/* Phones. One card per input. */}
+                <ul className={'divide-border/70 divide-y sm:hidden'}>
+                  {INPUTS.map((row) => (
+                    <li key={row.input} className={'px-4 py-3.5'}>
+                      <div className={'flex items-center gap-2.5'}>
+                        <row.icon
+                          className={'text-muted-foreground size-[15px] shrink-0'}
+                          strokeWidth={1.9}
+                          aria-hidden
+                        />
+                        <span
+                          className={
+                            'text-foreground text-[14px] font-medium tracking-[-0.012em]'
+                          }
+                        >
+                          {row.input}
+                        </span>
+                      </div>
+
+                      <dl className={'mt-2.5 flex flex-col gap-2'}>
+                        {COLUMNS.map((column, index) => (
+                          <div key={column} className={'flex items-center gap-2.5'}>
+                            <CellDot cell={row.cells[index]!} />
+                            <dt
+                              className={
+                                'text-muted-foreground w-[104px] shrink-0 text-[11.5px] leading-tight'
+                              }
+                            >
+                              {column}
+                            </dt>
+                            <dd
+                              className={
+                                'text-foreground min-w-0 flex-1 text-[12.5px] leading-tight font-medium'
+                              }
+                            >
+                              {row.says[index]}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Everything wider. The matrix. */}
+                <div className={'hidden sm:block'}>
+                  <div
+                    className={
+                      'text-muted-foreground bg-foreground/[0.022] grid grid-cols-[minmax(0,0.9fr)_repeat(3,minmax(0,1fr))] items-end gap-x-4 px-5 py-2.5 text-[11px] font-medium tracking-wide uppercase'
+                    }
+                  >
+                    <span>Input</span>
+                    {COLUMNS.map((column) => (
+                      <span key={column} className={'leading-tight'}>
+                        {column}
+                      </span>
+                    ))}
                   </div>
-                </li>
-              );
-            })}
-          </ul>
+
+                  <ul className={'divide-border/70 divide-y'}>
+                    {INPUTS.map((row) => (
+                      <li
+                        key={row.input}
+                        className={
+                          'grid grid-cols-[minmax(0,0.9fr)_repeat(3,minmax(0,1fr))] items-center gap-x-4 px-5 py-3.5'
+                        }
+                      >
+                        <div className={'flex min-w-0 items-center gap-2.5'}>
+                          <row.icon
+                            className={'text-muted-foreground size-[15px] shrink-0'}
+                            strokeWidth={1.9}
+                            aria-hidden
+                          />
+                          <span
+                            className={
+                              'text-foreground text-[14px] font-medium tracking-[-0.012em]'
+                            }
+                          >
+                            {row.input}
+                          </span>
+                        </div>
+
+                        {row.cells.map((cell, index) => (
+                          <div
+                            key={index}
+                            className={'flex min-w-0 items-center gap-2'}
+                          >
+                            <CellDot cell={cell} />
+                            <span
+                              className={
+                                'text-foreground min-w-0 text-[12px] leading-tight font-medium'
+                              }
+                            >
+                              {row.says[index]}
+                            </span>
+                          </div>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className={'text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px]'}>
+                {(Object.keys(CELL) as Cell[]).map((cell) => (
+                  <span key={cell} className={'inline-flex items-center gap-1.5'}>
+                    <CellDot cell={cell} /> {CELL[cell].label}
+                  </span>
+                ))}
+              </div>
+
+              <p className={'text-muted-foreground/60 mt-4 text-[11px] leading-relaxed'}>
+                PDFs are not accepted yet. The reason is under the lines we
+                hold, below.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <Section title={'How each of these was established'}>
-        <p>
-          The two provable layers were tested by reading the result back rather
-          than by trusting the tool’s own report. Characters were planted at
-          known positions and the text re-read afterwards. Files were compared
-          byte by byte before and after.
-        </p>
-        <p>
-          The rewrite was measured across five documents from 1,260 to 5,047
-          words. Every figure survived in all five, and between 94 and 100 per
-          cent of the original length was preserved. That measures the quality of
-          the rewrite. It does not measure the watermark, and cannot.
-        </p>
-        <p>
-          <strong>
-            The rewrite is deliberately not performed by Claude or by Gemini.
-          </strong>{' '}
-          Rewriting Claude’s text with Claude would apply the watermark again at
-          full strength rather than removing it. The model we use is one setting
-          and is re-checked against a list of vendors known to watermark their
-          own output.
-        </p>
-      </Section>
+      {/* What each removal claims, in one grammar. */}
+      <section className={'border-border/70 border-b'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+          <div className={'grid gap-8 sm:grid-cols-3 sm:gap-10'}>
+            {CLAIMS.map((claim) => (
+              <div key={claim.head} className={'flex flex-col items-start'}>
+                <claim.icon
+                  className={'text-mark-strong size-[20px]'}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <h2
+                  className={
+                    'text-foreground mt-3 text-[18px] leading-[1.25] font-semibold tracking-[-0.02em] text-balance'
+                  }
+                >
+                  {claim.head}
+                </h2>
+                <p className={'text-muted-foreground mt-1.5 max-w-[38ch] text-[14px] leading-[1.6]'}>
+                  {claim.body}
+                </p>
+                <Link
+                  href={claim.anchor}
+                  className={
+                    'text-foreground hover:bg-foreground/[0.045] mt-3 inline-flex items-center gap-1.5 rounded-[8px] py-1 pr-2 text-[12.5px] font-semibold transition-colors'
+                  }
+                >
+                  How this mark works
+                  <ArrowRightIcon className={'size-[13px]'} strokeWidth={2.2} aria-hidden />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <Section title={'What we would change if we learned we were wrong'}>
-        <p>
-          If a detector ships and shows the rewrite does not work, we will say so
-          on this page and stop selling that part.
-        </p>
-        <p>
-          The reason we can say that is that we have not built a business on a
-          claim we cannot check. Two of the three things this product does are
-          provable to the character and to the byte. The third is described here
-          exactly as what it is.
-        </p>
-      </Section>
+      {/* The commitments. */}
+      <section className={'border-border/70 border-b'}>
+        <div className={'mx-auto max-w-[1180px] px-5 py-14 sm:px-8'}>
+          <div className={'grid gap-8 lg:grid-cols-12 lg:gap-14'}>
+            <div className={'lg:col-span-4'}>
+              <h2
+                className={
+                  'text-foreground text-[24px] leading-[1.15] font-semibold tracking-[-0.024em] text-balance sm:text-[28px]'
+                }
+              >
+                The lines we hold.
+              </h2>
+              <p className={'text-muted-foreground mt-3 max-w-[40ch] text-[15px] leading-[1.6]'}>
+                The confident claims above are only worth something because of
+                these.
+              </p>
+            </div>
+
+            <div className={'lg:col-span-8'}>
+              <ul className={'divide-border/70 divide-y'}>
+                {LINES.map((line) => (
+                  <li key={line.head} className={'py-4 first:pt-0 last:pb-0'}>
+                    <h3 className={'text-foreground text-[15px] font-semibold tracking-[-0.012em]'}>
+                      {line.head}
+                    </h3>
+                    <p className={'text-muted-foreground mt-1 max-w-[68ch] text-[13.5px] leading-[1.6]'}>
+                      {line.body}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <CtaBand
+        heading={'Start with the free scan.'}
+        sub={'Paste text or drop a file, and see what it is carrying. No account needed.'}
+        secondary={{ href: '/how-it-works', label: 'How it works' }}
+      />
     </div>
+  );
+}
+
+function CellDot({ cell }: { cell: Cell }) {
+  const config = CELL[cell];
+  const Icon = config.icon;
+
+  return (
+    <span
+      title={config.label}
+      className={`grid size-[18px] place-items-center rounded-full ${config.className}`}
+    >
+      <Icon className={'size-[11px]'} strokeWidth={2.6} aria-hidden />
+      <span className={'sr-only'}>{config.label}</span>
+    </span>
   );
 }
 
