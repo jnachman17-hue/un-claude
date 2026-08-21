@@ -25,7 +25,14 @@ export function HomeSidebar() {
     <Sidebar collapsible={'icon'}>
       <SidebarHeader className={'h-16 justify-center'}>
         <div className={'flex items-center justify-between space-x-2'}>
-          <div>
+          {/* The wordmark is the entire logo (see app-logo.tsx) — there is no
+              separate icon mark to fall back to. Every other sidebar label
+              hides itself at icon width via this same class; the logo was
+              missing it, so at icon width the full "Un-Claude" text kept
+              rendering past the narrow rail and overlapped the page content
+              next to it. Hiding it here leaves a blank collapsed header,
+              which is correct: nothing is better than an overlap. */}
+          <div className={'group-data-[collapsible=icon]:hidden'}>
             <AppLogo className={'max-w-full'} />
           </div>
         </div>

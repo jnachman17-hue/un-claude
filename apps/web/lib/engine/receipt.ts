@@ -83,8 +83,19 @@ function figures(text: string): number[] {
     if (Number.isFinite(value)) found.push(value);
   }
 
-  // Hyphenated compounds first, so "thirty-four" is 34 rather than 30 and 4.
-  for (const match of text.toLowerCase().matchAll(/\b([a-z]+)-([a-z]+)\b/g)) {
+  /*
+   * Hyphenated compounds first, so "thirty-four" is 34 rather than 30 and 4.
+   *
+   * Each compound is then blanked out of the copy the single-word pass reads.
+   * Without that the two passes both see the same words and "thirty-four
+   * percent" lands as THREE figures, 34 plus 30 plus 4, so a document with
+   * four facts in it reports six and the receipt invents two failures that
+   * never happened. That is the same phantom-figure fault Jon caught in the
+   * panel originally, arriving by a different route.
+   */
+  let singles = text.toLowerCase();
+
+  for (const match of singles.matchAll(/\b([a-z]+)-([a-z]+)\b/g)) {
     const tens = NUMBER_WORDS[match[1] ?? ''];
     const units = NUMBER_WORDS[match[2] ?? ''];
     if (tens !== undefined && units !== undefined && tens >= 20 && units < 10) {
@@ -92,8 +103,40 @@ function figures(text: string): number[] {
     }
   }
 
-  for (const match of text.toLowerCase().matchAll(/\b[a-z]+\b/g)) {
-    const value = NUMBER_WORDS[match[0]];
+  singles = singles.replace(/\b([a-z]+)-([a-z]+)\b/g, (whole, left, right) => {
+    const tens = NUMBER_WORDS[left];
+    const units = NUMBER_WORDS[right];
+    const isCompound =
+      tens !== undefined && units !== undefined && tens >= 20 && units < 10;
+
+    return isCompound ? ' '.repeat(whole.length) : whole;
+  });
+
+  /*
+   * SPELLED-OUT NUMBERS ARE FACTS AND ARE GUARDED. "Seven percent of people"
+   * is data whether it is written 7 or seven, and losing it in a rewrite is
+   * exactly what the fact guard exists to catch.
+   *
+   * "One" is the single exclusion, because it is overwhelmingly a pronoun or
+   * an article rather than a quantity: one of these days, one participant,
+   * the one thing. Jon pasted ordinary prose containing several and the panel
+   * announced "3 of 7 figures carried through" about a text with no data in
+   * it, because the rewrite had swapped those for synonyms, which is what a
+   * rewrite should do.
+   *
+   * An earlier attempt at this cut everything below thirteen. That was an
+   * arbitrary line with no reasoning behind it and it threw away real
+   * research figures; Jon called it and he was right.
+   *
+   * The trade-off, recorded: a genuine "one in five" loses its one and keeps
+   * its five, so the fact still has a guard on it. Plural forms (millions,
+   * hundreds) never matched here in the first place, so vague quantities
+   * stay out on their own.
+   */
+  for (const match of singles.matchAll(/\b[a-z]+\b/g)) {
+    const word = match[0];
+    if (word === 'one') continue;
+    const value = NUMBER_WORDS[word];
     if (value !== undefined) found.push(value);
   }
 
