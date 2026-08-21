@@ -4080,3 +4080,188 @@ the site and nothing was broken; the append-only trigger preserves the cascade
 that does exist. **Adding `accounts.id references auth.users on delete cascade`
 is Jon's call and changes the legal page in the same deployment** — recorded in
 `06` as open rather than decided here.
+
+## 21 August 2026, session 11. The Stripe session
+
+### 111. The pack names are ratified as Starter, Plus and Pro, ending two sessions of drift
+
+**Ruling. Jon, 21 August 2026, asked directly because the names were about to be
+typed into Stripe, where they appear on the checkout page and on every receipt.**
+
+**The drift, stated plainly, because this is the third document to carry it.**
+`04` entry 67's ratified table names the packs **Taster, Standard, Pro**. The
+page that shipped, and `pricing-data.ts` behind it, have said **Starter, Plus,
+Pro** since they were built. `04` entry 108 flagged the departure and kept it,
+on the grounds that "Taster" reads British to a US college student, and
+explicitly left it as Jon's call. **It stayed open through a second session and
+is now closed.**
+
+**Starter, Plus, Pro.** No code and no copy changes: the live page, the live
+site and `pricing-data.ts` already agree, and now the document does too.
+
+**Why it needed asking rather than assuming.** `CLAUDE.md` section 2 makes the
+document govern where it decided something, and entry 67 decided this. A session
+that quietly kept the page's names would have been overriding a ratified entry
+without saying so. **The names are also about to stop being editable cheaply:**
+once they are on a Stripe Product they appear on receipts and in a buyer's card
+statement history, and changing them later makes old receipts disagree with the
+site.
+
+**`04` entry 67's table is amended on this row only.** The prices, the credit
+counts and the words-per-credit are untouched and remain as ratified: $4.99 for
+10 credits, $9.99 for 25, $24.99 for 100, one credit buying 1,000 words.
+
+### 112. Stripe is set up as a US individual, and the product description leads with the provable layers
+
+**Ruling. Jon, 21 August 2026, approving the account walkthrough and both
+installs** (`stripe` into `apps/web`, and the Stripe CLI globally so webhooks can
+be proven locally rather than asserted).
+
+**The framing decision, which `03-pricing.md` section 12b called the highest
+leverage sentence in the process.** Two descriptions of this product are both
+true, and a payments risk reviewer treats them very differently. The account's
+product description leads with the **provable data-hygiene layers** — invisible
+Unicode characters, EXIF and XMP metadata, C2PA provenance records — states the
+prices and the credit rule, and **makes no claim about detectors or detection
+scores at all.**
+
+**This is not concealment and the reasoning matters.** Layers A and metadata are
+deterministic and provable; the rewrite is best effort and unverifiable
+(`CLAUDE.md` section 4). A description promising a detection outcome would be a
+claim this project cannot stand behind, written into the one document a risk
+reviewer reads first. **The honest description is also the safe one, which is
+the unusual luxury this product has.**
+
+**Stripe's own validation note makes consistency mandatory rather than
+optional:** *"Website content should match your business name and product
+description."* The description was written to match the live site's register,
+not to differ from it.
+
+**The full field-by-field walkthrough, with what was verified against Stripe's
+live requirements endpoint and what is flagged as unknown, is in
+`docs/session-notes/stripe-setup.md`.**
+
+### 113. The 30 day refund goes on /pricing as OUR POLICY, and the statutory right is carried separately
+
+**Ruling. Jon, 21 August 2026.** Closes a question three sessions have now
+touched, and it closes it with a correction that matters more than the ruling.
+
+**The history, because it is the flagging system working rather than a
+mistake.** `03-pricing.md` P6 proposed a 30 day refund of unspent credits. `04`
+entry 67 ratified "pricing and free credits" and **did not reach P6**, so the
+session that rebuilt /pricing (`04` entry 108) refused to advertise an unruled
+policy and left a flag. This session found the flag when it became decision
+relevant. **One session raised it, another surfaced it a day later. That is the
+system behaving correctly.**
+
+**THE INCONSISTENCY THAT FORCED THE RULING.** The **live terms of service
+already promise it**, word for word: *"Within 30 days of a purchase you may ask
+for a refund of any credits from it that you have not spent, at the price you
+paid, and we will not ask you why."* **So the policy was already binding in the
+legal document while the marketing page withheld it out of caution.** The
+caution had been overtaken by events.
+
+**Ruled: it goes on /pricing.**
+
+**JON'S CORRECTION, AND IT IS THE LOAD-BEARING PART OF THIS ENTRY.** Our refund
+and the statutory right of withdrawal are **two different things**, and the page
+may not blur them:
+
+| | What it is | What it covers |
+|---|---|---|
+| **Our 30 day refund** | **A voluntary policy** we chose | **Unspent credits only**, at the price paid |
+| **UK/EU right of withdrawal** | **A statutory right**, not ours to define | **Everything, including spent credits** |
+
+**Presenting the voluntary policy as "your right to cancel" would be a false
+claim in a legal register**, which is the precise error `CLAUDE.md` section 7
+exists to catch: a sentence true of one thing written as though true of another.
+**So /pricing describes OUR POLICY in our words, and the checkout consent
+wording carries the STATUTORY RIGHT separately.** Both will exist. Neither
+stands in for the other.
+
+**A SECOND CORRECTION FROM JON, ON THE ARITHMETIC.** `03-pricing.md`'s
+"a refund costs $0.561" is **modelled on a $9 pack that no longer exists.** It
+transfers almost exactly to the $9.99 Plus pack, so the conclusion is sound, but
+**the figure must not be quoted as if measured against the real prices.** The
+honest form of the argument is the **ratio**: a refund costs under a dollar, a
+dispute costs about $24.50. **Roughly 40 to 1, and that is the whole case** —
+advertising the refund is how someone who would have called their bank becomes
+someone who sends an email instead.
+
+**Also ruled, in passing:** the live site being ahead of nothing is not a
+problem, because **the site has no traffic yet**. Jon: *"I know it's live but no
+one knows about this site yet so zero traffic, it's okay."*
+
+**Deferred by Jon, deliberately:** the full reconciliation of the privacy policy
+and the terms **happens after Stripe setup is finished**, not during it.
+
+### 114. The payment path is tested, and the audit found more in the OLD code than in the new
+
+**21 August 2026. Jon: "This is real people's money, real logic, everything.
+This, our whole system has never really been tested. So really stress it."**
+He was right to say so, and the result justifies the instruction: **the two worst
+defects found were not in the Stripe code at all.**
+
+**WHAT IS PROVEN, each with a run behind it.** `payments-tested.md` has the
+output. A real purchase credits a real account. **Three deliveries of the same
+webhook produce exactly one ledger row.** 12 refusals on the payment surface all
+hold, including a perfectly-shaped forged paid session. 6 signature-forgery
+cases refused. 9 migration checks pass.
+
+**THE TWO CRITICAL PRE-EXISTING DEFECTS, both in the credit system:**
+
+**1. `/api/tool/clean` read the guest cookie to decide "is this a conversion?"**
+— and `/api/credits` deletes that cookie the moment the merge completes. So every
+converted account was later paid the +2 welcome grant it had just been correctly
+denied. **This is defect 2 from `guest-merge-double-runs.md`, fixed in one route
+and missed in the other**, and `ensureGrants`' own docblock warns against it by
+name. Every converting user minted 2 free credits, spendable on the rewrite —
+the only layer that costs real money.
+
+**2. The clean route's idea of a "text file" did not match the engine's.** The
+route knew four extensions; the engine's `TEXT_EXTS` has twelve, and treats
+`.md`/`.markdown` as CONTAINERS. **Wrong in both directions:** a 100,000-word
+essay saved as `essay.csv` bought a full rewrite for **one credit**, a 100x
+undercharge; and a `.md` upload was **charged per 1,000 words for a rewrite the
+engine never runs.** Paying and not receiving, and the reverse, in one function.
+
+**THE WORST DEFECT IN THE NEW CODE was a misread Stripe field.**
+`charge.amount_refunded` is a **running total**, and it was read as the amount of
+the current refund. Two $3 refunds on a $9.99 pack removed 8 credits then 16 —
+24 of 25 — and because the clamp works against the whole balance, the surplus
+eats credits from **other, un-refunded purchases**. Fixed by making the caller
+pass a **cumulative target** and letting the database work out the shortfall
+under its lock: `20260821160000_refund_cumulative.sql`.
+
+**A FALSE COMMENT CAUSED A REAL BUG, and it is worth recording as a pattern.**
+`onDisputeCreated` deliberately left the ledger alone, reasoning that Stripe
+"will send `charge.refunded` if it is eventually lost". **Stripe does not.** A
+lost dispute is `charge.dispute.closed` with status `lost`. Because the comment
+was believed, nothing removed the credits: roughly **$40 of loss on a $24.99
+sale** — the money, the ~$15 fee, and the customer keeps 100 credits.
+**A confident comment is not evidence.**
+
+**THE BUG NO AMOUNT OF CODE READING WOULD HAVE FOUND.** The Stripe account had
+**Bank (ACH) enabled** as a payment method, visible only by looking at the real
+checkout page. ACH completes the session immediately as `unpaid` and settles
+days later under a different event, so a bank payer would have been charged and
+received nothing, silently. Fixed twice over: checkout pins
+`payment_method_types: ['card']`, and the webhook now handles
+`checkout.session.async_payment_succeeded` anyway, **because payment methods are
+a dashboard setting that can change with no deploy and no review.**
+
+**METHOD, recorded because it worked.** Six adversarial review lenses over the
+money path, every finding then put to three independent skeptics — a refuter, a
+database check, and a practical-impact judge — surviving only on 2 of 3. **33
+raw findings, 17 survived.** The rejected 16 were mostly concerns the code's own
+comments already answered correctly.
+
+**STILL OPEN, recorded rather than fixed:** a forged `uc-guest` cookie can name
+another user's anonymous account, because `merge_guest_credits` checks only that
+the target is anonymous, not that the caller ever held that session. Rated LOW —
+it needs the victim's account UUID and takes at most 2 credits. **In `06`.**
+
+**NOT PROVEN AND SAID SO:** refunds and disputes are written and typechecked but
+never fired, because the refund fix changes a database function signature and
+the migration is Jon's to paste. The `.csv`/`.md` pricing fix is by inspection
+against `format_dispatch.py`, not yet run against the engine.

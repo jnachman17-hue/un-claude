@@ -1,99 +1,107 @@
 # Un-Claude: Current Handoff
 
-**THE CREDIT SYSTEM IS BUILT AND WAITING ON ONE PASTE.** `04` entry 97:
-2 welcome credits + 3 at signup, anonymous Supabase sessions as guest
-identity, server-side enforcement live in `/api/tool/clean` (401/402/403 all
-verified), the wallet at /home, the dev bypass at /dev/credits. **A real
-sanitise fails until Jon pastes `supabase/migrations/
-20260820210000_welcome_grant.sql` into the Supabase SQL editor** (the
-`anon_grant` reason is not yet in the hosted check constraint; everything
-else was rehearsed live against the hosted ledger and works). After that:
-Turnstile keys, end-to-end funnel verification, then Stripe and the pricing
-page rebuild.
-
-**Date: 20 August 2026. Updated after session 9, the inner-pages rebuild.**
-`04` entries 79 to 88 are the full record of the last two days.
-
-**Session 9 in one line:** /how-it-works and /capabilities were rebuilt to the
-landing page's visual grammar and claims boundary (`04` entry 88), /faq was
-rebuilt with the real questions after the boilerplate version was deleted
-(`04` entries 89 then 90, which supersedes it), and **Jon reviewed the rebuild
-and ruled /capabilities finished while /how-it-works got a sell-mode copy pass
-and his own redesign of the choice diagram** (`04` entry 91: shorter panels,
-the trimmed Anthropic quote, the we-beat-it proof row, blank-and-fingers
-drawing, 8.4 phone screens down from 12.4).
-
-**The mission page was rewritten off a new argument** (`04` entry 92) because
-the previous draft was a close paraphrase of a widely read X essay on the same
-subject, in places word for word. New spine: they marked the output and not
-the intake. Redesigned to the site's section grammar and connected to the
-product.
-
-**The site is now nine routes**, all returning 200: the landing page, how it
-works, what we can do, why I built this, pricing, FAQ, and the three legal
-pages. **No page on it is boilerplate any more.**
-
-**One thing to check on the next dev server start:** the navigation label was
-changed to "Why I built this" and the JSON is correct, but the running server
-serves the old "Why we built this" from a cached dynamic import of the i18n
-messages. It should correct itself on restart. `04` entry 92.
-
-**One thing to know before editing any FAQ answer:** the words live in
-`app/(marketing)/_components/faq-items.tsx` and **both the home page section
-and /faq render that one array.** Edit there and both update. /faq groups them
-into three and opens them by default; the home page runs all nine in order,
-collapsed.
-
-**Status: the site is launch-shaped. The one gap between here and taking money
-is Stripe, and it is Jon's.**
-
-**TWO PRICING QUESTIONS WAITING ON JON, `04` entry 108.** First: **the 30 day
-no-questions refund of unspent credits** (`03-pricing.md` P6) is proposed but
-never ruled, so it is deliberately absent from /pricing. It is the strongest
-trust line still available there and a refund costs 56 cents where a dispute
-costs about $24.50. Second: **the pack names**. Entry 67's table says Taster,
-Standard, Pro; the page says Starter, Plus, Pro, on the grounds that "Taster"
-reads British to a US student. Both are one word from him.
+**Rewritten 21 August 2026, end of session 11 — the Stripe session.**
 
 ---
 
-## 1. What is live on localhost, verified this session
+## THE HEADLINE: STRIPE IS BUILT, TESTED END TO END, AND NOT DEPLOYED
 
-| | State |
+**Three things stand between here and taking real money, and only one of them is
+work.** Everything else on the payment path has a run behind it.
+
+| # | Remaining | Whose |
+|---|---|---|
+| **1** | **Terms and privacy reconciliation.** The live terms still say *"The service is currently free to use and no payment method is collected."* **That becomes a false statement in a binding legal document on the first charge.** | Drafted by a session, **approved by Jon** |
+| **2** | **Vercel Pro.** Hobby forbids commercial use, and Vercel's own definition includes *"advertising the sale of a product or service"* — /pricing already qualifies. Enforcement is a **paused deployment**, whole site offline | **Jon** |
+| **3** | **Production wiring.** ~10 min plus ~20 min verifying. Last step, depends on nothing | Jon runs it, procedure written |
+
+**Procedure for 3 is `session-notes/stripe-setup.md` section 16. Do not improvise
+it** — the trap is that production needs its OWN webhook signing secret, and
+reusing the local one makes every real payment fail silently.
+
+---
+
+## What is true right now
+
+| | |
 |---|---|
-| The page | Hero + tool, marquee, Claude band, vendor table, FAQ. One argument, no text walls |
-| The tool | Scan, sanitise, receipts, file clean, paywall, remove, copy button: **all tested live and passing** |
-| Pricing | **/pricing REBUILT 20 August 2026, `04` entry 108.** Price is the hero, the credit is taught before it is spent, a slider mirrors the server's arithmetic, and no button pretends to sell. Wiring Stripe is three hrefs, three labels and deleting one status bar |
-| Mission | **Live**, Jon's words refined, first person |
-| Logo | Drawn, in the header, the favicon and the share card |
-| Vendor table | **Corrected against primary sources.** xAI never signed the EU code; Claude text is committed-not-live |
-| Legal | Terms ready for Stripe activation: credits, refunds (30 days, unspent), failed-ops-free |
-| SEO | Title, description, OG card, complete sitemap, robots |
-| Theme | Light and dark only |
-| Console | Clean |
+| **Stripe account** | **ACTIVATED.** `charges_enabled`, `payouts_enabled`, `details_submitted` all true, nothing outstanding |
+| **Production** | **NO `STRIPE_*` env vars at all.** The live site physically cannot charge anyone. This is the correct safe state |
+| **Deployed** | Nothing from this session. un-claude.com serves an older build |
+| **Pushed** | Nothing. Local is ahead of `origin/main` |
+| **Migrations** | `20260821150000_stripe_purchases` and `20260821160000_refund_cumulative` are **both applied** |
 
-## 2. Jon's morning list, in order
+---
 
-1. **Stripe.** Account, identity verification, business description, payout
-   bank, 2FA, statement descriptor `UN-CLAUDE.COM`. `03` section 12c is the
-   step-by-step. The site side is built up to the checkout call: swap the
-   pricing buttons' hrefs when checkout exists.
-2. **Vercel Pro before the first sale** (`03` 12c step 7), then deploy and
-   spot-check production: the engine env keys, `UC_ENABLE_LAYER_B`, PostHog.
-3. **Read `04` entry 86's "found and left for Jon" list**: the rewrite invented
-   a dollar sign once (engine fact-guard tweak); the hero rides the
-   announced-rollout ambiguity deliberately (his entry 84 posture ruling, worth
-   one conscious re-read); stakes heading and marquee caption are placeholders
-   in his voice.
-4. **Say the word on the sample chip label** ("Try an example") and anything
-   else the morning eye catches.
+## What was proven, and how to re-prove it
 
-## 3. Standing cautions
+**Twelve suites, all passing.** `session-notes/payments-tested.md` has the
+output. All read-only unless noted.
 
-- **The preview pane freezes background hydration.** `07` has the mechanism and
-  the three-step discipline. Do not diagnose the app until the tab is fronted
-  and the fiber probe returns true.
-- **Layer B is off in production by default** (`UC_ENABLE_LAYER_B`); turning it
-  on before credits are real spends money on the honour system.
-- **No document outside `docs/` records decisions.** Write them down when they
-  happen.
+    cd apps/web
+    node scripts/verify-stripe-migration.mjs        # 10 checks
+    node scripts/verify-stripe-webhook.mjs          # 6 forgery cases, no server needed
+    node scripts/verify-payment-edges.mjs           # 12 refusals
+    node scripts/verify-pricing-matches-engine.mjs  # price vs engine drift
+    node scripts/stripe-refund-check.mjs <pi|email> # BEFORE refunding anyone
+
+    cd apps/e2e
+    node stripe-purchase.mjs starter                # a real browser purchase
+
+**The two that write:** `verify-refund-flow.mjs` issues test refunds and
+`verify-dispute-flow.mjs` closes a test dispute. Both refuse to run on a live
+key.
+
+**The headline result: the same webhook delivered three times produces exactly
+one ledger row.** Stripe guarantees at-least-once delivery, so this will happen
+in production.
+
+---
+
+## READ THIS BEFORE TOUCHING CREDITS OR THE ENGINE
+
+**An adversarial audit found two CRITICAL bugs in code that predates Stripe.**
+Both are fixed. Both are the kind that come back.
+
+1. **`/api/tool/clean` read the guest cookie to decide "is this a conversion?"**
+   — and `/api/credits` deletes that cookie on merge, so every converting user
+   was paid the +2 welcome grant they had just been correctly denied. **The same
+   defect was fixed in one route and missed in the other.** It now reads
+   `hasConverted()`. Regression test: `apps/e2e/conversion-regression.mjs`.
+
+2. **The clean route's "text file" list did not match the engine's.**
+   `essay.csv` bought an unlimited rewrite for 1 credit; `.md` was charged
+   per-word for a rewrite the engine never runs. **`verify-pricing-matches-engine.mjs`
+   now guards this. Run it if you edit either list.**
+
+---
+
+## Standing cautions, carried forward
+
+- **Turnstile refuses automated browsers, and that is correct.** The E2E scripts
+  sign in with an admin-issued one-time token through `/auth/confirm`, the
+  product's own arrival path. **Do not disable the captcha to make a test pass** —
+  the anonymous-grant cap is sized on the assumption it is enforced.
+- **The Browser preview pane cannot do mobile on this site.** Use
+  `apps/e2e/mobile-probe.mjs` / `mobile-shots.mjs`, which drive the installed
+  Chrome. **Do NOT run `npx playwright install`.**
+- **Next.js 16 refuses a second dev server from the same directory**, whatever
+  port. `.claude/launch.json`'s `web-b`/`web-c` entries append the port AFTER a
+  pipe, so it reaches `pino-pretty` rather than `next` — they do not work.
+- **Never write a `/` immediately followed by `*` inside a SQL comment.**
+  Postgres nests block comments and it swallows the rest of the file.
+- **Stage commits by explicit path.** Other sessions are live in this folder.
+
+---
+
+## Open, recorded, deliberately not fixed
+
+**A forged `uc-guest` cookie can name another user's anonymous account** and move
+up to 2 credits across. It needs an account UUID that is never published
+anywhere. Rated LOW by the audit. **In `06` with a revisit trigger** — the guest
+merge has been broken three separate ways already, and changing it again to
+close a hole requiring a secret is a bad trade this week.
+
+**The virtual mailbox is NOT a blocker.** A real receipt was fetched and checked:
+Jon's name and both addresses are absent. Stripe requires the support address as
+a setting, not on the receipt. Worth finishing; not gating.

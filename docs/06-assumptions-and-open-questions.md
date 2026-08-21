@@ -480,3 +480,41 @@ confirmation link so the merge can run wherever it is opened; or make the
 laptop's still-open session notice the account was confirmed elsewhere; or
 accept it and make the carry-over promise conditional in the copy. **Deciding
 this needs a view on how often it happens, which nothing currently measures.**
+
+---
+
+## A forged `uc-guest` cookie can name another user's anonymous account
+
+**Raised 21 August 2026, session 11, by the payment audit. `04` entry 114.**
+**Open. Not fixed today, deliberately.**
+
+**What it is.** `merge_guest_credits` validates that the account named by the
+`uc-guest` cookie **is anonymous**, but not that the caller ever held that guest
+session. The cookie is an attacker-controlled value that reaches a database
+write. So someone who learns another visitor's anonymous account UUID can put it
+in their own cookie and have that account's remaining credits transferred onto
+theirs, leaving the victim at zero with an `adjustment / transfer_out` row they
+did not cause.
+
+**Working position: leave it, and record it.** Three reasons, and the third is
+the real one.
+
+1. **It needs a UUID that is never published.** Anonymous account ids are not
+   rendered, not in any URL, and not returned by any endpoint to anyone but
+   their owner. There is no enumeration path, and a UUID is not guessable.
+2. **The take is at most 2 credits**, the welcome grant, on layers that cost us
+   nothing to run.
+3. **The fix is not obviously cheap and could break the real flow.** Proving
+   "this browser held that guest session" means signing the cookie or keeping a
+   server-side record, and the guest merge is the piece of this system that has
+   already been broken three separate ways. **Changing it to close a hole that
+   requires a secret UUID, days after finally getting it right, is a bad trade
+   this week.**
+
+**Rated LOW by 2 of 3 skeptics** in the audit, against CRITICAL for the two
+defects fixed the same day.
+
+**Trigger for revisiting.** Any of: an anonymous account id becoming visible
+anywhere a third party can read it; the welcome grant rising materially above 2
+credits; or the guest merge being touched for another reason, at which point
+signing the cookie is a small addition to work already being done.
