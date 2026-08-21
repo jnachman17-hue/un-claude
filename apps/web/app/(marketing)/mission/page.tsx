@@ -54,20 +54,11 @@ const SECTIONS: Array<{ head: string; body: string[] }> = [
     ],
   },
   {
-    head: 'It lands on the wrong people',
-    body: [
-      'Think about who actually asks a model to clean up a paragraph. Often it is someone writing in their second language, or someone with dyslexia, or anyone using the tool to be understood rather than to skip the work. Proofreading and translation are exactly the uses that leave a mark. The research is yours, the argument is yours, the essay is yours, and the sentence that gets you flagged is the one you asked for help with.',
-      'Meanwhile the people this was supposedly built to catch are fine. Spam operations and influence campaigns rewrite everything as a matter of routine, and they publish clean.',
-      'Anthropic’s own documentation says a full rewrite removes the mark. So the whole system only works on people who do not know it exists. That is not transparency. Once you know about it, it stops sorting honest from dishonest and starts sorting people who know from people who do not.',
-    ],
-  },
-  {
     head: 'So I built this',
     body: [
       'What I want instead is simple. Disclosure the author can see and control, made at the point of publishing, with a name on it. If a lab wants to record what its model produced, it can put that record in the file, where anyone can read it, and be honest that it is a claim about a file, not a verdict on a person.',
       'Until that exists, this is the most useful thing I could do. Un-Claude finds the marks in your text and your files, names every one of them, and shows you exactly what was there and what came off. Nothing about your own writing is hidden from you. That is the whole point.',
-      'One thing I will not do is overclaim. Nobody can currently verify that a statistical watermark is gone, so I will not tell you it is verified. You get the engineering and the measurements from every run, and the day Anthropic opens its detector, every job gets checked against it.',
-      'I did not build this to hide that a machine was involved. I built it because a mark you cannot see, never agreed to, and cannot answer is not transparency. It is ink you did not choose.',
+      'I did not build this to hide that a machine was involved. I built it because a mark you cannot see, never agreed to, and cannot answer is not transparency.',
     ],
   },
 ];
