@@ -12,11 +12,15 @@ adding the one foreign key the schema was missing. Plus the privacy policy,
 upgraded in the same commit to the stronger sentence, per the standing rule in
 06 row 46.
 
-**Two things in this note are not done and cannot be done by me.** The migration
-is **PENDING JON** — I may not apply migrations, and nothing behind an unapplied
-migration is finished. And **the policy page must not deploy before the SQL is
-run**, because the sentence it now carries is only true afterwards. Both are
-spelled out below.
+**APPLIED 21 August 2026, and proved afterwards rather than assumed.** Jon ran
+all three blocks from section 5. The end-to-end run in section 10 shows a real
+account created, given credit history, deleted through the real path, and every
+row gone. The nine orphan rows went with them. **The site is now safe to deploy,
+and the privacy policy's new wording is true.**
+
+Everything below section 5 was written before that happened and is left as it
+was written, because the value of it is the reasoning that was available at the
+time. Section 10 is what actually happened.
 
 ---
 
@@ -727,13 +731,126 @@ on looking like it covered them all.
 - Every row this session created was removed. Two throwaway accounts and six
   ledger rows, all deleted, verified empty.
 
-**Not done, and it is yours:**
+**Still open when this section was written, all closed in section 10 except the
+last:**
 
-- **The migration is not applied.** Blocks 1, 2 and 3 in section 5. Until block
-  3 runs, the defect is live and pressing "delete account" still keeps the
-  person's email address and name.
-- **The nine orphan rows are still there.** I recommended deleting all nine and
-  did not touch them.
-- **The append-only trigger's cascade branch is reasoned, not executed.** Block
-  2 is the canary, the script is the proof.
-- **Nothing was deployed.**
+- The migration was not applied. It is now.
+- The nine orphan rows were still there. They are gone.
+- **Nothing was deployed.** Still true. Deploying is Jon's call, and it is now
+  safe to make.
+
+---
+
+## 10. Applied, and what happened. 21 August 2026
+
+Jon ran blocks 1, 2 and 3. **The order was changed from what section 5 first
+recommended, and the change made it safer.** Section 5 said to run the four
+security-session migrations first, so that the orphan sweep would act as a
+canary for the append-only trigger. Running this fix FIRST is better, because
+with that trigger not yet applied there is no trigger to interfere at all, and
+the `accounts -> credit_ledger` cascade had already been watched working on this
+database earlier the same day. The trigger question moves to whoever applies
+`20260821120000`, where it belongs, and it now has a working chain to be tested
+against.
+
+### Backed up first, because the free plan has no restore
+
+Both things block 2 destroys were captured into `apps/web/credit-ledger-backups/`,
+which is gitignored:
+
+```
+backup-credit-ledger: wrote 43 rows to credit-ledger-backups/credit_ledger_2026-08-21T17-35-28-525Z.csv
+wrote 9 orphan accounts rows to credit-ledger-backups/orphan_accounts_before_sweep_...csv
+```
+
+The four ledger rows the sweep would take, confirmed present in the backup
+before it ran:
+
+```
+52,f17969e2-4699-4627-9e5b-6f40a8b5c494,2,anon_grant,...,2026-08-21T04:13:20.978935+00:00
+53,f17969e2-4699-4627-9e5b-6f40a8b5c494,3,signup_grant,...,2026-08-21T04:13:21.125569+00:00
+172,7c376386-ae32-413a-a78b-acefae40055c,2,anon_grant,...,2026-08-21T16:55:29.841742+00:00
+173,7c376386-ae32-413a-a78b-acefae40055c,3,signup_grant,...,2026-08-21T16:55:30.13321+00:00
+```
+
+### The full chain, run against the live database after the migration
+
+**Unedited output of `node scripts/verify-account-deletion.mjs`:**
+
+```
+--- BEFORE — everything this person has in the database ---
+auth.users      : PRESENT (deletion-chain-test@un-claude.com)
+public.accounts : 1 row(s)
+    {"id":"087ed20d-eb0f-4767-977b-db67e7077f54","name":"Deletion Chain Test","email":"deletion-chain-test@un-claude.com"}
+credit_ledger   : 3 row(s)
+    {"id":198,...,"delta":3,"reason":"signup_grant","created_at":"2026-08-21T17:38:01.822632+00:00"}
+    {"id":199,...,"delta":-1,"reason":"spend","created_at":"2026-08-21T17:38:01.930861+00:00"}
+    {"id":200,...,"delta":1,"reason":"operation_refund","created_at":"2026-08-21T17:38:02.022171+00:00"}
+
+=== STEP 3 — press "delete account" ===
+    DELETE /auth/v1/admin/users/087ed20d-eb0f-4767-977b-db67e7077f54
+  -> 200 {}
+
+--- AFTER — what is left behind ---
+auth.users      : GONE
+public.accounts : 0 row(s)
+credit_ledger   : 0 row(s)
+
+=== VERDICT ===
+sign-in destroyed      : YES
+account record removed : YES
+credit history removed : YES
+
+FIXED — deleting your account deletes your account record and your entire credit history with it.
+That is what the privacy policy now promises, and it is what just happened.
+```
+
+**Compare that with the same script's output in section 1, before the fix**, where
+the account row and all three ledger rows survived. Same script, same database,
+same call. Only the foreign key changed.
+
+**This also proves sign-up is unharmed**, which was the main thing the new
+constraint could have broken: STEP 1 created an auth user and the
+`on_auth_user_created` trigger wrote its accounts row with the key in place.
+
+### The orphans are gone and the two tables now agree
+
+```
+public.accounts rows : 16
+auth.users rows      : 16
+CONFIRMED ORPHANS (accounts row with no auth.users parent): 0
+credit_ledger rows total: 39
+```
+
+Accounts went from 25 to 16, exactly the nine swept. The ledger went from 43 to
+39, exactly the four rows those nine held, all four of them in the backup above.
+**Every account in the database now has a sign-in, and every sign-in has an
+account.**
+
+### The constraint is enforcing, not merely declared
+
+Trying to create the tenth orphan, the same way the first nine came to exist:
+
+```
+=== Is the constraint actually there and enforcing? ===
+Try to create an account row with no sign-in behind it.
+Before today this succeeded. It is how all nine orphans came to exist.
+
+  -> 409 {"code":"23503",
+          "details":"Key (id)=(00000000-0000-4000-8000-0000000000ff) is not present in table \"users\".",
+          "message":"insert or update on table \"accounts\" violates foreign key constraint \"accounts_id_fkey\""}
+  rows created: []
+```
+
+**The class of bug is closed, not just its nine instances.** An account row with
+no sign-in behind it can no longer be created by anything: not the application,
+not a script, not the dashboard, not a future code path.
+
+### What is still pending, and is not this fix
+
+`20260821120000` (append-only ledger), `120100` (credit_balance self-only),
+`120200` (rate limits) and `120300` (signup grant email dedupe) are **still not
+applied.** They belong to the security session. When they are applied, re-run
+`node scripts/verify-account-deletion.mjs`: it is now the standing check that the
+append-only trigger has not broken account deletion, and it exits non-zero if it
+has.
