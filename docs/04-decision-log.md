@@ -4036,3 +4036,47 @@ because the status bar and three captions came out. Buttons 49px. No horizontal
 overflow, `scrollWidth` 390. No console errors. The only remaining
 `/capabilities` links on the page are the shared header and footer navigation,
 which are not this page's and were not touched.
+
+### 110. Security fixes: the free-credit doors close by inbox, not by network, and the audit's per-IP number is deliberately not used
+
+**21 August 2026, implementing `docs/session-notes/security-audit.md`.** Three
+rulings worth keeping, because two of them depart from a number the audit
+already derived and one corrects a premise the work was briefed on.
+
+**1. THE PER-IP CAP ON ANONYMOUS GRANTS IS 60/HOUR, NOT THE AUDIT'S 5.** The
+audit derived 5 new anonymous sessions per hour per IP before it was confirmed
+that Cloudflare Turnstile is genuinely enforced. It is — verified this session
+against the live project: `signInAnonymously()` returns
+`captcha_failed: captcha protection: request disallowed`. So every anonymous
+account already costs a human solving a captcha and the attack is not
+scriptable, which is the same correction Jon applied to the signup path. Against
+that, **this product's audience is students, and a campus, a school or a mobile
+carrier is one IP for hundreds of real people.** A cap of 5/hour would lock out
+a lecture hall of genuine first-time users, the exact failure the audit itself
+warns about. 60/hour serves a full lecture hall and still stops industrial
+farming. **The cap counts grants actually paid, not requests**, so ordinary
+repeat visitors never consume the budget, and **at the cap the account still
+works** — it only goes without the giveaway. The constant is
+`ANON_GRANTS_PER_HOUR_PER_IP` in `credits.ts`, one line to retune.
+
+**2. THE REAL DEFENCE AGAINST "ONE PERSON, MANY ACCOUNTS" IS IP-BLIND.** The
+signup grant is now keyed to a normalised email **inbox** rather than an
+address, so `student+1@` and `student+2@` collect it once. This is the mechanism
+doing the work, and it is deliberately blind to the network: 300 students on one
+campus IP are 300 different inboxes and every one is served. The per-IP cap is a
+backstop behind it, not the primary control. **The two are one mechanism sharing
+one counter, per the brief, not two competing ones.**
+
+**3. THE BRIEF'S PREMISE ABOUT ACCOUNT DELETION WAS WRONG, AND VERIFYING IT WAS
+THE INSTRUCTION.** The work was briefed that deleting an account cascades the
+credit ledger away and that the privacy policy relies on it. **It does not.**
+`credit_ledger.account_id` does cascade from `public.accounts`, but
+`public.accounts.id` carries **no foreign key to `auth.users`** — confirmed in
+`20241219010757_schema.sql` and confirmed live by an orphan `accounts` row with
+no matching auth user. `auth.admin.deleteUser()` removes the sign-in and leaves
+both the account row and the ledger standing. **The privacy policy already says
+exactly this**, having been corrected by an earlier session. Nothing false is on
+the site and nothing was broken; the append-only trigger preserves the cascade
+that does exist. **Adding `accounts.id references auth.users on delete cascade`
+is Jon's call and changes the legal page in the same deployment** — recorded in
+`06` as open rather than decided here.
