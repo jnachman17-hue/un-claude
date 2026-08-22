@@ -1,87 +1,39 @@
-# The terms reconciled with real money, and the consent ceremony at checkout — 22 August 2026
+# Terms, checkout and the European decision — 22 August 2026
 
-**What this is.** Four jobs, all applied: the two false sentences in the live
-terms fixed, a consent step built between the pricing page and Stripe, the
-currency and the statutory cancellation right stated on the pricing page, and
-a real description given to each of the three legal pages.
+**Read section 0 first. This note documents work that was applied, then partly
+reversed by Jon's ruling the same day, and the reversal is the more important
+half.** Everything the reversal deleted is preserved in section 7, because it was
+proven working and it is what a future session restarts from if Europe is ever
+opened up.
 
-**Files changed. Nothing else was touched.**
+**Two commits.**
 
-- `apps/web/app/(marketing)/(legal)/terms-of-service/page.tsx`
-- `apps/web/app/(marketing)/(legal)/privacy-policy/page.tsx` — metadata only
-- `apps/web/app/(marketing)/(legal)/cookie-policy/page.tsx` — metadata only
-- `apps/web/app/(marketing)/pricing/page.tsx`
-- `apps/web/app/(marketing)/pricing/_components/buy-button.tsx`
-- `apps/web/app/api/checkout/route.ts`
+- `b965e88` — the full UK/EU consent ceremony. **Superseded.**
+- `ca69a80` — US only, ceremony deleted, governing law added. **Current.**
 
-**Nothing was deployed and nothing was pushed.** The live site still carries the
-two false sentences until Jon deploys.
+**Decision log entries 115 and 115a carry the rulings.** Nothing was deployed and
+nothing was pushed.
 
 ---
 
-## 0. Read this first. Three things the brief assumed that turned out otherwise
+## 0. Where this landed, in one page
 
-**Stated up front because two of them change what someone should do next.**
+| | Before today | Now |
+|---|---|---|
+| **Market** | Sold worldwide | **US customers only**, stated in the terms |
+| **Terms on payment** | "currently free... no payment method is collected" | Present tense, live, with the card-security line |
+| **Free credits** | "a small number", "a few more" | **2 plus 3**, read from the code, with promotion terms |
+| **UK/EU 14 day right** | Not addressed anywhere | **Out of scope.** Section removed |
+| **Checkout ceremony** | Stripe's terms checkbox | **Unchanged.** Stripe's terms checkbox, and nothing on our side |
+| **30 day refund** | A tile under the buy buttons | **Small print, FAQ, and the terms.** Not a tile |
+| **Governing law** | Absent | **California.** D1 closed |
+| **Legal page descriptions** | Inherited the site-wide one | One each |
 
-### 0.1 Part 3 was already done, a day before this session
-
-The brief said the pricing page "deliberately withholds the refund policy". It
-does not, and has not since 21 August. `04` entry 113 ruled it on, and the page
-already carries it as a trust tile reading **"Our 30 day refund — Unspent
-credits go back at the price you paid. We will not ask why."** The page's header
-comment was already rewritten to say so.
-
-**The precision the brief was protecting was already protected.** The tile says
-"Our", the header comment explains in eleven lines why that word is doing legal
-work, and the code comment beside the tile says outright that writing it as
-"your right to cancel" would be a false claim in a legal register.
-
-**So Part 3 became a smaller job than briefed**, and what was actually missing is
-in section 3 below: the currency, the tax position, and the existence of the
-statutory right.
-
-### 0.2 The research note says United Kingdom. The Stripe account says United States
-
-**`legal-research.md` section 9A drafts "an individual trading as un-claude from
-the United Kingdom", and its governing-law paragraph names England and Wales.**
-**`04` entry 112 records the Stripe account as a US individual**, with
-`accountCountry=US`, a US home address for identity, and a Google Voice number.
-`stripe-setup.md` notes the business origin country cannot be changed after
-activation, and the account is activated.
-
-**Those cannot both be right, and this session did not resolve it.** Nothing was
-applied from 9A or 9B, so no false country statement was written anywhere. But
-**decision D1 is now blocked on a factual contradiction rather than only on Jon's
-preference**, and whoever picks it up needs to settle it before drafting a word.
-
-**It does not undermine Part 2.** The 14 day right belongs to the buyer based on
-where the buyer lives, not where the seller sits, and the site sells to the UK
-and the EU. A US trader directing a site at those markets is within scope. The
-consent wording applied here never asserts where the trader is, deliberately.
-
-**`legal-research.md` section 11 already flagged this**: "The US. No US
-consumer-protection, state privacy or FTC analysis was done." That gap is wider
-than it looked when it was written.
-
-### 0.3 The third limb of the waiver is NOT fully closed, and the brief said it was
-
-**The brief said the Stripe receipt satisfies the durable-medium requirement and
-already exists. Half of that is right.**
-
-The receipt exists and is real. A prior session read one:
-
-    Receipt from Un-Claude
-    Un-Claude Starter — 10 credits x 1      $4.99
-    If you have any questions, contact us at unclaudeapp@gmail.com
-
-**It is a durable medium. It does not repeat the consent.** The requirement is
-confirmation on a durable medium *of the consent and the acknowledgement*, and
-Stripe's receipt carries the pack and the price and nothing about immediate
-supply. `legal-research.md` 9D saw this and drafted a confirmation email whose
-whole point was that one email discharges three duties at once.
-
-**Limbs 1 and 2 are closed and proven below. Limb 3 is partly open.** See
-section 5 for the cheapest fix and why this session did not apply it.
+**The single most important sentence in this note:** the US-only restriction is
+**a term of sale that nothing enforces.** Jon instructed that the Stripe Radar
+country blocklist not be populated, so **a non-US card completes normally today.**
+No page or comment anywhere claims otherwise, and none may until the Radar rule is
+on. Section 6.1.
 
 ---
 
@@ -224,169 +176,61 @@ state is a question this session did not touch and could not answer.
 
 ---
 
-## 2. Part 2 — the consent ceremony
+## 2. The checkout, as it now stands
 
-### 2.1 Why it is required, in plain English
+**There is nothing on un-claude.com's side. The button goes straight to Stripe.**
 
-**A UK or EU consumer has 14 days to cancel a distance purchase and get ALL their
-money back.** That includes credits they already spent. It is the law rather than
-a policy, and **our 30 day refund does not discharge it**, because the two cover
-different money: ours covers unspent credits only. Being more generous in one
-place does not settle an obligation in another.
+The only consent collected is Stripe's own, set by `consent_collection` and live
+since entry 112. Read off the live checkout page:
 
-**The right is lost only if three things all happen.**
+> ☐ I agree to Un-Claude's Terms of Service and Privacy Policy
 
-1. The customer expressly consents to the service starting immediately.
-2. They acknowledge that this loses them the right to cancel.
-3. They get confirmation of both on a durable medium.
+Not pre-ticked, required to pay, recorded by Stripe with its own timestamp.
+**That is the whole ceremony and it is deliberately the ordinary one.** Jon:
+*"We shouldn't present the granular details at checkout, just make them
+acknowledge they have read the T&C."*
 
-**Credits land the instant the payment succeeds, so supply IS immediate whether
-or not anyone papered it.** Without the paperwork, every UK and EU buyer keeps a
-full 14 day right to a total refund, spent credits included.
-
-### 2.2 What was built
-
-**A dialog between the pack button and Stripe.** The card is untouched: the
-button still reads "Purchase now", still receives its `className` unchanged from
-the page, and the three cards still measure identically (332px each at 1280px
-wide). The consent is a dialog, so nothing in the measured layout moved.
-
-**What the buyer sees**, read out of the live DOM:
-
-> **Buy the Plus pack**
->
-> $9.99 for 25 credits. One payment, nothing renews, and the credits never
-> expire.
->
-> ☐ I want my credits delivered immediately, and I understand that once they are
-> delivered I lose my 14 day right to cancel.
->
-> Our 30 day refund of unspent credits is a separate thing and this does not
-> affect it. **Both are in the terms.**
->
-> **[ Pay $9.99 ]**
->
-> You pay on Stripe's own page. Your card details never reach us.
-
-**Three properties, each of which is the point rather than a detail.**
-
-- **The box is not pre-ticked.** A pre-ticked box is not consent anywhere.
-- **The pay button is dead until it is ticked**, and it renders at 40% opacity so
-  it is visibly dead rather than mysteriously unresponsive.
-- **The button states the amount.** "Pay $9.99", never "Continue" or "Confirm".
-  A button that carries an obligation to pay and hides the figure is the trap
-  sitting immediately next to this one.
-
-**The tick does not survive closing the dialog.** Reopening is a fresh decision.
-
-### 2.3 The proof, run rather than asserted
-
-**The security boundary is intact: the browser still sends a pack id and never a
-price.** The dialog renders the price for the eyes only, from the same array the
-card renders from; the server looks the pack up by id and builds the line item
-itself. If the dialog lied about the price the charge would still be correct.
-
-**The route now refuses without the consent flag.** Four requests, as a real
-signed-in buyer, against the running application:
-
-    A. no consent field
-       {"ok":false,"error":"consent_required"}          http 400
-
-    B. agreedToImmediateSupply: false
-       {"ok":false,"error":"consent_required"}          http 400
-
-    C. agreedToImmediateSupply: "true"   (a string)
-       {"ok":false,"error":"consent_required"}          http 400
-
-    D. agreedToImmediateSupply: true
-       {"ok":true,"url":"https://checkout.stripe.com/c/pay/cs_test_a1yocy39x…"}
-                                                        http 200
-
-**Case C matters more than it looks.** A truthy string is what a sloppy client or
-a hand-rolled request produces, and accepting it would mean a sale whose consent
-record says "accepted" on the strength of a value nobody deliberately set. The
-check is `!== true`.
-
-**The consent is written onto the Stripe payment**, read back from Stripe's API
-for the session created in case D:
-
-    session       cs_test_a1yocy39xmf710FA1cL2RCw8iRkRgWHmPVplqh4K8jEYQcxkyeYTIsWlDO
-    amount_total  999 usd
-    metadata      {
-      "account_id": "b9c8dcc5-db62-4b4d-98cd-dbc0f2992d81",
-      "consent_immediate_supply": "accepted",
-      "consent_immediate_supply_at": "2026-08-21T23:07:08.721Z",
-      "credits": "25",
-      "pack_id": "plus"
-    }
-
-**And it is restated on Stripe's own page, above Stripe's own pay button.**
-Stripe has no field for this consent — `consent_collection` offers terms of
-service and marketing and nothing else — so it is repeated through `custom_text`.
-Read out of the live checkout page at `checkout.stripe.com`:
-
-    I agree to Un-Claude's Terms of Service and Privacy Policy
-
-    You asked for your credits to be delivered immediately and confirmed that
-    this ends your 14 day right to cancel. Our separate 30 day refund of unspent
-    credits still applies.
-
-    [ Pay ]
-
-**So the buyer meets the sentence twice**, once where they tick it and once at
-the moment the money leaves.
-
-### 2.4 What was NOT proven, and why
-
-**The charge-level copy of the consent was not proven by a completed payment.**
-The route also writes the two consent keys into `payment_intent_data.metadata`,
-so that a dispute opened months later still carries the record on the charge
-itself. **A PaymentIntent does not exist until the session is paid**, so on the
-unpaid session above that field reads `null`. Proving it needs a card typed into
-Stripe's form, which is not something this session will do.
-
-**What this means in practice:** the session-level record is proven and the
-charge-level record is the same two keys on an object the previous session
-already proved flows end to end (`payments-tested.md`, a real purchase crediting
-a real account). It is very likely correct and it is not verified. **Whoever runs
-the next end-to-end test should read `payment_intent.metadata` off the paid
-charge and confirm it.**
-
-**A signed-out visitor ticks the box and then meets a sign-up form.** The button
-still always POSTs and lets the server answer "who are you" — 401 signed out, 402
-guest — rather than guessing in a cached page. So the tick is discarded with the
-request. That is the honest outcome, since no purchase happened and no consent
-was needed, but it is one wasted click and it is recorded rather than hidden.
+**What the terms that checkbox points at now carry:** the refund policy, the
+US-only restriction, and the governing law. **One tick covers all three**, which
+is why nothing needed to be added beside it.
 
 ---
 
-## 3. Part 3 — the pricing page
+## 3. The refund, moved rather than removed
 
-**The refund was already there.** Section 0.1. What was missing is what `9G` asks
-for and what a buyer actually needs beside a price.
+**The audit trail Jon asked for, since it changed the decision.** Entry 115a has
+it in full. The short version: the policy came from **Stripe dispute economics on
+19 August**, not from law, and the legal research two days later said it **fails**
+as a substitute for the statutory right. Roughly **40 to 1**, a refund against a
+dispute, is the entire case for it and it is a good one.
 
-**Added, as small print under the rule below the four trust tiles:**
+**It is now in three places and none of them is a tile.**
 
-> Prices are in US dollars, and the price on the card is the total you pay. We
-> add nothing at checkout, no tax and no fee. Separately from our 30 day refund,
-> buyers in the UK and the EU have a 14 day legal right to cancel, which ends once
-> credits are delivered. **Both are set out in the terms.**
+**Small print under the pack grid**, at 12.5px:
 
-**It is deliberately NOT a fifth trust tile, and that is the precision the brief
-asked not to lose.** The four tiles are our promises and they are set in the
-grammar of promises. These two sentences are neither: one is what the checkout
-arithmetic does, and the other is a right the law gives the buyer that we do not
-define and cannot vary. **Putting the statutory right in a trust tile would give
-it the grammar of a selling point, and it would then read as "our cancellation
-policy" — which is the exact false register `04` entry 113 ruled against.**
+> Prices are in US dollars, and the price on the card is the total you pay.
+> Credits are sold to customers in the United States only. Unspent credits are
+> refundable for 30 days at the price you paid. **The terms have the detail.**
 
-**The two are named as two throughout:** "Separately from our 30 day refund" and
-"a 14 day legal right". Neither stands in for the other on any surface.
+**Last answer in the pricing FAQ**, placed last on purpose so that someone
+deciding whether to buy does not meet it on the way in:
 
-**Still not on the pricing page, and it cannot be:** a visible link to "Who you
-are dealing with". That section does not exist in the terms, because there is no
-name and no service address to put in it. Decision D1, now also blocked on
-section 0.2.
+> **Can I get a refund?** Yes. Within 30 days of buying, email
+> unclaudeapp@gmail.com and we will refund any credits from that purchase you have
+> not spent, at the price you paid, without asking why. Credits already spent are
+> not refunded, because the work was done.
+
+**And in full in the terms**, under its own **Refunds** heading.
+
+**What took its slot in the trust grid**, because a four-column grid cannot have
+three items and because Stripe's checklist wants this disclosed anyway:
+
+> **Your card never touches us.** You pay on Stripe's own page. We never see the
+> number.
+
+**It must not leave the pricing page entirely.** Stripe's website checklist
+expects a visible refund policy and `03-pricing.md` 12c step 8 lists it as a
+pre-activation requirement. Hidden is fine. Absent is an account risk.
 
 ---
 
@@ -416,72 +260,196 @@ one keeps the layer split rather than flattening the three into one promise.
 
 ---
 
-## 5. Handoffs. Not this session's files, or not this session's call
+## 5. The terms, as they now read
 
-**5.1 The durable-medium limb. The most important item in this note.**
-Section 0.3. Stripe's receipt does not repeat the consent, so limb 3 is partly
-open. **The cheapest fix is `invoice_creation` on the Checkout Session with the
-consent sentence in `invoice_data.footer`**: Stripe then emails a PDF invoice
-carrying our wording, which is a durable medium and needs no mail infrastructure,
-of which this project has none. **It was not applied here because it changes what
-every customer receives**, which is a product and finance decision belonging to
-Jon and to whoever owns the Stripe account, not a wording fix. `9D` drafts the
-alternative, a confirmation email that discharges three duties at once.
+The two new sections, rendered from the running application and pasted as words.
+Section 1.2 above has the payment sections.
 
-**5.2 D1 is now blocked on a contradiction, not a preference.** Section 0.2.
-United Kingdom in the research note, United States in the Stripe account, and the
-country cannot be changed after activation. Settle the fact before drafting 9A or
-9B, and note that no US consumer-protection analysis has ever been done.
+> **Refunds**
+>
+> Within 30 days of a purchase you may ask for a refund of any credits from it
+> that you have not spent, at the price you paid, and we will not ask you why.
+> Email unclaudeapp@gmail.com and we will do it. Credits you have already spent
+> are not refunded, because the work was done. Refunds are returned to the card
+> that paid.
+>
+> If you delete your account, any credits on it end with it and are not refunded.
+> Ask for the refund before you delete.
+>
+> **Who you are dealing with, and whose law applies**
+>
+> Un-Claude is operated by an individual sole trader based in California, in the
+> United States. There is no company; the trader is a person, and these terms are
+> an agreement with him. Write to unclaudeapp@gmail.com and a person reads it.
+>
+> These terms are governed by the law of the State of California and of the
+> United States, and any dispute is heard in the state or federal courts of
+> California. Nothing here takes away rights you have under consumer law that a
+> contract cannot remove.
 
-**5.3 Liability, 9E and 9F, drafted and still unapplied.** "The service is
-provided as it is, without warranties of any kind" still stands alone in "What we
-can and cannot promise", and `9H` says it should not against a consumer. `9F`'s
-suspension sentence, which refunds an unspent balance on suspension and removes
-the single most likely chargeback in the product, is also unapplied. **Both were
-out of this session's brief and both get more dangerous now money moves.**
+And in **Payment and credits**, the sentence that makes all of the above coherent:
 
-**5.4 The model cancellation form.** The CCRs expect one to be made available.
-It cannot be written without a trader name and a service address. Same block as
-D1. The email route is stated in the terms in the meantime.
+> **We sell credits to customers in the United States only.** If you are outside
+> the United States you may use the free tool, but you may not buy credits, and by
+> buying you confirm that you are a US resident. We may refuse or reverse a
+> purchase made from outside the United States and refund it in full.
 
-**5.5 Sales tax and VAT.** The terms say what the checkout does, which is that it
-adds nothing. Whether anything is owed is unanswered and unresearched.
-
-**5.6 Entries for the permanent documents.** Two other sessions are live, so
-these are recorded here to be carried across rather than written into shared
-files: the UK/US contradiction as an open question with "before any 9A wording"
-as its trigger; the consent ceremony and its three limbs as a decision log entry;
-and the durable-medium gap as an open question with `invoice_creation` named as
-the candidate fix.
+**No legal name and no address**, on Jon's instruction. The US has no equivalent
+of the UK DMCC disclosure duty and Stripe holds a support address separately.
 
 ---
 
-## 6. Verification
+## 6. Open items, ordered by how much they can hurt
 
-**What was run.**
+### 6.1 The Vercel plan is Hobby, and the site is about to take money
 
-- `npx tsc --noEmit` across the web app: **exit 0, no output.**
+**This is the biggest thing in this note and it is not a legal-page problem.**
+Read from the Vercel API, 22 August 2026:
+
+    team    jnachman17-hue's projects
+    id      team_4xVAEsxQQQJGwkd6mabjRXO5   (matches .vercel/project.json orgId)
+    plan    hobby
+
+**`03-pricing.md` 4e:** *"Vercel's Hobby plan does not permit commercial use...
+a project generating revenue must be on Pro."* **12c step 7** lists moving to Pro
+as **Jon's, before launch**, and it has not been done. Pro is $20 a month.
+
+That section also says *"Jon should check which plan the un-claude project is
+currently on. I could not: the command that would have shown it was blocked."*
+**It is now checked, and the answer is the one that needed action.**
+
+### 6.2 US-only is not enforced
+
+Jon instructed the Radar country blocklist not be populated. **A non-US card
+completes normally today.** The mechanism when he wants it: the built-in
+`card_country_blocklist` value list, confirmed present on the account and
+writable through the API. **The rule that reads it is dashboard-only and could
+not be verified from a session**, so before relying on it somebody must open
+Radar and confirm the block rule is active, and check whether it needs the paid
+Radar tier (about two cents a transaction, 0.2 percent on a $9.99 sale).
+
+### 6.3 Vercel log retention is still an unread number
+
+The privacy policy says technical logs *"sit with our hosting company, which
+keeps them for a limited period set by its platform rather than by us."*
+**That is not wrong and it is weaker than it could be.** If the real window is
+short, saying so is a selling point.
+
+**I could not read it.** The runtime-logs API returned 403 for this project from
+this session. **Jon can get it in one look:** Vercel dashboard, the `un-claude`
+project, **Logs** tab, then set the time filter to its widest setting and see how
+far back data actually exists. That measured number is better evidence than any
+figure in the docs, and when it is known the privacy sentence changes in the same
+deployment.
+
+### 6.4 Still open, smaller
+
+- **An arbitration clause with a class action waiver.** Now the highest-value
+  legal addition, and it is lawyer drafting rather than a session's.
+- **US state sales tax.** Trigger: roughly $100,000 or 200 transactions in a
+  single state. **EU VAT is gone entirely** with the EU market.
+- **`9F`, the suspension sentence** in "Ending your use", still unapplied. It
+  refunds an unspent balance on suspension and removes the most likely chargeback
+  in the product.
+- **`legal-research.md` was written against the wrong jurisdiction.** It assumes
+  the UK throughout while the Stripe account is a US individual. **Do not reuse
+  its UK-specific conclusions.** Its section 11 already admitted no US analysis
+  was done.
+
+---
+
+## 7. What was deleted, and how to bring it back
+
+**Preserved because it was built, proven and then made unnecessary by a market
+decision rather than by being wrong.** If Europe is ever opened for sale, start
+here rather than from scratch.
+
+**In commit `b965e88`:** a consent dialog in `buy-button.tsx` with an unticked
+immediate-supply checkbox and a pay button stating the amount; a `consent_required`
+gate in the checkout route that refused a missing flag, a `false`, and the string
+`"true"`; the consent and its timestamp written to Stripe session and charge
+metadata; a `custom_text` restatement above Stripe's pay button; and a
+"Cancelling, and getting your money back" section in the terms.
+
+**All of it was proven working**, including four refusal cases against the live
+route and the consent read back off Stripe's own checkout page.
+
+**The law behind it**, which has not changed: UK CCR 2013 regs 30, 37 and 16, and
+CRD Article 16(m). The right is lost only on express consent to immediate supply,
+plus acknowledgement of losing it, plus confirmation on a durable medium.
+
+**The two things that were never closed and would need closing:**
+
+1. **The durable-medium limb.** Stripe's receipt is durable but does not repeat
+   the consent. The cheapest fix identified was `invoice_creation` with the
+   sentence in `invoice_data.footer`.
+2. **Digital content or service?** `legal-research.md` 3c holds it is digital
+   content with **moderate confidence**, and names it the one item worth paying a
+   lawyer for. On the "service" reading the right survives until the credit
+   balance hits zero, and someone could spend 9 of 10 credits on day 13 and
+   cancel for everything.
+
+---
+
+## 8. Earlier handoffs, still standing
+
+Carried from `legal-applied.md` and unaffected by today's rulings.
+
+- **The account-deletion defect.** "Delete account" destroys the sign-in but
+  leaves the account row, holding email and name, and the whole credit history.
+  There is no cascade and no delete trigger. The privacy policy describes this
+  accurately today; **when the code is fixed the sentence changes in the same
+  deployment.**
+- **Nobody agrees to the terms at sign-up.** The checkbox flag is unset and there
+  is no acceptance line under either sign-up button. **Note that this matters
+  less than it did this morning**, because Stripe's checkbox now takes terms
+  acceptance from every buyer at the moment of purchase. It still matters for
+  everyone who uses the free tool without buying.
+- **The disclosure line at the tool's own button**, `legal-reconciliation.md` 2D.
+- **Whether PostHog autocapture has ever recorded workbench text.**
+
+---
+
+## 9. Verification
+
+**Run, with output.**
+
+- `npx tsc --noEmit` across the web app: **exit 0, no output.** Run after each of
+  the two commits.
 - `npx oxlint` over the three changed directories: **no output.**
-- Both changed pages rendered on the running dev server and read end to end. The
-  full text of the terms is in section 1.2 above.
-- The consent dialog opened and driven at **1280px and at 375px**. At 375 it
-  measures 326x366 inside a 375x812 viewport, fits on both axes, and the page
-  does not scroll sideways. The pay button reads "Pay $9.99" and is disabled
-  until the box is ticked; ticking it enables the button, confirmed by reading
-  `aria-checked` and `disabled` off the live elements.
-- The three card heights measured identically at 332px, so the layout signed off
-  in `04` entry 109 did not move.
-- Four real requests against `/api/checkout` as a signed-in buyer, section 2.3.
-- The resulting Checkout Session read back from Stripe's API, section 2.3.
-- The consent sentence read off the live `checkout.stripe.com` page.
-- The three meta descriptions read out of the rendered HTML.
+- **The terms rendered and read end to end** on the running dev server. The
+  changed sections are pasted as words in sections 1.2 and 5.
+- **The pricing page read out of the live DOM after the changes.** The trust grid
+  is now *Credits never expire, A failed run costs nothing, Your card never
+  touches us, Scanning is always free*. The refund appears twice on the page, both
+  times below the fold. The three pack cards still measure **332px each**, so the
+  layout signed off in entry 109 has not moved. No horizontal overflow at 375px,
+  and the page was screenshotted at that width and looked at.
+- **The three meta descriptions read out of the rendered HTML**, all under 155
+  characters.
+- **Tax and fees, verified on all three packs** through the real route, read back
+  from Stripe:
 
-**What was not run, said plainly.**
+      pack     advertised   subtotal   tax   total   currency
+      starter  $4.99        499        0     499     usd
+      plus     $9.99        999        0     999     usd
+      pro      $24.99       2499       0     2499    usd
 
-- **No completed test payment**, so `payment_intent.metadata` is unproven.
-  Section 2.4.
-- **The live terms were read by curl before the change and are unchanged on the
-  live site.** Nothing was deployed and nothing was pushed.
-- **Nothing here is legal advice and nobody in this session is a lawyer.** This
-  applies drafted wording and builds a mechanism. `legal-research.md` section 8
-  still names the items that need a professional, and one of them is this one.
+      automatic_tax: {"enabled": false}   on all three
+
+  And a search of the whole payment path finds no `automatic_tax`, no
+  `tax_behavior`, no `application_fee`, no `tax_rates` and no shipping.
+
+- **The Vercel plan read from the API:** `hobby`. Section 6.1.
+
+**Not run, said plainly.**
+
+- **No completed test payment.** The consent metadata that a paid charge would
+  have carried is gone with the ceremony, so this no longer matters for this
+  session's work.
+- **The Radar block was not populated**, on Jon's instruction, and **the Radar
+  rule state could not be read** from a session. Section 6.2.
+- **Vercel log retention could not be read.** 403 on the project. Section 6.3.
+- **Nothing was deployed and nothing was pushed.** The live site still carries the
+  two false payment sentences until Jon deploys.
+- **Nothing here is legal advice and nobody in this session is a lawyer.**

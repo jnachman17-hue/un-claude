@@ -4265,3 +4265,120 @@ it needs the victim's account UUID and takes at most 2 credits. **In `06`.**
 never fired, because the refund fix changes a database function signature and
 the migration is Jon's to paste. The `.csv`/`.md` pricing fix is by inspection
 against `format_dispatch.py`, not yet run against the engine.
+
+### 115. Credits are sold to Americans only, the European consumer regime is parked, and the checkout ceremony is Stripe's one checkbox
+
+**Ruling. Jon, 22 August 2026.** Closes the question `legal-research.md` section
+3 opened and does it by removing the market rather than by satisfying the law.
+
+**Jon's words, and the reasoning is his:** *"I am a solo developer who may not
+get $1 of revenue. I am not worried about a determined EU regulator hunting me
+down. Simply reject EU cards for now."*
+
+**WHAT WAS BUILT AND THEN DELETED IN THE SAME DAY, recorded because the reasoning
+is worth keeping.** Earlier on 22 August this session applied the full waiver
+ceremony for the UK/EU 14 day right of withdrawal: a consent dialog before
+Stripe, an unticked checkbox carrying express consent to immediate supply and
+acknowledgement of losing the right, a pay button stating the amount, a consent
+flag the checkout route refused to proceed without, the consent written onto the
+Stripe payment as metadata, and a cancellation section in the terms splitting the
+statutory right from our voluntary refund. **All of it was proven working and all
+of it is now deleted.** Commit `b965e88` holds it and
+`docs/session-notes/legal-applied-stripe.md` holds the law behind it. **If Europe
+is ever opened up, that is the starting point rather than a fresh session.**
+
+**THE TRADE, STATED HONESTLY BECAUSE IT IS A REDUCTION AND NOT AN ELIMINATION.**
+What decides whether UK and EU consumer law reaches a trader is whether he
+**directs activities** at those markets, not which card was used. Refusing non-US
+cards and saying so in the terms is good evidence that he does not. It is not a
+certificate. **Jon was told this in those words and accepted it.**
+
+**THE HALF THIS DOES NOT CLOSE, and it is the half nobody should later assume
+went away.** Restricting **sales** does not restrict **use**. The free tool stays
+open worldwide, European visitors will keep pasting text into it, and **GDPR and
+UK GDPR still apply to that processing.** The privacy policy, the controller
+question and the supervisory-authority question are untouched by this entry. What
+is gone is the consumer-contract half: withdrawal rights, the consent ceremony,
+distance-selling disclosure, the model cancellation form, the EU trader address
+and phone number, and **EU VAT**, which was the item with real money attached.
+
+**US STATE SALES TAX IS NOT VAT AND DOES NOT VANISH.** It has economic-nexus
+thresholds of roughly $100,000 or 200 transactions in a single state, so it bites
+at nothing like current volume. Parked with that as its trigger.
+
+**THE RESTRICTION IS CONTRACTUAL AND IS NOT ENFORCED.** Jon instructed that the
+Stripe Radar country blocklist **not** be populated in this session. So today a
+non-US card completes normally. **No page, comment or receipt claims otherwise,
+and none may until the Radar rule is switched on.** The mechanism, when he wants
+it, is the built-in `card_country_blocklist` value list, which exists on the
+account and was confirmed reachable through the API; the rule that reads it is
+dashboard-only and could not be verified from a session.
+
+**THE CHECKOUT CEREMONY IS NOW WHAT EVERYONE ELSE DOES, AND THAT WAS THE POINT.**
+Jon: *"We shouldn't present the granular details at checkout, just make them
+acknowledge they have read the T&C."* Stripe's own `consent_collection` checkbox,
+live since entry 112, reading **"I agree to Un-Claude's Terms of Service and
+Privacy Policy"**, unticked and required to pay. **Nothing on un-claude.com's own
+side: no dialog, no second checkbox, no interstitial.**
+
+**GOVERNING LAW ARRIVES AND D1 CLOSES. California.** Jon operates from there. He
+asked whether a friendlier state could be named instead and was told no: **a
+California court applies California law to a California trader whatever the
+contract says**, so naming another state buys nothing and reads as evasive.
+**His legal name and address are deliberately not published, on his instruction.**
+The US has no equivalent of the UK DMCC disclosure duty and Stripe holds a
+support address separately.
+
+**AND A CONTRADICTION THIS RESOLVES BY ACCIDENT.** `legal-research.md` 9A drafted
+the trader as "an individual trading as un-claude from the United Kingdom" while
+entry 112 recorded the Stripe account as a US individual. **The research note was
+written against the wrong jurisdiction throughout.** Its UK-specific conclusions
+should not be reused. Section 11 of that note already admitted no US analysis was
+done, and that gap is wider than it looked.
+
+**ONE THING GOT STRONGER BY ACCIDENT.** "Provided as it is, without warranties of
+any kind" was flagged as close to unenforceable against a UK consumer. **Against a
+US consumer a conspicuous disclaimer of that kind is broadly enforceable**, so
+`9E` drops down the list. **The highest-value US addition is now an arbitration
+clause with a class action waiver**, which is lawyer drafting and was not
+attempted.
+
+### 115a. The 30 day refund stays, and moves off the shop window
+
+**Ruling. Jon, 22 August 2026**, after asking for the audit trail behind it.
+
+**THE AUDIT TRAIL, BECAUSE THE ANSWER SURPRISED BOTH OF US.** Jon asked whether
+the policy came from a legally favourable basis. **It did not.** It was proposed
+in `03-pricing.md` P6 on **19 August**, two days before any legal research
+existed, on **pure Stripe dispute economics**: a refund costs about $0.56 and a
+dispute about $24.50, roughly 40 to 1. When the legal research did arrive on 21
+August it said the policy **fails** as a substitute for the statutory right,
+because it is narrower in scope. **It never positioned us better legally and was
+never claimed to.**
+
+**A DEFECT IN THE TRAIL WORTH REMEMBERING.** Entry 67 ratified "pricing and free
+credits" and never reached P6, yet **the promise entered the terms of service on
+20 August anyway** (commit `3eeffda`), while the pricing page correctly refused to
+advertise an unruled policy. **The binding document acquired a promise the
+marketing page would not make.** That inversion is what forced entry 113.
+
+**RULED: keep it.** The 40 to 1 arithmetic is sound and it is the only refund
+route a US customer has, since there is now no statutory right anywhere in scope.
+**Dropping it would not have reduced legal exposure by a penny.**
+
+**RULED: stop advertising it.** Jon: *"I don't want to aggressively advertise it
+... only people that are really fed up would go looking for this."* The reasoning
+is the same arithmetic read backwards: the policy earns its keep by catching the
+customer who would otherwise call their bank, and **not** by reminding a satisfied
+customer their money is refundable.
+
+**So it is discoverable rather than advertised, in three places and none of them a
+tile:** the small print under the pack grid, the last FAQ answer, and in full in
+the terms. **It did not leave the pricing page**, because Stripe's website
+checklist expects a visible refund policy and `03-pricing.md` 12c step 8 lists it
+as a pre-activation requirement. **Hidden is fine. Absent is an account risk.**
+Its slot in the trust grid went to a card-security line, which Stripe's checklist
+also wants and which sells where the refund line cost.
+
+**No real sale has ever happened**, confirmed by Jon, so the promise bound nobody
+while it was on the page.
