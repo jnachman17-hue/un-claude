@@ -1,5 +1,8 @@
-MODEL: Sonnet 5, medium effort. Five small, visitor-facing fixes from
-Jon's own list.
+MODEL: Sonnet 5, medium effort. Seven small, visitor-facing fixes.
+
+UPDATED 22 August: un-claude.com is LIVE and taking real money. The
+engine session that held the workbench has finished, so items 6 and 7 —
+previously blocked — are now yours as well. No other session is running.
 
 Read CLAUDE.md first. Section 4 (show the artefact, not a description of
 it) and section 8 (think like the visitor) both apply — every one of
@@ -16,14 +19,16 @@ TERRITORY, and it is exactly these:
   apps/web/app/(marketing)/how-it-works/page.tsx   (ONE link label, line ~359)
   apps/web/app/(marketing)/_components/faq-items.tsx  (ONE sentence, line ~73)
 
-DO NOT TOUCH, ANY OF IT. Another session is live in these right now and a
-second editor means one of you silently overwrites the other:
-  apps/web/app/(marketing)/_components/workbench/**
-  apps/web/app/(marketing)/_components/hero-section.tsx
-  apps/web/app/(marketing)/pricing/page.tsx
-  apps/web/styles/theme.css
+PLUS, for items 6 and 7 only:
+  apps/web/app/(marketing)/_components/workbench/workbench.tsx
+  apps/web/app/(marketing)/pricing/page.tsx   (the metadata export ONLY)
+
+DO NOT TOUCH:
   apps/web/engine/**, apps/web/api/*.py, apps/web/lib/engine/**
   docs/LAUNCH-CHECKLIST.md
+  The pricing page's COPY or its FAQ. It was rewritten hours ago through
+  the messaging skill to match a pricing ruling, and it is correct. You
+  are adding one line to its metadata and nothing else.
 
 TWO ENVIRONMENT FACTS THAT WILL COST YOU TIME IF YOU DO NOT KNOW THEM.
 
@@ -36,6 +41,10 @@ TWO ENVIRONMENT FACTS THAT WILL COST YOU TIME IF YOU DO NOT KNOW THEM.
    Not a hot reload, not touching i18n/request.ts. Only a full restart.
    Item 3 edits one, so expect to need that and do not spend twenty
    minutes thinking your change did not apply.
+
+THE SITE IS LIVE AND TAKES REAL MONEY. Do NOT deploy — Jon deploys, and
+only from a quiet tree. Nothing here should touch the payment path, and
+if you find yourself in a checkout or credits file, stop.
 
 YOU CANNOT DEPLOY AND MUST NOT TRY. Another session has unfinished work
 and a deploy ships the WORKING TREE rather than git.
@@ -94,11 +103,40 @@ vertically with each other. Align them.
 Fix it in the component with its existing utility classes. DO NOT edit
 styles/theme.css — another session is in that file.
 
-═══ NOT IN THIS SESSION ═══
-Jon also reported that on mobile, tapping into the paste box zooms the
-page and stays zoomed after leaving the box. That is a real defect and it
-is NOT yours — it lives in the workbench, which another session holds.
-It is recorded and will be picked up after. Do not go near it.
+═══ 6. Mobile: tapping the paste box zooms the page and never zooms back ═══
+Jon, on a phone: tap into the box to paste text and the page zooms in,
+and it STAYS zoomed after leaving the box, so the layout is wrong from
+then on.
+
+A STRONG HYPOTHESIS, NOT A DIAGNOSIS — verify before you trust it. iOS
+Safari auto-zooms any focused input or textarea whose computed font-size
+is UNDER 16px, and it does not zoom back out afterwards. Check the
+textarea's computed font-size at phone width first.
+
+If that is the cause, the fix is to make the font-size at least 16px at
+mobile widths. It must not change how the box looks at desktop.
+
+DO NOT "FIX" THIS BY EDITING THE VIEWPORT META TAG. Adding
+`maximum-scale=1` or `user-scalable=no` stops the zoom by taking pinch
+zoom away from everybody, which breaks the site for anyone who needs to
+magnify it. That is an accessibility regression traded for a layout bug.
+If the font-size route does not work, report back rather than reaching
+for the viewport tag.
+
+Prove it with the real interface at phone width: tap in, type, tap out,
+and show the page is not left zoomed.
+
+═══ 7. /pricing is the only page with no canonical tag ═══
+Eight of the nine pages in the sitemap now name their own address. The
+ninth was skipped because another session held the file; it has let go.
+
+Add to the metadata export in pricing/page.tsx, matching what the other
+eight do exactly:
+
+    alternates: { canonical: '/pricing' },
+
+TOUCH NOTHING ELSE IN THAT FILE. Not the copy, not the FAQ, not the pack
+data. One line. Prove it with curl showing the tag rendering.
 
 ═══ FINISHING ═══
 Jon is not a programmer and cannot check this by reading code. For every
