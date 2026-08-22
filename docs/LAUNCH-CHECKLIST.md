@@ -23,19 +23,43 @@ running. Every claim below was re-checked with a real run, not inherited.
 
 ---
 
-# ★ THE CRITICAL PATH TO TAKING MONEY
+# ★ LAUNCHED — 22 August 2026
 
-| # | ID | Item | Status | Owner |
-|---|---|---|---|---|
-| 1 | **C1** | Terms & privacy reconciliation | **IN FLIGHT — W2, first commit landed** | W2 drafts, **Jon approves** |
-| 2 | **E11** | Vercel Pro | **DONE — upgraded 22 Aug** | Jon |
-| 3 | **E12** | Production wiring, ~10 min | **BLOCKED by C1, E11** | Jon |
-| 4 | **E15** | **The deploy** — nothing reaches the public until this | **BLOCKED by a quiet tree** | Jon |
-| 5 | **F1** | The Fable 5 audit | **BLOCKED** | Jon triggers |
+**The site is live and can take money.** Verified by the conductor, not reported:
 
-**Nothing shipped today is on the internet yet.** Everything below marked DONE
-is done *in the repository*. The live site still serves a build from before all
-of it. That is why E15 is on the critical path in its own right.
+```
+POST https://un-claude.com/api/checkout  ->  401 {"ok":false,"error":"signed_out"}
+```
+
+401 to an anonymous request is the correct answer and proves the Stripe key is
+found and the route is running. It was **503 `checkout_unavailable`** twenty
+minutes earlier — see E16.
+
+| Step | State |
+|---|---|
+| 1. Live key into Vercel | **DONE** (after the rename in E16) |
+| 2. Production webhook + its own signing secret | **DONE** |
+| 3. EU card block | **SKIPPED** — needs paid Radar, see C8 |
+| 4. Deploy | **DONE** |
+| 5. **Prove the live path with a real purchase** | **NOT DONE — the next thing** |
+
+**Also live and verified:** the US-only terms, the old "currently free" sentence
+**gone (zero occurrences)**, the homepage canonical, the title template
+(`Pricing · Un-Claude`), and `mistral/mistral-medium` as the rewrite model.
+
+---
+
+# ★ WHAT IS LEFT, IN ORDER
+
+| # | Item | Whose | Note |
+|---|---|---|---|
+| 1 | **Step 5: buy the Starter pack, $4.99, real card** | **Jon** | The only thing that proves the live path. Five checks below. |
+| 2 | **Search Console** | **Jon** | Unblocked by the deploy. W4's five-step walkthrough. |
+| 3 | **Measure on production** | Jon/session | W1's one open item. Every timing so far is local — no HTTP, no base64, no cold start. **Production will be slower.** |
+| 4 | **Push to GitHub** | **Jon** | **109 commits exist only on this laptop while the site is live.** |
+| 5 | W7 UI notes, paused | session | Five items, plus the mobile zoom now that the workbench is free. |
+| 6 | `/pricing` canonical | session | The ninth of nine. W1 has released the file. |
+| 7 | **F1 Fable audit** | Jon triggers | The final gate. |
 
 ---
 
@@ -153,7 +177,9 @@ remain closed as non-defects.
 | E11 | **Vercel Pro** | **DONE — 22 Aug** | Hobby forbade commercial use and the live pricing page already advertised a sale, so the site was arguably in violation before a single charge, with a paused deployment as the penalty. Closed. |
 | E11a | ~~Pro raises the function ceiling~~ | **CLOSED — the conductor's flag was wrong** | The plan decision and the size-ceiling decision are connected and nobody has connected them. **The plan was never the binding constraint, so Pro changes nothing here.** W1 found the real ceiling was **the site's own abort in `lib/engine/client.ts` at 120s** — past it the browser was told "unreachable", the credit was correctly refunded, **and the Python function carried on running and being billed for a result nobody would ever receive.** Raising Vercel's cap to 300s "bought nothing". Worst case is now 225s against a 300s cap, so the 10,000-word limit stands on either plan. |
 | E12 | **Production wiring** | **BLOCKED by C1, E11** | ~10 min + ~20 verifying. Live key into **Vercel env, never a file**. A **production** webhook at `https://un-claude.com/api/stripe/webhook` on all six events, **with its own signing secret** — reusing the `stripe listen` one makes every real payment fail silently. Procedure: `stripe-setup.md` §16. **Do not improvise it.** |
-| E15 | **The deploy — nothing shipped today is public yet** | **BLOCKED by a quiet tree** | The live site serves a build from **before** all of today's work. Deploys ship the **working tree, not git**, so a deploy while W1/W2/W3 have edits on disk pushes their half-finished work live. Deploy only when every session has stopped. **This gates D7, and it gates any user seeing any of it.** |
+| E15 | ~~The deploy~~ | **DONE — 22 Aug** | The live site serves a build from **before** all of today's work. Deploys ship the **working tree, not git**, so a deploy while W1/W2/W3 have edits on disk pushes their half-finished work live. Deploy only when every session has stopped. **This gates D7, and it gates any user seeing any of it.** |
+| E16 | **The key was named `Stripe_Secret_Key`, the code reads `STRIPE_SECRET_KEY`** | **FIXED — 22 Aug** | Environment variable names are case-sensitive, so the key was never found and the first live deploy returned **503 `checkout_unavailable`** on every checkout. **Caught by probing the live endpoint before spending money, not by reading anything.** The failure was safe and loud: `hasStripe()` returned false, the route refused cleanly, and the button said "Card payments are briefly unavailable. Nothing was charged." **The guard earned its keep.** Fixed by removing and re-adding under the exact name, then redeploying — env changes do not reach a deployment that already exists. |
+| E17 | **Never answer Y to "Pull development environment variables into .env.local?"** | **RUNBOOK** | It overwrites `apps/web/.env.local`, which holds three variables that **exist nowhere in Vercel** — `UC_ENGINE_URL`, `UC_ENGINE_SCAN_PATH`, `UC_ENGINE_CLEAN_PATH` — plus the `sk_test_` key and the `stripe listen` secret that make local testing possible without real money. The file is gitignored, so **there is no committed copy to restore from.** |
 | E14 | **The "one port per session" rule is wrong — NEW, from W4** | **OPEN, belongs in the runbook** | Next.js 16 enforces **one dev server per build directory** via `.next/dev/lock`, scoped to the project folder and **not to the port**. Sessions share one working tree, so only the first session to start a dev server can have one, whatever port the others ask for. `HANDOFF-2026-08-21-launch.md` Part 0 rule 7 says to use a distinct port per session; that does not work and will waste a session's time. W4 worked around it by curling a peer's server on 3000 — valid, same tree, read-only. |
 | E1 | **Sentry not wired** | **JON approves dep** | Account created, never connected. **If the site breaks at 3am nobody finds out until Jon looks.** |
 | E2 | **Ledger backups — Vercel Pro does NOT provide these** | **JON — decision needed** | **Correcting a wrong premise before it becomes a plan: nothing bought on 22 Aug backs up the database.** The ledger lives in **Supabase**; Vercel never sees it. The "7 days" is **Supabase Pro, $25/mo** — daily backups, 7-day retention — which Jon declined earlier. **What Pro *did* unlock is the mechanism, not the backup: Cron Jobs.** |
@@ -320,3 +346,10 @@ revenue, and it is the longest unstarted item on the board.**
   **W6 left its work uncommitted and wrote no session note**, both required by
   its brief; the conductor committed it by explicit path after confirming the
   staged set contained none of W1's in-flight engine, workbench or pricing files.
+- **22 Aug — LAUNCHED.** Steps 1, 2 and 4 done; step 3 skipped for the paid
+  Radar tier; **step 5 not yet done.** The first deploy shipped with checkout
+  dead: the Vercel variable was named `Stripe_Secret_Key` and the code reads
+  `STRIPE_SECRET_KEY`. Caught by probing the live endpoint rather than trusting
+  the deploy, and fixed before a single real card was used. Recorded as E16, and
+  E17 records the `.env.local` overwrite prompt that nearly took the local test
+  keys with it.
