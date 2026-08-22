@@ -28,7 +28,7 @@ running. Every claim below was re-checked with a real run, not inherited.
 | # | ID | Item | Status | Owner |
 |---|---|---|---|---|
 | 1 | **C1** | Terms & privacy reconciliation | **IN FLIGHT — W2, first commit landed** | W2 drafts, **Jon approves** |
-| 2 | **E11** | Vercel Pro | **JON — still unconfirmed** | Jon |
+| 2 | **E11** | Vercel Pro | **JON — confirmed on Hobby, must upgrade** | Jon |
 | 3 | **E12** | Production wiring, ~10 min | **BLOCKED by C1, E11** | Jon |
 | 4 | **E15** | **The deploy** — nothing reaches the public until this | **BLOCKED by a quiet tree** | Jon |
 | 5 | **F1** | The Fable 5 audit | **BLOCKED** | Jon triggers |
@@ -133,7 +133,8 @@ remain closed as non-defects.
 
 | ID | Item | Status | Note |
 |---|---|---|---|
-| E11 | **Vercel Pro — NEW, not in the original handoff** | **JON — a launch blocker** | Hobby **forbids commercial use**, and Vercel's definition includes "advertising the sale of a product or service" — `/pricing` already qualifies today. Enforcement is a **paused deployment: the whole site goes offline**, usually after an email. *Conductor could not read the plan tier from the CLI; Jon must confirm in the dashboard.* |
+| E11 | **Vercel Pro — CONFIRMED ON HOBBY, 21 Aug** | **JON — the hardest blocker on the board** | **Jon checked the dashboard: the account is on Hobby.** Hobby **forbids commercial use**, and Vercel's own definition includes "advertising the sale of a product or service" — the live `/pricing` page names three packs and three prices, so **the site is arguably in violation today, before a single charge.** Enforcement is not a warning: it is a **paused deployment, the whole site offline**, usually after an email nobody is watching for. ~$20/month. **Upgrade before the deploy that opens checkout, not after.** |
+| E11a | **Pro also changes the engine's ceiling — check before W1 rules on B3** | **OPEN** | The plan decision and the size-ceiling decision are connected and nobody has connected them. B3 asks W1 to recommend raise-the-cap vs background-work vs an honest limit, and **what the cap can be raised to is a function of the plan.** Read the real Pro limits before accepting a recommendation built on Hobby's. |
 | E12 | **Production wiring** | **BLOCKED by C1, E11** | ~10 min + ~20 verifying. Live key into **Vercel env, never a file**. A **production** webhook at `https://un-claude.com/api/stripe/webhook` on all six events, **with its own signing secret** — reusing the `stripe listen` one makes every real payment fail silently. Procedure: `stripe-setup.md` §16. **Do not improvise it.** |
 | E15 | **The deploy — nothing shipped today is public yet** | **BLOCKED by a quiet tree** | The live site serves a build from **before** all of today's work. Deploys ship the **working tree, not git**, so a deploy while W1/W2/W3 have edits on disk pushes their half-finished work live. Deploy only when every session has stopped. **This gates D7, and it gates any user seeing any of it.** |
 | E14 | **The "one port per session" rule is wrong — NEW, from W4** | **OPEN, belongs in the runbook** | Next.js 16 enforces **one dev server per build directory** via `.next/dev/lock`, scoped to the project folder and **not to the port**. Sessions share one working tree, so only the first session to start a dev server can have one, whatever port the others ask for. `HANDOFF-2026-08-21-launch.md` Part 0 rule 7 says to use a distinct port per session; that does not work and will waste a session's time. W4 worked around it by curling a peer's server on 3000 — valid, same tree, read-only. |

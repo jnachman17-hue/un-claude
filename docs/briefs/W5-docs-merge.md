@@ -69,9 +69,26 @@ why. Where you cannot tell, write it into
 docs/06-assumptions-and-open-questions.md as open, with a trigger for
 revisiting, rather than guessing.
 
-Delete each note file only after its content is merged. If you run out of
-room, stop cleanly: merge fewer files completely rather than all of them
-partially, and say exactly which ones are done.
+DELETING: MERGE ALL, BUT DO NOT DELETE THESE FIVE YET
+
+  docs/session-notes/limits.md
+  docs/session-notes/payments-tested.md
+  docs/session-notes/stripe-setup.md
+  docs/session-notes/legal-research.md
+  docs/session-notes/legal-reconciliation.md
+
+Two sessions are running right now and their briefs instruct them to read
+those five. Deleting a file out from under a live session is how you
+break one. Merge their content normally, then leave the file on disk with
+a single line added at the very top saying which decision-log entry now
+holds it and that it is retained until W1 and W2 finish. The conductor
+removes them afterwards.
+
+Every other file on your list: delete it once its content is merged, as
+the folder's README describes.
+
+If you run out of room, stop cleanly: merge fewer files completely rather
+than all of them partially, and say exactly which ones are done.
 
 FINISHING
 Report as a list: which note went where, and which notes contradicted
