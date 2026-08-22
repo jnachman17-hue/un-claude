@@ -43,15 +43,18 @@ of it. That is why E15 is on the critical path in its own right.
 
 | Session | Scope | Territory | Status |
 |---|---|---|---|
-| **W1** | Engine correctness | `engine/**`, `api/*.py` | **IN FLIGHT** — 2 commits landed |
+| **W1** | Engine correctness **+ the word/credit counter** | `engine/**`, `api/*.py`, **`workbench/**`, `lib/engine/client.ts`** | **IN FLIGHT** — 2 commits landed, scope widened by Jon |
 | **W2** | Legal + checkout consent | legal pages, pricing, `buy-button.tsx`, checkout route | **IN FLIGHT** — 1 commit landed |
-| **W3** | Word counter + disclosure | `workbench/**` | **READY — collision-checked, safe to send** |
+| **W3** | ~~Word counter + disclosure~~ | — | **SCRAPPED 21 Aug by Jon.** Both items resolved elsewhere — see B6 and C4. |
 | **W4** | SEO | `root-metdata.ts`, 3 page metadata | **DONE — verified by conductor** |
 | **W5** | Docs merge | `docs/04`, `docs/07` | Not started |
 
-**W3 verified safe:** the workbench contains no checkout path at all (zero
-matches for checkout/packId/buy-button), and W2's landed commit touched only
-legal pages, pricing, `buy-button.tsx` and the checkout route. No overlap.
+**The workbench is no longer free.** W1's scope was widened to take the word and
+credit counter, and it currently holds `workbench.tsx`, `credits.ts`,
+`encode.ts`, `marked-text.tsx` and `lib/engine/client.ts` alongside the engine.
+**Nothing else may touch the workbench until W1 reports done.** Still no overlap
+with W2, which holds only the legal pages, pricing, `buy-button.tsx` and the
+checkout route — verified against the working tree.
 
 ---
 
@@ -84,7 +87,7 @@ conductor verified.** Territory `apps/web/engine/**`, `apps/web/api/*.py`.
 | B3 | **The two size ceilings** | **OPEN** | F1, money, G2 | Localhost 10,000 words fails with **nothing timing it out** = engine defect. Production: **nothing above 2,000 words has ever run.** Measure, then recommend one of raise the cap / background work / honest limit. |
 | B4 | **Pricing arbitrage** | **OPEN → then Jon** | H4 | 10k pasted = 10 credits; the same text as `.txt` = 1. Verify it is real; the ruling is Jon's. A session must **not** quietly change the pricing rule. |
 | B5 | **Retry exhaustion at 1,000 words** | **OPEN** | — | `uc_chunk`'s retry loop sometimes gives up. Both known cases refunded correctly. Never investigated. |
-| B6 | **Word counter freezes on a stale number** | **ASSIGNED — W3, ready to send** | — | Delete 10,000 words, box empty, still reads "10,524 words". **A price display that lies.** *Conductor's untested hypothesis:* `workbench.tsx:1465` reads `countWords(loaded.text \|\| text)`, so a non-empty `loaded.text` wins forever once set. Read, not run — verify it. |
+| B6 | **Word counter freezes on a stale number** | **IN FLIGHT — absorbed by W1** | — | Delete 10,000 words, box empty, still reads "10,524 words". **A price display that lies.** *Conductor's untested hypothesis:* `workbench.tsx:1465` reads `countWords(loaded.text \|\| text)`, so a non-empty `loaded.text` wins forever once set. Read, not run — verify it. |
 
 **Do not edit `ENGINE_TEXT_EXTS` or the engine's `TEXT_EXTS` without running
 `verify-pricing-matches-engine.mjs`.** It guards a 100x undercharge. It passes today.
@@ -99,7 +102,7 @@ conductor verified.** Territory `apps/web/engine/**`, `apps/web/api/*.py`.
 | C2 | **Checkout consent ceremony** | **IN FLIGHT — W2, mostly landed** | F1 | A legal requirement, not a nicety. The 30-day refund does **not** satisfy the UK/EU statutory withdrawal right. Needs express consent + a pay button stating the amount ("Pay $9.99", never "Continue") + durable-medium confirmation (the Stripe receipt covers it). **Cheap now, expensive to retrofit.** |
 | C2a | **Durable-medium limb only partly closed — W2's own finding** | **OPEN** | W2 reports the Stripe receipt is durable **but does not repeat the consent**. The statutory right is only lost if all three limbs hold, so this one is not finished. Recorded rather than papered over — verify against a real receipt before calling C2 done. |
 | C3 | **Refund on the pricing page** | **IN FLIGHT — W2** | — | The live terms already promise it word for word. Refund ≈ $0.56, dispute ≈ $24.50. **Must never be labelled "your right to cancel"** — the voluntary policy and the statutory right are two different things. |
-| C4 | **Disclosure line at the tool's button** | **ASSIGNED — W3, ready to send** | — | "Your text is processed and deleted, never stored. The optional rewrite sends it to an AI model to be rewritten." The people who care most are the ones who never sign up. |
+| C4 | **Disclosure line at the tool's button** | **DECLINED by Jon, 21 Aug — do not re-propose** | — | Jon does not want it at the button. **Checked before recording, and the decline is safe:** the transparency duty is already discharged in the privacy policy, which says in its own words that nothing submitted is kept, that the optional rewrite is the only thing that leaves, that it goes to an AI company's model and comes straight back, and that this happens only when the rewrite is run. So section 2D's suggestion was a trust and conversion idea, **not a legal requirement**, and nothing is exposed by leaving it out. A future session proposing it again should be pointed here. |
 | C5 | **Essay-mill advertising constraint into `unclaude-messaging`** | **OPEN** | — | The offence does not cover this product, but **advertising such a service to students is a separate offence.** A hard constraint on marketing. Put it in the skill so it binds all future copy. |
 | C6 | Deferred legal decisions | **JON** | — | Name and address handled inside the Stripe chat. **No entity will be formed — settled.** Remaining: MoR, VAT for EU sales, ICO registration. |
 
@@ -250,3 +253,12 @@ revenue, and it is the longest unstarted item on the board.**
   limb is only partly closed. W4 left its work uncommitted; the conductor
   committed it by explicit path after confirming the staged set contained no
   engine or legal files.
+- **21 Aug, W3 scrapped by Jon.** Its two items did not disappear, they moved.
+  The word counter (B6) was absorbed into W1, whose scope Jon widened to include
+  the workbench — so the workbench is now **held**, not free, and the checklist
+  records that before something else walks into it. The disclosure line (C4) was
+  declined outright. **Checked rather than just filed:** the privacy policy
+  already discloses the rewrite leaving for an AI model, so section 2D's line
+  was a trust idea and not a legal requirement, and declining it exposes
+  nothing. Recorded as do-not-re-propose because a declined suggestion with no
+  reasoning attached is exactly what a future session re-raises.
