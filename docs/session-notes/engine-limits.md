@@ -16,7 +16,14 @@ because a note that buries them is a note that hides them.
 
 # 1. THE SHORT VERSION
 
-## Is it closed out? No. Four things need Jon and one needs its own session.
+## Is it closed out? Round three closed all but one, and that one is Jon's to run.
+
+**Everything Jon ruled on is done and verified.** The one item left is
+**measuring on production**, which needs a deploy and is his. One decision is
+waiting on him: **which model to run** (section 15, measured bake-off).
+
+Section 2 below is the state as it stood BEFORE his rulings. Section 14 is what
+changed after them, and it is the part to read.
 
 **The single worst finding came last, from the interface stress sweep, and it
 reverses an answer given earlier in this session.** See section 2.1. Jon read an
@@ -970,3 +977,381 @@ cd apps/web && node scripts/verify-pricing-matches-engine.mjs    # 3/3 PASS
 
 cd apps/web && npx tsc --noEmit                   # exit 0
 ```
+
+---
+
+# 14. ROUND THREE — Jon's rulings, carried out
+
+**Same session.** Jon read the report and ruled. Every item below has a run
+behind it and the real output pasted in.
+
+| His ruling | What happened |
+|---|---|
+| **Measure on production. Happening shortly** | **Not done, and it is the one open item.** Needs a deploy |
+| **Metadata stripping: leave as is** | Left exactly as it was. The scan still says "no AI metadata" and the clean still removes `dc:creator` |
+| **Word documents are just metadata. Keep it that way** | Done. The interface no longer claims a rewrite it does not perform |
+| **Make .txt behave exactly like a paste** | Done, and it turned out to be the biggest single fix in the session |
+| **Fix the retry number parser** | Done. 29 cases, wrong on 0, where the old reader was wrong on 5 |
+| **You have my okay to install exiftool** | Installed, and **measured to change nothing** for the four accepted types |
+| **Re-check the ceiling now the account is Pro** | Done. **It does not change the recommendation.** See section 16 |
+| **Fix every UI item** | All five, plus the smaller ones, verified in the browser |
+| **The pricing page states the old rule in four places** | All four updated through the messaging skill |
+
+## 14.1 The worst defect in the session, and it arrived last
+
+**One line decided whether an upload was treated as writing or as a picture, and
+it was wrong for BOTH file types, in opposite directions.**
+
+```
+workbench.tsx:358   const carriesProse = !isFile || scan?.kind === 'container';
+
+  pasted text  isFile=False kind=text       -> carriesProse=True    treated as PROSE
+  essay.txt    isFile=True  kind=text       -> carriesProse=False   treated as AN IMAGE
+  essay.docx   isFile=True  kind=container  -> carriesProse=True    treated as PROSE
+
+what the engine actually does:
+  pasted text -> layer A + rewrite
+  essay.txt   -> layer A + rewrite     <- the interface asked for NEITHER
+  essay.docx  -> layer A + metadata    <- the interface asked for a rewrite
+```
+
+Uploading an essay showed, on screen: **"An image carries no text, so there are
+no characters to hide between"** — while the same panel listed the zero width
+space it had just found.
+
+**Fixed by splitting one flag into two**, because they were always two questions:
+
+```js
+const carriesText  = !isFile || scan?.kind === 'text' || scan?.kind === 'container';
+const carriesProse = !isFile || scan?.kind === 'text';
+```
+
+`carriesText` drives the hidden-characters row, because layer A genuinely runs on
+a Word document too — proved before splitting anything:
+
+```
+DOES A WORD DOCUMENT GET LAYER A (hidden characters)?
+  zero width spaces still in the cleaned document: 0
+  -> layer A RUNS on a .docx
+```
+
+`carriesProse` drives the rewrite, the price and the copy.
+
+### Verified in the running interface
+
+**A 3,004 word `.txt` upload, before and after:**
+
+```
+before:  TXT file = 1   Sanitise it (1) 1   1 file = 1
+         Hidden characters      NO TEXT TO CHECK   "An image carries no text..."
+         Statistical watermark  NO WORDS TO MARK   "An image carries no writing..."
+
+after:   TXT file = 4   Sanitise it (1) 4   3,004 words = 4 · takes up to about 1 minute
+         Hidden characters      1 FOUND     "Characters sitting between the words... Zero width space"
+         Statistical watermark  PRESUMED PRESENT
+```
+
+**A Word document, after:**
+
+```
+         DOCX file = 1   Sanitise it (1) 1   1 file = 1
+         Hidden characters      NONE FOUND    "None in this text. 9 classes checked..."
+         Statistical watermark  NOT REWRITTEN "A Word document is cleaned of its metadata and its
+                                               hidden characters. Its wording is not rewritten, so a
+                                               statistical mark in the writing itself would stay.
+                                               Paste the text instead to have it rewritten."
+```
+
+**That last sentence is Jon's ruling written out for the visitor.**
+
+### And the two-implementations trap, a third time
+
+The `.txt` price came back as **zero words** at first. The standalone development
+server returns no `billing` block; only the Vercel function did. So the interface
+priced every uploaded file at zero words locally and correctly in production.
+
+`billing_estimate` now lives in `uc_policy.py` and **both** entry points send it:
+
+```
+kind: text  billing: {'credits': 4, 'words': 3011, 'basis': 'words', 'limit': 10000, 'over_limit': False}
+```
+
+The file card's coin was also **hardcoded to 1**, so the card said "TXT file = 1"
+beside a button saying 4. It is told the price now.
+
+## 14.2 The number reader, third rewrite, first one that measures better
+
+The old reader could not read scale words at all. "thirty thousand" resolved to
+**30** and "30,000" to **30000**, so a model obeying rule 5 of the prompt looked
+like it had dropped a figure.
+
+**An earlier attempt this session was built and rejected** because it multiplied
+without adding and broke "two thousand five hundred". This one does both, using
+the ordinary way English numbers are read, with the real combining rule so that
+"nineteen eighty four" stays 19 and 84 rather than becoming 103.
+
+```
+   OLD          NEW          should
+-> RETRY        ok           ok       'thirty thousand manuscripts' -> '30,000 manuscripts'
+-> RETRY        ok           ok       'one hundred and twenty seats' -> '120 seats'
+-> RETRY        ok           ok       '$4.2 million in sales' -> '4,200,000 in sales'
+-> RETRY        ok           ok       '30 thousand copies' -> '30,000 copies'
+   ok           ok           ok       'two thousand five hundred pounds' -> '2,500 pounds'
+   ok           ok           ok       'nineteen eighty-four' -> 'nineteen eighty-four'
+   ok           ok           ok       'thirty-four percent' -> '34 percent'
+   ok           RETRY        RETRY    'two hundred towns' -> 'a handful of towns'
+   RETRY        RETRY        RETRY    'profits rose 42 percent in 2019' -> 'profits rose in 2019'
+
+cases: 29   OLD guard wrong on 5   NEW guard wrong on 0
+```
+
+### The retries did not fall, and THAT is the finding
+
+Measured on the same 10,464 word document, retries went **up**, and chasing why
+found something more important than the parser.
+
+**The model itself mangles figures.** Given three attempts at one paragraph:
+
+```
+SOURCE: Within sixty years there were coffee houses in every ward. Stockjobbers were
+        expelled in 1698 and carried on trading there for the next eighty years.
+
+ATTEMPT 1: Within fifty-eight years ... banished in sixteen ninety-eight ... eighty-two.
+ATTEMPT 2: Within half a century ... In seventeen sixty-eight ... four-score years.
+```
+
+**"1698" became "seventeen sixty-eight", which is a different year.** "sixty
+years" became "fifty-eight years". **The fact guard firing is correct.** The
+retries are true positives, not waste.
+
+A rule 5a was added to the prompt forbidding exactly this. **It did not
+measurably help** and is kept only because it costs nothing and states the
+intent. Three fresh attempts after it still produced "sixteen ninety-eight",
+"four score years" and "three score years".
+
+**So the honest answer to "fix the retry parser" is: the parser is fixed and
+proven, and the remaining retries are the model, not the parser.** Which leads to
+the next section.
+
+## 14.3 The five interface defects, all fixed and all verified
+
+| | Verified |
+|---|---|
+| A refused file kept its price and a live button | `csv_still_in_box: false`, message shown, box back to "Scan it" |
+| The cursor never landed in the box | `U2_activeElement: "TEXTAREA"` — was `BODY` |
+| The scanned text could not be selected without wiping the scan | `U3_selected_chars: 384`, `has_newlines: true`, tag is now `DIV` |
+| The hero could be scrolled sideways | `scrollLeft` forced to 300, reads back `0`; `overflow-x: clip` |
+| The counter was usually caught mid-flip | `card-flip .28s` and a 40 degree start, was 0.5s and 100 |
+
+**The selection fix is the other half of Jon's original formatting complaint.**
+Highlighting the result to copy it was never going to work while it was a
+`<button>`, whatever the whitespace rule said. It now selects **with its
+newlines**.
+
+Smaller ones fixed in the same pass: the browser's price rule still used the
+extension list the Stripe audit removed from the route (`.md|.markdown`), and the
+file card's hardcoded credit.
+
+**Rendered and looked at, desktop and 375px.** The over-limit message wraps to
+two clean lines on a phone and the page does not scroll sideways at either width
+(`scrollWidth` 1280 and 375).
+
+### I broke the site once doing this, and it is worth writing down
+
+Shortening the counter flip, I added a `@media` block inside `@theme`. **That is
+a build error in Tailwind v4** and it took every page to a 500:
+
+```
+CssSyntaxError: `@theme` blocks must only contain custom properties or `@keyframes`.
+```
+
+It also survived a dev server restart, because Turbopack had cached it; it needed
+`.next` removed. **And the block was redundant anyway** — `globals.css` already
+collapses every animation on the site under `prefers-reduced-motion`. Removed.
+
+**The lesson is the messaging skill's own rule 4, which I skipped: render it and
+look, before claiming done.**
+
+## 14.4 exiftool: installed, and measured to be unnecessary
+
+Jon approved installing it. Installed (13.55) and measured with it on PATH and
+removed:
+
+```
+--- exiftool with ---            --- exiftool without ---
+marked.png  ai=True  findings=['PNG tEXt: Claude']      marked.png  ai=True  findings=['PNG tEXt: Claude']
+clean.png   ai=False findings=[]                        clean.png   ai=False findings=[]
+photo.jpg   ai=False findings=[]                        photo.jpg   ai=False findings=[]
+essay.docx  ai=True  findings=['docProps/app.xml: ai:Claude']   essay.docx  ai=True  findings=[...]
+```
+
+**Identical. It changes nothing for the four accepted types**, because the engine
+reads PNG chunks, JPEG segments and DOCX parts natively. It only ever mattered
+for PDF, which is not accepted.
+
+**This is a good outcome rather than a wasted one.** exiftool is a system program
+and **Vercel cannot install system programs**, so anything depending on it would
+have worked locally and not in production — the exact trap that has now bitten
+this project three times. Nothing depends on it. It stays installed as a
+cross-check tool.
+
+## 14.5 The grant question, confirmed
+
+A brand-new account that was never a guest gets **+2 `anon_grant` and +3
+`signup_grant` = 5**. Read from `lib/server/credits.ts`:
+
+```js
+const isConversion = user.isConversion === true && !user.isAnonymous;
+if (!isConversion) { ... grantOnce(user.id, WELCOME_CREDITS, 'anon_grant') }
+if (!user.isAnonymous) { grantOnce(user.id, SIGNUP_CREDITS, 'signup_grant') }
+```
+
+A converter gets the +2 as a guest, which merges across, then +3. **Both routes
+total 5. It is deliberate and consistent**, and both were seen in the live ledger.
+
+## 14.6 The pricing page, updated through the messaging skill
+
+Jon's instruction, and it was right: the `.txt` change made four statements
+false. All four updated, and the skill loaded first:
+
+| Where | Now |
+|---|---|
+| Meta description | "One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size." |
+| Unit row 1 | "1,000 words of text, pasted or uploaded" |
+| Unit row 2 | "One Word document or picture, any size" |
+| FAQ answer | Teaches the split by **what the work is**: text gets rewritten and a rewrite is priced by the word; a document or picture has its metadata and hidden characters removed, which is the same job at any size |
+| The comment at line 116 | Records the ruling and why the line moved |
+
+**The terms of service already carried the new rule** and needed no change.
+
+**No em dashes in any visitor-facing string.** One I had introduced earlier in the
+over-limit message has been removed:
+
+```
+10,500 words. The rewrite takes 10,000 at a time. Split it and run it in parts.
+```
+
+---
+
+# 15. THE MODEL: a measured recommendation, and Jon's call
+
+Chasing the retries found that the model is the cost driver. A bake-off, same
+prompt, same 306 word chunk, three attempts each:
+
+| Model | Figures kept | Length | Seconds | Missed |
+|---|---|---|---|---|
+| `mistral/mistral-small` (current) | **1/3** | 113% | 4.8 | 60, 80 |
+| **`mistral/mistral-medium`** | **3/3** | 108% | 5.4 | none |
+| `deepseek/deepseek-v3.1` | 2/3 | 106% | 34.1 | 1699 |
+| `alibaba/qwen3-next-80b-a3b-instruct` | 0/3 | 104% | 3.2 | 60 |
+| `moonshotai/kimi-k2` | timed out | | | |
+| `zai/glm-4.6` | timed out | | | |
+
+Confirmed on the full 10,464 word document:
+
+| | small | **medium** |
+|---|---|---|
+| Model calls | 162 | **109** |
+| Retries | 128 | **75** |
+| Truncated chunks | 3 | **0** |
+| Seconds | 99.6 | **84.6** |
+| Words out | 96% | **99%** |
+| Cost | $0.027 | $0.101 |
+
+**Recommendation: switch to `mistral/mistral-medium`.** Better on every axis that
+matters to the product, and faster despite being the larger model, because it
+does not spend calls being corrected. It costs 3.8x more per run, which is
+**about 1 cent per 1,000 words against roughly 50 cents of revenue per credit**,
+so cost is not the constraint — ENGINE.md section 5 already says so.
+
+**One caveat, stated plainly:** medium split paragraphs more (192 in, 206 out)
+where small merged them (192 to 190). Neither kept structure exactly on a
+192-paragraph document. `structure_kept` reports it either way.
+
+**This is one Vercel environment variable and it is Jon's to set.** No code
+change is needed and none was made.
+
+---
+
+# 16. VERCEL PRO: re-checked, and it does not change the recommendation
+
+Jon flagged that the account moved from Hobby to Pro. Read from Vercel's own
+documentation, 21 August 2026:
+
+|  | Default | Maximum | Extended maximum |
+|---|---|---|---|
+| Hobby | 300s | 300s | — |
+| **Pro** | **300s** | **800s** | **1800s (30 minutes)** |
+| Enterprise | 300s | 800s | 1800s |
+
+Python 3.14 is on the supported list for the extended beta, so `api/*.py` could
+run for up to 30 minutes.
+
+**It changes nothing, and the reason matters: Vercel's ceiling was never the one
+that bound.** The site gave up on its own engine call at 120 seconds, well under
+even Hobby's 300. The measured worst case at 10,000 words is 109 seconds.
+
+**So the 10,000 word limit stands, and it is not a platform limit.** It is set by
+three things Pro does not touch:
+
+1. **How long a person will wait.** 109 seconds is already a long time to watch a
+   box. Twenty thousand words would be nearly four minutes.
+2. **Variance.** The same document ranges 79 to 109 seconds because time tracks
+   retries, not length. A limit has to hold at the bad end.
+3. **What a failure costs.** A run cut off after two minutes has spent the money
+   and returns nothing.
+
+**`maxDuration` stays at 300 and should NOT be raised to 800.** It already sits
+above the site's 240 second abort, which is what matters; raising it further only
+lets an abandoned function keep running and billing after the browser has stopped
+listening.
+
+**What Pro genuinely buys** is headroom for the background-job design if very
+large documents are ever wanted. That remains the right answer for 50,000 word
+documents and it is still a job store, a status endpoint and an interface that
+shows progress.
+
+---
+
+# 17. WHAT REMAINS
+
+**One item, and it is Jon's:**
+
+- **Measure on production.** Everything here is local against the real engine
+  code, and for anything about money against the real production database. The
+  timings carry no HTTP, no base64 and no cold start, so production will be
+  slower. Jon says this is happening shortly.
+
+**One decision, with the data above:** which model.
+
+**Deliberately left alone, on Jon's ruling:** a Word document with no AI markings
+still loses `dc:creator` silently. Unchanged.
+
+**Still true and still worth knowing:**
+
+- No file written by real Word, a real camera or a real AI tool was ever used.
+  Every fixture was hand-built. "Opens" means the structural checks passed, not
+  that Microsoft Word opened it.
+- Genuine signed C2PA provenance is untested; a valid manifest cannot be
+  hand-built.
+- A UTF-16 `.txt` from Notepad is refused with a confusing sentence.
+  Pre-existing: the engine already refused it.
+- Two workbench instances render on the page (a responsive pair). Harmless, but
+  it makes browser testing confusing because only one receives a synthetic file.
+
+---
+
+# 18. WHAT THE WHOLE SESSION SPENT
+
+Read from the AI Gateway at both ends, not estimated:
+
+```
+start  {"balance":"14.73742628","total_used":"0.26257372"}
+end    {"balance":"14.34079368","total_used":"0.65920632"}
+```
+
+**39.7 cents**, covering every rewrite in this note: the formatting proofs, four
+sizes before the fixes and four after, the instrumented 10,000 word runs, the
+model bake-off, and the live route tests. No credits were bought. Four throwaway
+accounts were funded by inserting ledger rows and deleted, each verified at 0
+rows remaining.

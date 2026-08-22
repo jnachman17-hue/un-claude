@@ -260,7 +260,7 @@ Every setting is an environment variable. **Nothing needs a code change to tune.
 |---|---|---|
 | `WATERMARKS_REWRITE_BACKEND` | `openai-compatible` | |
 | `WATERMARKS_REWRITE_BASE_URL` | `https://ai-gateway.vercel.sh` | **No `/v1`.** The code appends it. Putting it in gives a 404 |
-| `WATERMARKS_REWRITE_MODEL` | `mistral/mistral-small` | |
+| `WATERMARKS_REWRITE_MODEL` | `mistral/mistral-small`. **A measured bake-off on 21 Aug 2026 recommends `mistral/mistral-medium`: 3/3 figures kept against 1/3, no truncations on a 10,464 word document, 109 model calls against 162, 84.6s against 99.6s, at 3.8x the model cost, which is about 2% of the revenue on a credit.** Jon's call; it is one Vercel setting | |
 | `WATERMARKS_REWRITE_API_KEY` | **Secret.** Set on Vercel as Sensitive | Never in the repository |
 | `UC_LAYER_B_CHUNK_WORDS` | **NOT SET. Code default is 350** | Words per chunk. The default happens to be the measured best value, so this one is correct by accident rather than by configuration |
 | `UC_LAYER_B_WORKERS` | **NOT SET. Code default is 8** | Chunks at once. Correct value, unset. If the default ever changes upstream this silently regresses to the 56 second failure below |
@@ -412,8 +412,11 @@ is why it is the paid tier.
    number-dense document can spend its whole budget retrying and time out with
    nothing to show. `06` row 66.
 1. **Guard names as well as numbers.** Same mechanism, free to compute.
-2. **Surface `figures_to_check` in the interface.** It is returned and currently
-   unused. It is the honest half of Jon's checklist panel design.
+2. ~~**Surface `figures_to_check` in the interface.**~~ **ALREADY DONE**, and
+   this entry was stale. `receipt-panel.tsx` prints "Check these figures against
+   your original before you use this:" followed by the list. Verified 21 Aug
+   2026. It matters more than it looks now that the model is known to change
+   figures outright.
 3. **A test suite that runs on demand**, covering length, content type, repeat
    runs for variance, and hostile input.
 4. **Reconsider the model** when quality matters more than launch speed. The
