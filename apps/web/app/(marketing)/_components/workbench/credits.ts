@@ -76,8 +76,18 @@ export function costFor(input: {
   wantsRewrite: boolean;
   words: number;
 }): number {
-  const textLike =
-    !input.isFile || /\.(txt|md|markdown|text)$/i.test(input.name);
+  /*
+   * THIS LIST USED TO BE THE ONE THE STRIPE AUDIT REMOVED FROM THE ROUTE.
+   * It still said `.md|.markdown`, which the server treats as a CONTAINER and
+   * charges one flat credit for, so a .md upload was QUOTED per 1,000 words and
+   * CHARGED one. Quoted more than charged is the safe direction, but the two
+   * disagreeing is how the 100x undercharge happened in the first place.
+   *
+   * `.md` is refused at the door as of 21 August 2026, and this now mirrors the
+   * server's own `ENGINE_TEXT_EXTS` for what remains. `verify-pricing-matches-
+   * engine.mjs` guards the server's copy against the engine's.
+   */
+  const textLike = !input.isFile || /\.(txt|text)$/i.test(input.name);
   const byWords = Math.max(1, Math.ceil(input.words / WORDS_PER_CREDIT));
 
   if (textLike && input.wantsRewrite) return byWords;

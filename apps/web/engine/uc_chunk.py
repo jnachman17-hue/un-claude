@@ -79,58 +79,116 @@ class FactsLost(RuntimeError):
         self.missing = missing or []
 
 
-_NUM = re.compile(r"\d[\d,]*(?:\.\d+)?")
-_WORDNUM = {
-    "zero":"0","one":"1","two":"2","three":"3","four":"4","five":"5","six":"6",
-    "seven":"7","eight":"8","nine":"9","ten":"10","eleven":"11","twelve":"12",
-    "thirteen":"13","fourteen":"14","fifteen":"15","sixteen":"16",
-    "seventeen":"17","eighteen":"18","nineteen":"19","twenty":"20","thirty":"30",
-    "forty":"40","fifty":"50","sixty":"60","seventy":"70","eighty":"80","ninety":"90",
+# THE NUMBER READER. Rewritten 21 August 2026, and it has now been got wrong
+# THREE times, so read this before touching it and re-run the table that proves
+# it (docs/session-notes/engine-limits.md, part 5).
+#
+# Its job is to answer one question: what numeric VALUES does this text contain?
+# It compares values, never spellings, so a model writing "eighteen percent" for
+# "18 percent" is not a loss and does not cost a retry.
+#
+# THE THREE MISTAKES, IN ORDER, BECAUSE EACH ONE WAS A REPAIR OF THE LAST.
+#
+#   1. "thirty-four" resolved to 30 AND 4 rather than 34, so the guard rejected
+#      six chunks in eight on entirely false grounds.
+#   2. The repair added 34 to the set and LEFT 30 AND 4 IN IT, so a source saying
+#      "thirty-four" demanded a 30 in the output and an output written "34" — the
+#      natural thing for a model to do — looked like a dropped figure.
+#   3. Scale words were not read at all. "thirty thousand" resolved to 30 and
+#      "30,000" to 30000, so a model doing exactly what rule 5 of the prompt asks
+#      looked like it had dropped a figure. Measured on a 10,464 word document:
+#      126 of 149 attempts ended in the fact guard, eight chunks burned all eight
+#      retries, and the run cost about four times what a clean one needs.
+#
+# An earlier attempt at mistake 3 was BUILT AND THEN REJECTED, because measuring
+# it showed it cured "thirty thousand" and broke "two thousand five hundred" —
+# it multiplied but could not add. A change that measures as a wash is worse than
+# no change. This version does both, and is measured against 29 real rewrite
+# pairs: the old reader is wrong on 5 of them, this one on none.
+#
+# The algorithm is the ordinary way English numbers are read. Values accumulate
+# into `current`; "hundred" multiplies it; a scale word banks it into `total` and
+# starts again; anything that is not part of a number flushes what has been
+# built. The combining rule is the real English one — a smaller value joins a
+# larger one only when the larger is a round hundred or more, or when a tens word
+# is followed by a unit ("thirty four"). That is what keeps "nineteen eighty
+# four" as 19 and 84 rather than 103.
+_UNITS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+    "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16,
+    "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30,
+    "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80,
+    "ninety": 90,
 }
+_SCALES = {"thousand": 1000, "million": 1000000,
+           "billion": 1000000000, "trillion": 1000000000000}
+
+#: A run of digits (commas and one decimal point allowed), or a word.
+_TOKEN = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-z]+")
 
 
-_TENS = {"twenty":20,"thirty":30,"forty":40,"fifty":50,
-         "sixty":60,"seventy":70,"eighty":80,"ninety":90}
+def _format_value(value: float | int) -> str:
+    """One spelling per value, so two texts can be compared as sets."""
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if isinstance(value, int):
+        return str(value)
+    return repr(value).rstrip("0").rstrip(".")
 
 
 def _numbers(text: str) -> set[str]:
-    """Every numeric value present, however written. Digits and number-words.
+    """Every numeric value present, however it is written."""
+    out: set[str] = set()
+    current: float = 0
+    total: float = 0
+    have = False
 
-    Compares values rather than spellings, so a model writing 'eighteen percent'
-    for '18 percent' is not a loss.
+    def flush() -> None:
+        nonlocal current, total, have
+        if have:
+            out.add(_format_value(total + current))
+        current = total = 0
+        have = False
 
-    COMPOUNDS MATTER AND HAVE NOW BEEN GOT WRONG TWICE, IN OPPOSITE DIRECTIONS.
-
-    First time: 'thirty-four' resolved to 30 and 4 and not to 34, so the guard
-    rejected six chunks in eight on entirely false grounds.
-
-    Second time, fixed here 19 August 2026: the repair added 34 to the set but
-    LEFT 30 AND 4 IN IT. So a source saying 'thirty-four' demanded that the
-    output contain 30, and an output written as '34' — the natural thing for a
-    model to do — looked like a dropped figure. Measured on a real 674 word
-    document: ten model calls where three were needed, seven of them retries
-    chasing numbers that were never lost, 38 seconds against a 60 second
-    ceiling, and four times the documented cost per thousand words.
-
-    A tens word immediately followed by a unit word is now consumed as ONE
-    value. 'thirty-four' is 34 and nothing else. 'thirty percent and four
-    people' is still 30 and 4, because those two words are not adjacent.
-    """
-    out = {m.replace(",", "").rstrip("0").rstrip(".") if "." in m.replace(",", "")
-           else m.replace(",", "") for m in _NUM.findall(text)}
-    toks = re.findall(r"[a-z]+", text.lower().replace("-", " "))
-    i = 0
-    while i < len(toks):
-        word = toks[i]
-        if word in _TENS and i + 1 < len(toks) and toks[i + 1] in _WORDNUM:
-            unit = int(_WORDNUM[toks[i + 1]])
-            if 1 <= unit <= 9:
-                out.add(str(_TENS[word] + unit))
-                i += 2          # the ten and the unit are one number, not two
-                continue
-        if word in _WORDNUM:
-            out.add(_WORDNUM[word])
-        i += 1
+    for token in _TOKEN.findall(text.lower().replace("-", " ")):
+        if token[0].isdigit():
+            # A figure written in digits ends whatever came before it. A scale
+            # word after it still applies: "30 thousand" is 30000.
+            flush()
+            raw = token.replace(",", "")
+            current = float(raw) if "." in raw else int(raw)
+            have = True
+        elif token in _UNITS:
+            value = _UNITS[token]
+            joins = have and (
+                # "two hundred and five", "one thousand and one"
+                (current > 0 and current % 100 == 0 and value < 100)
+                or (current == 0 and total > 0 and value < 1000)
+                # "thirty four" is 34; "nineteen eighty four" is 19 and 84
+                or (20 <= current <= 90 and current % 10 == 0 and 1 <= value <= 9)
+            )
+            if joins:
+                current += value
+            else:
+                flush()
+                current, have = value, True
+        elif token == "hundred":
+            # A bare "hundred" with nothing before it is 100, so that "a hundred"
+            # and "one hundred" agree rather than costing a retry.
+            current = (current or 1) * 100
+            have = True
+        elif token in _SCALES:
+            total += (current or 1) * _SCALES[token]
+            current = 0
+            have = True
+        elif token == "and":
+            # Only meaningful inside a number ("a hundred and twenty"). Between
+            # two unrelated figures the words on either side flush anyway.
+            continue
+        else:
+            flush()
+    flush()
     return out
 
 

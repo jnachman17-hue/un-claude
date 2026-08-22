@@ -95,6 +95,7 @@ from uc_policy import (  # noqa: E402
     ACCEPTED_EXTS,
     MAX_WORDS,
     accepted,
+    billing_estimate,
     over_word_limit,
     safe_name,
 )
@@ -162,45 +163,11 @@ def _word_count(raw: bytes | None) -> int | None:
         return None
 
 
-# One credit buys this many words. 04 entry 67.
-CREDIT_WORDS = 1000
-
-
-def billing_estimate(kind: str | None, raw: bytes | None) -> dict:
-    """What this job costs in credits, worked out BEFORE it runs.
-
-    04 entry 16 and entry 67: the price has to be knowable before somebody
-    commits to paying it, never discovered afterwards. That is only possible if
-    the free scan — which costs $0.0000021 and is never charged — comes back
-    carrying the number.
-
-    Two cases and one rule between them, which is the whole of the pricing:
-
-      * Anything with words in it is charged by its words, one credit per
-        thousand, ROUNDED UP, minimum one.
-      * Anything without words is a flat one credit whatever its size, because
-        stripping metadata from a 4 MB photograph and a 40 KB one is the same
-        forty milliseconds of work.
-
-    CONTAINERS ARE FLAT, AND THAT IS A WORKING POSITION RATHER THAN A RULING.
-    06 row 74: layer B runs only when kind == "text", so a .docx gets metadata
-    and layer A and never reaches the model. Charging it by its words would be
-    charging for a rewrite it does not receive. Flat is the option that cannot
-    overcharge, so it is the one to be wrong in. Jon rules on 06 row 74.
-    """
-    if kind == "text":
-        words = _word_count(raw) or 0
-        # Ceiling division without importing math, and 0 words still costs 1:
-        # an empty job is refused earlier, so reaching here means real input.
-        credits = max(1, -(-words // CREDIT_WORDS))
-        # The limit rides on the free scan so the interface can say "too long"
-        # BEFORE anyone commits to paying, which is the same rule as the price
-        # itself: 04 entry 16, nothing discovered afterwards.
-        return {"credits": credits, "words": words, "basis": "words",
-                "limit": MAX_WORDS, "over_limit": words > MAX_WORDS}
-    return {"credits": 1, "words": None, "basis": "flat",
-            "limit": None, "over_limit": False}
-
+# The price is computed in engine/uc_policy.py so that BOTH ways into this
+# engine return it. It used to live here, which meant the Vercel functions sent
+# a `billing` block and the standalone development server did not, so the
+# interface priced every uploaded file at zero words locally and correctly in
+# production. Same class of bug as the allowlist. See uc_policy.py.
 
 def usage_record(
     endpoint: str,

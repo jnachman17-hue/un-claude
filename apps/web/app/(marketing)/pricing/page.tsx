@@ -102,7 +102,7 @@ import {
 export const metadata = {
   title: 'Pricing',
   description:
-    'Five credits free, then packs from $4.99. One credit sanitises 1,000 words, a file is one credit whatever its size, and credits never expire. No subscription.',
+    'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size. Credits never expire.',
 };
 
 /**
@@ -112,12 +112,22 @@ export const metadata = {
  * 1 credit = 1,000 words of text. 1 credit = 1 file." A Word document on one
  * row and a PNG on the next taught the visitor to look for their own file
  * type in a list, and a list invites the question of what is missing from it.
- * One rule for files, whatever the file is, is both simpler and truer to what
- * the server actually charges: a flat credit per file entry, 04 entry 71.
+ *
+ * STILL TWO ROWS, BUT THE LINE MOVED, 21 August 2026. Jon's ruling: a .txt
+ * upload behaves exactly like a paste. It always did in the engine, which
+ * rewrites any text-kind input, but the interface never asked for the rewrite
+ * on an uploaded .txt, so it was charged as a flat file. Now that it gets the
+ * rewrite it is charged by the word, like the paste it is.
+ *
+ * So the split is no longer "typed or uploaded". It is WHAT THE WORK IS, which
+ * is what the server has always charged for: text gets rewritten and a rewrite
+ * is priced by the word; a Word document or a picture has its metadata and
+ * hidden characters removed, which is the same small job at any size.
+ * 04 entry 71 still governs the flat file credit.
  */
 const UNIT = [
-  { icon: TypeIcon, label: '1,000 words of text' },
-  { icon: FileIcon, label: 'One file, whatever its size' },
+  { icon: TypeIcon, label: '1,000 words of text, pasted or uploaded' },
+  { icon: FileIcon, label: 'One Word document or picture, any size' },
 ];
 
 /** The four reassurances that sit under the buy buttons. All four are ruled. */
@@ -200,7 +210,7 @@ const LAYERS = [
 const FAQ = [
   {
     q: 'What exactly is a credit?',
-    a: 'One credit sanitises 1,000 words of pasted text. A file is one flat credit whatever its size, because stripping a 4 MB photograph and a 40 KB one is the same piece of work. Every job rounds up to a whole credit.',
+    a: 'One credit sanitises 1,000 words of text, whether you paste it in or upload it as a .txt file. Both get the full rewrite, and a rewrite is priced by the word because the words are the work. A Word document, a PNG or a JPG is one flat credit whatever its size: those have their metadata and hidden characters removed rather than their wording rewritten, and stripping a 4 MB photograph and a 40 KB one is the same piece of work. Every job rounds up to a whole credit.',
   },
   {
     q: 'Do my credits expire?',

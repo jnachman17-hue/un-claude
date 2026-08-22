@@ -166,11 +166,31 @@
    * for, corrected from an earlier slide-and-fade version that did not
    * read as a card rotating at all.
    */
-  --animate-card-flip: card-flip 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /*
+   * SHORTER AND SHALLOWER, 21 August 2026.
+   *
+   * The live counter takes a new figure every 0.25 to 4 seconds and the flip
+   * lasted 0.5s, so in a still frame the number was usually caught mid-rotation
+   * with its trailing digits smaller and lower than its leading ones. Measured:
+   * 5 of 9 desktop screenshots. Motion that is only ever seen half-finished
+   * reads as a rendering fault rather than as motion.
+   *
+   * 0.28s and a 40-degree start keep the flip legible while spending far less
+   * of the time between bursts in a distorted state. The overshoot easing is
+   * kept because that is what gives it life.
+   *
+   * NOTHING IS NEEDED HERE FOR REDUCED MOTION. globals.css already collapses
+   * every animation on the site to 0.001ms when the visitor has asked for it,
+   * globally so it cannot be forgotten in one component. An override was added
+   * here and then removed: a @media block inside @theme is a BUILD ERROR in
+   * Tailwind v4 ("@theme blocks must only contain custom properties or
+   * @keyframes") and it took the whole site to a 500.
+   */
+  --animate-card-flip: card-flip 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
   @keyframes card-flip {
     from {
-      transform: rotateX(-100deg);
+      transform: rotateX(-40deg);
       opacity: 0;
     }
     55% {

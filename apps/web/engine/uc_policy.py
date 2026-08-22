@@ -123,3 +123,38 @@ def over_word_limit(name: str, data: bytes, layer_b: bool) -> bool:
     if not layer_b or Path(name).suffix.lower() != ".txt":
         return False
     return word_count(data) > MAX_WORDS
+
+
+# One credit buys this many words. 04 entry 67.
+CREDIT_WORDS = 1000
+
+
+def billing_estimate(kind: str | None, raw: bytes | None) -> dict:
+    """What this job costs in credits, worked out BEFORE it runs.
+
+    04 entry 16 and entry 67: the price has to be knowable before somebody
+    commits to paying it, never discovered afterwards. That is only possible if
+    the free scan — which costs $0.0000021 and is never charged — comes back
+    carrying the number. The browser holds only base64 for an uploaded file, so
+    this is the ONLY place the word count exists before the paid run.
+
+    Two cases and one rule between them, which is the whole of the pricing:
+
+      * Anything with words in it is charged by its words, one credit per
+        thousand, ROUNDED UP, minimum one.
+      * Anything without words is a flat one credit whatever its size, because
+        stripping metadata from a 4 MB photograph and a 40 KB one is the same
+        forty milliseconds of work.
+
+    `limit` and `over_limit` ride along so the interface can refuse an
+    over-length document before the button rather than after a long wait.
+    """
+    if kind == "text":
+        words = word_count(raw)
+        # Ceiling division without importing math, and 0 words still costs 1:
+        # an empty job is refused earlier, so reaching here means real input.
+        credits = max(1, -(-words // CREDIT_WORDS))
+        return {"credits": credits, "words": words, "basis": "words",
+                "limit": MAX_WORDS, "over_limit": words > MAX_WORDS}
+    return {"credits": 1, "words": None, "basis": "flat",
+            "limit": None, "over_limit": False}

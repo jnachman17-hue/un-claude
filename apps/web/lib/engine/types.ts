@@ -30,12 +30,30 @@ export interface ScanReport {
   [key: string]: unknown;
 }
 
+/**
+ * What this job will cost, worked out by the server on the FREE scan.
+ *
+ * 04 entry 16: the price must be knowable before somebody commits to paying it.
+ * The browser holds only base64 for an uploaded file, so it cannot count the
+ * words itself — this is the only place the count exists before the paid run.
+ * `limit` and `over_limit` ride along so the interface can refuse an
+ * over-length document before the button rather than after a two minute wait.
+ */
+export interface BillingEstimate {
+  credits: number;
+  words: number | null;
+  basis: 'words' | 'flat';
+  limit: number | null;
+  over_limit: boolean;
+}
+
 export interface ScanResult {
   ok: true;
   /** "text" | "image" | "container" */
   kind: string;
   suspicious?: boolean;
   report: ScanReport;
+  billing?: BillingEstimate;
   usage?: UsageSummary;
 }
 

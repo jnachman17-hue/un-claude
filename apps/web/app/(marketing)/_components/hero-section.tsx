@@ -44,7 +44,21 @@ const HANDLES = [
 
 export function HeroSection() {
   return (
-    <section className={'relative overflow-hidden'}>
+    /*
+      overflow-CLIP, not overflow-hidden. 21 August 2026.
+
+      The decorative glow below is 820px wide and offset off the right edge, so
+      it made this section 128px wider than the viewport at desktop. With
+      `overflow-hidden` that surplus is invisible but the section is still
+      SCROLLABLE, and any `scrollIntoView` on a child — the tool calls .focus()
+      inside here — shifted the whole hero sideways with no way back. Captured
+      twice: the headline read "Claude wrote / it's marked." with the "If" cut
+      off and the counter read "692,6".
+
+      `overflow-clip` hides the same overflow without creating a scroll
+      container, so there is nothing to scroll and nothing to shift.
+    */
+    <section className={'relative overflow-clip'}>
       {/* A last touch of warmth directly behind the tool. The page-level
           gradient in globals.css carries most of it. */}
       <div

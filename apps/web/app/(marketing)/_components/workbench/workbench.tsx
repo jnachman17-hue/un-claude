@@ -179,6 +179,38 @@ export function Workbench() {
 
   const fileInput = useRef<HTMLInputElement>(null);
   const textArea = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * PUTTING THE CURSOR IN THE BOX, WHICH USED NOT TO HAPPEN AT ALL.
+   *
+   * `startEditing` and `startOver` both did
+   * `requestAnimationFrame(() => textArea.current?.focus())`, and the ref is
+   * still null on that frame because the textarea has not mounted yet — the
+   * component is only switching to it in the same render. Measured with real
+   * mouse clicks: after clicking "click anywhere above to paste your own text",
+   * `document.activeElement` was BODY, so the next keystroke or Cmd+V went
+   * nowhere.
+   *
+   * A callback ref fires exactly when the node arrives, which is the moment
+   * that matters, and works whether the textarea is already mounted or not.
+   */
+  const wantFocus = useRef(false);
+  const attachTextArea = useCallback((node: HTMLTextAreaElement | null) => {
+    textArea.current = node;
+    if (node && wantFocus.current) {
+      wantFocus.current = false;
+      node.focus();
+    }
+  }, []);
+
+  /** Focus now if the box is already there, otherwise the moment it arrives. */
+  const focusBox = useCallback(() => {
+    if (textArea.current) {
+      textArea.current.focus();
+      return;
+    }
+    wantFocus.current = true;
+  }, []);
   const inFlight = useRef<AbortController | null>(null);
 
   const supabase = useSupabase();
@@ -255,6 +287,27 @@ export function Workbench() {
     } else {
       setMessage(result?.message ?? 'Something went wrong.');
       setPhase('error');
+
+      /*
+       * A REFUSED FILE MUST NOT STAY IN THE BOX. 21 August 2026.
+       *
+       * Measured before this: uploading a .csv showed "That file type is not
+       * supported", and the chip still read `data-export.csv / CSV file = 1
+       * credit` with Sanitise enabled beside it. Pressing it sent the same
+       * refused file again for another 400. A file the engine will not take is
+       * not loaded, should not be priced, and should not offer a button.
+       *
+       * The message stays on screen — `clearResults` is deliberately NOT called,
+       * because it would reset `phase` and take the explanation with it.
+       */
+      if (kind === 'file') {
+        setLoaded({ payload: '', name: 'paste.txt', text: '' });
+        // Back to the editable empty box. `runScan` set `editing` false on the
+        // way in, so without this the box comes back with no file, no
+        // textarea and a Sanitise button offering to clean nothing.
+        setEditing(true);
+        if (fileInput.current) fileInput.current.value = '';
+      }
 
       track.scanFailed({ inputKind: kind, name: next.name });
     }
@@ -354,8 +407,42 @@ export function Workbench() {
   };
 
   const isFile = loaded.name !== 'paste.txt';
-  // An image carries no writing. A document does. Pasted text always does.
-  const carriesProse = !isFile || scan?.kind === 'container';
+
+  /*
+   * TWO QUESTIONS, NOT ONE, AND CONFLATING THEM WAS THE WORST DEFECT IN THIS
+   * FILE. Jon's ruling, 21 August 2026: a .txt upload behaves exactly like a
+   * paste, and a Word document is metadata only.
+   *
+   * There used to be a single flag:
+   *
+   *     const carriesProse = !isFile || scan?.kind === 'container';
+   *
+   * A .txt scans as `text`, not `container`, so it FAILED that test and landed
+   * in the same branch as a PNG. A person who uploaded an essay was told, on
+   * screen, "An image carries no text, so there are no characters to hide
+   * between" — while the panel listed the hidden character it had just found.
+   * The same flag drove `wantsRewrite`, so THE REWRITE NEVER RAN on an uploaded
+   * .txt: paste your essay and you bought the rewrite, upload the identical file
+   * and you bought invisible-character removal, for a different price, with
+   * nothing saying so.
+   *
+   * And it was wrong in the other direction too. A .docx PASSES that test, so
+   * the button said "Rewriting" and the status said "Breaking up the wording"
+   * for a file the engine only strips metadata and hidden characters from. The
+   * container path ignores layer_b entirely.
+   *
+   * Verified against the engine before splitting it:
+   *   pasted text -> kind "text"      layer A + rewrite
+   *   essay.txt   -> kind "text"      layer A + rewrite
+   *   essay.docx  -> kind "container" layer A + metadata, NO rewrite
+   */
+
+  /** Layer A applies: there is text in here to hide characters between. */
+  const carriesText =
+    !isFile || scan?.kind === 'text' || scan?.kind === 'container';
+
+  /** The rewrite actually runs, and is therefore charged by the word. */
+  const carriesProse = !isFile || scan?.kind === 'text';
 
   /*
    * THE WORDS ACTUALLY IN THE BOX, RIGHT NOW.
@@ -375,8 +462,16 @@ export function Workbench() {
    * For a file the words are never shown — the line says "1 file" — so the
    * snapshot is only consulted in the one case where it is still true.
    */
-  const wordsNow = countWords(isFile ? loaded.text : text);
-  const overLimit = !isFile && carriesProse && wordsNow > MAX_WORDS;
+  /*
+   * For a paste the words are in the box and are counted live as you type. For
+   * an uploaded file the browser holds only base64 — `takeFile` deliberately
+   * stores `text: ''` — so the count comes from the FREE scan, which is the
+   * only place it exists before the paid run, and which the server computes
+   * from the same bytes it will charge for.
+   */
+  const wordsNow = isFile ? (scan?.billing?.words ?? 0) : countWords(text);
+  const overLimit =
+    carriesProse && (scan?.billing?.over_limit ?? wordsNow > MAX_WORDS);
 
   const sanitise = async () => {
     // An image has no prose, so there is nothing for the rewrite to do and no
@@ -605,8 +700,8 @@ export function Workbench() {
     setIsSample(false);
     setEditing(true);
     if (fileInput.current) fileInput.current.value = '';
-    requestAnimationFrame(() => textArea.current?.focus());
-  }, [clearResults]);
+    focusBox();
+  }, [clearResults, focusBox]);
 
   const startEditing = () => {
     if (isSample) {
@@ -617,7 +712,7 @@ export function Workbench() {
     // The example's findings belong to the example. 06 row 72.
     clearResults();
     setEditing(true);
-    requestAnimationFrame(() => textArea.current?.focus());
+    focusBox();
   };
 
   /**
@@ -862,7 +957,7 @@ export function Workbench() {
         state:
           busy || !scan
             ? 'pending'
-            : !carriesProse
+            : !carriesText
               ? 'skipped'
               : done
                 ? 'removed'
@@ -872,7 +967,7 @@ export function Workbench() {
         status:
           busy || !scan
             ? waitingStatus
-            : !carriesProse
+            : !carriesText
               ? 'No text to check'
               : done
                 ? foundCount > 0
@@ -882,7 +977,7 @@ export function Workbench() {
                   ? `${foundCount} found`
                   : 'none found',
 
-        detail: !carriesProse
+        detail: !carriesText
           ? 'An image carries no text, so there are no characters to hide between. This check runs on pasted text and documents.'
           : done
           ? foundCount === 0
@@ -999,14 +1094,22 @@ export function Workbench() {
           busy || !scan
             ? waitingStatus
             : !carriesProse
-              ? 'No words to mark'
+              ? isFile
+                ? 'Not rewritten'
+                : 'No words to mark'
               : done && receipt
                 ? 'Rewritten'
                 : // Never a count: there is nothing to count. The state word
                   // matches the row grammar, and the teach table carries why.
                   'Presumed present',
         detail: !carriesProse
-          ? 'An image carries no writing, so there are no word choices for this mark to hide in.'
+          ? // A Word document and an image are skipped for DIFFERENT reasons, and
+            // saying "an image carries no writing" about somebody's essay was
+            // the single most visible lie this interface told. Jon's ruling,
+            // 21 August 2026: a Word document is metadata only.
+            carriesText
+            ? 'A Word document is cleaned of its metadata and its hidden characters. Its wording is not rewritten, so a statistical mark in the writing itself would stay. Paste the text instead to have it rewritten.'
+            : 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
             ? `Rewritten. The longest stretch of your original wording left is ${receipt.longestRun} words in a row. The mark rides only on unbroken stretches of your original words.`
             : 'Presumed present, because Claude marks what it writes and no tool can show the mark in place. It is not hidden in your words. It is your words: the exact sequence they were chosen in. Ask another AI to reword and whatever it leaves alone still carries the mark, so we rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
@@ -1116,7 +1219,7 @@ export function Workbench() {
 
           {editing ? (
             <textarea
-              ref={textArea}
+              ref={attachTextArea}
               value={text}
               onChange={(event) => {
                 setText(event.target.value);
@@ -1152,15 +1255,51 @@ export function Workbench() {
             <div className={'px-4 py-3.5'}>
               <FileSummary
                 name={loaded.name}
+                price={costFor({
+                  isFile,
+                  name: loaded.name,
+                  wantsRewrite: carriesProse,
+                  words: wordsNow,
+                })}
                 scanning={busy}
                 downloadUrl={done ? downloadUrl : null}
                 onClear={startOver}
               />
             </div>
           ) : (
-            <button
-              type={'button'}
-              onClick={startEditing}
+            /*
+              A DIV, NOT A BUTTON, AND THAT IS THE WHOLE FIX FOR SELECTION.
+              21 August 2026.
+
+              Dragging across a <button> selects nothing — the browser treats
+              the drag as a press — so the click landed, `startEditing` ran, and
+              the scan and its findings vanished. Anyone who highlighted a line
+              to read it, or tried to copy part of their own text, lost their
+              result. It is also the other half of Jon's original formatting
+              complaint: highlighting the output to copy it was never going to
+              work, whatever the whitespace rule said.
+
+              As a div the text selects normally. The click still opens the
+              editor, but only when nothing was selected — otherwise finishing a
+              highlight would throw the scan away, which is the bug again.
+
+              Keyboard access is kept explicitly: role, tabIndex and a key
+              handler, which a plain div does not get for free.
+            */
+            <div
+              role={'button'}
+              tabIndex={0}
+              onClick={() => {
+                const selection = window.getSelection()?.toString() ?? '';
+                if (selection.length > 0) return;
+                startEditing();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  startEditing();
+                }
+              }}
               aria-label={'Edit this text'}
               className={'block w-full cursor-text px-4 py-3.5 text-left'}
             >
@@ -1182,7 +1321,7 @@ export function Workbench() {
                   </div>
                 )}
               </div>
-            </button>
+            </div>
           )}
 
           {/*
@@ -1520,17 +1659,21 @@ export function Workbench() {
                   return (
                     <span className={'text-destructive font-medium'}>
                       {words.toLocaleString('en-US')} words. The rewrite takes{' '}
-                      {MAX_WORDS.toLocaleString('en-US')} at a time — split it
-                      and run it in parts.
+                      {MAX_WORDS.toLocaleString('en-US')} at a time. Split it and
+                      run it in parts.
                     </span>
                   );
                 }
 
                 return (
                   <span className={'inline-flex items-center gap-1.5'}>
-                    {isFile
-                      ? '1 file'
-                      : `${words.toLocaleString('en-US')} ${words === 1 ? 'word' : 'words'}`}
+                    {/*
+                      A .txt upload is charged by the word like a paste, so it
+                      shows its words. Only the flat-priced files show "1 file".
+                    */}
+                    {carriesProse
+                      ? `${words.toLocaleString('en-US')} ${words === 1 ? 'word' : 'words'}`
+                      : '1 file'}
                     <span className={'text-muted-foreground/60'}>=</span>
                     <CreditChip amount={price} tone={'spend'} />
                     {/* A long document warns before the button, not only while
@@ -1691,11 +1834,14 @@ export function Workbench() {
  */
 function FileSummary({
   name,
+  price,
   scanning,
   downloadUrl,
   onClear,
 }: {
   name: string;
+  /** What this file will actually cost, computed by the caller. */
+  price: number;
   scanning: boolean;
   /** Only used to say "sanitised" on the card. The download itself, and the
       event that records it, live in the action bar above. */
@@ -1751,11 +1897,14 @@ function FileSummary({
             {name}
           </span>
           {/* The file pricing rule, taught at the exact moment it applies:
-              the card says "1 credit" instead of anything explaining it.
-              04 entry 97. */}
-          {/* The file pricing rule, taught at the exact moment it applies:
               the card wears the coin instead of explaining anything.
-              04 entries 97 and 98. */}
+              04 entries 97 and 98.
+
+              THE COIN USED TO BE HARDCODED TO 1, which was true while every
+              file was a flat credit. It is not true now: a .txt upload is
+              priced by the word like the paste it is, so a 3,000 word essay
+              showed "TXT file = 1" on the card and "4" on the button beside
+              it. The card is told the price rather than assuming it. */}
           <span
             className={
               'text-muted-foreground flex items-center gap-1.5 text-[12px]'
@@ -1769,7 +1918,7 @@ function FileSummary({
             ) : (
               <>
                 <span className={'text-muted-foreground/60'}>=</span>
-                <CreditChip amount={1} tone={'spend'} />
+                <CreditChip amount={price} tone={'spend'} />
               </>
             )}
           </span>

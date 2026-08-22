@@ -59,6 +59,7 @@ from common import (
 from container_meta import clean_container, inspect_container
 from format_dispatch import classify_bytes
 from uc_policy import POLICY_ON, accepted as _product_accepts
+from uc_policy import billing_estimate as _billing_estimate
 from uc_policy import over_word_limit as _over_word_limit
 from uc_policy import safe_name as _product_safe_name
 from image_meta import clean_image, inspect_image, run_synthid_score
@@ -1014,7 +1015,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._respond(HTTPStatus.BAD_REQUEST,
                                  {"ok": False, "code": refusal[0], "error": refusal[1]})
         run_detect = body.get("detect") is True
-        self._respond(HTTPStatus.OK, _inspect_payload(data, name, run_detect))
+        payload = _inspect_payload(data, name, run_detect)
+        # The price rides on the free scan, exactly as it does on the Vercel
+        # function. Without this the standalone server answered with no
+        # `billing` block and the interface priced every uploaded file at zero
+        # words, so a 3,000 word .txt showed "1 credit" locally and 4 in
+        # production. api/scan.py does the same thing for the same reason.
+        payload["billing"] = _billing_estimate(payload.get("kind"), data)
+        return self._respond(HTTPStatus.OK, payload)
 
     def _handle_inspect_batch(self, body: dict[str, Any]) -> None:
         items = _batch_items(body)
