@@ -27,16 +27,80 @@ if (mode !== 'test' && mode !== 'live') {
   process.exit(1);
 }
 
-let env = '';
-for (const name of ['../.env.local', '../.env']) {
-  const file = path.resolve(HERE, name);
-  if (fs.existsSync(file)) env += fs.readFileSync(file, 'utf8') + '\n';
+/*
+ * HOW THE KEY IS FOUND, AND WHY IT IS NOT SCRAPED OUT OF THE FILE.
+ *
+ * THE FIRST VERSION REGEX-SEARCHED THE WHOLE .env.local FOR ANYTHING STARTING
+ * sk_live AND FOUND A MATCH INSIDE A COMMENT. The file carries the line "# The live key
+ * (sk_live_) must NEVER be written to this file", so the script cheerfully
+ * handed Stripe the literal string "sk_live_" and got a 401 with a stack trace.
+ * A regex over a config file matches prose as happily as configuration.
+ *
+ * SO: test mode reads the NAMED variable out of parsed key=value lines, with
+ * comments skipped. And live mode does not read the file at all, because the
+ * project's own rule is that the live key never goes in it. Pass it in for the
+ * one command and it is never written anywhere:
+ *
+ *     STRIPE_LIVE_KEY=sk_live_xxx node apps/web/scripts/block-eu-cards.mjs live
+ */
+function readEnvFile(file) {
+  const out = {};
+
+  if (!fs.existsSync(file)) return out;
+
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+
+    // A comment is prose, not configuration. This is the whole bug.
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const eq = trimmed.indexOf('=');
+
+    if (eq === -1) continue;
+
+    out[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+  }
+
+  return out;
 }
 
-const key = new RegExp(`sk_${mode}[A-Za-z0-9_]*`).exec(env)?.[0];
+let key;
 
-if (!key) {
-  console.error(`No sk_${mode} key found in apps/web/.env.local or apps/web/.env.`);
+if (mode === 'live') {
+  key = process.env.STRIPE_LIVE_KEY;
+
+  if (!key) {
+    console.error(
+      'Live mode needs the live key passed in, because the project rule is that\n' +
+      'it never goes in .env.local. Run:\n\n' +
+      '  STRIPE_LIVE_KEY=sk_live_xxx node apps/web/scripts/block-eu-cards.mjs live\n',
+    );
+    process.exit(1);
+  }
+} else {
+  const env = { ...readEnvFile(path.resolve(HERE, '../.env')), ...readEnvFile(path.resolve(HERE, '../.env.local')) };
+  key = env.STRIPE_SECRET_KEY;
+
+  if (!key) {
+    console.error('No STRIPE_SECRET_KEY in apps/web/.env.local or apps/web/.env.');
+    process.exit(1);
+  }
+}
+
+/*
+ * Refuse a key that does not match the mode asked for. Populating the test list
+ * while believing you populated the live one is the failure this whole script
+ * exists to prevent, and it would look identical from the outside.
+ */
+const expected = mode === 'live' ? 'sk_live_' : 'sk_test_';
+
+if (!key.startsWith(expected)) {
+  console.error(`Mode "${mode}" needs a key starting ${expected}. Got ${key.slice(0, 8)}...`);
+  process.exit(1);
+}
+
+if (key.length < 20) {
+  console.error(`That key is ${key.length} characters, which is a placeholder rather than a key.`);
   process.exit(1);
 }
 

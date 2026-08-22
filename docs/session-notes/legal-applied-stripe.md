@@ -29,12 +29,16 @@ nothing was pushed.
 | **Governing law** | Absent | **California.** D1 closed |
 | **Legal page descriptions** | Inherited the site-wide one | One each |
 
-**The one thing left to run, and it is one command.** UK, EU and EEA cards are
-refused by a Stripe Radar blocklist, built and **proven in test mode**: a US card
-authorises, GB and FR are blocked before reaching the network. **Live mode has not
-been populated**, because this session was blocked from writing to live Stripe.
-Until `node scripts/block-eu-cards.mjs live` is run, a real EU card completes
-normally. Section 6.2.
+**NOTHING ON THIS SITE CAN TAKE MONEY TODAY, and that reframes the urgency of
+everything above.** Production returns **404** for `/api/checkout` and has **no
+Stripe environment variables at all**. The payment path exists only on a laptop.
+**So the two sentences this session was convened to fix are not currently false**;
+they become false on the deploy that ships checkout with a live key, and the fix
+is written and waiting for it. Section 6.2.
+
+**The EU card block is built and proven in test**, and populating live is a
+launch step rather than a today step, because there is no live mode to populate.
+Section 6.2.
 
 **And one thing that is bigger than anything on the legal pages:** the Vercel
 project is on the **Hobby plan**, which does not permit commercial use. Jon has
@@ -333,15 +337,45 @@ checked.**
 a todo."** So this is ruled rather than open. **It is the one item on this list
 that can cost the whole site rather than some money**, and it is not done yet.
 
-### 6.2 EU, EEA and UK cards. PROVEN IN TEST, LIVE STILL PENDING ONE COMMAND
+### 6.2 EU, EEA and UK cards. Built and proven in test. Live is a LAUNCH step, not a today step
 
-**This closes what section 0 called the most important sentence in the note.**
+**First, the fact that reframes this whole note, found 22 August by probing
+production rather than by reading code.**
 
-`scripts/block-eu-cards.mjs` puts 31 country codes on Stripe's built-in
-`card_country_blocklist`: the **EU 27**, the **three EEA states** that apply the
-same consumer directive, and the **UK**, which left the EU but kept the 14 day
-right in CCR 2013. **The UK is in there deliberately**: it is outside EU VAT but
-it has the withdrawal right, which is the reason the list exists at all.
+    POST https://un-claude.com/api/checkout   ->  404
+    GET  https://un-claude.com/api/checkout   ->  404
+
+    vercel env ls production  ->  13 variables, and NOT ONE of them is Stripe.
+                                  No STRIPE_SECRET_KEY. No STRIPE_WEBHOOK_SECRET.
+
+**The entire payment path exists only on a laptop.** The checkout route is not
+deployed, production has no Stripe credentials, and the live pricing page still
+carries the OLD `<Link>` buttons from entry 109 rather than the posting ones.
+**The live site cannot take a dollar from anybody, anywhere.**
+
+**Which means the two sentences this session was convened to fix are NOT
+currently false.** "The service is currently free to use and no payment method
+is collected" is **true today**. They become false on the deploy that ships the
+checkout route with a live key, and the fix now exists and is waiting for it.
+**There is no live falsehood to race.**
+
+**THREE THINGS THIS NOTE ASSERTED THAT WERE WRONG, all the same shape: a match
+read as a fact.**
+
+1. *"Checkout is already wired: `/api/checkout` returns a live Stripe session,
+   and the Stripe account has `charges_enabled true`."* **True on a laptop, false
+   in production.** No probe of the live site was run before writing it.
+2. *".env.local contains a live key."* A grep for `sk_live` matched **the comment
+   warning that the live key must never be put in that file.** There is no live
+   key anywhere on this machine.
+3. *"It is idempotent, so running it twice is harmless."* It was not. Section
+   below.
+
+**The blocklist itself is built and proven.** `scripts/block-eu-cards.mjs` puts
+31 country codes on Stripe's built-in `card_country_blocklist`: the **EU 27**,
+the **three EEA states**, and the **UK**. The UK is included deliberately: it is
+outside EU VAT but it kept the 14 day withdrawal right in CCR 2013, which is the
+reason the list exists.
 
 **Test mode, run and proven:**
 
@@ -351,50 +385,54 @@ it has the withdrawal right, which is the reason the list exists at all.
                             | network_status "not_sent_to_network"
     FR card   -> DECLINED   | same
 
-**Two things that were previously flagged as unverifiable are now facts.** The
-rule that reads the built-in blocklist is **active by default**, so no dashboard
-work is needed and **no paid Radar tier is needed**. And a blocked card **never
-reaches the card network**, so it costs nothing and leaves no failed charge.
+**Two things previously flagged as unverifiable are now facts.** The rule reading
+the built-in blocklist is **on by default**, needing no dashboard work and **no
+paid Radar tier**. And a blocked card **never reaches the card network**, so it
+costs nothing and leaves no failed charge.
 
-**LIVE MODE IS NOT DONE.** The session was blocked from writing to live Stripe by
-a permission rule and did not work around it. **One command, from the repo root:**
+**LIVE IS A LAUNCH STEP.** There is no live Stripe key and no live mode, so
+there is nothing to populate yet. **When Jon activates live mode, this belongs
+in the same sequence as putting the live key into Vercel:**
 
-    node apps/web/scripts/block-eu-cards.mjs live
+    STRIPE_LIVE_KEY=sk_live_xxx node apps/web/scripts/block-eu-cards.mjs live
 
-It prints the list before and after and names anything missing. **Until it is
-run, a real EU card completes normally.**
+**The key is passed in rather than read from a file**, because `.env.local` says
+in its own comment that the live key must never be written there. Nothing stores
+it. The script refuses a placeholder, refuses a test key in live mode, and is
+idempotent.
 
-**TWO DEFECTS THIS SCRIPT SHIPPED WITH, BOTH FOUND BY JON RUNNING IT AND NEITHER
-BY ANY CHECK IN THIS SESSION.** Recorded because the second one was an assertion
-this note made and was wrong about.
+**It can also be done in the Stripe dashboard** under Radar, block list, card
+country, which Jon offered to do. Either is fine; the script is faster and
+records what it did.
 
-**One, the path.** It was handed over as `node scripts/block-eu-cards.mjs live`,
-a path relative to `apps/web`, to someone standing at the repo root. It also read
-`.env.local` relative to the working directory, so it only worked from one
-place. **It now resolves the env files against its own location and runs from
-anywhere.**
+### 6.2a Four defects in that script, every one found by Jon running it
 
-**Two, and this is the one that matters: it was described as idempotent and it
-was not.** Stripe stores country codes on the value list **lowercased**, whatever
-case you send. The script held them uppercase and compared raw, so
-`existing.has('AT')` was false against a stored `at`, and **every re-run tried to
-add all 31 again and died on the first** with "This item already exists in this
-case-insensitive list". Fixed by normalising case on both sides, plus a catch on
-the duplicate error so a partial run can never abort.
+**None was found by anything in this session, and that is the point.**
 
-**Proven idempotent now**, run twice back to back from two different directories:
+| # | Defect | Cause |
+|---|---|---|
+| 1 | `MODULE_NOT_FOUND` | Handed over as a path relative to `apps/web` to someone at the repo root |
+| 2 | Only worked from one directory | Read `.env.local` relative to the working directory |
+| 3 | **Not idempotent, though described as idempotent** | Stripe stores codes **lowercased**; the script compared uppercase, so every re-run re-added all 31 and died on the first |
+| 4 | `Invalid API Key provided: sk_live_` | The key was **regex-scraped out of the whole file** and matched **a comment** |
+| 5 | `SyntaxError` in the fix for 4 | The explanatory comment contained a regex literal, whose `*/` closed the block comment early |
 
-    before: 31 AT BE BG CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU
-               LV MT NL NO PL PT RO SE SI SK
-    added:  0
-    already present: 31
-    All 31 present. Done.
+**Defect 4 is the instructive one.** A regex over a config file matches prose as
+happily as configuration. The script now parses `key=value` lines with comments
+skipped, reads the **named** variable, and validates that the key matches the
+mode asked for and is not a stub. **Populating the test list while believing you
+populated the live one is the exact failure this script exists to prevent, and it
+would look identical from the outside.**
 
-**The lesson, since it is the second time today.** The meta description said "14
-day right to cancel" after the right was deleted, and this script said idempotent
-when it was not. **Both were claims about something no test exercised.** A script
-that is only ever run once has its second run untested by definition, and "run it
-again, it is harmless" is exactly the sentence that needs a second run behind it.
+All four paths were then run and shown to behave: test succeeds and reports 0
+added, live with no key prints the instruction, live with the placeholder says
+"8 characters, which is a placeholder", and live with a test key refuses.
+
+**THE PATTERN, THREE TIMES IN ONE DAY.** The meta description advertised a right
+the page no longer granted. The script claimed idempotency with no second run
+behind it. The live-key claim came from a grep hit inside a comment. **All three
+were assertions about something no command had exercised.** A grep match is
+evidence that a string exists, not that a fact is true.
 
 ### 6.3 Vercel log retention. RULED, no change wanted
 

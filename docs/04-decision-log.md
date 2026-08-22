@@ -4323,9 +4323,19 @@ unverifiable are now facts: the rule that reads the built-in blocklist is ON BY
 DEFAULT, needing no dashboard work and no paid Radar tier, and a blocked card
 never reaches the network, so it costs nothing.**
 
-**LIVE MODE IS NOT POPULATED.** The session was blocked from writing to live
-Stripe by a permission rule and did not work around it. One command,
-`node scripts/block-eu-cards.mjs live`, and it is idempotent.
+**LIVE MODE IS NOT POPULATED, AND THERE IS NOTHING TO POPULATE YET.** Probing
+production on 22 August found `/api/checkout` returns **404** and Vercel holds
+**no Stripe environment variables at all**. **The payment path exists only on a
+laptop and the live site cannot take a dollar from anybody.** So the live
+blocklist is a **launch step**, sequenced with putting the live key into Vercel,
+not an outstanding task. `STRIPE_LIVE_KEY=sk_live_xxx node
+apps/web/scripts/block-eu-cards.mjs live`, or the same thing by hand in Radar.
+
+**AND A CORRECTION TO THIS SESSION'S OWN FRAMING.** It was written throughout as
+though the site were about to take money. **It is not, and the two "false"
+sentences in the live terms are true today.** They go false on the deploy that
+ships checkout with a live key. The wording is fixed and waiting; there is no
+live falsehood to race.
 
 **THE TERM IS DELIBERATELY BROADER THAN THE BLOCK.** The terms say United States
 only; the blocklist covers the UK, EU and EEA, which is where the withdrawal
