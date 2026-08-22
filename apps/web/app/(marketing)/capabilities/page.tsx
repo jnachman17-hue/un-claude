@@ -20,7 +20,8 @@ import { PageHeader } from '../_components/prose';
 export const metadata = {
   title: 'What we can do',
   description:
-    'Give Un-Claude pasted text, a Word document or an image, and this is exactly what happens to each: which marks come off, what comes back, and what we will put our name to.',
+    'Give Un-Claude pasted text, a Word document or an image, and see exactly what happens: which marks come off, what comes back, and what we stand behind.',
+  alternates: { canonical: '/capabilities' },
 };
 
 /**

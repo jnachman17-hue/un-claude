@@ -41,6 +41,7 @@ export async function generateMetadata() {
      */
     description:
       'The agreement behind Un-Claude: what each of the three layers is promised to do, how credits and payment work, and our 30 day refund policy.',
+    alternates: { canonical: '/terms-of-service' },
   };
 }
 

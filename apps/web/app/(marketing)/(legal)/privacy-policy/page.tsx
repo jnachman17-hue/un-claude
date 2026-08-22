@@ -20,6 +20,7 @@ export async function generateMetadata() {
      */
     description:
       'What Un-Claude does with your text and files. Nothing you submit is kept, the optional rewrite is the only thing that leaves, and here is what we store.',
+    alternates: { canonical: '/privacy-policy' },
   };
 }
 

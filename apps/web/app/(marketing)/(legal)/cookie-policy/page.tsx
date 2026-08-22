@@ -18,6 +18,7 @@ export async function generateMetadata() {
      */
     description:
       'Un-Claude sets no advertising and no tracking cookies, so there is no consent banner. What is actually set, what it does, and how long it lasts.',
+    alternates: { canonical: '/cookie-policy' },
   };
 }
 

@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Contact',
   description:
     'Reach Un-Claude. Write a subject and a message here and send it from your own mail app, or email us directly.',
+  alternates: { canonical: '/contact' },
 };
 
 /**
