@@ -29,11 +29,18 @@
  * consent ceremony a version of this route briefly carried for it, are gone
  * with the market they belonged to. 04 entry 115.
  *
- * THE RESTRICTION IS A TERM OF SALE, NOT A MECHANISM. Nothing in this file
- * looks at where a card comes from. The enforcement is a Stripe Radar block on
- * the built-in `card_country_blocklist`, set in the dashboard, and IT IS NOT
- * SWITCHED ON YET. Until it is, a non-US card completes normally. Do not claim
- * anywhere that non-US cards are refused.
+ * THE RESTRICTION IS A TERM OF SALE AND THIS ROUTE DELIBERATELY DOES NOT
+ * IMPLEMENT IT. Nothing here looks at where a card comes from, because only
+ * Stripe knows that and only after the card is entered. UK, EU and EEA cards
+ * are refused by a Radar block on the built-in `card_country_blocklist`,
+ * populated by `scripts/block-eu-cards.mjs` and proven in test mode: a US card
+ * authorises, GB and FR come back blocked before reaching the network.
+ *
+ * THE TERM IS BROADER THAN THE BLOCK, ON PURPOSE. The terms say United States
+ * only; the blocklist covers the UK, the EU and the EEA, which is where the
+ * withdrawal right and the VAT problem actually live. A Canadian card still
+ * completes. That is a term being stricter than its enforcement, which is
+ * ordinary, and the terms reserve the right to refuse or reverse the rest.
  *
  * THE ONLY CONSENT COLLECTED IS STRIPE'S OWN TERMS CHECKBOX, below. That is
  * deliberate and it is the whole of it.

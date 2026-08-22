@@ -29,11 +29,16 @@ nothing was pushed.
 | **Governing law** | Absent | **California.** D1 closed |
 | **Legal page descriptions** | Inherited the site-wide one | One each |
 
-**The single most important sentence in this note:** the US-only restriction is
-**a term of sale that nothing enforces.** Jon instructed that the Stripe Radar
-country blocklist not be populated, so **a non-US card completes normally today.**
-No page or comment anywhere claims otherwise, and none may until the Radar rule is
-on. Section 6.1.
+**The one thing left to run, and it is one command.** UK, EU and EEA cards are
+refused by a Stripe Radar blocklist, built and **proven in test mode**: a US card
+authorises, GB and FR are blocked before reaching the network. **Live mode has not
+been populated**, because this session was blocked from writing to live Stripe.
+Until `node scripts/block-eu-cards.mjs live` is run, a real EU card completes
+normally. Section 6.2.
+
+**And one thing that is bigger than anything on the legal pages:** the Vercel
+project is on the **Hobby plan**, which does not permit commercial use. Jon has
+ruled it a todo before launch. Section 6.1.
 
 ---
 
@@ -310,9 +315,8 @@ of the UK DMCC disclosure duty and Stripe holds a support address separately.
 
 ## 6. Open items, ordered by how much they can hurt
 
-### 6.1 The Vercel plan is Hobby, and the site is about to take money
+### 6.1 The Vercel plan is Hobby. RULED, and it is Jon's todo
 
-**This is the biggest thing in this note and it is not a legal-page problem.**
 Read from the Vercel API, 22 August 2026:
 
     team    jnachman17-hue's projects
@@ -320,36 +324,56 @@ Read from the Vercel API, 22 August 2026:
     plan    hobby
 
 **`03-pricing.md` 4e:** *"Vercel's Hobby plan does not permit commercial use...
-a project generating revenue must be on Pro."* **12c step 7** lists moving to Pro
-as **Jon's, before launch**, and it has not been done. Pro is $20 a month.
+a project generating revenue must be on Pro."* That section also says *"Jon
+should check which plan the un-claude project is currently on. I could not: the
+command that would have shown it was blocked by a permission rule."* **It is now
+checked.**
 
-That section also says *"Jon should check which plan the un-claude project is
-currently on. I could not: the command that would have shown it was blocked."*
-**It is now checked, and the answer is the one that needed action.**
+**Jon, 22 August 2026: "I am upgrading to pro vercel before launch it's noted and
+a todo."** So this is ruled rather than open. **It is the one item on this list
+that can cost the whole site rather than some money**, and it is not done yet.
 
-### 6.2 US-only is not enforced
+### 6.2 EU, EEA and UK cards. PROVEN IN TEST, LIVE STILL PENDING ONE COMMAND
 
-Jon instructed the Radar country blocklist not be populated. **A non-US card
-completes normally today.** The mechanism when he wants it: the built-in
-`card_country_blocklist` value list, confirmed present on the account and
-writable through the API. **The rule that reads it is dashboard-only and could
-not be verified from a session**, so before relying on it somebody must open
-Radar and confirm the block rule is active, and check whether it needs the paid
-Radar tier (about two cents a transaction, 0.2 percent on a $9.99 sale).
+**This closes what section 0 called the most important sentence in the note.**
 
-### 6.3 Vercel log retention is still an unread number
+`scripts/block-eu-cards.mjs` puts 31 country codes on Stripe's built-in
+`card_country_blocklist`: the **EU 27**, the **three EEA states** that apply the
+same consumer directive, and the **UK**, which left the EU but kept the 14 day
+right in CCR 2013. **The UK is in there deliberately**: it is outside EU VAT but
+it has the withdrawal right, which is the reason the list exists at all.
+
+**Test mode, run and proven:**
+
+    US card   -> succeeded  | outcome type "authorized"
+    GB card   -> DECLINED   | type "blocked", reason "blocklist",
+                            | rule "block_if_in_blocklist",
+                            | network_status "not_sent_to_network"
+    FR card   -> DECLINED   | same
+
+**Two things that were previously flagged as unverifiable are now facts.** The
+rule that reads the built-in blocklist is **active by default**, so no dashboard
+work is needed and **no paid Radar tier is needed**. And a blocked card **never
+reaches the card network**, so it costs nothing and leaves no failed charge.
+
+**LIVE MODE IS NOT DONE.** The session was blocked from writing to live Stripe by
+a permission rule and did not work around it. **One command, from `apps/web`:**
+
+    node scripts/block-eu-cards.mjs live
+
+It prints the list before and after. It is idempotent, so running it twice is
+harmless. **Until it is run, a real EU card completes normally.**
+
+### 6.3 Vercel log retention. RULED, no change wanted
 
 The privacy policy says technical logs *"sit with our hosting company, which
 keeps them for a limited period set by its platform rather than by us."*
-**That is not wrong and it is weaker than it could be.** If the real window is
-short, saying so is a selling point.
 
-**I could not read it.** The runtime-logs API returned 403 for this project from
-this session. **Jon can get it in one look:** Vercel dashboard, the `un-claude`
-project, **Logs** tab, then set the time filter to its widest setting and see how
-far back data actually exists. That measured number is better evidence than any
-figure in the docs, and when it is known the privacy sentence changes in the same
-deployment.
+**Jon, 22 August 2026: "Keep vercel log framing in privacy policy as is."** So
+this is closed rather than open. **Nobody should reopen it as a defect.** The
+sentence is accurate; it was only ever flagged as an opportunity to make it
+stronger if the real retention window turned out to be short, and Jon does not
+want that chased.
 
 ### 6.4 Still open, smaller
 

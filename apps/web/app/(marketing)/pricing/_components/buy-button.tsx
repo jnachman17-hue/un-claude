@@ -17,11 +17,18 @@ import { toast } from '@kit/ui/sonner';
  * "just in case", because a consent step for a right nobody in scope has is
  * friction that costs sales and teaches nothing.
  *
- * THE RESTRICTION IS CONTRACTUAL AND IS NOT YET ENFORCED IN CODE OR AT STRIPE.
- * Nothing here or in the checkout route refuses a non-US card today. The
- * enforcement is a Stripe Radar block on `card_country_blocklist`, which is a
- * dashboard job Jon has not done yet. Do not write a comment, a page or a
- * receipt anywhere claiming non-US cards are blocked until it is.
+ * ENFORCEMENT LIVES AT STRIPE, NOT HERE. Nothing in this file or in the
+ * checkout route looks at where a card comes from, and nothing should: a
+ * browser cannot be trusted to say, and the card country is only known to
+ * Stripe. UK, EU and EEA cards are refused by a Radar block on the built-in
+ * `card_country_blocklist`, populated by `scripts/block-eu-cards.mjs`.
+ *
+ * PROVEN IN TEST MODE, 22 August 2026. A US card authorises; GB and FR cards
+ * come back `type: "blocked"`, `rule: "block_if_in_blocklist"`,
+ * `network_status: "not_sent_to_network"`. The rule is on by default and needs
+ * no dashboard work. **Whether LIVE mode has been populated is a separate fact
+ * with its own switch**, so check before claiming anywhere that a real EU card
+ * is refused.
  *
  * THE ONLY CONSENT IS STRIPE'S OWN TERMS CHECKBOX, set by
  * `consent_collection` in the checkout route and rendered on Stripe's page as

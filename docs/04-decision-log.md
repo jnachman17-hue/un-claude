@@ -4306,13 +4306,33 @@ and phone number, and **EU VAT**, which was the item with real money attached.
 thresholds of roughly $100,000 or 200 transactions in a single state, so it bites
 at nothing like current volume. Parked with that as its trigger.
 
-**THE RESTRICTION IS CONTRACTUAL AND IS NOT ENFORCED.** Jon instructed that the
-Stripe Radar country blocklist **not** be populated in this session. So today a
-non-US card completes normally. **No page, comment or receipt claims otherwise,
-and none may until the Radar rule is switched on.** The mechanism, when he wants
-it, is the built-in `card_country_blocklist` value list, which exists on the
-account and was confirmed reachable through the API; the rule that reads it is
-dashboard-only and could not be verified from a session.
+**THE BLOCK IS BUILT AND PROVEN, AND THE SCOPE IS NARROWER THAN THE TERM.**
+Jon's instruction moved during the session and the final one governs: *"I thought
+we agreed to just block a EU card to stop the VAT stuff."* An earlier "do not
+populate country blocklist" was a rejection of the **scope** proposed at the time,
+which was all ~200 non-US countries, rather than of the mechanism.
+
+**`scripts/block-eu-cards.mjs` blocks 31: the EU 27, the three EEA states, and
+the UK.** The UK is included deliberately. It is outside EU VAT but it kept the
+14 day withdrawal right in CCR 2013, and that right is the reason the list exists.
+
+**Proven in test mode:** a US card authorises; GB and FR come back
+`type: "blocked"`, `rule: "block_if_in_blocklist"`,
+`network_status: "not_sent_to_network"`. **Two things previously recorded as
+unverifiable are now facts: the rule that reads the built-in blocklist is ON BY
+DEFAULT, needing no dashboard work and no paid Radar tier, and a blocked card
+never reaches the network, so it costs nothing.**
+
+**LIVE MODE IS NOT POPULATED.** The session was blocked from writing to live
+Stripe by a permission rule and did not work around it. One command,
+`node scripts/block-eu-cards.mjs live`, and it is idempotent.
+
+**THE TERM IS DELIBERATELY BROADER THAN THE BLOCK.** The terms say United States
+only; the blocklist covers the UK, EU and EEA, which is where the withdrawal
+right and the VAT problem actually are. **A Canadian card still completes.** A
+term of sale being stricter than its enforcement is ordinary, and the terms
+reserve the right to refuse or reverse the rest. **Revisit only if non-US, non-EU
+sales start arriving.**
 
 **THE CHECKOUT CEREMONY IS NOW WHAT EVERYONE ELSE DOES, AND THAT WAS THE POINT.**
 Jon: *"We shouldn't present the granular details at checkout, just make them
@@ -4875,3 +4895,22 @@ Jon's ruling to stay on Hobby "until Vercel objects." A later session's
 cost-asymmetry argument for upgrading proactively as part of going live is
 recorded as a recommendation, not a ruling; **entry 58 stands unless and until
 Jon revisits it.**
+
+
+### 115b. Two operational rulings, recorded so they stop being reopened
+
+**Jon, 22 August 2026.**
+
+**The Vercel plan.** *"I am upgrading to pro vercel before launch it's noted and
+a todo."* The project was confirmed on **Hobby** this session, read from the
+Vercel API, and `03-pricing.md` 4e says Hobby does not permit commercial use.
+**This is ruled rather than open, and it is still not done.** It is the single
+item in this whole area that can cost the site itself rather than money.
+
+**Vercel log retention in the privacy policy.** *"Keep vercel log framing in
+privacy policy as is."* The sentence stays: logs *"sit with our hosting company,
+which keeps them for a limited period set by its platform rather than by us."*
+**It was never wrong.** It was flagged only as an opportunity to strengthen if the
+real window turned out to be short. **Jon does not want it chased. Nobody should
+reopen it as a defect**, and `legal-applied.md` section 6's entry on it is
+superseded by this.
