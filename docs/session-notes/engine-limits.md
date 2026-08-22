@@ -1,854 +1,625 @@
-# Engine correctness: formatting, file types, ceilings
+# The engine, tested rather than asserted
 
-**21 August 2026, session 12.** Territory: `apps/web/engine/**`, `apps/web/api/*.py`,
-this note. No route handler, no credits file, no workbench file was edited. Where a
-fix lives outside that boundary it is written up here as a handoff, not applied.
+**21 August 2026, session 12.** Engine correctness, file handling, the size
+ceiling, and a full stress pass over the interface.
 
-Every number below came from a command that was run. Where something was not run, it
-says so.
+**Territory:** `apps/web/engine/**`, `apps/web/api/*.py`, this note, and — added
+part way through on Jon's explicit instruction — the workbench, `encode.ts` and
+`lib/engine/client.ts`. No route handler, no `lib/server/credits.ts`, no pricing
+or legal page was touched.
+
+**How to read this.** Every claim has a run behind it and the real output is
+pasted in. Where something was not run, it says so. The open items come first,
+because a note that buries them is a note that hides them.
 
 ---
 
-# PART 1 — FORMATTING
+# 1. THE SHORT VERSION
 
-## The finding, in one paragraph
+## Is it closed out? No. Four things need Jon and one needs its own session.
 
-**Formatting is destroyed in two different places, and they are unrelated.** The one
-that hits every single person who pastes anything is **not in the engine at all**: the
-interface renders the text inside an HTML paragraph with default whitespace handling,
-so every line break in the document is displayed as a single space. The engine's own
-copy of the text still has the line breaks; the screen does not. The second, smaller
-loss **is** in the engine, in the layer B rewrite, and it is fixed in this session.
+**The single worst finding came last, from the interface stress sweep, and it
+reverses an answer given earlier in this session.** See section 2.1. Jon read an
+earlier draft of this note and replied "Noted on file types and arbitrage. My
+understanding is all good and all clean there." **That understanding was formed
+before this defect was found, and it is not all clean.**
 
-**The frontend half is the bigger one and I could not fix it — `marked-text.tsx` is
-inside the workbench, which this session was told not to touch.** It is a one-line
-change and it is written out below.
+## What was fixed and proved
 
-## How this was found, rather than guessed
+| | Evidence |
+|---|---|
+| **Formatting survives, on screen and on the clipboard** | 7 paragraph breaks in, 7 out of the Copy button; screen went from 0 line breaks to 18 |
+| **The engine keeps paragraph structure through the rewrite** | 875 words, 16 paragraphs in, 16 out, aligned one for one; 9,900 words, 182 in, 182 out |
+| **Only four file types are accepted, anywhere** | `.csv .md .pdf .html .epub .xlsx .pptx .svg .json .py` and a no-extension file all refused; a `.png` renamed `.docx` refused |
+| **Every accepted type still opens afterwards** | PNG pixels, JPEG scan data and DOCX text all byte-identical, checked by reading the bytes |
+| **10,000 words is refused before a model call** | 1.3 seconds, 11 credits charged and 11 refunded, net zero |
+| **The 10,000 word path actually runs** | 9,900 words in 109.3 seconds through the real route, real ledger, dev bypass off |
+| **The word counter stopped lying** | Empty box now shows nothing; it showed "10,500 words = 11" for ever before |
+| **Long runs say how long they take** | "2,500 words = 3 · takes up to about 40 seconds" |
+| **Local development tests the real product** | It did not before, and that invalidated a whole class of testing |
+| **The 10,000-word failure is gone** | 149 model calls / 95s / returned nothing → 132 calls / 79s / succeeded |
 
-The brief named three candidates and said to find the cause before changing anything.
-All three were tested separately.
-
-### Candidate 1 — layer A / the clean path. NOT the cause.
-
-Layer A is the invisible-character pass. Run through `_clean_payload`, the same engine
-function `/api/clean` calls, on a 932-byte essay with headings, a numbered list and
-eight blank-line breaks:
-
-```
-LAYER A ONLY, through the same _clean_payload that /api/clean calls:
-  bytes identical: True   in=932 out=932
-```
-
-**Byte for byte identical.** Layer A cannot be the cause, and this matters more than it
-looks: it means a plain sanitise with no rewrite returns the document *unchanged*, and
-Jon still sees flattened text. That alone proves the loss is after the engine.
-
-### Candidate 2 — the chunker in `uc_chunk`. A real cause, though a smaller one.
-
-`split_paragraphs` split the document on blank lines and rejoined every paragraph with
-a flat `\n\n`, discarding whatever was actually there. Run against the code **as it was
-before this session**:
+## Closing verification
 
 ```
-THE SAME CASES AGAINST THE CODE AS IT WAS BEFORE THIS SESSION
-(no model involved: this is the chunker's own no-op round trip)
-========================================================================
+495 passed, 1 skipped              engine test suite
+3/3 PASS                           price/engine drift guard
+exit 0                             typecheck
+
+per model call  45s                the four ceilings, consistent
+retry budget    180s
+site abort      240s
+vercel cap      300s
+
+ACCEPTED_EXTS   (".txt", ".docx", ".png", ".jpg", ".jpeg")   engine
+ACCEPTED_FILES  '.txt,.docx,.png,.jpg,.jpeg'                 file picker
+MAX_WORDS = 10_000  /  UC_MAX_WORDS "10000"                  interface and engine agree
+```
+
+## What it cost
+
+Read from the AI Gateway at the start and the end, not estimated:
+
+```
+start  {"balance":"14.73742628","total_used":"0.26257372"}
+end    {"balance":"14.53365238","total_used":"0.46634762"}
+```
+
+**20.4 cents**, for every rewrite in this note. No credits were bought. Three
+throwaway accounts were funded by inserting ledger rows and deleted afterwards;
+each time the ledger rows went with them, verified at 0 remaining.
+
+---
+
+# 2. OPEN — needs Jon's ruling, not a session's judgement
+
+## 2.1 THE WORST ONE. The interface has text files and Word files backwards.
+
+**One line decides whether an upload is treated as writing or as a picture, and
+it is wrong for both file types, in opposite directions.**
+
+```
+workbench.tsx:358
+    const carriesProse = !isFile || scan?.kind === 'container';
+```
+
+Verified directly against the engine:
+
+```
+  pasted text  isFile=False kind=text       -> carriesProse=True    treated as PROSE
+  essay.txt    isFile=True  kind=text       -> carriesProse=False   treated as AN IMAGE
+  essay.docx   isFile=True  kind=container  -> carriesProse=True    treated as PROSE
+
+what the engine actually does with each:
+  pasted text  -> layer A + layer B rewrite
+  essay.txt    -> layer A + layer B rewrite   <- the interface asks for NEITHER
+  essay.docx   -> metadata only, NO rewrite   <- the interface asks for a rewrite
+```
+
+**What a real person sees.** A `.txt` file containing one zero-width space was
+uploaded through the actual interface. The panel said:
+
+```
+Hidden characters      NO TEXT TO CHECK
+  "An image carries no text, so there are no characters to hide between."
+  Zero width space · Invisible, no width at all      <- it lists the finding anyway
+Metadata               NONE FOUND
+Statistical watermark  NO WORDS TO MARK
+  "An image carries no writing, so there are no word choices for this mark to hide in."
+```
+
+…beside a button reading **"Sanitise it (1)"**. After paying, the panel read
+`NO TEXT TO CHECK`, `0 REMOVED`, `NO WORDS TO MARK`.
+
+**The engine is fine.** The same bytes through `/api/tool/scan` return
+`"kind":"text"`, `"suspicious_total":1`, `U+200B ZERO WIDTH SPACE`.
+
+**Three things follow from one boolean:**
+
+1. **The interface tells a `.txt` user their essay is an image.** That sentence is
+   simply false and it is on screen.
+2. **The rewrite never runs on an uploaded `.txt`.** Paste your essay and you buy
+   the watermark rewrite. Upload the identical file and you buy invisible-character
+   removal only. Same content, two different products, and nothing says so. This is
+   the same defect reported in part 3 as a pricing question; the sweep shows the
+   symptom is far worse than the price.
+3. **A `.docx` is told it is being rewritten and is not.** The button says
+   "Rewriting" and the status says "Breaking up the wording" for a file the engine
+   only strips metadata from — which is exactly what Jon himself described as the
+   intended behaviour.
+
+**Why this was not fixed.** It changes what a customer is charged: today an
+uploaded `.txt` costs 1 flat credit, and treating it as prose would charge it by
+the word, up to 10. **The pricing rule is Jon's** and CLAUDE.md section 5 says
+stop before overriding anything already decided. Fixing it correctly also means
+splitting one flag into two — "does layer A apply" and "does the rewrite run" —
+which rewrites about ten pieces of visitor-facing copy, and section 7 of CLAUDE.md
+says copy goes through the messaging skill.
+
+**Recommendation.** Split the flag, and make `.txt` behave exactly like a paste:
+
+```js
+const carriesText  = !isFile || scan?.kind === 'text' || scan?.kind === 'container';
+const carriesProse = !isFile || scan?.kind === 'text';
+```
+
+`carriesText` drives the hidden-characters row. `carriesProse` drives the rewrite,
+the price and the "Rewriting" copy. That makes the interface agree with the engine
+for all three inputs, and it makes the browser's price agree with the server's for
+a `.txt` — today they agree only by both being wrong in the same direction.
+
+**The `.docx` half costs nothing to get right and changes no price** (a container
+is charged one flat credit either way). **The `.txt` half is a pricing change and
+is Jon's call.**
+
+## 2.2 A document with nothing AI in it still loses its author
+
+Verified on a Word document with `dc:creator` = "Jon Nachman" and no AI markings:
+
+```
+  scan says has_ai_metadata : False
+  scan says suspicious      : False
+  -> the interface shows: "No content credentials, generator tags or AI
+     metadata in this file."   (workbench.tsx:954)
+
+  before: <dc:creator>Jon Nachman</dc:creator><cp:lastModifiedBy>Jon Nachman</...
+  after : <dc:creator></dc:creator><cp:lastModifiedBy></cp:lastModifiedBy>
+
+  "Jon Nachman" still in the cleaned bytes: False
+```
+
+**The scan is honest and the clean deletes the name anyway, silently.** The same
+thing happens to images: a JPEG whose only metadata was written by macOS scanned
+as "nothing found" and came back 136 bytes lighter, with its Exif and Photoshop
+blocks dropped.
+
+**Not a lie in the interface** — it says "no AI metadata", which is true. But the
+file is changed and nothing says so.
+
+**This is a product question, not a defect to fix quietly.** For a student who
+wants anonymity, stripping every trace is arguably the point. For someone
+protecting their own authorship it is a surprise.
+
+**Recommendation:** keep stripping, and say so. Report AI findings and general
+metadata separately so a file with nothing AI in it is never described as having
+had an AI mark removed, and the panel says plainly that all identifying metadata
+is removed. There is already a `keep_non_ai_metadata` option in the clean route's
+allowed set that nothing sends.
+
+## 2.3 The fact guard asks for retries it should not — money, not breakage
+
+Covered in full in part 5. **Nothing fails because of it.** It costs roughly four
+times the money and time a clean run needs. The obvious repair was built and
+measured and it is a wash, so it was not shipped. It needs a proper number parser
+as its own small task.
+
+## 2.4 Nothing has been measured on production
+
+Jon's instruction was not to deploy, so the deployed code is not this session's
+code, and production's `/api/scan` and `/api/clean` need an engine key that is a
+Vercel-only secret. **Everything here is local against the real engine code, and —
+for anything about money — against the real production database.** The timings
+therefore carry no HTTP, no base64 and no cold start; real production will be
+slower.
+
+---
+
+# 3. THE INTERFACE STRESS SWEEP
+
+A full pass as a demanding human, at desktop and phone width, with the
+development bypass on so nothing was charged. Twenty checks. **Fourteen passed.**
+
+## Passed
+
+- Paste, scan, paste different text: old findings clear, count follows.
+- Paste, scan, sanitise, Start over: everything clears — box, placeholder,
+  findings, credit line.
+- Clear the box: the placeholder returns, the price line goes.
+- Load the example, click into it: the example's findings clear.
+- Upload a file, remove it, paste: shows "18 words = 1", not "1 file".
+- Three scans clicked in one tick: 4 requests, 2 completed, 2 properly cancelled,
+  one clean result, no stuck spinner.
+- A `.txt` upload correctly offers **Download the clean file** rather than Copy.
+- Refused extensions show, verbatim: `That file type is not supported. Use text,
+  a Word document, PNG or JPG.`
+- The picker's `accept` is exactly `.txt,.docx,.png,.jpg,.jpeg`.
+- A filename with spaces, unicode and an emoji displays and scans intact.
+- **10,500 words:** `10,500 words. The rewrite takes 10,000 at a time — split it
+  and run it in parts.` Scan stays enabled (scanning is free); **Sanitise is
+  disabled.**
+- **The boundary is exact:** 10,000 allowed, 10,001 refused.
+- **The time hint threshold is exact:** 999 words no hint, 1,000 words
+  `· takes up to about 15 seconds`.
+- **No horizontal overflow** at 1280 or 375. The new over-limit message wraps to
+  two clean lines on a phone.
+- **Paragraph breaks render** — computed `white-space: pre-wrap` on both the
+  scanned and the sanitised text.
+- **No React errors, no uncaught exceptions, no 5xx.** Every 4xx was a
+  deliberately invalid file and every one was explained to the user.
+
+## Found, and not fixed
+
+**U1. A refused file stays in the box, priced, with a live Sanitise button.**
+After the "not supported" message the chip still reads
+`data-export.csv / CSV file = 1` and Sanitise is **not** disabled. Pressing it
+gives a 400 and re-shows the same refusal, so nothing is silent — but a rejected
+file should not sit there wearing a price.
+
+**U2. Clicking "click anywhere above to paste your own text" does not put the
+cursor in the box.** Verified with real mouse clicks: `document.activeElement` is
+`BODY`. The next keystroke or paste goes nowhere. Cause is visible in the source:
+`startEditing` and `startOver` both call
+`requestAnimationFrame(() => textArea.current?.focus())` and the textarea has not
+mounted by that frame.
+
+**U3. You cannot select the scanned text, and trying wipes the scan.** The whole
+result is one `<button class="cursor-text">`. Dragging across a line returns an
+empty selection and drops back to the empty textarea with the findings gone.
+Anyone who highlights a line to read it loses their scan. **This is also the other
+half of the formatting complaint**: highlighting to copy was never going to work.
+
+**U4. A decorative glow makes the hero programmatically scrollable.** 128px of
+horizontal overflow at desktop inside `overflow-hidden`, from a
+`right-[-10%] w-[820px]` div. Hidden, but any `scrollIntoView` inside that section
+shifts the whole hero left with no way back — captured twice, with the headline
+reading "Claude wrote / it's marked." and the counter reading "692,6".
+**Honest caveat: not reproducible with a plain mouse click or Tab**, so there is
+no demonstrated user path to it. The app does call `.focus()` inside that section.
+
+**U5. The live counter is visibly mid-flip most of the time.** In 5 of 9
+screenshots the number rendered with its leading digits large and its trailing
+digits smaller and lower. It is the intended flip animation, but bursts arrive
+every 0.25–4s and the flip lasts 0.5s, so a still frame usually looks like a
+rendering fault.
+
+**Smaller:** whitespace-only input shows `0 words = 1` before Scan is pressed; the
+disabled Sanitise button's credit chip is illegible at 45% opacity; on a phone the
+price line right-aligns under a left-aligned button row; two Cloudflare Turnstile
+console warnings, cosmetic.
+
+**None of U1–U5 were fixed.** They are a coherent interface work package and they
+belong in a session that owns the workbench and loads the messaging skill, not in
+the last hour of an engine session.
+
+## What the sweep could not test
+
+- **Whether a credit is really charged or refunded** — the bypass pins the balance
+  and writes no ledger row, which is what makes it safe and also what makes money
+  unobservable. That was covered separately against the real ledger; see part 3.
+- **The contents of a downloaded file** — downloading needs permission.
+- **A real `.docx`, `.png` or `.jpg`** — no sample files exist in the repo and the
+  sweep was forbidden to create any.
+- **Uploads through the real OS file picker** — synthetic `File` objects were used,
+  which reach the same handler but bypass the picker's own filtering.
+- **A production build.** Everything is the dev server.
+
+---
+
+# 4. PART 1 — FORMATTING
+
+## The finding
+
+**Formatting was destroyed in two unrelated places, and the bigger one was not in
+the engine at all.**
+
+Jon's question: *"If I paste it in a certain format and copy it out, does it come
+out right?"* **It always did.** Measured by intercepting the Copy button:
+
+```
+input_paragraph_breaks       : 7
+COPY_BUTTON_paragraph_breaks : 7
+SCREEN_shows_line_breaks     : false      <-- the defect
+```
+
+The text was never damaged. The screen collapsed it. Somebody who pressed **Copy
+the clean text** got correct formatting; somebody who looked at the box, or
+highlighted it with the mouse, saw and got a wall.
+
+## Candidates, tested one at a time
+
+**Layer A — not the cause.** Through `_clean_payload`, the same function
+`/api/clean` calls:
+
+```
+LAYER A ONLY: bytes identical: True   in=932 out=932
+```
+
+Byte for byte identical. **That is what proved the loss was after the engine**: a
+plain sanitise returns the document unchanged and Jon still saw flattened text.
+
+**The chunker — a real cause, smaller.** It split on blank lines and rejoined with
+a flat `\n\n`, discarding what was there. Against the code as it was:
+
+```
   PASS  plain two paragraphs
-  FAIL  triple blank line
-        in : 'One.\n\n\n\nTwo.'
-        out: 'One.\n\nTwo.'
-  FAIL  leading + trailing newlines
-        in : '\n\nOne.\n\nTwo.\n\n\n'
-        out: 'One.\n\nTwo.'
-  FAIL  blank line with spaces
-        in : 'One.\n   \nTwo.'
-        out: 'One.\n\nTwo.'
+  FAIL  triple blank line            in: 'One.\n\n\n\nTwo.'      out: 'One.\n\nTwo.'
+  FAIL  leading + trailing newlines  in: '\n\nOne.\n\nTwo.\n\n\n' out: 'One.\n\nTwo.'
+  FAIL  blank line with spaces       in: 'One.\n   \nTwo.'       out: 'One.\n\nTwo.'
   PASS  numbered list block
-  FAIL  windows endings
-        in : 'One.\r\n\r\nTwo.'
-        out: 'One.\r\n\nTwo.'
+  FAIL  windows endings              in: 'One.\r\n\r\nTwo.'      out: 'One.\r\n\nTwo.'
 ```
 
-Four of six mangled, **with no model involved at all**. Blank-line runs collapsed, the
-document's own leading and trailing blank lines deleted, and Windows line endings left
-half-converted.
+Four of six mangled **with no model involved at all.**
 
-### Candidate 3 — the rewrite round trip. The other real cause.
+**The rewrite — the other real cause.** The layer B prompt had seven rules and not
+one mentioned layout:
 
-The layer B prompt has seven rules and **not one of them mentioned layout.** Measured on
-a 147-word essay and an 875-word essay, before the fix:
-
-| Document | Paragraphs in | Paragraphs out | What was lost |
+| Document | Paragraphs in | out | Lost |
 |---|---:|---:|---|
-| 147-word essay | 9 | 9 | numbered list `1. 2. 3.` came back as `• • •` |
-| 875-word essay | 16 | 15 | **the title line was deleted outright** |
+| 147-word essay | 9 | 9 | `1. 2. 3.` came back as bullets |
+| 875-word essay | 16 | 15 | **the title line was deleted** |
 
-The model folds short standalone lines — titles, headings, one-line closers — into the
-paragraph next to them, or drops them. Nothing told it not to.
-
-### Candidate 4, which the brief did not list, and which is the biggest one
-
-**The interface renders the text in a `<p>` with default CSS whitespace handling.**
-Measured live in the browser against the running dev server, after pasting a
-16-newline essay and clicking Scan it:
+**The display — the biggest one.** Measured live in the browser:
 
 ```
-{
-  "matches": [{
-      "tag": "P",
-      "cls": "text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em]",
-      "whiteSpace": "normal",
-      "textContentNewlines": 16,
-      "innerTextNewlines": 0,
-      "innerTextHasNewline": false,
-      "first160": "The Long Shadow of the Printing Press Introduction When Johannes
-                   Gutenberg assembled his press in Mainz around 1440, he was not
-                   trying to remake European societ"
-  }]
-}
+tag: "P"   whiteSpace: "normal"
+textContentNewlines: 16      <- the data still has all 16
+innerTextNewlines:  0        <- the screen has none
+first160: "The Long Shadow of the Printing Press Introduction When Johannes
+           Gutenberg assembled his press in Mainz around 1440, he was not..."
 ```
 
-Read that carefully, because it is the whole finding. **`textContent` still holds all
-16 newlines. `innerText` holds none.** The data is intact; the rendering collapses it.
-The title, the heading and the first paragraph are run together into one line on screen.
+## Fixed
 
-The same component renders the *cleaned* output too (`workbench.tsx:1151`), so the
-result a visitor reads is a wall of text whatever the engine returned.
-
-**The Copy button itself is fine.** It calls
-`navigator.clipboard.writeText(cleanedText)` on the raw string, which still has its line
-breaks. But anyone who selects the text on screen and copies it — which is what most
-people do, and what the flattened display invites — gets the flattened version, because
-a selection copies what is rendered.
-
-## What was changed, and where
-
-All three edits are inside `apps/web/engine/`.
-
-### 1. `uc_chunk.py` — the document's real spacing is now kept and put back
-
-`split_paragraphs` was replaced by `_split_blocks` / `_plan_chunks` / `_weave` /
-`_restore`. The separator between every pair of paragraphs is captured instead of
-discarded, along with the document's own leading and trailing newlines, and put back
-exactly where it was. Chunks are rejoined with the separator that actually sat between
-them rather than a flat blank line.
-
-`split_paragraphs` still exists with the same signature and same meaning, so nothing
-that called it broke.
-
-### 2. `rewrite_text.py` — the prompt now has a layout rule
-
-Added as rule 7 of the `unclaude` prompt (and rule 6 of `unclaude_retry`), which pushes
-"output only the rewritten text" down one number:
-
-> **KEEP THE LAYOUT EXACTLY AS IT ARRIVED.** Return the same number of paragraphs, in
-> the same order, separated by a blank line. Never merge two paragraphs into one and
-> never split one into two. A short line standing on its own is a heading or a title:
-> keep it on its own line and keep it — never fold it into the paragraph below it and
-> never delete it. Keep every line break inside a paragraph where it is, and keep list
-> markers in the form the original used: `1.` stays `1.`, `-` stays `-`, a bullet stays
-> a bullet.
-
-### 3. `uc_chunk.py` — one bounded re-roll when the model loses a paragraph anyway
-
-After each chunk comes back, its paragraph count is compared with what went in. If it
-matches, the original separators go back on and the structure is **exact**. If it does
-not, the engine **keeps the model's own layout and says so** rather than guessing where
-a paragraph break belonged — guessing at the shape of somebody's document is not
-something this tool should do.
-
-Because the rewrite is non-deterministic, another roll usually lands it. So a chunk that
-kept its facts but lost its paragraphs gets **one** extra attempt, capped by a new
-`UC_LAYER_B_STRUCTURE_RETRIES` (default 1, set 0 to disable). It is deliberately
-separate from the fact guard's budget of eight: a re-roll costs a model call and seconds
-against the function ceiling, and part 4 of this brief is about that ceiling.
-
-Where the fact guard is *already* retrying, structure costs nothing at all — it is used
-as a tie-break between attempts that dropped the same number of figures.
-
-### 4. The result is now reported, so this cannot regress silently
-
-Every layer B response now carries `paragraphs_in`, `paragraphs_out` and
-`structure_kept`. None of the three existed before, which is why nobody knew.
+1. **`uc_chunk.py`** — separators between paragraphs, blank-line runs and the
+   document's own leading and trailing whitespace are captured and put back
+   exactly. Chunks rejoin on the separator that actually sat between them.
+2. **`rewrite_text.py`** — a layout rule added to both prompts: same number of
+   paragraphs, same order, never merge or split, a short line on its own is a
+   heading, keep list markers as they are.
+3. **`uc_chunk.py`** — when the model loses a paragraph anyway the engine **keeps
+   the model's own layout and reports it** rather than guessing where a break
+   belonged. One bounded re-roll, `UC_LAYER_B_STRUCTURE_RETRIES`, default 1, kept
+   separate from the fact guard's eight because a re-roll costs a model call
+   against the clock.
+4. **`marked-text.tsx`** — `whitespace-pre-wrap`.
+5. Every layer B response now carries `paragraphs_in`, `paragraphs_out` and
+   `structure_kept`. **None of the three existed before, which is why nobody knew.**
 
 ## Proof
 
-### The deterministic half: guaranteed, and it now is
-
-Eleven shapes of document through the split-and-rejoin, and then through a rewrite where
-the model returns its input unchanged:
+Deterministic half, guaranteed:
 
 ```
-DETERMINISTIC ROUND TRIP  (split -> weave), no model involved
-========================================================================
-  PASS  plain two paragraphs         paras=2 chunks=1
-  PASS  triple blank line            paras=2 chunks=1
-  PASS  leading + trailing newlines  paras=2 chunks=1
-  PASS  blank line with spaces       paras=2 chunks=1
-  PASS  soft-wrapped paragraph       paras=2 chunks=1
-  PASS  numbered list block          paras=3 chunks=1
-  PASS  indented block               paras=3 chunks=1
-  PASS  single paragraph             paras=1 chunks=1
-  PASS  windows endings              paras=2 chunks=1
-  PASS  whitespace only              paras=0 chunks=0
-  PASS  no trailing newline          paras=3 chunks=1
-========================================================================
+DETERMINISTIC ROUND TRIP (split -> weave), no model involved
+  PASS  plain two paragraphs        PASS  soft-wrapped paragraph   PASS  windows endings
+  PASS  triple blank line           PASS  numbered list block      PASS  whitespace only
+  PASS  leading + trailing newlines PASS  indented block           PASS  no trailing newline
+  PASS  blank line with spaces      PASS  single paragraph
 11/11 identical, 0 failed
 
-NO-OP REWRITE  (a model that echoes its input) must return the document unchanged
-========================================================================
-  PASS  plain two paragraphs         paras_in=2 paras_out=2 kept=True
-  PASS  triple blank line            paras_in=2 paras_out=2 kept=True
-  PASS  leading + trailing newlines  paras_in=2 paras_out=2 kept=True
-  PASS  blank line with spaces       paras_in=2 paras_out=2 kept=True
-  PASS  soft-wrapped paragraph       paras_in=2 paras_out=2 kept=True
-  PASS  numbered list block          paras_in=3 paras_out=3 kept=True
-  PASS  indented block               paras_in=3 paras_out=3 kept=True
-  PASS  single paragraph             paras_in=1 paras_out=1 kept=True
-  PASS  windows endings              paras_in=2 paras_out=2 kept=True
-  PASS  no trailing newline          paras_in=3 paras_out=3 kept=True
-========================================================================
-0 failed
-```
-
-The re-roll fires exactly once and only when it is needed:
-
-```
-no-op round trip: 8/8 byte-identical, 8 model calls (1 per chunk, no structure re-rolls)
-
-always-merges model: 2 model calls for 1 chunk (1 first attempt + 1 structure re-roll),
-                     paragraphs 3 -> 1, structure_kept=False
+NO-OP REWRITE (a model that echoes its input) — 10/10 byte-identical, 0 failed
+no-op: 8 model calls for 8 chunks, no structure re-rolls
+always-merges model: 2 calls for 1 chunk, paragraphs 3 -> 1, structure_kept=False
   returned: 'One. Two. Three.'   <- the model's own layout, not a guess
 ```
 
-### The real half: a real essay, real model, whole thing pasted in
-
-875 words, 16 paragraphs, a title, a one-line closer. Live against
-`mistral/mistral-small` through the AI Gateway.
+Real half, live model:
 
 ```
-{
-  "seconds": 36.05,
-  "chunks": 3,
-  "words_in": 875,
-  "words_out": 882,
-  "paragraphs_in": 16,
-  "paragraphs_out": 16,
-  "structure_kept": true,
-  "figures_to_check": ["80"],
-  "usage": { "attempts": 11, "model_calls": 11, "retries": 8,
-             "total_tokens": 12911, "cost_usd": 0.0020995 }
-}
+{ "seconds": 36.05, "chunks": 3, "words_in": 875, "words_out": 882,
+  "paragraphs_in": 16, "paragraphs_out": 16, "structure_kept": true }
 ```
 
-**16 paragraphs in, 16 out, aligned one for one and in order** — including the title,
-which the run before the fix deleted, and the closing one-liner, which the run before
-the fix absorbed:
+**16 in, 16 out, aligned one for one** — including the title the earlier run
+deleted and the one-line closer it absorbed. And on screen after the fix:
 
 ```
-paragraph-for-paragraph alignment, 16 in / 16 out
-==========================================================================
- 1  IN : Why the Coffee House Mattered
-    OUT: Why the Coffee House Held Significance
- 2  IN : In 1652 a Greek servant named Pasqua Rosee opened the first coff
-    OUT: In the year 1652 a servant from Greece, named Pasqua Rosee, init
- 3  IN : What made it matter was not the drink. It was the seating. A tav
-    OUT: What granted them influence was not the beverage itself but the
- 4  IN : The economics were unusual too. A cup cost roughly a penny, and
-    OUT: The financial structure defied convention as well. A single serv
- 5  IN : Specialisation followed quickly. Traders in marine insurance gat
-    OUT: Specialised gatherings sprang up in short order. Those trading m
- 6  IN : That last detail is worth sitting with. The London Stock Exchang
-    OUT: The final element merits careful reflection. The London Stock Ex
- 7  IN : The political consequences arrived fast enough to alarm the crow
-    OUT: The swift political fallout unsettled the monarchy. In December
- 8  IN : Eleven days is a short life for a royal proclamation, and the re
-    OUT: Eleven days proved too brief for a royal decree, and the explana
- 9  IN : Women were excluded from most of them, and said so. A pamphlet o
-    OUT: Female patrons were systematically barred from most establishmen
-10  IN : The newspapers deserve their own paragraph. Coffee houses did no
-    OUT: The press merits its own section. Coffeehouses did more than sup
-11  IN : That is a division of labour in the gathering of news, worked ou
-    OUT: This informal division of journalistic labor—shaped by where peo
-12  IN : Postal habits changed as well. A regular customer could have let
-    OUT: Postal routines shifted in kind. A loyal patron might request ma
-13  IN : None of this was designed. The coffee house was a commercial ven
-    OUT: None of this was deliberate. The coffeehouse functioned as a com
-14  IN : There is a temptation to draw the obvious modern comparison and
-    OUT: It’s tempting to make the straightforward comparison to modern d
-15  IN : The decline, when it came, was slow and had ordinary causes. Tea
-    OUT: The decline unfolded gradually and for entirely routine reasons.
-16  IN : That is a considerable inheritance for a room with a shared tabl
-    OUT: This is no small legacy for a modest room with a shared table in
+computed whiteSpace : "pre-wrap"   (was "normal")
+lineBreaksOnScreen  : 18           (was 0)
 ```
 
-And the 147-word essay, whole, before and after — headings intact, and the numbered
-list keeps `1. 2. 3.` where before the fix it came back as bullets:
-
-**BEFORE**
-
-```
-The Long Shadow of the Printing Press
-
-Introduction
-
-When Johannes Gutenberg assembled his press in Mainz around 1440, he was not
-trying to remake European society. He was a goldsmith looking for a business.
-
-Yet within fifty years there were printing shops in more than two hundred
-European towns, and the number of books in circulation had risen from perhaps
-thirty thousand manuscripts to over nine million printed volumes.
-
-Three consequences followed, and historians still argue about their order.
-
-1. Literacy spread outward from the clergy.
-2. Vernacular languages hardened into national standards.
-3. The cost of being wrong in public rose sharply.
-
-The third point deserves more attention than it usually gets. A manuscript
-error stayed in one library. A printed error travelled.
-
-Conclusion
-
-The press did not cause the Reformation, the scientific revolution, or the
-nation state. It made each of them cheaper to attempt.
-```
-
-**AFTER**
-
-```
-The Extensive Impact of the Printing Machine
-
-Introduction
-
-When Johannes Gutenberg constructed his device in Mainz approximately 1440, his
-intent was not to transform European civilization. He was merely a metalworker
-in search of income.
-
-Within fifty years, however, printing facilities had appeared in over two hundred
-European cities, and the count of available texts had increased from around thirty
-thousand handwritten works to more than nine million printed copies.
-
-This led to three major outcomes, and historians continue to debate their
-sequence.
-
-1. Reading skills expanded beyond religious circles.
-2. Local dialects solidified into recognized national languages.
-3. The social penalty for publicly held incorrect views grew substantially.
-
-The final consequence merits deeper consideration than it typically receives. An
-error in a handwritten document remained confined to a single library. A printed
-mistake, by contrast, could reach countless readers.
-
-Conclusion
-
-The invention did not single-handedly spark the Reformation, the scientific
-advancement, or the formation of nation states. It simply reduced the expense of
-pursuing each of these developments.
-```
-
-### Nothing else broke
-
-```
-495 passed, 1 skipped in 11.10s
-```
-
-(`ENGINE.md` section 11 records 487 passing; the suite has grown since. No failures.)
-
-## What is honest to claim, and what is not
-
-- **The deterministic half is guaranteed.** Paragraph separators, blank-line runs,
-  leading and trailing whitespace, and the joins between chunks are now exact. That is
-  proved by the 11/11 table above and it does not depend on any model.
-- **The rewrite half is best effort, like everything else in layer B.** It depends on a
-  model following a prompt rule. It went from losing a title on a 16-paragraph document
-  to keeping all 16, but that is one run of one document, not a guarantee. What *is*
-  guaranteed is that the engine no longer hides it: `structure_kept` is in every
-  response.
-- **Two documents were tested, not twenty.** This is the weakest part of the evidence.
+**Honest limits.** The deterministic half is guaranteed. The rewrite half is best
+effort like everything in layer B — it depends on a model following a prompt rule,
+and `structure_kept` is how it admits when it did not. Two documents were tested
+in depth, not twenty.
 
 ---
 
-## HANDOFF TO JON — the bigger half of part 1, which is not mine to fix
+# 5. PART 2 — FILE TYPES
 
-### 1. The flattened display. One line. `marked-text.tsx:73`
+## Nothing validated the extension, anywhere
 
-```
-'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em]'
-```
+`ACCEPTED_FILES` in `encode.ts` is the picker's `accept` attribute — a hint that
+"All Files" or a drag-and-drop walks straight past. The clean route had no
+allowlist. **So the real accepted set was the engine's own 24 extensions**,
+including `.pdf`, `.xlsx`, `.pptx`, `.epub`, `.odt`, `.html` and `.svg`. None
+chosen, none tested. That is exactly how the `.csv` undercharge got in.
 
-needs `whitespace-pre-wrap` adding:
-
-```
-'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em] whitespace-pre-wrap'
-```
-
-That is the whole fix. The component already receives the text with its line breaks
-intact — it splits it into spans by character offset and every newline is inside one of
-those spans. `pre-wrap` keeps the line breaks and still wraps long lines, which is what
-is wanted. Nothing about the hidden-character markers changes.
-
-**This affects both views**: the scanned input at `workbench.tsx:1154` and the cleaned
-output at `workbench.tsx:1151`. One change fixes both.
-
-**Verify it by re-running the browser check above** and confirming `innerTextNewlines`
-matches `textContentNewlines`.
-
-### 2. The stale word count. `workbench.tsx:557` and `1465`. Confirmed, read-only.
-
-Jon's report: paste 10,000 words, sanitise, clear the box, and it still says
-"10,027 words = 11 credits".
-
-The conductor's hypothesis was right, and here is the exact mechanism. The price line
-reads:
-
-```
-workbench.tsx:1465   const words = countWords(loaded.text || text);
-```
-
-`clearResults()` (line 557) runs on **every keystroke** after a scan and resets `scan`,
-`cleaned`, `cleanedText`, `message` and `phase` — **but never `loaded`**. Only
-`startOver()` (line 578) clears `loaded`. So once a scan has happened, `loaded.text`
-holds the old paste for the rest of the session, `loaded.text || text` always picks the
-stale one, and emptying the textarea changes nothing on screen.
-
-Two more things fall out of the same cause and should be fixed together:
-- the row is shown at all because the condition at line 1456 is
-  `loaded.text || text || isFile`, so it survives an empty box;
-- the placeholder never comes back, because line 1176 requires `loaded.text === ''`.
-
-`countWords(loaded.text || text)` also appears at lines 377 and 1400, on the paywall and
-tracking paths, so the same stale number is being sent to those.
-
-**I did not run this one.** It is read from the source, and it explains the symptom
-exactly, but a session that owns the workbench should confirm it in the browser before
-calling it fixed.
-
-### 3. Decision log entries are owed
-
-CLAUDE.md section 6 says a decision goes in `04-decision-log.md` and an open question in
-`06`. This brief restricted this session to the engine, the Python functions and this
-file, and both of those documents were being edited by other sessions today. Rather than
-write into a shared file mid-session I am naming what is owed:
-
-- **04**: the layout rule is now part of the layer B prompt, and paragraph structure is
-  restored deterministically but never guessed at.
-- **04**: `UC_LAYER_B_STRUCTURE_RETRIES`, default 1, is a new cost-and-time knob.
-- **06**: layer B paragraph preservation is best effort and measured on two documents.
-- **ENGINE.md section 6** should gain `UC_LAYER_B_STRUCTURE_RETRIES` in the settings
-  table. Not done: this session's brief did not include a documentation pass and
-  `ENGINE.md` is heavily cross-referenced.
-
----
-
-## What part 1 did not do
-
-- **Did not test on production.** Every layer B run above is against the same engine
-  code, called through the same `_clean_payload`, but locally and directly rather than
-  over HTTP through `/api/tool/clean`. The formatting behaviour is in the engine and the
-  browser, and neither is changed by the hop; the timing is not comparable and no timing
-  claim is made from these runs.
-- **Did not fix the display.** Out of territory. See the handoff.
-- **Did not test a `.docx` round trip.** That is part 2.
-- **Did not test more than two documents.**
-
----
-
-# PART 2 — EVERY FILE TYPE, END TO END
-
-## The correction the brief asked for, confirmed and then acted on
-
-The brief's correction was right and the situation was slightly worse than it
-said. **Nothing validated the extension anywhere.** `ACCEPTED_FILES` in
-`encode.ts` is the file picker's `accept` attribute, which a "All Files" choice
-or a drag-and-drop walks straight past. The clean route has no allowlist. So the
-real accepted set was the engine's own: **12 text extensions and 12 container
-extensions, 24 in all**, including `.pdf`, `.xlsx`, `.pptx`, `.epub`, `.odt`,
-`.html` and `.svg`. None was ever chosen, and none was ever tested.
-
-## What changed: the four things, enforced at the front door
-
-`apps/web/api/_shared.py` now holds an allowlist, and `read_request` applies it
-to **both** `/api/scan` and `/api/clean`:
+## Fixed: four things, enforced, with the bytes checked
 
 ```python
 ACCEPTED_EXTS = (".txt", ".docx", ".png", ".jpg", ".jpeg")
 ```
 
-Five extensions, four things: **pasted text, a Word document, a PNG, a JPG.**
-`.txt` is there because pasted text arrives as `paste.txt` — the browser has no
-separate text path, so refusing `.txt` would refuse every paste.
+Five extensions, four things: pasted text, a Word document, a PNG, a JPG. `.txt`
+is there because pasted text arrives as `paste.txt`.
 
-**It also checks the bytes, not only the name.** A `.png` must carry the PNG
-signature, a `.jpg` the JPEG one, a `.docx` must be a zip that actually contains
-`word/document.xml` (which is what separates it from `.xlsx`, `.pptx`, `.odt` and
-`.epub`, all of which are zips too), and a `.txt` must not be a binary we
-recognise and must carry no NUL bytes.
+**The bytes are checked, not just the name.** A `.png` must carry the PNG
+signature; a `.docx` must be a zip that really contains `word/document.xml`, which
+is what separates it from `.xlsx`, `.pptx`, `.odt` and `.epub`; a `.txt` must not
+be a recognised binary and must carry no NUL bytes.
 
-**Deliberately NOT in `engine/format_dispatch.py`.** That file is vendored
-upstream code shared with the command line tools and the audits, and it is one of
-the two lists `verify-pricing-matches-engine.mjs` compares. Narrowing it would
-have broken the guard I was told to keep passing. The restriction belongs at our
-product's front door, and that is where it now is.
-
-**The guard was run, as instructed, and still passes:**
+**Deliberately not in `format_dispatch.py`** — that is vendored upstream code
+shared with the CLI and the audits, and it is one of the two lists the pricing
+guard compares. Narrowing it would have broken the guard Jon said to keep passing.
+The guard was run, as instructed:
 
 ```
-Does the PRICE agree with the WORK about what a file is?
-==================================================================
-
-engine TEXT_EXTS       .css .csv .go .js .json .py .rs .text .toml .txt .yaml .yml
-route ENGINE_TEXT_EXTS .css .csv .go .js .json .py .rs .text .toml .txt .yaml .yml
-
-engine CONTAINER_EXTS  .docx .epub .htm .html .markdown .md .mdx .odt .pdf .pptx .svg .xlsx
-
   PASS  nothing the engine rewrites is priced as a flat file
   PASS  nothing priced by the word is refused a rewrite by the engine
   PASS  nothing priced as text is a CONTAINER to the engine
-
-==================================================================
-
 The price and the work agree on every extension.
 ```
 
-## The front door, as it now behaves
-
-Every row below is a real call to `_shared.read_request`:
+## The front door
 
 ```
-name                       result                                 name used
-============================================================================
-paste.txt                  accepted                               'paste.txt'
-essay.txt                  accepted                               'essay.txt'
-photo.png                  accepted                               'photo.png'
-PHOTO.PNG                  accepted                               'PHOTO.PNG'
-shot.jpg                   accepted                               'shot.jpg'
-shot.jpeg                  accepted                               'shot.jpeg'
-report.docx                accepted                               'report.docx'
-essay.csv                  REFUSED 400 bad_format                 -
-essay.md                   REFUSED 400 bad_format                 -
-essay.pdf                  REFUSED 400 bad_format                 -
-notes.html                 REFUSED 400 bad_format                 -
-book.epub                  REFUSED 400 bad_format                 -
-sheet.xlsx                 REFUSED 400 bad_format                 -
-noext                      REFUSED 400 bad_format                 -
-a.png   (a docx renamed)   REFUSED 400 bad_format                 -
-a.docx  (a png renamed)    REFUSED 400 bad_format                 -
-a.txt   (a png renamed)    REFUSED 400 bad_format                 -
-empty.txt                  REFUSED 400 no_file                    -
-../../etc/passwd.txt       accepted                               'passwd.txt'
-my essay final (2).txt     accepted                               'my essay final (2).txt'
-проба ünïcode 文書.txt       accepted                               'проба ünïcode 文書.txt'
+paste.txt / essay.txt / photo.png / PHOTO.PNG / shot.jpg / shot.jpeg / report.docx   accepted
+essay.csv essay.md essay.pdf notes.html book.epub sheet.xlsx noext                    REFUSED bad_format
+a.png (a docx renamed) / a.docx (a png renamed) / a.txt (a png renamed)               REFUSED bad_format
+empty.txt                                                                             REFUSED no_file
+../../etc/passwd.txt                                                    accepted as 'passwd.txt'
+my essay final (2).txt / проба ünïcode 文書.txt                                        accepted
 ```
 
-**`essay.csv` is the one that matters**: that is the exact name the Stripe audit
-found buying an unlimited rewrite for one credit. It is now refused at the door.
+## Every type, end to end — and does it still open?
 
-## The end-to-end table
+Layer B off throughout; it never runs on a `.docx`, `.png` or `.jpg` anyway. All
+fixtures hand-built with the standard library, because CLAUDE.md section 3 forbids
+reading outside this folder and section 5 forbids installing.
 
-Layer B was **off** for all of it — this part is about file integrity, not the
-rewrite, and layer B never runs on a `.docx`, `.png` or `.jpg` anyway. Every
-fixture was hand-built with the Python standard library, because CLAUDE.md
-section 3 forbids reading any file outside this folder and section 5 forbids
-installing anything.
+| Fixture | Scan | Clean | **Still opens?** | Credits |
+|---|---|---|---|---|
+| `paste.txt` | text / suspicious (48) | removed 47 invisibles, replaced 1 NBSP | **YES** | 1 |
+| `clean.docx` / `marked.docx` | container / suspicious | metadata scrubbed, custom part dropped | **YES** zip valid, parts present, XML parses, text unchanged | 1 flat |
+| `clean.png` / `marked.png` | image | tEXt and iTXt dropped | **YES** all CRCs valid, pixels byte-identical | 1 flat |
+| `clean.jpg` / `marked.jpg` | image | APP1, APP13, COM dropped | **YES** scan data byte-identical | 1 flat |
+| clean `.txt`, no marks | text / **not** suspicious | `removed_count: 0` | **YES** | 1 |
+| 4.9 MB `.txt` | text | removed 107,367, replaced 2,285 | **YES** | 816 |
+| 2.1 MB `.png` / 2.8 MB `.docx` | image / container | as above | **YES** | 1 flat |
+| 5.4 MB `.txt` | **REFUSED 413 `too_large`** | — | — | — |
+| invalid UTF-8 `.txt` | text | 0 removed | byte-identical in and out | 1 |
+| `.txt` with NUL bytes | **REFUSED `bad_format`** | — | — | — |
+| zip with `word/document.xml` removed | **REFUSED `bad_format`** | — | — | — |
 
-| Fixture | Front door | Scan: kind / suspicious | Clean | **Output still opens?** | Credits |
-|---|---|---|---|---|---|
-| `paste.txt` 2143 B | accept | text / **yes** (48) | removed 47 invisibles, replaced 1 NBSP | **YES** UTF-8 | 1 (357 words) |
-| `essay.txt` same bytes | accept | text / yes (48) | identical | **YES** | 1 |
-| `clean.docx` | accept | container / yes | scrubbed creator, lastModifiedBy, Application, Company, AppVersion | **YES** zip valid, parts present, XML parses, visible text unchanged | 1 flat |
-| `marked.docx` | accept | container / yes | as above plus dropped `docProps/custom.xml` | **YES** same checks | 1 flat |
-| `clean.png` | accept | image / no | nothing to remove | **YES** all CRCs valid, pixels byte-identical | 1 flat |
-| `marked.png` | accept | image / yes | dropped tEXt, dropped iTXt | **YES** CRCs valid, pixels byte-identical | 1 flat |
-| `clean.jpg` | accept | image / **no** | dropped APP1, APP13 | **YES** scan data byte-identical | 1 flat |
-| `marked.jpg` | accept | image / yes | dropped APP1, dropped COM | **YES** scan data byte-identical | 1 flat |
-| clean `.txt`, no marks | accept | text / **no** (0) | `removed_count: 0, replaced_count: 0` | **YES** unchanged | 1 |
-| 4.9 MB `.txt` | accept | text / yes (109,652) | removed 107,367, replaced 2,285 | **YES** | **816** |
-| 2.1 MB `.png` | accept | image / no | nothing to remove | **YES** pixels byte-identical | 1 flat |
-| 2.8 MB `.docx` | accept | container / yes | metadata scrubbed | **YES** visible text unchanged | 1 flat |
-| 5.4 MB `.txt` | **REFUSED 413 `too_large`** | — | — | — | — |
-| invalid UTF-8 `.txt` | accept | text / no | 0 removed | byte-identical in and out | 1 |
-| `.txt` containing NUL | **REFUSED 400 `bad_format`** | — | — | — | — |
-| zip with `word/document.xml` deleted | **REFUSED 400 `bad_format`** | — | — | — | — |
-| docx containing a nested zip | accept | container / yes | metadata scrubbed | **YES** zip valid, text unchanged | 1 flat |
+**Nothing came back corrupted.** Verified by reading bytes — CRC32 on every PNG
+chunk, marker walking on the JPEG, `zipfile` plus an XML parse on the DOCX.
 
-**Nothing came back corrupted.** Every PNG's pixels, every JPEG's entropy-coded
-scan, and every DOCX's visible text survived byte for byte. That was checked by
-reading the bytes — CRC32 on every PNG chunk, marker walking on the JPEG, and
-`zipfile` plus an XML parse on the DOCX — not by asking the engine whether it had
-worked.
-
-**The metadata really was removed**, read back out of the cleaned bytes:
+**The metadata really was removed**, read back from the cleaned bytes:
 
 ```
-marked.png
-  IN  IHDR  crc OK | tEXt payload=b'Software\x00Claude' | iTXt payload=b'Comment\x00...Generated by Claude Opus 5' | IDAT | IEND
-  OUT IHDR  crc OK | IDAT | IEND
-  b"Claude" in OUT bytes : False
-  IDAT payload identical : True
-  OUT == the unmarked original PNG, byte for byte : True
+marked.png   IN  IHDR | tEXt b'Software\x00Claude' | iTXt b'...Generated by Claude Opus 5' | IDAT | IEND
+             OUT IHDR | IDAT | IEND
+             b"Claude" in OUT: False    IDAT identical: True
+             OUT == the unmarked original PNG, byte for byte: True
 
-marked.docx
-  IN  docProps/app.xml  : <Application>Claude</Application><Company>Anthropic</Company>
-  OUT docProps/app.xml  : <Application></Application><Company></Company>
-  IN  docProps/core.xml : <dc:creator>Claude</dc:creator><cp:lastModifiedBy>Claude</cp:lastModifiedBy>
-  OUT docProps/core.xml : <dc:creator></dc:creator><cp:lastModifiedBy></cp:lastModifiedBy>
-  b"Claude" anywhere in OUT bytes    : False
-  b"Anthropic" anywhere in OUT bytes : False
-  word/document.xml identical in/out : True
+marked.docx  IN  <Application>Claude</Application><Company>Anthropic</Company>
+             OUT <Application></Application><Company></Company>
+             b"Claude"/b"Anthropic" anywhere in OUT: False
+             word/document.xml identical in/out: True
 
-marked.jpg
-  IN  segments [E0, E1(Exif...Claude Opus 5), FE(Generated by Claude Opus 5), C0, C4..., SOS, scan, EOI]
-  OUT segments [E0,                                                          C0, C4..., SOS, scan, EOI]
-  b"Claude" in OUT bytes : False
-  scan bytes identical   : True
+marked.jpg   IN  [E0, E1(Exif...Claude Opus 5), FE(Generated by Claude Opus 5), C0, ..., SOS, scan, EOI]
+             OUT [E0,                                                          C0, ..., SOS, scan, EOI]
+             b"Claude" in OUT: False    scan bytes identical: True
 ```
 
-## What a PDF actually does, which nobody knew
+## What a PDF actually does — nobody knew
 
-**At the front door it is now refused**, consistent with 04 entry 26:
-
-```
-read_request({... "name": "essay.pdf"}) ->
-  (400, {'ok': False, 'code': 'bad_format',
-         'error': 'That file type is not supported. Use text, a Word document, PNG or JPG.'})
-```
-
-**Bypassing the door and calling the engine directly**, with a valid hand-built
-PDF carrying `/Producer (Claude Opus 5)`:
+Refused at the door now, consistent with 04 entry 26. Reached directly, with a
+valid PDF carrying `/Producer (Claude Opus 5)`:
 
 ```
-classify_bytes(pdf, ".pdf") -> container
-
-_inspect_payload -> "has_ai_metadata": true,
-                    "findings": ["pdf-structured:ai:Claude"],
-                    "suspicious": true
-
-_clean_payload  -> "actions": ["no PDF cleaner available (install exiftool for
-                                reliable metadata strip); copied as-is"],
-                   "bytes_in": 719, "bytes_out": 719,
-                   "still_has_ai_metadata": true,
-                   "meta": {"mode": "copy", "degraded": true}
-
-output == input          : True
-b"Claude" still in output: True
+_inspect_payload -> "has_ai_metadata": true, "findings": ["pdf-structured:ai:Claude"]
+_clean_payload   -> "actions": ["no PDF cleaner available (install exiftool...); copied as-is"],
+                    "bytes_in": 719, "bytes_out": 719, "still_has_ai_metadata": true,
+                    "meta": {"mode": "copy", "degraded": true}
+output == input: True     b"Claude" still in output: True
 ```
 
-So the answer is: **it detects the mark, returns the file completely unchanged,
-says so honestly in the report, and returns `ok: true`.** The file is not damaged.
-But `billing_estimate` returns one credit for it, so if that path were ever
-reachable a customer would pay a credit for a no-op whose own report says it did
-nothing. It is not reachable now.
+**It detects the mark, returns the file completely unchanged, says so honestly,
+and returns `ok: true`.** The file is not damaged. `billing_estimate` would charge
+one credit for that no-op if the path were reachable. It is not.
 
-## Findings from part 2
+## Should any other type be added? No.
 
-### F1. A document with NO AI metadata is still reported as scrubbed, and loses its author
+Jon asked to be told if anything else was a free add-in. **Nothing is.** Every
+remaining type is either a container the rewrite silently skips, or needs a system
+program Vercel cannot install (`exiftool`, `qpdf`), or both. PDF is the clearest
+case: the cleaner is a no-op today.
 
-This is the container half of the brief's own test — "a clean input must not be
-reported as cleaned of something" — and it fails.
+## Smaller findings
 
-Fixture: a `.docx` with `dc:creator` = "Jon Nachman", `Application` =
-"Microsoft Office Word", and no AI markings at all.
+- **A UTF-16 `.txt` is refused** with "that file type is not supported", which is
+  a confusing sentence for a text file. **Pre-existing, not a regression** — the
+  engine already refused it (`refusing to clean bytes that look like a binary
+  container as text`). Notepad's "Save as → Unicode" produces exactly this.
+- **A file named exactly `.txt` is refused**, because `Path(".txt").suffix` is
+  `''`. Safe outcome reached by accident rather than by rule.
+- **Invalid UTF-8 round-trips byte-identical** — nothing is corrupted — but it is
+  billed on a word count taken from a lossy decode.
 
-```
-scan : kind=container  suspicious=False  findings=[]  has_ai_metadata=False
-clean actions: ['scrub docProps/core.xml field dc:creator',
-                'scrub docProps/core.xml field cp:lastModifiedBy',
-                'scrub docProps/app.xml field Application',
-                'scrub docProps/app.xml field AppVersion']
-core.xml OUT: <dc:creator></dc:creator><cp:lastModifiedBy></cp:lastModifiedBy>
-```
+## Two smaller defects found and FIXED
 
-The scan is honest. The clean reports four "scrub" actions on a file that had
-nothing AI in it, **and deletes the user's own name from their own document.**
-
-The text path gets this right — a clean `.txt` reports `removed_count: 0` and
-claims nothing. The container path does not.
-
-**Not fixed, deliberately.** Whether "clean" means "remove AI marks" or "remove
-all identifying metadata" is a product decision and Jon's, not mine — and there is
-already a `keep_non_ai_metadata` option in the clean route's `ALLOWED` set that
-nothing sends. My recommendation: keep stripping (anonymity is a reasonable thing
-to sell) but **report AI findings and general metadata separately**, so a file
-with nothing AI in it is never described as having had an AI mark removed.
-
-### F2. The scan told the browser where our server keeps its temp files. FIXED.
-
-Every image and container scan came back carrying:
-
-```
-report.path = /var/folders/5r/rqsn81s52mb2wfp7nsmkc5hh0000gn/T/wm-inspect-vjlp3as1/clean.docx
-```
-
-`_clean_payload` pops its own `input`/`output` keys; `_inspect_payload` popped
-nothing, and `scan.py` returned the report whole. Text scans additionally echoed
-the filename inside `report.stylometry.path`.
-
-Fixed in `_shared.py` (`strip_server_paths`), applied in both `scan.py` and
-`clean.py`:
-
-```
-  report carried a server path before stripping: True
-  report carries a server path after stripping : False
-```
-
-### F3. A filename with a path in it crashed with the wrong error. FIXED.
-
-`../../etc/passwd.txt` was **accepted** by the front door, reached the engine, and
-died inside `server._tmp_path` with `ValueError: unsafe filename`, which
-`clean.py` maps to `bad_format` — so the user was told "that file type is not
-supported" for what is a filename problem.
-
-**Nothing was ever written outside the temp directory**; `_tmp_path` refused
-first, which is exactly what it is for. But the request should not have got that
-far. `_shared.safe_name` now takes the basename at the door, so
-`../../etc/passwd.txt` becomes `passwd.txt` and cleans normally — friendlier than
-refusing, and it is almost certainly what the person wanted.
-
-### F4. The scan and the clean disagree about a JPEG with only ordinary metadata
-
-A JPEG produced by macOS `sips` scanned as `suspicious: False`, `findings: []` —
-correctly, there is nothing AI in it. The clean then reported
-`["drop APP1", "drop APP13"]` and returned a file 136 bytes smaller. Those were an
-Exif block and a Photoshop block, neither AI.
-
-Same root cause as F1 on the image path. A user who scans first is told nothing
-was found and then watches bytes disappear.
-
-### F5. Smaller notes
-
-- A file named exactly `.txt` is refused, because `Path(".txt").suffix` is `''`.
-  Safe outcome, reached by accident rather than by rule.
-- Invalid UTF-8 in a `.txt` is accepted and round-trips **byte-identical** — the
-  engine corrupts nothing. But it is billed on a word count taken from a lossy
-  decode. Open question rather than a defect.
-- `.jpeg`, uppercase extensions and a missing `name` all behave as intended.
-
-## What part 2 did not do
-
-- **`exiftool` and `c2patool` are not installed**, so container and image metadata
-  detection ran in its degraded, standard-library-only mode throughout. That is
-  why the PDF cleaner is a no-op. Installing is forbidden by CLAUDE.md section 5.
-- **No file written by real Word, a real camera, or a real AI tool was used.**
-  Every fixture was hand-built. A DOCX from actual Word carries far more parts than
-  mine. "Opens" means the structural checks passed, **not that Microsoft Word
-  opened it.** This is the same caveat ENGINE.md section 2 already carries.
-- **Genuine signed C2PA provenance was not tested.** A valid manifest cannot be
-  hand-built, so `has_c2pa` was false everywhere and that detector is unexercised.
-- **The tests called the functions, not the HTTP surface.** `authorised()`, the
-  engine key check and `Content-Length` handling are not covered by this table.
-- The exact 5 MB boundary was not tested; 4.9 MB and 5.4 MB were.
+- **The scan was sending the browser our server's temp path**:
+  `report.path = /var/folders/5r/.../T/wm-inspect-vjlp3as1/clean.docx`.
+  `_clean_payload` popped its own keys; `_inspect_payload` popped nothing.
+  Now stripped in both.
+- **A filename carrying a path crashed with the wrong error.**
+  `../../etc/passwd.txt` was accepted, reached the engine and died in
+  `_tmp_path` with `ValueError: unsafe filename`, reported to the user as "that
+  file type is not supported". **Nothing was ever written outside the temp
+  directory** — `_tmp_path` refused first, which is what it is for. The name is
+  now reduced to its basename at the door, so it cleans normally.
 
 ---
 
-# PART 3 — THE PRICING ARBITRAGE: TESTED, AND IT IS NOT THERE
+# 6. PART 3 — THE PRICING ARBITRAGE: TESTED, AND IT IS NOT THERE
 
-**The brief said: 10,000 pasted words costs 10 credits, the same text uploaded as
-a `.txt` costs 1, same work for a tenth of the price. The first half is true. The
-second half is not, and the difference matters.**
+**The brief said 10,000 pasted words cost 10 credits and the same text uploaded
+as a `.txt` cost 1 — same work, a tenth of the price. The first half is true.
+The second half is not.**
 
-Run live, against the real database, **with the dev bypass off**, on one
-throwaway account funded by inserting a ledger row directly and deleted
-afterwards, exactly as the brief describes:
+Live, real database, **dev bypass off**, one throwaway account funded by inserting
+a ledger row and deleted afterwards:
 
 ```
-throwaway account 587f87e0
-funded +60 credits with reason "purchase"
 the document: 2616 words, identical bytes in all three runs
+signed in with a real session cookie: true (dev bypass NOT used)
 
-signed in with a real session cookie: true (1 sb- cookies, dev bypass NOT used)
+PASTED into the box                name=paste.txt  layer_b=true  -> charged=3 rewrite ran=true  16.6s
+the SAME text uploaded as .txt     name=essay.txt  layer_b=false -> charged=1 rewrite ran=false  1.5s
+.txt upload, rewrite forced on     name=essay.txt  layer_b=true  -> charged=3 rewrite ran=true  13.6s
 
-PASTED into the box                name=paste.txt  layer_b sent=true  -> HTTP 200 charged=3 balance=62 rewrite actually ran=true  16.6s
-the SAME text uploaded as .txt     name=essay.txt  layer_b sent=false -> HTTP 200 charged=1 balance=61 rewrite actually ran=false  1.5s
-.txt upload, rewrite forced on     name=essay.txt  layer_b sent=true  -> HTTP 200 charged=3 balance=58 rewrite actually ran=true  13.6s
-
-THE LEDGER FOR THIS ACCOUNT, every row:
-  447      +60  purchase          -       -      words_in=-
-  448       +2  anon_grant        -       -      words_in=-
-  449       +3  signup_grant      -       -      words_in=-
-  450       -3  spend             clean   text   words_in=2616
-  453       -1  spend             clean   file   words_in=2616
-  456       -3  spend             clean   file   words_in=2616
-
-account deleted; ledger rows remaining for it: 0 (must be 0)
+THE LEDGER: +60 purchase | +2 anon_grant | +3 signup_grant
+            -3 spend clean text words_in=2616
+            -1 spend clean file words_in=2616
+            -3 spend clean file words_in=2616
+account deleted; ledger rows remaining: 0
 ```
 
-**Read the third row.** The same `.txt` upload, with the rewrite actually
-requested, is charged **3 credits — exactly what the paste cost.** The route
-prices by words whenever a rewrite will run, whatever the file is called. The
-Stripe audit's fix holds. **There is no way to buy a rewrite at a discount by
-renaming a paste to a file.**
+**Read the third row.** The same `.txt` upload with the rewrite actually requested
+is charged **3 credits — exactly what the paste cost.** The route prices by words
+whenever a rewrite will run, whatever the file is called. **The Stripe audit's fix
+holds and there is no discount to be had by renaming a paste.**
 
-## So what IS the one-credit case?
+**The one-credit case is not cheap work — it is different work**, and that is
+section 2.1, which the interface sweep then showed is far worse than a price.
 
-**It is a different product, sold silently.** Look at the `rewrite actually ran`
-column: for the 1-credit upload it is `false`, and the run took 1.5 seconds
-instead of 16.6.
+## A second price defect, read from source not run
 
-The cause is one line in the interface:
-
-```
-workbench.tsx:355   const carriesProse = !isFile || scan?.kind === 'container';
-```
-
-For a `.txt` upload, `scan.kind` is `"text"`, not `"container"`, so `carriesProse`
-is **false**, so `wantsRewrite` is false, so the browser never asks for the
-rewrite. The user gets layer A only, pays one credit, and **nothing tells them the
-rewrite did not run.**
-
-Paste your essay: the watermark rewrite, priced by the word.
-Upload the identical essay as a `.txt`: invisible characters only, one credit.
-
-**This is a finding for Jon, not something I changed** — the pricing rule is his
-and the workbench is not mine. Two ways to settle it, and my recommendation is
-the first:
-
-1. **Make `.txt` upload behave exactly like a paste.** A `.txt` IS prose; the
-   engine rewrites it perfectly well, as row three proves. The condition becomes
-   `!isFile || scan?.kind === 'container' || scan?.kind === 'text'`. One line, and
-   the two routes into the product stop being different products.
-2. Keep the distinction, and say so in the interface before the button is pressed.
-
-## A second, smaller price defect found on the way
-
-`credits.ts:costFor` — the price the **browser shows** — still uses the extension
+`credits.ts:costFor` — the price the **browser** shows — still uses the extension
 list the Stripe audit removed from the route:
 
 ```
 credits.ts   const textLike = !input.isFile || /\.(txt|md|markdown|text)$/i.test(input.name);
-route.ts     const ENGINE_TEXT_EXTS = ['.txt','.text','.css','.js','.py','.rs','.go','.json','.yaml','.yml','.toml','.csv'];
+route.ts     ENGINE_TEXT_EXTS = ['.txt','.text','.css','.js','.py','.rs','.go','.json','.yaml','.yml','.toml','.csv'];
 ```
 
-`.md` and `.markdown` are in the browser's list and not in the server's. So a
-`.md` upload is **displayed** at one credit per 1,000 words and **charged** one
-flat credit. The customer is quoted more than they pay, which is the safe
-direction, but the two disagree. `.md` is refused at the engine's door as of this
-session, so the quote is now for a file that will be rejected.
+`.md` is in the browser's list and not the server's, so a `.md` upload was
+displayed at one credit per 1,000 words and charged one flat credit — quoted more
+than charged, the safe direction. `.md` is now refused at the door, so the quote
+is for a file that will be rejected. **Not run**, because the door refuses it
+before any price is charged.
 
-**Read from source, not run** — I could not exercise it because the front door now
-refuses `.md` before any price is charged. `credits.ts` is not my territory.
+## An observation, not a finding
 
-### An observation, not a finding
-
-A brand-new account that never was a guest received **both** `+2 anon_grant` and
-`+3 signup_grant` (rows 448 and 449). That is 5 credits, which is the same total
-a visitor gets by guesting first and then signing up, so it looks consistent
-rather than wrong. Noting it because it was visible in the ledger and somebody
-should confirm it is intended.
+A brand-new account that was never a guest received **both** `+2 anon_grant` and
+`+3 signup_grant`. Five credits — the same total someone gets by guesting first
+and then signing up, so it looks consistent rather than wrong. Noting it because
+it was visible in the ledger and somebody should confirm it is intended.
 
 ---
 
-# PART 4 — THE TWO CEILINGS
+# 7. PART 4 — THE TWO CEILINGS
 
 ## (a) Why 10,000 words failed locally with nothing timing it out
 
-**Reproduced, and the cause is not a timeout. The engine gives up.**
+**Reproduced. It is not a timeout — the engine gives up.**
 
 ```
 { "ok": false, "seconds": 95.32,
-  "usage": { "attempts": 149, "model_calls": 149, "retries": 119,
-             "total_tokens": 172246, "cost_usd": 0.0246386, "chunks": 34 } }
+  "usage": { "model_calls": 149, "retries": 119, "cost_usd": 0.0246386, "chunks": 34 } }
 
 WHY EACH ATTEMPT ENDED AS IT DID
   FactsLost          126
@@ -858,76 +629,45 @@ WHY EACH ATTEMPT ENDED AS IT DID
 chunks that burned all eight attempts: {0, 3, 6, 8, 11, 17, 23, 25}
 ```
 
-**149 model calls, 95 seconds, 2.5 cents spent, and the request returned
-nothing.** Eight of the 34 chunks used every one of their eight attempts.
+**149 model calls, 95 seconds, 2.5 cents, and nothing returned.**
 
 The mechanism, exactly:
 
-- The **fact guard** is advisory — a chunk that keeps losing a figure keeps its
-  best attempt and carries on. On its own it cannot fail a document.
-- The **length guard** is a hard failure by design (04 entry 22: overflow rejects,
+- The **fact guard is advisory** — a chunk that keeps losing a figure keeps its
+  best attempt. On its own it cannot fail a document.
+- The **length guard is a hard failure by design** (04 entry 22: overflow rejects,
   never truncates). On the **last** attempt it re-raised, and that exception
-  escaped `pool.map` and killed the whole request.
-- Put together: a chunk spends seven attempts losing figures — so it is *holding a
-  perfectly good rewrite* — and then its eighth roll happens to come back short,
-  and the good rewrite is thrown away along with the entire document.
+  escaped and killed the whole request.
+- Together: a chunk spends seven attempts losing figures — so it is holding a
+  perfectly good rewrite — and its eighth roll comes back short, and the good
+  rewrite is thrown away along with the entire document.
 
-**It gets worse with length, which is why 5,000 worked and 10,000 did not.**
-34 chunks with 8 rolls each is 272 chances for one roll to come back short, and
-any single one of them ended the request.
+**That is why 5,000 worked and 10,000 did not.** 34 chunks with 8 rolls each is
+272 chances for one roll to come back short, and any one of them ended the request.
 
-### Fixed, without softening 04 entry 22
+**Fixed without softening 04 entry 22.** A short last attempt no longer discards a
+good earlier one. Nothing truncated is ever returned — the kept attempt passed the
+same length guard when it was recorded. If there is no good attempt it still
+raises, fails and refunds.
 
-A short last attempt no longer discards a good earlier one:
-
-```python
-if best_out is not None:
-    return i, best_out, best_info, best_missing, usage, best_kept
-raise
-```
-
-**Nothing truncated is ever returned.** `best_out` passed the same length guard
-when it was recorded. The only change is that a good rewrite already in hand is
-no longer thrown away because a later roll was bad. If there is no good attempt,
-it still raises and the request still fails and refunds.
-
-### Also added: a time budget on retries
-
-ENGINE.md section 10 lists this as improvement zero — "a time budget on retries,
-not only a count" — and the measurement above is the evidence for it. New
-`UC_LAYER_B_DEADLINE`, default **100 seconds**, after which retries stop and the
-best attempt so far is returned.
-
-### The same document, after both fixes
+Same document after the fix:
 
 ```
 { "ok": true, "seconds": 78.68, "words_in": 10464, "words_out": 10262,
-  "paragraphs_in": 192, "paragraphs_out": 193,
-  "usage": { "model_calls": 132, "retries": 98, "cost_usd": 0.0219923 } }
-
-  FactsLost          106
-  ok                  23
-  TruncatedRewrite     3
+  "paragraphs_in": 192, "paragraphs_out": 193, "model_calls": 132 }
+  FactsLost 106 | ok 23 | TruncatedRewrite 3
 ```
 
 **Three chunks still came back short and none of them killed the document.**
 
-## (b) The table of words against seconds
+## (b) Words against seconds
 
-**Stated plainly first: this is measured on LOCALHOST, not production.** I was
-told not to deploy, so production is running the code as it was before this
-session, and its `/api/scan` and `/api/clean` require an engine key that is a
-Vercel-only secret — a direct production measurement was not available to me.
-Every row is the engine's own code called in-process, which means it carries **no
-HTTP, no base64 and no cold start**. Real production numbers will be larger.
+**Localhost, not production** — see 2.4. Engine only, no HTTP. The filler is one
+875-word essay repeated with a distinct heading per section and every number
+shifted per section, so the fact guard sees fresh figures. That makes it realistic
+prose but deliberately **number-dense, the known worst case** for retries.
 
-The filler is one 875-word essay repeated with a distinct heading per section and
-**every number shifted per section**, so the fact guard sees fresh figures rather
-than the same ones. That makes it grammatical, realistic prose but deliberately
-**number-dense, which is the known worst case** for retries (06 row 66). Treat
-these as pessimistic.
-
-| Words | Seconds | Chunks | Model calls | Retries | Cost | Paragraphs in→out | Result |
+| Words | Seconds | Chunks | Model calls | Retries | Cost | Paragraphs | Result |
 |---:|---:|---:|---:|---:|---:|---|---|
 | 2,616 | **35.8** | 9 | 35 | 26 | $0.0059 | 48 → 48 | success |
 | 5,232 | **68.6** | 17 | 89 | 72 | $0.0143 | 96 → 98 | success |
@@ -935,122 +675,110 @@ these as pessimistic.
 | 10,464 | **78.7** | 34 | 132 | 98 | $0.0220 | 192 → 193 | success |
 | 10,464 | 95.3 | 34 | 149 | 119 | $0.0246 | — | **failed, before the fix** |
 
-**Read the 7,848 row against the 10,464 row.** The shorter document took
-**longer**. Time here does not track length; it tracks how many retries the fact
-guard demands, and that is a roll of the dice. Any promise made about "how long a
-document of size N takes" would be false.
+**Read 7,848 against 10,464: the shorter document took longer.** Time does not
+track length, it tracks how many retries the fact guard demands, and that is a
+roll of the dice. **Any promise about how long a document of size N takes would be
+false.**
 
-**What it actually costs.** $0.0220 for 10,464 words is **0.21 cents per 1,000
-words**. ENGINE.md section 8 says "~0.06 cents per 1,000 words typical" — about a
-quarter of what I measured. My corpus is number-dense and therefore worst-case, so
-this is not a contradiction, but **the documented figure is a best case and reads
-like a typical one.** The failed run cost more than the successful one, which is
-the property 06 row 48 already warns about.
+**What it costs:** $0.0220 for 10,464 words is **0.21 cents per 1,000 words**.
+ENGINE.md said "~0.06 cents typical" — a best case reading like a typical one.
+Now corrected there.
 
-## THE CEILING NOBODY HAD RECORDED, AND IT IS THE ONE THAT BINDS
+## THE CEILING NOBODY HAD RECORDED, AND IT IS THE ONE THAT BOUND
 
-`limits.md` raised Vercel's `maxDuration` from 60 to 300 seconds and recommended
-it as the fix. **That change bought nothing above 120 seconds, because the site
-gives up on its own engine call first:**
+`limits.md` raised Vercel's `maxDuration` from 60 to 300 and recommended it as the
+fix. **It bought nothing above 120 seconds, because the site gave up on its own
+engine call first:**
 
 ```
-apps/web/lib/engine/client.ts:143
-  return call<CleanResult>(CLEAN_PATH, { ...payload, options }, slow ? 120_000 : 20_000);
-
-apps/web/lib/engine/client.ts:101
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-apps/web/lib/engine/client.ts:120
-  } catch { return failure('unreachable'); }
+lib/engine/client.ts:143   slow ? 120_000 : 20_000
+lib/engine/client.ts:101   setTimeout(() => controller.abort(), timeoutMs)
+lib/engine/client.ts:120   } catch { return failure('unreachable'); }
 ```
 
-So the real chain is:
+Past it the browser was told the service was unreachable, the credit was correctly
+refunded, **and the Python function carried on running and being billed for a
+result nobody would ever receive.**
 
-| Ceiling | Value | Where |
+## Recommendation, and what was done
+
+**An honest limit at 10,000 words, and raise the site's abort so the limit is
+reachable. Both, because the first is not true without the second.**
+
+- **Raising the platform cap** is what `limits.md` already did and it changed
+  nothing.
+- **Background work** is the architecturally right answer for a product taking
+  50,000-word documents — a job store, a status endpoint, an interface that shows
+  progress. Right answer for later, wrong size for now.
+- **10,000** is Jon's own figure and the measurements support it rather than merely
+  permit it.
+
+**Both ceilings moved together:**
+
+| Ceiling | Was | Now |
 |---|---|---|
-| One model call | 45s | `WATERMARKS_REWRITE_TIMEOUT` |
-| Retries, whole document | **100s, new this session** | `UC_LAYER_B_DEADLINE` |
-| **The site's own abort** | **120s** | `lib/engine/client.ts:143` |
-| Vercel's function cap | 300s | `vercel.json` |
+| One model call | 45s | 45s |
+| Retries, whole document (`UC_LAYER_B_DEADLINE`) | none | **180s** |
+| **The site's own abort** | **120s** | **240s** |
+| Vercel's function cap | 300s | 300s |
 
-**Past 120 seconds the browser is told "We could not reach the service", the
-credit is correctly refunded, and the Python function carries on running and
-being billed for a result nobody will ever receive.** The 7,848-word row above
-took 104.2 seconds *before* any HTTP overhead. That is not a theoretical margin.
+Worst case is 180 seconds of retries plus one 45-second call already in flight =
+225: inside the site's abort with 15 seconds spare and inside Vercel's cap with 75.
 
-## The recommendation: an honest limit, and raise the abort so the limit is real
+**`UC_MAX_WORDS`, default 10,000**, refused in `api/clean.py` **before a single
+model call**. Only the rewrite has a word ceiling and only text reaches it, so a
+`.docx`, `.png` or `.jpg` is never capped by words. The free scan now carries
+`billing.limit` and `billing.over_limit` so the interface can refuse **before**
+anyone commits to paying.
 
-**One recommendation, not a menu.**
-
-**Set the limit at 10,000 words, and raise the site's 120-second abort to 240
-seconds. Both, because the first is not true without the second.**
-
-Why not the other two:
-
-- **Raising the cap** is what `limits.md` already did, and the measurement above
-  shows it changed nothing: 300 seconds was never reachable, because 120 came
-  first. Raising the abort is part of my recommendation, but on its own it just
-  moves the wall — 7,848 words at 104 seconds says the wall is close at sizes well
-  under the cap.
-- **Background work** is the architecturally right answer and I would recommend it
-  for a product that means to take 50,000-word documents. It needs a job store, a
-  status endpoint and an interface that can show progress — none of which exists,
-  and the interface is not this session's to build. It is the right answer for
-  later and the wrong size for now, which is the same judgement `limits.md` made.
-
-Why 10,000 specifically: it is Jon's own figure, and the measurements support it
-rather than merely permit it. 10,464 words ran in 79 and 95 seconds. With HTTP,
-base64 and a cold start on top, that fits inside a 240-second abort with real
-margin and does not fit inside 120.
-
-### What I implemented, and what is still Jon's
-
-**Implemented (my territory):** `UC_MAX_WORDS`, default 10,000, enforced in
-`apps/web/api/clean.py` **before a single model call is made**. Only the rewrite
-has a word ceiling and only `.txt` reaches the rewrite, so a `.docx`, `.png` or
-`.jpg` is never capped by words — those are instant and free however large.
-
-The free scan now carries the limit so the interface can say "too long" **before**
-anyone commits to paying, which is the same rule as the price itself (04 entry 16):
+## The stress test
 
 ```
-  small          words=50      credits=1    over_limit=False
-  at the limit   words=10000   credits=10   over_limit=False
-  over           words=10001   credits=11   over_limit=True
+throwaway account 8ab7716b funded +80
+real session: true (dev bypass NOT used)
+
+OVER the 10,000 limit       10464 words -> HTTP 400  charged=-     1.3s  paragraphs 192->-
+just UNDER the limit         9900 words -> HTTP 200  charged=10  109.3s  paragraphs 182->182
+the slowest measured size    7848 words -> HTTP 200  charged=8    82.5s  paragraphs 144->146
+
+LEDGER: +80 purchase | +2 anon_grant | +3 signup_grant
+        -11 spend words_in=10464 | +11 operation_refund
+        -10 spend words_in=9900
+         -8 spend words_in=7848
+account deleted; ledger rows remaining: 0
 ```
 
-**Still Jon's, and needed for this to be honest:**
+**9,900 words in 109.3 seconds.** Under the old 120-second abort that was a coin
+flip. **182 paragraphs in, 182 out**, through the whole real stack.
 
-1. **`lib/engine/client.ts:143` — raise 120_000 to 240_000.** Without this the
-   limit I just set is not reachable. **Until it is raised, set
-   `UC_LAYER_B_DEADLINE=60`**, because a run can still exceed 120s: the deadline
-   stops new retries but a model call already in flight has its own 45-second
-   timeout, so worst case is deadline + 45.
-2. **`lib/engine/client.ts` MESSAGES — add the `too_many_words` line.** The engine
-   returns that code with the right sentence, but `client.ts` maps codes to its own
-   closed set and an unknown code falls back to "Something went wrong. Nothing was
-   charged." **Until this is added, a user over the limit sees the generic
-   message.** I am flagging it rather than hiding it. The sentence the engine
-   already returns, and which `client.ts` should use:
+## The defect the stress test found, and fixed
 
-   > **That is longer than 10,000 words, which is the most the rewrite can do in
-   > one go. Split it and run it in parts.**
+The over-limit refusal was correct and the refund was correct and the user was
+told **"Something went wrong. Nothing was charged."** The site maps the engine's
+`code` to its own sentence and falls back to a generic one; the local gate was
+returning a message with no code. Fixed, and re-run:
 
-3. **The workbench should refuse before the button, not after.** The free scan now
-   returns `billing.over_limit` and `billing.limit`. The price line at
-   `workbench.tsx:1465` already shows words and credits; when `over_limit` is true
-   it should show the sentence above and disable Sanitise, so nobody waits two
-   minutes to be refused. **This is the whole reason the limit is on the scan.**
+```
+OVER the word limit    code=too_many_words   charged=-
+  "That is longer than 10,000 words, which is the most the rewrite can do in one
+   go. Split it and run it in parts."
+a .csv                 code=bad_format       charged=-
+  "That file type is not supported. Use text, a Word document, PNG or JPG."
+a .md                  code=bad_format       charged=-
+  "That file type is not supported. Use text, a Word document, PNG or JPG."
+
+ledger: -11 spend | +11 refund | -1 spend | +1 refund | -1 spend | +1 refund
+```
+
+**Every refusal refunds to net zero.**
 
 ---
 
-# PART 5 — RETRY EXHAUSTION
+# 8. PART 5 — RETRY EXHAUSTION
 
-## What is actually happening
+**The breaking is fixed. The waste is bounded but not gone.**
 
-`limits.md` recorded that runs at 1,000 words sometimes fail through the retry
-loop giving up, on both word salad and real prose, and that nobody knew why.
-Instrumented, on the 10,464-word document:
+Instrumented on the 10,464-word document:
 
 ```
   FactsLost          126 attempts
@@ -1058,364 +786,187 @@ Instrumented, on the 10,464-word document:
   TruncatedRewrite     4 attempts
 ```
 
-**Retries are almost entirely the fact guard.** 126 of 149 attempts ended because
-`_guard_facts` found a number in the input that it could not find in the output.
-Eight chunks never satisfied it and burned all eight attempts each.
+**Retries are almost entirely the fact guard.** 126 of 149. Eight chunks never
+satisfied it.
 
-Some of those are genuine — the model does drop figures. But some are the guard
-being wrong. Measured, phrase by phrase:
+Some are genuine — the model does drop figures. Some are the guard being wrong:
 
 ```
   'thirty thousand manuscripts' -> '30,000 manuscripts'
       src numbers=['30']  out numbers=['30000']  guard demands ['30']  -> RETRY
 ```
 
-**The value is right there in the output.** The guard reads "thirty thousand" as
-the single number 30 and "30,000" as the single number 30000, so a model doing
-exactly what rule 5 asks looks like it dropped a figure. Every such phrase costs
-up to eight model calls and up to eight times the money.
+**The value is right there in the output.** Each such phrase costs up to eight
+model calls and up to eight times the money.
 
-The two other repeat offenders in this corpus were `60` and `80`, from "sixty
-years" and "eighty years" — those are the model writing "six decades", which is a
-real change of form, so the guard firing there is defensible.
+## Why the guard was not changed
 
-## Why I did not change the guard
-
-I built the obvious fix — teach `_numbers` that a scale word multiplies the
-number before it, so "thirty thousand" resolves to 30000 — and **measured it
-against the current one on twenty realistic rewrite pairs before shipping it:**
+The obvious fix — teach `_numbers` that a scale word multiplies the number before
+it — was built and **measured against the current one on twenty realistic pairs
+before shipping:**
 
 ```
    OLD          NEW           phrase
-================================================================================
 -> RETRY        ok            'thirty thousand manuscripts' -> '30,000 manuscripts'
    ok           ok            'nine million volumes' -> '9,000,000 volumes'
-   ok           ok            'more than two hundred towns' -> 'more than 200 towns'
    ok           ok            'thirty-four percent' -> '34 percent'
    ok           ok            'eighteen percent' -> '18 percent'
-   ok           ok            '$4.2 million' -> '$4.2 million'
 -> ok           RETRY         'two thousand five hundred' -> '2,500'
    RETRY        RETRY         'profits rose 42 percent in 2019' -> 'profits rose in 2019'
-   RETRY        RETRY         'thirty thousand manuscripts' -> 'many manuscripts'
-================================================================================
+
 false retries demanded by the OLD guard: 1
 false retries demanded by the NEW guard: 1
 ```
 
-**It fixes one false positive and introduces another.** "two thousand five
-hundred" resolves to 2000 and 500 where "2,500" is one number, so the additive
-compound breaks in the same way the multiplicative one was broken.
+**It fixes one false positive and introduces another.** `_numbers` has already
+been got wrong twice in opposite directions and the docstring is a long account of
+what that cost. **Shipping a change that measures as a wash would be worse than
+leaving it.**
 
-`_numbers` has already been got wrong twice, in opposite directions, and the
-docstring in `uc_chunk.py` is a long account of what that cost. **I am not
-shipping a change that my own measurement says is a wash.** Doing it properly
-means a real number parser handling additive and multiplicative compounds
-together, with a test table, and that is its own piece of work.
+**What was done instead:** the deadline stops a chunk spending the whole request
+chasing a figure the guard was never going to accept, and the truncation fix stops
+a retrying chunk losing the document on its last roll.
 
-**What I did instead** is bound the damage: the deadline in part 4 stops a chunk
-spending the whole request chasing a figure the guard was never going to accept,
-and the truncation fix stops a chunk that has been retrying from losing the
-document on its last roll. Both are measured above.
+**What it needs:** a proper number parser handling additive and multiplicative
+compounds, with that table as its test. Its own small task. **Nothing breaks while
+it waits; it costs about four times what it should.**
 
-## Recommendation
-
-Do the number parser properly, as its own small task with a table of pairs like
-the one above as its test. Until then the deadline stops it being expensive. The
-1,000-word failures `limits.md` recorded should be re-run afterwards: with the
-truncation fix in place I could not reproduce a failure at any size this session,
-including the 10,464-word document that failed before it.
+`limits.md`'s 1,000-word failures should be re-run afterwards — with the
+truncation fix in place, no failure was reproducible at any size this session.
 
 ---
 
-# WHAT THIS SESSION SPENT
+# 9. THE FINDING THAT INVALIDATES A CLASS OF TESTING
 
-Real figures from the AI Gateway, read from the API at the start and at the end,
-not estimates:
+**Local development was not testing the live site.**
 
-    start  {"balance":"14.73742628","total_used":"0.26257372"}
-    end    {"balance":"14.58194968","total_used":"0.41805032"}
+There are two ways into this engine and they are **different programs**:
 
-**15.5 cents**, for every layer B run in this note: two formatting essays run
-twice each, the four sizes run before the fixes, the four run after, two
-instrumented 10,000-word runs, and the three live route calls in part 3.
-No credits were bought. The one throwaway account
-was funded by inserting a ledger row and deleted afterwards, and its ledger rows
-went with it (verified: 0 rows remaining).
-
----
-
-# WHAT WAS SKIPPED, AND WHY
-
-A step skipped is a step that failed, so here they are, plainly:
-
-1. **Nothing was measured on production.** The brief asked for the file-type
-   table and the size table on production with the dev bypass off. Production's
-   engine endpoints need `UC_ENGINE_KEY`, a Vercel-only secret not in any local
-   env file, and I was told not to deploy — so the deployed code is not this
-   session's code anyway. Everything is localhost against the real engine code and,
-   for part 3, against the **real production database**. The part 4 table therefore
-   has no HTTP, base64 or cold-start time in it and real production will be slower.
-2. **The frontend half of part 1 is not fixed.** `marked-text.tsx` is inside the
-   workbench. One-line handoff is in part 1.
-3. **The `.md` picker entry is not removed.** `encode.ts:ACCEPTED_FILES` still
-   offers `.md`, which the engine now refuses. **A user can still pick a `.md` file
-   and be told it is unsupported.** The fix is to remove `.md` from that string;
-   it is in the workbench folder.
-4. **`too_many_words` has no sentence in `client.ts`** yet, so an over-limit user
-   sees the generic failure message. Part 4 handoff item 2.
-5. **`_numbers` was measured and deliberately left alone.** Part 5.
-6. **F1 and F4 (a clean file reported as scrubbed) were not fixed** — a product
-   decision, reported for Jon.
-7. **04 and 06 entries are owed.** Territory, and both files were being edited by
-   other sessions today. Listed in part 1's handoff, plus: the four-type allowlist,
-   `UC_MAX_WORDS`, `UC_LAYER_B_DEADLINE`, and the 120-second abort finding.
-8. **ENGINE.md is not updated.** Its section 6 settings table, its section 8 cost
-   figure and its section 10 limits are all now out of date in ways this note
-   records. Not in this session's brief and the file is heavily cross-referenced.
-9. **No real Word/camera/AI-produced file was used**, and `exiftool`/`c2patool`
-   are not installed, so metadata detection ran degraded throughout.
-
----
-
-# ROUND TWO — the questions Jon asked back, answered by running them
-
-**Same session, 21 August 2026, after Jon read the note above.** He asked four
-things: is the formatting actually fixed, take the 10,000 word limit and the
-240 second abort and stress test them, tell people how long a long run takes,
-and fix the frozen word counter. All four are done and every claim below has a
-run behind it.
-
-## 1. "If I paste it in a certain format and copy it out, does it come out right?"
-
-**Yes — and it always did. It was the screen that was wrong, not the text.**
-
-Measured live in the browser, by intercepting the Copy button and reading exactly
-what it put on the clipboard:
-
-```
-input_paragraph_breaks              : 7
-COPY_BUTTON_paragraph_breaks        : 7
-COPY_BUTTON_first_120               : "The Printing Press’s Lasting Influence\n\nOpening\n\nWhen Johannes
-                                       Gutenberg put together his machine in Mainz about 1440, h"
-SCREEN_shows_line_breaks            : false      <-- the defect
-```
-
-The Copy button handed over the real thing with all seven paragraph breaks. The
-box on screen showed it as one block of text. So somebody who pressed **Copy the
-clean text** got correct formatting and somebody who looked at the box, or
-highlighted it with the mouse, saw and got a wall.
-
-**Now fixed.** `marked-text.tsx` renders with `whitespace-pre-wrap`. Verified in
-the running app after the change:
-
-```
-computed whiteSpace  : "pre-wrap"     (was "normal")
-lineBreaksOnScreen   : 18             (was 0)
-```
-
-## 2. The frozen word counter — reproduced, then fixed, then re-run
-
-**The previous session's hypothesis was right, and it is no longer a hypothesis.**
-Run in the browser against the live page, before the fix:
-
-```
-1_after_pasting_10500_words              : "10,500 words=11"
-2_after_scanning                         : "10,500 words=11"
-3_after_DELETING_everything_box_is_empty : "10,500 words=11"     <-- box is EMPTY
-4_after_typing_6_new_words               : "10,500 words=11"
-textarea_value_now                       : "just thirty new words here now"
-```
-
-**Cause**, confirmed: `clearResults()` runs on every keystroke after a scan and
-resets the findings, the result, the message and the phase — **but never
-`loaded`**. Only `startOver()` does. So `countWords(loaded.text || text)` kept
-preferring a snapshot that was dead.
-
-**Fixed** with one honest derived value, `wordsNow`, replacing three inline
-copies. Re-run after the fix, on a freshly loaded page:
-
-```
-A_300_words     : "300 words=1"                                    [textarea words=300]
-B_2500_words    : "2,500 words=3 · takes up to about 40 seconds"    [textarea words=2500]
-C_10000_words   : "10,000 words=10 · takes up to about 3 minutes"   [textarea words=10000]
-D_10500_words   : "10,500 words. The rewrite takes 10,000 at a time — split it and run it in parts."
-E_BOX_EMPTIED   : (no line shown)                                   [textarea words=0]
-F_7_NEW_WORDS   : "8 words=1"                                       [textarea words=8]
-```
-
-Two more defects with the same cause went with it: the placeholder never came
-back after an emptied box (`loaded.text === ''` was in its condition), and the
-price row survived an empty box.
-
-## 3. "How long will this take" — said before the button and while it runs
-
-Jon's instruction: a long run must say it is long, or a working tool reads as a
-hung one. The old sentence said *"this takes a few seconds"* whatever was pasted,
-and a 7,848 word document takes about 104 seconds. Somebody told "a few seconds"
-and then made to wait nearly two minutes concludes the site has crashed — during
-the one operation they were charged for.
-
-**It is a CEILING, never an estimate**, and the wording says "takes up to".
-Time here tracks retries rather than length — the 7,848 word document took longer
-than the 10,464 word one — so a number presented as an estimate would be wrong
-about half the time. 15 seconds per 1,000 words comes from the worst measured run.
-
-Below 1,000 words nothing is shown, because there the run is quick enough that
-saying so is noise.
-
-## 4. Both ceilings raised, together, and stress tested
-
-**`limits.md` raised Vercel's cap from 60 to 300 and that bought nothing**, because
-the site aborted its own engine call at 120 seconds first. Raising either alone
-does nothing. Both moved:
-
-| Ceiling | Was | Now |
+| | Path | Reads |
 |---|---|---|
-| One model call | 45s | 45s |
-| Retries, whole document (`UC_LAYER_B_DEADLINE`) | 100s | **180s** |
-| **The site's own abort** (`lib/engine/client.ts`) | **120s** | **240s** |
-| Vercel's function cap | 300s | 300s |
+| **Production** | browser → `/api/tool/clean` → `/api/clean` | the Vercel functions, via `_shared.py` |
+| **Local development** | browser → `/api/tool/clean` → port 8765 | the standalone `server.py`, because `.env.local` sets `UC_ENGINE_URL` |
 
-Worst case is now 180 seconds of retries plus one 45-second call already in
-flight = 225, inside the site's abort with 15 seconds spare and inside Vercel's
-cap with 75.
-
-### The stress test: real route, real session, real ledger, dev bypass OFF
+The allowlist and the word cap were added to `_shared.py` only, so they were
+enforced live and **not locally**:
 
 ```
-throwaway account 8ab7716b funded +80
-real session: true (dev bypass NOT used)
-
-OVER the 10,000 limit       10464 words -> HTTP 400 engine_error     charged=-     1.3s  paragraphs 192->-
-just UNDER the limit         9900 words -> HTTP 200 ok               charged=10  109.3s  paragraphs 182->182
-the slowest measured size    7848 words -> HTTP 200 ok               charged=8    82.5s  paragraphs 144->146
-
-LEDGER:
-    +80  purchase           |   +2 anon_grant   |   +3 signup_grant
-    -11  spend   words_in=10464        +11  operation_refund
-    -10  spend   words_in=9900
-     -8  spend   words_in=7848
-
-account deleted; ledger rows remaining: 0 (must be 0)
-```
-
-**Read the 9,900 word row: 109.3 seconds.** Under the old 120-second abort that
-was a coin flip — one unlucky retry and the customer would have been told the
-service was unreachable after nearly two minutes. **182 paragraphs in, 182 out**,
-through the whole real stack.
-
-The over-limit document was refused in **1.3 seconds**, charged 11 and refunded
-11, net zero. Nothing was spent with the model.
-
-### The defect the stress test found
-
-Look at the first row: `code=engine_error`, and the user was told **"Something
-went wrong. Nothing was charged."** — not the sentence about splitting the
-document. The refusal was correct and the refund was correct and the message was
-useless.
-
-**Cause:** the site maps the engine's `code` to its own sentence and falls back to
-a generic one for any code it does not know. The local gate was returning a
-message with no code. Fixed, and re-run:
-
-```
-OVER the word limit                  HTTP 400  code=too_many_words   charged=-
-   what the user reads: "That is longer than 10,000 words, which is the most the
-                         rewrite can do in one go. Split it and run it in parts."
-a .csv (the 100x undercharge name)   HTTP 400  code=bad_format       charged=-
-   what the user reads: "That file type is not supported. Use text, a Word document, PNG or JPG."
-a .md (offered by the old picker)    HTTP 400  code=bad_format       charged=-
-   what the user reads: "That file type is not supported. Use text, a Word document, PNG or JPG."
-
-ledger: +40 purchase | +2 anon_grant | +3 signup_grant
-        -11 spend | +11 refund | -1 spend | +1 refund | -1 spend | +1 refund
-account deleted; rows remaining: 0
-```
-
-**Every refusal refunds to net zero.**
-
-## 5. THE BIG ONE THIS ROUND: local development was not testing the live site
-
-**Found while stress testing, and it invalidates a whole class of testing.**
-
-There are two ways into this engine and they are **different implementations**:
-
-- **Production**: browser → `/api/tool/clean` → `/api/clean`, the Vercel Python
-  function in `apps/web/api`, which reads `_shared.py`.
-- **Local development**: browser → `/api/tool/clean` → the standalone
-  `server.py` on port 8765, because `.env.local` sets `UC_ENGINE_URL` to it.
-
-The four-type allowlist and the word cap were added to `_shared.py` only. So they
-were enforced on the live site and **not locally**. Proven by asking the local
-engine directly:
-
-```
-before:  essay.csv -> ACCEPTED       (production refuses it)
+before:  essay.csv -> ACCEPTED locally    (production refuses it)
 ```
 
 **Every local test of file handling would have proved nothing about production.**
-That is the worst kind of gap: testing that reassures without checking.
+That is the worst kind of testing: the kind that reassures without checking.
 
-**Fixed.** The policy moved to `apps/web/engine/uc_policy.py` and both entry
-points read it. After:
+**Fixed.** The policy moved to `apps/web/engine/uc_policy.py` and both read it:
 
 ```
-  essay.csv    -> REFUSED: that file type is not supported; use text, a Word document, ...
-  essay.md     -> REFUSED
-  essay.pdf    -> REFUSED
-  notes.html   -> REFUSED
-  paste.txt    -> ACCEPTED
-  10,001 words -> REFUSED: that is longer than 10,000 words, which is the most the rewrite can do
+  essay.csv / essay.md / essay.pdf / notes.html   -> REFUSED
+  paste.txt                                       -> ACCEPTED
+  10,001 words                                    -> REFUSED: that is longer than 10,000 words
 ```
 
 **Opt-in for the standalone server** via `UC_PRODUCT_POLICY`, because `server.py`
-is also the vendored engine's own server and its test suite drives it over real
-HTTP with formats this product does not sell — `test_clean_markdown_container`
-posts a `.md` and expects it to work. The local development engine sets the flag;
-the test suite does not. The Vercel functions always enforce.
+is also the vendored engine's own server and the upstream suite drives it over
+real HTTP with formats this product does not sell — `test_clean_markdown_container`
+posts a `.md` and expects it to work.
 
-**To run the local engine so it behaves like the live site:**
-
-```
+```bash
 UC_PRODUCT_POLICY=1 python3 server.py --port 8765
 ```
 
-**Without that variable, local development silently accepts 24 file types and
-unlimited words.** Anyone testing file handling locally must set it.
+**Run it any other way and local development accepts 24 file types and unlimited
+words.** Recorded in ENGINE.md section 7.
 
-## 6. Also done
+---
 
-- **`.md` removed from the file picker** (`encode.ts`). It was offered and the
-  engine refuses it; offering a type that gets refused is worse than not offering
-  it.
-- **`too_many_words` added to `client.ts`'s message map**, which was handoff item
-  2 from part 4 above. Now closed.
+# 10. EVERYTHING CHANGED
 
-## Regression after all of it
+| File | What |
+|---|---|
+| `engine/uc_chunk.py` | Paragraph separators captured and restored; structure re-roll; `UC_LAYER_B_DEADLINE`; a short last attempt no longer discards a good earlier one; `paragraphs_in/out` and `structure_kept` reported |
+| `engine/rewrite_text.py` | Layout rule added to both layer B prompts |
+| `engine/uc_policy.py` | **New.** The four accepted types, the magic-byte check, `safe_name`, `UC_MAX_WORDS` — read by both entry points |
+| `engine/server.py` | Opt-in product gate on the standalone server, returning proper error codes |
+| `engine/ENGINE.md` | Four settings added; cost figure corrected 0.06 → 0.21; timings corrected; one ceiling → four; improvement 0 struck through as done; the two-entry-points trap written down |
+| `engine/API.md` | `paragraphs_in/out`, `structure_kept`, `billing.limit/over_limit`, `too_many_words` |
+| `api/_shared.py` | Reads `uc_policy`; strips our server's paths out of replies |
+| `api/clean.py` | Word ceiling refused before any model call |
+| `api/scan.py` | Strips our server's paths out of replies |
+| `workbench/marked-text.tsx` | `whitespace-pre-wrap` — the formatting fix on screen |
+| `workbench/workbench.tsx` | One honest `wordsNow`; over-limit refusal before the button; Sanitise disabled over the limit; "takes up to" before and during a run; placeholder and price row respect an emptied box |
+| `workbench/credits.ts` | `MAX_WORDS`, `estimateSeconds`, `humanDuration` |
+| `workbench/encode.ts` | `.md` removed from the picker |
+| `lib/engine/client.ts` | Abort 120s → 240s; `too_many_words` message added |
 
+Five commits, each staged by explicit path with `git diff --cached --name-only`
+checked first. **Nothing was deployed and nothing was pushed.**
+
+---
+
+# 11. DECISIONS MADE, AND WHY
+
+1. **The allowlist went at the product's front door, not in `format_dispatch.py`.**
+   That file is vendored, shared with the CLI, and is one of the two lists the
+   pricing guard compares. Narrowing it would have broken the guard.
+2. **Paragraph structure is restored exactly when it can be and never guessed at
+   when it cannot.** Guessing where a break belonged in somebody's document is not
+   something this tool should do. `structure_kept` says which happened.
+3. **The structure re-roll is capped at one and kept separate from the fact
+   guard's eight.** A re-roll costs a model call against the clock, and the clock
+   is the revenue gate.
+4. **The truncation fix does not soften 04 entry 22.** Nothing truncated is ever
+   returned; the kept attempt passed the same guard.
+5. **`_numbers` was measured and deliberately left alone.** The fix is a wash.
+6. **The word cap is enforced in the engine and mirrored in the interface**, with
+   the limit riding on the free scan so the price and the refusal are both knowable
+   before anyone commits.
+7. **The interface's `.txt`/`.docx` defect was reported, not fixed.** It changes
+   what a customer is charged and the pricing rule is Jon's.
+8. **The metadata-stripping question was reported, not decided.** What "clean"
+   means is a product question.
+9. **U1–U5 were reported, not fixed.** They are a coherent interface package for a
+   session that owns the workbench and loads the messaging skill.
+
+---
+
+# 12. WHAT WAS SKIPPED, AND WHY
+
+A step skipped is a step that failed, so here they are:
+
+1. **Nothing was measured on production.** See 2.4.
+2. **`exiftool` and `c2patool` are not installed**, so container and image
+   metadata detection ran in its degraded, standard-library-only mode throughout.
+   That is why the PDF cleaner is a no-op. **Installing needs Jon's approval**
+   (CLAUDE.md section 5).
+3. **No file written by real Word, a real camera, or a real AI tool was used.**
+   Every fixture was hand-built. "Opens" means the structural checks passed, **not
+   that Microsoft Word opened it.** ENGINE.md carries the same caveat already.
+4. **Genuine signed C2PA provenance was not tested** — a valid manifest cannot be
+   hand-built, so `has_c2pa` was false everywhere and that detector is unexercised.
+5. **The exact 5 MB boundary** was not tested; 4.9 MB and 5.4 MB were.
+6. **The downloaded file's contents were never checked** — downloading needs
+   permission. Given section 2.1, that is worth doing by hand.
+7. **A production build was never tested.** Everything is the dev server.
+8. **04 and 06 entries were not written.** The conductor merges session notes into
+   the decision log — `31a8a6f "Merge 21 August session notes into the decision
+   log and runbook"` — so this note is the vehicle. What is owed: the layout rule,
+   `UC_LAYER_B_STRUCTURE_RETRIES`, `UC_LAYER_B_DEADLINE`, `UC_MAX_WORDS`,
+   `UC_PRODUCT_POLICY`, the four-type allowlist, the 240-second abort, and the
+   open questions in section 2.
+
+---
+
+# 13. RUNNING AND VERIFYING IT
+
+```bash
+# the local engine, behaving like the live site
+UC_PRODUCT_POLICY=1 python3 apps/web/engine/server.py --port 8765
+
+# the engine suite
+engine/.venv/bin/python -m pytest engine          # 495 passed, 1 skipped
+
+# the price and the work must agree about what a file is
+cd apps/web && node scripts/verify-pricing-matches-engine.mjs    # 3/3 PASS
+
+cd apps/web && npx tsc --noEmit                   # exit 0
 ```
-495 passed, 1 skipped        (engine suite)
-3/3 PASS                     (verify-pricing-matches-engine.mjs)
-typecheck exit: 0            (tsc --noEmit)
-```
-
-## Part 5, restated plainly because the first write-up was not plain enough
-
-**The failures are fixed. The waste is bounded but not gone.**
-
-- **Fixed:** runs no longer fail through retry exhaustion. The cause was a chunk's
-  last roll coming back short and killing the whole document even when a good
-  rewrite was already in hand. Every size from 2,500 to 10,464 words now completes.
-- **Not fixed, and it is money rather than breakage:** the fact guard still asks
-  for retries it should not. It reads "thirty thousand" as the number 30 and
-  "30,000" as the number 30000, so a model doing exactly what it was told looks
-  like it dropped a figure. 126 of 149 attempts on a 10,000 word document were the
-  fact guard. That is roughly four times the cost and time a clean run needs.
-- **Why it was not fixed:** the obvious repair was built and measured against the
-  current one on twenty realistic pairs. It fixes one false alarm and creates
-  another ("two thousand five hundred" against "2,500"). `_numbers` has been got
-  wrong twice already in opposite directions. Shipping a change that measures as a
-  wash would be worse than leaving it.
-- **What it needs:** a proper number parser handling additive and multiplicative
-  compounds, with that table of pairs as its test. Its own small task. Nothing
-  breaks while it waits; it costs about four times what it should.
