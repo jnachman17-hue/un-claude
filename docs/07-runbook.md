@@ -1560,3 +1560,156 @@ reads empty, open a NEW TAB.** This session hit that too. `document.body.innerTe
 was 328 characters of header and footer with the whole page missing, while
 `curl` returned 210KB of correct HTML for the same URL. A fresh tab rendered it
 perfectly. **Measure with `curl` or a new tab before believing a broken DOM.**
+
+---
+
+## The Browser preview pane cannot do mobile work on this site at all
+
+**21 August 2026, session 10.** A different failure from the backgrounded-tab
+freeze above, and worth telling apart from it. Setting the pane to any width
+below 768px turns on its mobile *device emulation*, and in that mode the
+landing page never finishes hydrating: every section reports `offsetHeight: 0`,
+the document measures roughly a quarter of its real height, and the screenshot
+comes back as a hero over a blank sheet. **It looks exactly like a catastrophic
+layout bug in the app. It is not one.** At 768px and above, the identical page
+hydrates and measures correctly, in the same pane.
+
+**Confirmed by elimination, not by guessing:** fresh tabs, closing every other
+tab, reloads and long waits all reproduced it; only the width changed the
+outcome. An iframe harness at 390px inside a non-emulated tab hydrated
+correctly but still would not paint the tool.
+
+**What actually works for mobile verification on this project: the repo's own
+Playwright, driving the copy of Chrome already installed on the machine.**
+
+```bash
+cd apps/e2e
+node mobile-probe.mjs / /how-it-works        # heights and side scroll
+node mobile-shots.mjs /how-it-works <dir>    # full page slices as PNGs
+node wallet-shots.mjs <dir>                  # signed-in pages, via an admin-minted magic link
+```
+
+**`npx playwright install` is NOT needed and must NOT be run** — it downloads
+browsers, which needs Jon's approval under `CLAUDE.md` section 5.
+`chromium.launch({ channel: 'chrome' })` uses `/Applications/Google Chrome.app`,
+which is already there. That one option is the whole trick.
+
+## Two sessions in one folder share one git index — read the staged list before every commit
+
+**21 August 2026.** Staging by explicit file path (`CLAUDE.md` section 5) is
+necessary here and **it is not sufficient** when a second session is working in
+the same folder at the same time. A `git add` in one session leaves that path
+staged for both, and the next `git commit` in the other sweeps it in even
+though that commit named only its own files.
+
+**It happened.** A second session's `docs/session-notes/operations-setup.md`
+landed inside an unrelated commit about the capabilities page — caught by
+reading the tool's own output, not by assuming the staged list matched the
+requested one.
+
+**The fix, and it is clean:** `git rm --cached <their-path>` then
+`git commit --amend --no-edit`. The commit is rewritten without the file; the
+file stays on disk, untracked, exactly as its owner left it.
+
+**The habit worth keeping: run `git diff --cached --name-only` and read it
+before every commit, every time**, not only when something feels off.
+
+## A slash immediately followed by a star inside a SQL comment silently eats the rest of the file
+
+**21 August 2026.** `20260821120200_rate_limits.sql` failed on its first-ever
+run with `ERROR: 42601: unterminated comment at or near ...`, pointing at line
+1, with nothing in the message naming the real cause.
+
+**The cause: a URL path written with a trailing wildcard inside the header
+comment** — a slash immediately followed by a star. **Postgres nests block
+comments, unlike C.** Those two characters opened a second comment, so the
+first closing delimiter closed the inner one rather than the outer one, and
+everything after it stayed commented out to the end of the file.
+
+**It survived being written, reviewed, and handed off twice, because nobody
+had ever run it.** A migration that has not been run is not known to work,
+however carefully it was written.
+
+**Never write a slash immediately followed by a star inside a SQL comment.**
+To check a file before pasting it, the counts must match:
+
+```bash
+grep -o '/\*' FILE | wc -l
+grep -o '\*/' FILE | wc -l
+```
+
+Run across every pending migration; only this one was ever unbalanced.
+
+**Not to be confused with Supabase's "Run and enable RLS" prompt**, which the
+SQL editor shows on any script that creates a table — either button is safe on
+this project's migrations because each one enables RLS itself.
+
+## Do not test auth over a LAN IP address
+
+**21 August 2026.** Testing sign-in or sign-up from a phone against
+`http://192.168.x.x:3000` produces failures that look like product bugs and
+are properties of the address, not the code.
+
+- **It is not a secure context**, so `crypto.subtle` (WebCrypto) is missing and
+  Supabase's PKCE sign-in flow silently degrades its code-challenge method to
+  `plain`.
+- **Supabase only redirects to URLs on its allow list.** A confirmation email's
+  link sent while testing on a LAN address resolves to the project's real Site
+  URL instead — production, running whatever build is live there — in a
+  browser context holding none of the session state the test needed.
+- **Cloudflare Turnstile fails the same way for the same family of reason**
+  (error `110200`): the host is not on the widget's allowed list.
+
+**None of this affects real visitors.** Production is `https://un-claude.com`,
+a secure context, on every allow list that matters. **Use
+`http://localhost:3000` on the Mac itself for any auth testing** — it is a
+secure context and is on Supabase's redirect allow list by default. The merge
+and grant logic this unblocks is server-side and does not need a phone at any
+point; drive it from the Mac and verify layout separately with the Playwright
+scripts above.
+
+## A guest cookie and a confirmation link opened on a different device don't meet
+
+**21 August 2026.** A visitor uses the tool on a laptop as a guest, spends part
+of a free balance, signs up, and opens the confirmation email on their phone
+instead. The link confirms the account and creates the session **on the
+phone**, which has never held the `uc-guest` cookie — the guest only exists on
+the laptop. The merge that would carry the guest's remaining credit onto the
+new account cannot fire, because it depends on the same browser holding both
+the guest cookie and the new session. The laptop stays a signed-out guest with
+a stranded credit; the phone is a signed-in account that never received it.
+**No error appears anywhere.** This is the normal way people read email, not
+an edge case, and it has not been fixed or even measured for frequency.
+
+## Rate limiting fails open, by design, and that is what makes it safe to deploy ahead of its own migration
+
+**21 August 2026.** The rate limiter added this session (`rate-limit.ts`,
+backed by a Postgres counter and `rate_limit_hit()`) is written so that any
+failure inside it — the migration not yet applied, the service key missing, a
+database blip — **allows the request rather than blocking it**, logging the
+error instead. A rate limiter is a backstop against abuse; it must never be
+the thing that takes the free tool down for everyone.
+
+**The consequence worth keeping in mind:** deploying this code before pasting
+its migration is safe. Before the migration, the RPC is simply missing, every
+call fails open, and behaviour is exactly what it was before the limiter
+existed. The same "detect the specific missing-column or missing-function
+error and continue without the feature rather than failing" pattern is used
+for `grantOnce` and the per-inbox dedupe column — this project has already had
+every grant fail outright once, because code assumed a column existed before
+the migration adding it had actually been pasted. **Any code that depends on a
+migration Jon has not yet run should be written to degrade, not to break.**
+
+## The Cloudflare Turnstile `600010` console error is noise, not a failure
+
+**21 August 2026.** `[Cloudflare Turnstile] Error: 600010` appears in the
+console on every page load, including in production, and looks like a
+misconfigured widget. **It is not the cause of a captcha failure if one
+happens.** Confirmed directly: with Supabase captcha protection switched on,
+a real sanitise completes successfully on the same page that logs this error
+on every load. `600010` is nominally the invalid-domain error, but `localhost`
+was confirmed already present in the Turnstile widget's allowed hostnames when
+this was checked, so whatever triggers it here is not a missing hostname.
+**Do not chase it.** The one time it is worth a second look is if sign-in or
+sanitising actually starts failing in production — that is the first place to
+check, not the first thing to fix on sight.

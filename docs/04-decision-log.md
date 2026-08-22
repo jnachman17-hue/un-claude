@@ -4382,3 +4382,496 @@ also wants and which sells where the refund line cost.
 
 **No real sale has ever happened**, confirmed by Jon, so the promise bound nobody
 while it was on the page.
+
+---
+
+## 21 August 2026, session 10. The credits interface, density and mobile: a three-phase night
+
+### 116. The credit dead end is answered before it is reached, and sign-up lands back on the tool
+
+**Ruling.** Jon, reporting the funnel by hand: "after you complete 2 scans and use
+your 2 free credits it just says 0 left... Most people will see 2 free scans, then
+give up because they see their token at zero and not even try again."
+
+**What was wrong, and it was a genuine defect, not a copy problem.** The
+empty-balance offer fired only after a *failed* attempt to spend — nobody could
+learn that 3 more free credits existed without pressing a button that would not
+work. And the paywall box itself had inverted layers: the blurred filler text sat
+in normal document flow and the message sat absolutely positioned on top of it,
+so the box's height was fixed by the filler and anything taller had its top
+pushed off-screen.
+
+**Fixed.** The offer now fires the moment the balance reaches nought — on arrival
+as well as on a spend, not only on a failed attempt — and it sits directly under
+the balance chip so the eye that reads "0 left" lands on the answer in the same
+movement. The offer text became an object rather than a clause buried in a
+sentence: a badge with the coin, the figure, a light pop-and-sheen animation
+(three runs, not infinite, and collapsing to nothing under reduced motion). The
+paywall's layering was inverted so the message sets the height and the filler is
+what's absolutely positioned.
+
+**Sign-up now lands back on the tool, not the wallet.** `app.afterAuth` is a new
+path, separate from `app.home` (still the wallet, reachable from the account menu
+and the header balance pill). Seven call sites across the auth flow now read it.
+Landing on the tool carries `?welcome=1`, which triggers "Your credits are ready"
+beside the balance so the new grant registers as news rather than as an unchanged
+number, then strips itself from the address bar the moment it is read.
+
+**Also, on Jon's mid-session instruction:** the repeat-password field is gone from
+sign-up. `refineRepeatPassword` stays in the schema because the password-reset
+form still needs it, where there is no email to fall back on.
+
+**What could not be verified from this session.** No local Supabase means the
+states needing a real ledger were built and looked at through a `/dev/states`
+harness and a display-only balance override, not through a live sign-up.
+**The first real sign-up in production is the actual test of the seven
+`afterAuth` call sites.**
+
+### 117. Text density is cut on the vendor table and the capabilities matrix, and the claims boundary survives by moving into the cell
+
+**Ruling.** Jon: "Remove those notes entirely. Keep the table. Jon wants the
+table to speak for itself," on the vendor table's seven paragraphs of sourced
+detail underneath each row. And on the capabilities matrix: "the text can't
+carry over... This literally needs to be done in like five words or something."
+
+**Why this is more than a copy trim.** The two-tier claims boundary — provable
+layers get "with a receipt," the statistical rewrite gets "measured" — had been
+living in a paragraph under the table. Cutting the paragraph without preserving
+the distinction would have flattened three different strengths of claim into one
+row of prose. Instead every cell now answers for itself in three or four words,
+and the register survives inside the cell: "Removed, with a receipt" for the two
+provable layers, "Rewritten, and measured" for the statistical one.
+**The rule for anyone editing this table later: never give the rewrite a
+receipt word.**
+
+**Verified by measurement, not by eye.** At 1280px every cell is one line except
+the two-line statistical entry, and nothing overflows its column. At 375px the
+matrix folds into one card per input type, with zero elements past the viewport
+edge.
+
+### 118. The mobile pass: collapse before cut, because a caveat is the first thing a cut sentence loses
+
+**Ruling, and it is the governing philosophy for the whole pass, not a single
+change.** Jon: "There's so much to read and it's just blobs of information and
+text... we're going to need to really utilise plus icons to expand sections if
+you actually want to look at them... let's be real, we're all brain rotted and
+we don't actually read."
+
+**The method this sets, stated because it will recur.** Shorter copy is the
+easiest way to overclaim by accident — the caveat is the first thing that gets
+cut under space pressure. So nothing load-bearing goes behind a disclosure
+control: the claim, what the product actually does, and the limits stay outside
+it on every page. What moves behind a plus is explanatory prose a phone reader
+can skip without losing the argument. **The claim pill on /pricing — "Proven on
+every run" against "Best effort, and not verifiable yet" — is explicitly not
+collapsible**, because it is the claims boundary doing its work on the page
+where money changes hands.
+
+**Result, measured at 390px, phone screens of scroll:** home 4.9 → 4.2,
+how-it-works 8.0 → 6.4, capabilities 4.0 → 3.4, mission unchanged (Jon's own
+essay, untouched on principle), pricing 7.5 → 6.5, contact 1.6 → 1.4. Four and a
+half screens removed site-wide, with every word that survives still reachable at
+every width and nothing deleted. Fifty-six width/page combinations checked for
+horizontal overflow: zero failures.
+
+**Found in the same pass, not asked for, and it mattered more than any of the
+planned cuts:** the sign-up page never told an arriving visitor about the 3 free
+credits every surface sending them there had promised. Fixed with the same
+badge used elsewhere.
+
+**Not reached, and said so rather than silently skipped:** the wallet at `/home`
+could not be rendered signed-in from this session (no local Supabase) and
+inherited only the shared padding fix.
+
+---
+
+## 21 August 2026. The guest merge and account deletion: bugs that had never been exercised until tonight
+
+### 119. The guest merge had never run, and when it finally did it was wrong in two independent ways — both minting credits
+
+**What happened.** Sign-up itself was fixed by a parallel session (a missing
+foreign key), and the guest merge — the code that carries a visitor's credits
+onto the account they create — ran for the first time in this project's history.
+Jon watched it happen: started as a guest with 2 credits, spent 1, signed up,
+expected 4, got 5.
+
+**Defect one: the merge is not idempotent and races with itself.** Two
+components independently call the balance route on page load, and the merge
+lived inside that route with no record that it had already run. Two concurrent
+calls both read the same starting balance and both transfer it — the account
+gets the credit twice and the guest goes negative. Nothing capped this at two:
+the transfer multiplies with however many concurrent requests carry the guest
+cookie.
+
+**Defect two: the conversion flag depends on a cookie the same route deletes.**
+The route decides "is this a conversion?" by reading `uc-guest`, then deletes
+that cookie sixteen lines later. Every call after the first sees no cookie,
+decides this is not a conversion, and pays the welcome grant a second time —
+the exact 7-credits-against-a-ratified-5 drift the security audit had already
+flagged as a risk, now confirmed live and reproduced on command.
+
+**The fix, and why a table rather than the pattern the welcome grants already
+use.** The welcome and signup grants are protected by partial unique indexes —
+one grant per account, enforced by the database. That pattern cannot protect
+the merge, because a guest who has already spent everything converts with zero
+credits to move and writes no ledger row at all (`delta <> 0` is enforced), so
+there is nothing for an index to catch. A new table, `guest_conversions`, with
+`guest_id` as primary key and `account_id` unique, claims the conversion record
+*before* moving anything, so the loser of a race gets nothing rather than a
+share. The transfer itself moved into a locking SQL function,
+`merge_guest_credits`, for the same reason `spend_credits` already exists as
+one: the check and the write have to be one indivisible step. The merge now
+runs before the grants, so the grant decision reads a permanent fact rather
+than a cookie about to disappear.
+
+**A third hole closed in the same migration, found rather than designed for.**
+`account_id unique` means an account can only ever convert once. Without it,
+signing out, collecting a fresh guest welcome grant, and signing back in would
+merge it across every time — repeatable at will.
+
+**Verified against the live ledger, including the actual race.** Both the
+already-converted branch (ten simultaneous merge calls on a converted pair: all
+ten return 0, nothing written) and the fresh race (two calls arriving before any
+conversion record exists) were run for real. The fresh race produced exactly
+one `transfer_out` and one `transfer_in` where the old code produced two of
+each, every time.
+
+**The product trade-off this creates, stated as a trade rather than smoothed
+over.** An account now carries guest credits across exactly once, ever. The
+cost: a signed-up user who later uses the tool signed out and signs back in
+leaves whatever that guest session earned stranded on the guest. The
+alternative is unlimited free credits, so this is deliberate — but it is
+product behaviour, not an implementation detail, and had not been put to Jon as
+of this entry.
+
+### 120. Account deletion actually deletes now — the missing foreign key, why a database constraint rather than a line of application code, applied and verified twice
+
+**The defect.** Pressing "delete account" destroyed only the sign-in. The
+`accounts` row — holding the person's email address and name — and their
+entire credit history both survived. Someone exercising a data-protection right
+got the opposite of what the button promised.
+
+**Why.** The deletion chain has three links and only two existed.
+`credit_ledger.account_id` really does cascade from `accounts.id` — the only
+`on delete cascade` in the whole schema. But `accounts.id` carried no reference
+to `auth.users` at all; its key column was a bare default-generated UUID. The
+delete button calls exactly one thing, `auth.admin.deleteUser()`, which removes
+the sign-in and nothing else. **This is the same finding the security audit
+reached and, separately, that a legal reconciliation pass reached — both read
+the schema and got the same answer independently, which is itself worth
+noting: the finding did not depend on any one session's care.**
+
+**The choice: a foreign key, not a line in the delete service.** The button is
+not the only way an account gets deleted — Jon deleted several from the
+Supabase dashboard directly while this was being investigated. A line inside
+`delete-personal-account.service.ts` would protect exactly that one path and
+would go on looking like it protected all of them, including a failure mode a
+database constraint cannot produce: if application code deleted the account
+row and the sign-in delete then failed, the result is the inverse orphan, a
+live sign-in with no account, breaking the app for a real person underneath
+them. The database performs both halves or neither.
+
+**Confirmed rather than assumed that the key is correct.** Every `accounts` row
+in this database is written by exactly one trigger, keyed to the auth user's
+own id — there are no team accounts in this schema, only inherited starter-kit
+comment text that mentions them. Live check: 15 auth users, 15 non-orphan
+accounts, zero auth users without one.
+
+**The interaction with the append-only ledger trigger, reasoned through before
+it could be tested.** The security session's append-only trigger (still
+unapplied at the time this migration was written) refuses direct UPDATE/DELETE
+on `credit_ledger` but allows a cascade, telling the two apart by whether the
+parent `accounts` row is already gone. Adding this foreign key makes the
+cascade run one level deeper — `auth.users → accounts → credit_ledger` — and
+the parent is still already gone by the time the ledger trigger fires, so the
+allow branch is the one taken. This could not be executed locally (no Postgres
+on the machine) and was proved live instead, twice, after Jon applied it.
+
+**The orphans.** Nine `accounts` rows already existed with no matching sign-in
+— every account ever deleted before this fix. The migration refuses to add the
+constraint while any exist, printing the full list rather than silently
+discarding real records; Jon confirmed all nine were his own testing, and a
+`begin…commit` sweep removed them, backed up first since the free Supabase plan
+takes no backups.
+
+**Applied and proved, twice, against the live database.**
+`node scripts/verify-account-deletion.mjs`: create an account, give it real
+credit history, press delete, read what's left. Before the fix: sign-in gone,
+account row and all three ledger rows still present. After: all zero. Re-run
+later the same day for an unrelated reason: same result. **This corrects an
+earlier note that the fix was "recorded as open rather than decided here" — it
+was decided, applied, and is now standing.**
+
+**In the same commit, per the standing rule that a legal page changes when the
+code that makes it wrong does:** the privacy policy's deletion paragraphs
+moved from "does not by itself erase the record" to "deletes your account
+record and your entire credit history with it... in that moment, not marked for
+removal later."
+
+---
+
+## 21 August 2026. Security, backups, and the auth surface
+
+### 121. The security audit's two worst findings were not in new code — they were pre-existing defects the audit surfaced by actually stress-testing the system
+
+**Context.** Jon: "This, our whole system has never really been tested. So
+really stress it." A read-only, multi-lens audit ran over the credit system and,
+separately, the file-upload path.
+
+**Found and fixed, ranked by what could actually cost money.**
+
+- **A free, no-login PNG upload could crash or hang the server for nothing.**
+  The zTXt/iTXt metadata decoder called `zlib.decompress()` with no output cap,
+  so a 199 KB crafted chunk aimed at 200 MB drove the function to 438 MB of
+  heap in 255ms — reachable through the free scan endpoint with no account and
+  no rate limit. Fixed with a bounded-inflate helper mirroring the cap already
+  applied to `.docx` zip bombs; peak heap for the same attack dropped to
+  8.6 MB. Eight new tests, all passing, no regression in the surrounding image
+  suites.
+- **Plus-addressed and dotted email variants could each claim a fresh signup
+  grant from one real inbox**, with no limit anywhere on how many accounts one
+  person could farm this way. Fixed with `normalizeEmail()`, applied to Gmail's
+  dot-and-plus rules specifically (not to every provider, since other
+  providers' dots are meaningful) and enforced with a partial unique index on
+  the normalised address.
+- **The `credit_balance` RPC leaked another account's balance to any signed-in
+  caller** who knew the account id, via a `security definer` function granted
+  to `authenticated` with no self-check. Fixed by splitting it by arity: a
+  no-argument form that always resolves to the caller, and a `uuid` form
+  restricted to `service_role`.
+
+**Ledger hardening, built as insurance against Jon's decision to stay on
+Supabase's free plan (entry 122).** Every writer to `credit_ledger` was audited
+and confirmed append-only already; a trigger now makes the database itself
+refuse UPDATE, TRUNCATE and any direct DELETE, distinguishing a real cascade
+(parent row already gone) from a direct attack (parent still present) the same
+way the account-deletion fix in entry 120 relies on.
+
+**Rate limiting built, not yet wired everywhere.** A Postgres-backed counter
+(no new dependency, no new service) with the audit's numbers applied —
+20/minute per IP on the free scan, 10/minute per account on the paid clean,
+60/hour per IP on new anonymous grants — and it fails open by design: if the
+limiter itself errors, the request is allowed rather than the free tool going
+down for everyone. `proxy.ts` still excludes `/api/*`, so this is per-route
+rather than site-wide by design, because the account-aware keys have to live at
+the route anyway.
+
+**The 60/hour figure is a deliberate departure from the audit's own
+recommendation of 5, and the reasoning matters.** The audit derived 5 before
+confirming Turnstile is actually enforced on anonymous sign-in; it is. Each
+anonymous account already costs a solved captcha, so this isn't scriptable at
+volume, and a cap of 5 would lock out a lecture hall of genuine students
+sharing one campus IP. The real defence against "one person, many accounts" is
+the per-inbox dedupe above, which is IP-blind on purpose — 300 students on one
+IP are 300 different inboxes and every one is served.
+
+**Not fixed, deliberately, and recorded rather than patched under time
+pressure:** a forged `uc-guest` cookie can still name another user's anonymous
+account and pull its balance across, because `merge_guest_credits` checks only
+that the target is anonymous, not that the caller ever held that session.
+Rated low risk by a later payment audit (needs a UUID that is never published,
+and the take is at most 2 credits).
+
+**Four migrations were written and reasoned through but not executed** — no
+Postgres, Docker or Supabase CLI exists on this machine, and installing one
+needs Jon's approval. All four are pasted, idempotent, and wrapped in
+`begin…commit`.
+
+### 122. Supabase stays on the free plan: zero backups, accepted knowingly, with the code hardened as the substitute
+
+**Ruling.** Jon declined both the $25/month Pro tier (nightly backups, 7 days)
+and the $100/month point-in-time-recovery add-on.
+
+**Reasoning.** Traffic and volume don't justify either yet. **The consequence
+stated plainly rather than left implicit: as of this decision, the credit
+ledger has zero backup protection — if it were lost or corrupted, there is no
+way to restore it.** That shifts the priority from insuring against corruption
+to making corruption unlikely in the first place, which is most of the
+reasoning behind entry 121's ledger hardening: an append-only table with no
+UPDATE or DELETE anywhere in the codebase has no number for a bug to set
+wrongly, because a balance is never stored, only summed.
+
+**The stopgap, built the same day.** `backup-credit-ledger.mjs`,
+dependency-free (Node built-ins only), dumps the whole ledger to a timestamped
+CSV. Run and verified against the live table. **Not a substitute for real
+backups — better than the nothing the free plan gives**, and cheap enough to
+run on a schedule.
+
+### 123. The auth surface: terms acceptance added without switching on the starter's own mechanism, and a real bug in "you cannot update your password" fixed
+
+**What was missing.** Nobody had ever agreed to the terms — no checkbox, no
+sentence, the only route to the terms a footer link — and either sign-up route
+(email or Google) created a real account with no acceptance behind it.
+
+**The starter kit has a mechanism for this, and it was deliberately not used.**
+`TermsAndConditionsFormField`, behind a feature flag, only renders inside the
+email/magic-link forms — the Google button never sees it, so switching the
+flag on would have covered one of two account-creation routes and looked like
+it had covered both. One sentence under both buttons instead: *"By creating an
+account you agree to our Terms of Service and Privacy Policy,"* both links
+real. **If the starter's checkbox is ever wanted, the choice is between the two
+mechanisms, not both at once** — and whoever flips that flag should know it
+isn't wired to validation at all yet; nothing beyond the browser's own
+`required` attribute enforces it.
+
+**A real bug, reproduced for the first time.** "You cannot update your password
+because your account is not linked to any" was shown to accounts that had just
+set a password. The check asked `amr` — how *this session* signed in — rather
+than whether the account *has* a password identity at all. A session created
+by clicking the sign-up confirmation link authenticates by `otp`, not
+`password`, so anyone who confirmed by link and never happened to sign in with
+a password again hit this warning permanently. Reproduced end-to-end on a
+throwaway account and fixed by checking the account's actual identities
+(`getUser()`) rather than the session's claims (`getClaims()`), which cannot
+answer the question because `identities` was never a JWT claim to begin with.
+
+---
+
+## 21 August 2026. Layer B's timeout, and what the SEO and legal read-only passes found
+
+### 124. Layer B's 60-second cap raised to 300 seconds, after production timing showed a document colliding with it mid-retry rather than mid-work
+
+**What was measured, on production, through the real UI, not locally.** A
+1,000-word document in real prose completed in 7.4 seconds. A 2,000-word
+document — the largest reachable under a single guest's 2 free credits without
+spending real money — failed at approximately the 60-second mark with the
+engine's own internal failure code, not a raw platform timeout page.
+
+**Why they fit together.** Each chunk's model call has its own 45-second
+timeout and retries with no internal deadline of its own on top of that. The
+2,000-word failure landing right at 60 seconds looks like a chunk hitting its
+45-second call timeout, retrying, and running out the platform's 60-second
+clock before the retry could return — a platform collision, not evidence the
+rewrite itself needs a full minute for 2,000 words.
+
+**Fixed:** `maxDuration` on `api/*.py` raised from 60 to 300 seconds, Vercel's
+current documented Fluid Compute default. Considered and set aside:
+background-job chunking (architecturally correct for very large documents, but
+real work needing a job store and a polling UI, out of scope for a one-file
+session) and a hard word cap (trades one failure mode for another — paid
+credits a guest cannot spend in one request, the same dead end entry 98 already
+ruled out once).
+
+**Explicitly not fixed, and not chased further:** two failures at exactly
+1,000 words on adversarial word-salad input, both retry-exhausted rather than
+timed out — refunded correctly both times, but a separate reliability question
+in the retry logic rather than a duration one. **Untested past 2,000 words**,
+because reaching larger sizes needs real credits this session did not have
+standing permission to spend.
+
+### 125. SEO audit, read-only: robots.txt and the sitemap are already right, and one belief about `/dev/credits` was wrong
+
+**What's already correct, so it isn't re-litigated:** `robots.txt`, the
+sitemap, the FAQ's structured data, single-H1 discipline site-wide, and the
+Open Graph share image are all confirmed live and correct.
+
+**Two real gaps, both mechanical, one-file fixes.** No page carries a canonical
+tag anywhere, and `www.un-claude.com` and `un-claude.com` are both live as two
+separately cached copies rather than one redirecting to the other — a genuine
+duplicate-content condition, with no dashboard evidence either way of what
+Vercel's Domains panel is currently set to. And every page except the homepage
+drops the brand from its own `<title>` (`Pricing` instead of
+`Pricing · Un-Claude`), a one-file structural cause: the root metadata sets a
+bare title string instead of a template, so every child page's own title
+*replaces* rather than extends it.
+
+**Correcting a belief already on record.** `/dev/credits` is live in
+production and is not protected the way it was believed to be — no `noindex`
+meta tag, no `x-robots-tag` header, and `robots.txt` is a blanket allow with no
+exclusion for `/dev`. It renders one static sentence outside a development
+build, so nothing leaks, but it is exactly the kind of half-built page a
+launch checklist should keep out of the index. One line closes it
+(`robots: { index: false, follow: false }`), and the security audit flagged
+the same page independently for the same reason.
+
+**Checked live and worth recording:** rivals are already titling pages
+explicitly around "Claude watermark remover," and the site's own homepage
+title competes; every other page currently cannot, for the reason above.
+
+### 126. Legal reconciliation: three sentences the credit-ledger work made false in the same week they were written, and what was corrected
+
+**The premise the session started on was wrong, and worth recording because it
+changes what kind of problem this is.** The legal pages were not starter-kit
+boilerplate — they were rewritten from the code on 19–20 August (entry 54) and
+were accurate the day they shipped. **The software moved underneath them on
+20–21 August and nobody moved the pages back.** That is exactly the failure the
+standing rule (a legal page changes in the same deployment as the code that
+makes it wrong) exists to prevent, and it was followed on the 19th and not on
+the 20th–21st.
+
+**Found false, and corrected in the same pass as entry 120's account-deletion
+wording:**
+- Both policies still described `uc.free-sanitises.v1`, a localStorage counter
+  whose file, `free-uses.ts`, is deleted. Nothing writes or reads that key any
+  more.
+- Both policies said cookies are "set only after you sign in." Two identifiers
+  are now placed on a browser that has never signed in: an anonymous Supabase
+  session created on first use, and `uc-guest`, a year-long cookie carrying the
+  guest's identity. Both are defensible as strictly necessary (no
+  consent-banner obligation follows), but the sentence claiming otherwise was
+  simply wrong.
+- The terms described the free allowance as "enforced in your browser and not
+  a security measure." It is now a server-side ledger enforced in a locking
+  database transaction — false in the direction that *understates* the
+  product, which is the sentence a Stripe reviewer would notice first.
+- Cloudflare Turnstile loads on every page for every visitor and appeared in
+  neither policy's third-party table.
+
+**Confirmed true and left untouched, so nobody re-audits them:** content is
+never retained or used for training, PostHog stores nothing on the device and
+never receives content, the contact form really does send nothing to a server,
+account deletion (as of entry 120) really does cascade, and the claims
+boundary section of the terms is — independently — the best-drafted section on
+the site.
+
+**What the reconciliation could not settle, and why: no legal entity exists.**
+Every disclaimer, cap and jurisdiction clause in a terms of service is written
+on behalf of a legal person, and today "we" means Jon personally. A companion
+research pass (drafted for a UK sole trader) worked out what publishing his
+name, an address and a governing-law clause would require under UK/EU consumer
+law — **entry 115 later resolved the live question by restricting sales to US
+customers instead, which supersedes that research's jurisdiction throughout.**
+What that research still leaves standing regardless of jurisdiction:
+professional-indemnity insurance is worth pricing early because a refusal is
+itself information about the risk, and the trade-mark question ("un-claude"
+containing Anthropic's mark) was explicitly out of scope and remains
+unexamined.
+
+### 127. The payment path, stress-tested: the audit's open items closed, and four small corrections to the Stripe account itself
+
+**Following entry 114, everything left "not proven" there was subsequently run
+and passed:** the refund migration applied and re-tested, including a real
+cumulative refund across three partial refunds (the old code would have
+removed double the correct amount); a real disputed charge, opened and then
+lost, correctly leaving credits alone until the loss and removing them exactly
+then; the guest-merge invariants re-checked (4/4); a converted account
+confirmed to receive no second welcome grant through the real route; and a real
+receipt read end to end, confirming no personal name or address appears on it.
+
+**Four corrections made to what Jon had submitted to Stripe, found only by
+looking at the actual screens rather than the API:** the customer support
+email was missing from Public details (required on receipts — set to
+`unclaudeapp@gmail.com`, distinct from the private KYC representative email);
+the privacy policy URL was missing from the same screen; the statement
+descriptor was `UN-CLAUDE`, corrected to `UN-CLAUDE.COM` so a customer
+squinting at a card statement can type it straight into a browser; and the
+support address city's capitalisation was fixed. **The one setting that
+mattered most and is easy to miss entirely: the "Successful payments" and
+"Refunds" customer-email toggles were off by default — if left off, a paying
+customer receives no receipt at all, which is close to ideal conditions for a
+dispute.**
+
+**One self-correction inside the same body of work, recorded because the
+reversal is the useful part.** Stripe Tax was first recommended off at launch
+(a 0.5% per-transaction cost). Reading Stripe's own dashboard wording corrected
+this — with no tax registrations, there is no charge, and what it actually
+buys is free monitoring of economic-nexus thresholds. **Left on.** The thing
+to be careful with is registering in a state, which is a real decision with
+real obligations, not the monitoring itself.
+
+**Left genuinely open, not decided here.** Whether the project's Vercel plan
+permits commercial use at all — Hobby forbids it, and entry 58 already has
+Jon's ruling to stay on Hobby "until Vercel objects." A later session's
+cost-asymmetry argument for upgrading proactively as part of going live is
+recorded as a recommendation, not a ruling; **entry 58 stands unless and until
+Jon revisits it.**

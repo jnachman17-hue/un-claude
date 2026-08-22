@@ -1,5 +1,10 @@
 # Legal reconciliation — 21 August 2026
 
+**Merged into `04-decision-log.md` entry 126, 21 August 2026 (its applied
+sections 2B/2C are also in `legal-applied.md`'s history, already merged into
+entries 120 and 126). Retained on disk until W1 and W2 finish reading it; the
+conductor removes it afterwards.**
+
 **Read-only.** Nothing in the application was changed to produce this. No legal
 page was edited. Every quotation below is the real text as it stands in the
 repository today, set against the real code, migration or configuration that

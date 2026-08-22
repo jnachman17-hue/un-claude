@@ -1,5 +1,9 @@
 # Stripe, from no account to taking money
 
+**Merged into `04-decision-log.md` entries 112, 113 and 127, 21 August 2026.
+Retained on disk until W1 and W2 finish reading it; the conductor removes it
+afterwards.**
+
 **21 August 2026, session 11.** Written for Jon to follow with the Stripe
 dashboard open. Every field Stripe asks a US individual for, with the answer
 this project should give and why.

@@ -1,5 +1,8 @@
 # Layer B timing vs. the 60-second function cap
 
+**Merged into `04-decision-log.md` entry 124, 21 August 2026. Retained on disk
+until W1 and W2 finish reading it; the conductor removes it afterwards.**
+
 Session date: 2026-08-21. Read-only investigation plus one config change, per
 instruction. Territory: `vercel.json`, `apps/web/api/*.py`, this note. No
 frontend file was touched — another session is editing the UI concurrently.

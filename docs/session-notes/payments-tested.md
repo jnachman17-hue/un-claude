@@ -1,5 +1,9 @@
 # The payment path, tested rather than asserted
 
+**Merged into `04-decision-log.md` entry 127 (and largely already covered by
+entry 114), 21 August 2026. Retained on disk until W1 and W2 finish reading it;
+the conductor removes it afterwards.**
+
 **21 August 2026, session 11.** What was actually run, what it printed, what it
 found, and what is still not proven. `04` entry 114.
 

@@ -1,5 +1,10 @@
 # Legal research — 21 August 2026
 
+**Merged into `04-decision-log.md` entry 126, 21 August 2026. Its UK-sole-trader
+jurisdiction assumption is superseded by entry 115 (US-only sales) — do not
+treat sections 1, 2, 3f, 5, 9A/9B as current. Retained on disk until W1 and W2
+finish reading it; the conductor removes it afterwards.**
+
 **Research only. No page was edited, no code was changed.** Output is a
 recommendation per question, the primary source behind it, and draft wording at
 the end for anything that would change a published page.
