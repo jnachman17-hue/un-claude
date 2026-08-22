@@ -133,28 +133,35 @@ const TRUST = [
     body: 'The credits go straight back to your balance.',
   },
   /*
-   * THE REFUND, ADDED 21 August 2026 ON JON'S RULING. 04 entry 113.
+   * THE REFUND CAME OFF THIS GRID ON 22 August 2026, AND WHERE IT WENT IS THE
+   * POINT. 04 entry 115, Jon's ruling: "I don't want to aggressively advertise
+   * it... only people that are really fed up would go looking for this."
    *
-   * IT SAYS "OUR", AND THAT WORD IS DOING LEGAL WORK. This is a VOLUNTARY
-   * POLICY covering unspent credits. It is NOT the UK/EU statutory right of
-   * withdrawal, which is not ours to define and which refunds everything
-   * including credits already spent. Jon's instruction was explicit: the page
-   * describes our policy in our words, and the statutory right is carried
-   * separately by the checkout consent flow. Writing this line as "your right
-   * to cancel" would be a false claim in a legal register.
+   * THE REASONING IS THE SAME ARITHMETIC THAT CREATED THE POLICY, READ THE
+   * OTHER WAY. A refund costs under a dollar and a dispute costs about $24.50,
+   * so the policy earns its keep by catching the customer who would otherwise
+   * call their bank. It does NOT earn its keep by reminding a satisfied
+   * customer that their money is refundable. A tile in a four-up grid directly
+   * under the buy buttons is the second thing, not the first.
    *
-   * IT REPLACED "No subscription" RATHER THAN BEING ADDED AS A FIFTH ITEM, for
-   * two reasons. The grid is `sm:grid-cols-2 lg:grid-cols-4`, so a fifth item
-   * leaves one orphan on its own row at desktop. And the standfirst 200px above
-   * already says "No subscription, no monthly reset, nothing to cancel" —
-   * duplication of exactly the kind 04 entry 109 removed from this page when it
-   * took the credit rule out of the standfirst. The refund is new information;
-   * the line it replaced was not.
+   * SO IT IS DISCOVERABLE RATHER THAN ADVERTISED, in three places and none of
+   * them a tile: the small print under this grid, the FAQ below, and in full in
+   * the terms of service. Anyone actually looking finds it in seconds. A
+   * skimmer never meets it.
+   *
+   * DO NOT REMOVE IT FROM THE PAGE ENTIRELY. Stripe's website checklist
+   * expects a visible refund policy and `03-pricing.md` section 12c step 8
+   * lists it as a pre-activation requirement. Hidden is fine. Absent is an
+   * account risk.
+   *
+   * WHAT TOOK THE SLOT, and it is not filler. Stripe's same checklist asks a
+   * business to be able to tell customers their payment details are handled
+   * safely, and ours can, truthfully. It sells where the refund line cost.
    */
   {
     icon: BanknoteIcon,
-    title: 'Our 30 day refund',
-    body: 'Unspent credits go back at the price you paid. We will not ask why.',
+    title: 'Your card never touches us',
+    body: 'You pay on Stripe’s own page. We never see the number.',
   },
   {
     icon: ScanLineIcon,
@@ -210,6 +217,18 @@ const FAQ = [
   {
     q: 'Is the free allowance a trial that runs out?',
     a: 'It is granted once rather than reset. Two credits the moment you use the tool, with no account and no card, and three more when you create a free account. Scanning is separate and never runs out.',
+  },
+  /*
+   * THE REFUND'S SECOND HOME, AND IT IS LAST ON PURPOSE. 04 entry 115. Someone
+   * who wants their money back reads the FAQ to the bottom. Someone who is
+   * deciding whether to buy does not. Placed after the failure question rather
+   * than beside it, because "what if it breaks" is a reassurance a buyer reads
+   * on the way in, and putting "can I have my money back" next to it plants the
+   * idea in a customer who did not have it.
+   */
+  {
+    q: 'Can I get a refund?',
+    a: 'Yes. Within 30 days of buying, email unclaudeapp@gmail.com and we will refund any credits from that purchase you have not spent, at the price you paid, without asking why. Credits already spent are not refunded, because the work was done.',
   },
 ];
 
@@ -476,7 +495,8 @@ function Pricing() {
                 </p>
 
                 <BuyButton
-                  pack={pack}
+                  packId={pack.id}
+                  packName={pack.name}
                   className={[
                     'relative mt-6 rounded-[11px] px-4 py-3.5 text-center text-[14px] font-semibold text-nowrap transition-transform active:scale-[0.98]',
                     pack.featured
@@ -531,22 +551,24 @@ function Pricing() {
           </ul>
 
           {/* ------------------------------------------------------------
-              THE TWO LINES THE TRUST GRID CANNOT CARRY, ADDED 22 August 2026.
+              THE SMALL PRINT, AND EVERY CLAUSE IN IT IS PLACED RATHER THAN
+              DUMPED. 04 entry 115.
 
-              The four reassurances above are OUR promises and they are set as
-              promises. These two are neither: one is what the checkout
-              arithmetic does, and the other is a right the law gives the buyer
-              and we do not define. Putting them in the grid would give them the
-              grammar of a selling point, and the second one would then read as
-              "our cancellation policy", which is the exact false register 04
-              entry 113 ruled against. So they sit under the rule as small
-              print, which is what they are.
+              THE REFUND LIVES HERE NOW, one clause long, under a rule, at 12.5px.
+              Jon's ruling: findable by anyone looking for it, invisible to
+              anyone who is not. See the TRUST array above for the full
+              reasoning and for why it must not be deleted outright.
 
-              THE 14 DAY RIGHT IS SUMMARISED IN ONE LINE AND LINKED, NOT
-              EXPLAINED. The terms carry it in full, the checkout consent
-              collects it, and a paragraph of statutory detail under a price
-              grid helps nobody. What this line owes the visitor is the
-              existence of the thing and a route to the rest.
+              US ONLY IS A TERM OF SALE AND IT IS STATED WHERE THE SALE HAPPENS.
+              It is also the sentence that lets the terms drop the UK/EU
+              cancellation right entirely. It is NOT enforced by anything on
+              this page or in the checkout route today.
+
+              NO TAX SENTENCE BEYOND WHAT THE CHECKOUT ACTUALLY DOES. "The price
+              on the card is the total you pay" is verified against the real
+              Stripe sessions: subtotal equals total, amount_tax is zero,
+              automatic_tax is off, on all three packs. It is not a claim that
+              no tax is owed anywhere, which is an accountant's question.
              ------------------------------------------------------------ */}
           <p
             className={
@@ -554,16 +576,15 @@ function Pricing() {
             }
           >
             Prices are in US dollars, and the price on the card is the total you
-            pay. We add nothing at checkout, no tax and no fee. Separately from
-            our 30 day refund, buyers in the UK and the EU have a 14 day legal
-            right to cancel, which ends once credits are delivered.{' '}
+            pay. Credits are sold to customers in the United States only. Unspent
+            credits are refundable for 30 days at the price you paid.{' '}
             <Link
               href={'/terms-of-service'}
               className={
                 'text-foreground font-medium underline underline-offset-2'
               }
             >
-              Both are set out in the terms
+              The terms have the detail
             </Link>
             .
           </p>

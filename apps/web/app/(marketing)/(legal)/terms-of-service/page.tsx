@@ -63,15 +63,41 @@ export async function generateMetadata() {
  * carries the two things a live payment page owes a buyer: where the card is
  * handled, and what the free credits actually are as a promotion.
  *
- * CANCELLING IS ITS OWN SECTION NOW, AND THE SPLIT INSIDE IT IS THE POINT.
- * 04 entry 113. Our 30 day refund of UNSPENT credits is a VOLUNTARY POLICY.
- * The UK/EU 14 day right of withdrawal is a STATUTORY RIGHT covering
- * EVERYTHING, spent credits included, and it is lost only where the buyer
- * expressly consents to immediate supply and acknowledges losing it. Those are
- * two different things and the section says so in its first line. Presenting
- * the voluntary policy as "your right to cancel" would be a false claim in a
- * legal register. The consent itself is collected at checkout, in
- * `pricing/_components/buy-button.tsx`, and recorded on the Stripe payment.
+ * THE UK/EU CANCELLATION RIGHT IS GONE, WITH THE MARKET IT BELONGED TO.
+ * Jon's ruling, 22 August 2026, 04 entry 115. A version of this page carried a
+ * "Cancelling, and getting your money back" section splitting the statutory 14
+ * day right of withdrawal from our voluntary refund, and the checkout carried a
+ * consent ceremony to waive the first. **Credits are now sold to US customers
+ * only**, so the right is out of scope, and a page explaining a right its
+ * readers do not have is noise in the one document that most needs to be read.
+ * The reasoning, the law and the wording are preserved in
+ * `docs/session-notes/legal-applied-stripe.md` for whenever Europe is opened up.
+ *
+ * THE US-ONLY SENTENCE IS A TERM OF SALE AND NOTHING IN THE SOFTWARE ENFORCES
+ * IT YET. The intended enforcement is a Stripe Radar block on the built-in
+ * `card_country_blocklist`, which is a dashboard job that has not been done.
+ * A non-US card completes normally today. That is fine for a term of sale, and
+ * it would NOT be fine for a sentence claiming such cards are refused, so no
+ * page says that.
+ *
+ * WHOSE LAW APPLIES, ADDED 22 August 2026, AND IT ENDS D1. The page carried no
+ * governing law section because there was no entity to name and inventing a
+ * jurisdiction would have been false. Jon confirmed he operates from
+ * California, so the section is now a fact rather than an invention.
+ * **California is named because he is there, not as a preference.** A
+ * California court applies California law to a California trader whatever a
+ * contract says, so naming another state would buy nothing and read as
+ * evasive. **His legal name and address are deliberately NOT published**, on
+ * his instruction; the US has no equivalent of the UK DMCC disclosure duty, and
+ * Stripe holds a support address separately.
+ *
+ * ONE THING THAT GOT STRONGER BY ACCIDENT. "Provided as it is, without
+ * warranties of any kind" in "What we can and cannot promise" was flagged as
+ * close to unenforceable against a UK consumer. Against a US consumer a
+ * conspicuous disclaimer of this kind is broadly enforceable, so the 9E
+ * rewrite is no longer urgent. **The highest-value US addition is an
+ * arbitration clause with a class action waiver, which is lawyer drafting and
+ * is deliberately not attempted here.**
  *
  * REWRITTEN 21 AUGUST 2026, from `docs/session-notes/legal-reconciliation.md`
  * sections 1.3 and 2C. Two things had gone false when the credit ledger shipped
@@ -99,22 +125,18 @@ export async function generateMetadata() {
  * what makes the prohibition credible, and broadening it to look safer would
  * prohibit the product's own most common use. 04 entry 54 rulings 3 and 4.
  *
- * STILL OUTSTANDING, and all of these are Jon's rather than a drafting job: the
- * entity and jurisdiction section (D1); a suspension sentence in "Ending your
- * use" covering what happens to a balance when an account is suspended (D4);
- * the model cancellation form, which cannot be written without a trader name
- * and a service address; and the sales tax and VAT position, which is a
- * registration question rather than a wording one. What this page says about
- * tax is only what the checkout code actually does: it adds nothing to the
- * price. See `docs/session-notes/legal-applied-stripe.md` section 5.
+ * STILL OUTSTANDING. D1 is closed by the California section above. What is
+ * left: a suspension sentence in "Ending your use" covering what happens to a
+ * balance when an account is suspended (D4); an arbitration and class action
+ * waiver clause, which needs a lawyer; and US state sales tax, which is an
+ * accountant's question that does not bite until roughly $100,000 or 200
+ * transactions in a single state. **EU VAT is no longer a question at all**,
+ * because nothing is sold into the EU. What this page says about tax is only
+ * what the checkout code actually does: it adds nothing to the price, verified
+ * against real Stripe sessions on all three packs.
  *
- * ALSO NOT APPLIED HERE, AND DRAFTED AND WAITING: sections 9E and 9F of
- * `legal-research.md`, which replace "Liability" and add a suspension sentence.
- * 9H says "provided as it is, without warranties of any kind" should not stand
- * alone against a consumer, and that sentence is still in "What we can and
- * cannot promise" below. It was left because this session's brief was the
- * payment sections, not liability, and because rewriting the claims boundary
- * needs Jon in the room. It gets more dangerous, not less, now money moves.
+ * The model cancellation form, the trader address and the phone number are all
+ * gone as requirements along with the UK/EU market.
  */
 async function TermsOfServicePage() {
   const t = await getTranslations();
@@ -274,6 +296,15 @@ async function TermsOfServicePage() {
         </P>
         <P>
           <span className={'text-foreground font-medium'}>
+            We sell credits to customers in the United States only.
+          </span>{' '}
+          If you are outside the United States you may use the free tool, but you
+          may not buy credits, and by buying you confirm that you are a US
+          resident. We may refuse or reverse a purchase made from outside the
+          United States and refund it in full.
+        </P>
+        <P>
+          <span className={'text-foreground font-medium'}>
             Your card details never reach us.
           </span>{' '}
           Payments are handled by Stripe, and you enter your card on Stripe’s own
@@ -295,44 +326,31 @@ async function TermsOfServicePage() {
           reversal. That is not a refund request and you do not have to ask for it.
         </P>
 
-        <H2>Cancelling, and getting your money back</H2>
+        <H2>Refunds</H2>
         <P>
-          There are two of these and they are not the same thing. The first is a
-          legal right you have. The second is a policy we chose.
-        </P>
-        <P>
-          <span className={'text-foreground font-medium'}>
-            Your right to cancel.
-          </span>{' '}
-          If you live in the UK or the EU, consumer law gives you 14 days from
-          buying credits to cancel and get your money back, without giving a
-          reason. To use it, email <Mail /> and say you want to cancel. We refund
-          you within 14 days of being told.
-        </P>
-        <P>
-          <span className={'text-foreground font-medium'}>
-            That right ends the moment your credits arrive.
-          </span>{' '}
-          They arrive as soon as the payment succeeds, so what you bought has
-          already been delivered in full. That is why checkout asks you to tick a
-          box agreeing to immediate delivery and confirming you understand the 14
-          day right to cancel ends at that point. You cannot pay without ticking
-          it, and if you did not tick it you did not give up anything.
-        </P>
-        <P>
-          <span className={'text-foreground font-medium'}>
-            Our 30 day refund, which is separate and more generous.
-          </span>{' '}
-          Within 30 days of a purchase you may ask for a refund of any credits from
-          it that you have not spent, at the price you paid, and we will not ask
-          you why. Credits you have already spent are not refunded, because the
-          work was done. Refunds are returned to the card that paid. This one is
-          our own policy rather than a legal right, and it sits on top of the right
-          above rather than standing in for it.
+          Within 30 days of a purchase you may ask for a refund of any credits
+          from it that you have not spent, at the price you paid, and we will not
+          ask you why. Email <Mail /> and we will do it. Credits you have already
+          spent are not refunded, because the work was done. Refunds are returned
+          to the card that paid.
         </P>
         <P>
           If you delete your account, any credits on it end with it and are not
           refunded. Ask for the refund before you delete.
+        </P>
+
+        <H2>Who you are dealing with, and whose law applies</H2>
+        <P>
+          Un-Claude is operated by an individual sole trader based in California,
+          in the United States. There is no company; the trader is a person, and
+          these terms are an agreement with him. Write to <Mail /> and a person
+          reads it.
+        </P>
+        <P>
+          These terms are governed by the law of the State of California and of
+          the United States, and any dispute is heard in the state or federal
+          courts of California. Nothing here takes away rights you have under
+          consumer law that a contract cannot remove.
         </P>
 
         <H2>Availability</H2>
