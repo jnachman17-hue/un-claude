@@ -139,9 +139,9 @@ remain closed as non-defects.
 | D9 | **Title template** | **DONE — verified** | One field in `root-metdata.ts` fixed **every page site-wide**, including four W4 never touched. Verified: `/pricing` "Pricing · Un-Claude", `/privacy-policy`, `/terms-of-service`, `/cookie-policy` all now carry the brand where they were bare words. Homepage uses an absolute title so the brand is not appended twice. |
 | D10 | **Meta descriptions over length** | **DONE for the pages W4 owned** | Verified by measuring the served strings: homepage **162 → 145**, `/how-it-works` **181 → 151**, `/mission` 136 unchanged. Claims were checked, not just character counts. |
 | D11 | **Legal pages' descriptions** | **DONE — by W2, verified** | Each of the three now has its own description instead of inheriting the product one: terms 143, privacy 152, cookie 144. |
-| D6 | **Canonical tags** | **PARTIAL — 3 of 9 pages** | **Done and verified:** `/`, `/how-it-works`, `/mission`, each self-referencing. **Still missing on six:** `/pricing`, `/capabilities`, `/contact`, and the three legal pages. |
-| D14 | **Why D6 is deliberately partial — do not "fix" it at the root** | **OPEN** | W4 refused to set a canonical in `root-metdata.ts` and **was right to.** A root canonical leaks the homepage's address onto every page that does not set its own, so those six would each claim to *be* the homepage. **A wrong canonical is worse than a missing one.** The fix is six per-page tags. Four of those files are W2's right now. |
-| D13 | **`/capabilities` description is 171 chars — NEW** | **OPEN** | Measured today. Over the truncation point and outside every session's territory so far, so nobody has owned it. `/contact` is fine at 109. |
+| D6 | **Canonical tags** | **DONE — 8 of 9, verified** | **Verified against a running build:** `/`, `/how-it-works`, `/mission`, `/capabilities`, `/contact`, and all three legal pages each name their own address. **`/pricing` is the ninth and is the one accepted gap** — W1 is rewriting its copy for the `.txt` ruling, and one missing canonical costs less than two sessions in one file. Pick it up after W1 lands. |
+| D14 | **Never set a canonical at the root** | **STANDING RULE** | W4 refused to set a canonical in `root-metdata.ts` and **was right to.** A root canonical leaks the homepage's address onto every page that does not set its own, so those six would each claim to *be* the homepage. **A wrong canonical is worse than a missing one.** The fix is six per-page tags. Four of those files are W2's right now. |
+| D13 | **`/capabilities` description** | **DONE — verified, 171 → 151** | Measured before and after against the served page. The trim cut words rather than caveats — "what we will put our name to" became "what we stand behind". |
 | D7 | **Search Console walkthrough** | **PARKED — written, waiting on E15** | **W4 delivered it in full** at the end of `session-notes/seo-canonicals-and-titles.md`: five numbered steps, named buttons, expected text. **Deliberately not done yet** — doing it before the deploy makes Google re-crawl the old build and recreates the exact stale-data trap that produced the phantom noindex. |
 | D8 | Inspect `www.`, confirm "Page with redirect" | **JON — folded into D7 step 3** | — |
 | D12 | Structured data | **OPEN** | W4 skipped it deliberately rather than rush it at session end. Additive, not a defect. |
@@ -313,3 +313,10 @@ revenue, and it is the longest unstarted item on the board.**
   without it: entry 115 made the restriction contractual, and no page claims
   cards are refused, so nothing becomes false. **The launch sequence continues
   without step 3.**
+- **22 Aug, W6 landed.** Canonicals now cover **8 of 9 pages**, `/capabilities`
+  is 151 characters, and `/pricing` remains the one deliberate gap until W1 lets
+  go of it. Verified against a running build rather than taken on report — the
+  diff was six lines across five files with nothing outside its territory.
+  **W6 left its work uncommitted and wrote no session note**, both required by
+  its brief; the conductor committed it by explicit path after confirming the
+  staged set contained none of W1's in-flight engine, workbench or pricing files.
