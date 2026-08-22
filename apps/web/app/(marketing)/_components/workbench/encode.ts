@@ -35,5 +35,18 @@ export function fileToBase64(file: File): Promise<string> {
   });
 }
 
-/** The four we accept. PDF is deliberately absent: 04 entry 26. */
-export const ACCEPTED_FILES = '.txt,.md,.docx,.png,.jpg,.jpeg';
+/**
+ * The four things we accept: pasted text, a Word document, a PNG, a JPG.
+ *
+ * MUST MATCH `ACCEPTED_EXTS` in apps/web/api/_shared.py, which is what actually
+ * enforces it — this string is only the file picker's `accept` hint and a user
+ * choosing "All Files", or dragging a file in, walks straight past it.
+ *
+ * `.md` was removed on 21 August 2026. It was offered here and the engine treats
+ * it as a CONTAINER, so the rewrite never ran on it, and the browser priced it by
+ * the word while the server charged one flat credit. Offering a type that gets
+ * refused is worse than not offering it.
+ *
+ * PDF is deliberately absent: 04 entry 26.
+ */
+export const ACCEPTED_FILES = '.txt,.docx,.png,.jpg,.jpeg';

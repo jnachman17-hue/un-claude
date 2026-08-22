@@ -57,6 +57,11 @@ const MESSAGES: Record<string, string> = {
   bad_base64: 'That file could not be read.',
   too_large: 'That file is larger than 5 MB. Try a smaller one.',
   bad_format: 'That file type is not supported. Use text, a Word document, PNG or JPG.',
+  // The engine refuses over-length documents before it spends a penny. Without
+  // this line the code fell through to "Something went wrong", which tells
+  // somebody nothing about what to do next.
+  too_many_words:
+    'That is longer than 10,000 words, which is the most the rewrite can do in one go. Split it and run it in parts.',
   layer_b_failed: 'The rewrite could not be completed. Nothing was charged. Please try again.',
   engine_error: 'Something went wrong. Nothing was charged.',
   unauthorised: 'Something went wrong. Nothing was charged.',
@@ -140,5 +145,26 @@ export function clean(
   options: { layer_b?: boolean } = {},
 ) {
   const slow = options.layer_b === true;
-  return call<CleanResult>(CLEAN_PATH, { ...payload, options }, slow ? 120_000 : 20_000);
+
+  /*
+   * 240 SECONDS, RAISED FROM 120 ON 21 AUGUST 2026, AND THIS WAS THE REAL
+   * CEILING ALL ALONG.
+   *
+   * `limits.md` raised Vercel's own function cap from 60 to 300 seconds and
+   * recommended it as the fix for large documents. It bought nothing above 120,
+   * because THIS abort fired first: the browser was told the service was
+   * unreachable, the credit was refunded, and the Python function carried on
+   * running and being billed for a result nobody would ever receive.
+   *
+   * Measured this session, engine only with no network in the way: 7,848 words
+   * took 104 seconds. That is already inside a fifth of the old limit at a size
+   * well under the 10,000 word cap.
+   *
+   * 240 and not 300: Vercel kills the function at 300, and a request that is
+   * still travelling when the platform kills it produces a worse failure than
+   * one we abandon ourselves. The engine's own retry budget
+   * (UC_LAYER_B_DEADLINE, 180s) plus one in-flight model call (45s) is 225,
+   * which fits inside this with room and inside Vercel's 300 with more.
+   */
+  return call<CleanResult>(CLEAN_PATH, { ...payload, options }, slow ? 240_000 : 20_000);
 }

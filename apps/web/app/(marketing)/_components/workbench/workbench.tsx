@@ -32,14 +32,17 @@ import { useSupabase } from '@kit/supabase/hooks/use-supabase';
 
 import { CreditChip, CreditCoin } from './credit-chip';
 import {
-  type CreditsState,
+  MAX_WORDS,
   WELCOME_CREDITS,
   costFor,
   countWords,
   devMode,
   devOverrides,
   ensureSession,
+  estimateSeconds,
   fetchCredits,
+  humanDuration,
+  type CreditsState,
 } from './credits';
 import { OutOfCredits, SignedInWelcome } from './credit-offer';
 import { Paywall } from './paywall';
@@ -354,6 +357,27 @@ export function Workbench() {
   // An image carries no writing. A document does. Pasted text always does.
   const carriesProse = !isFile || scan?.kind === 'container';
 
+  /*
+   * THE WORDS ACTUALLY IN THE BOX, RIGHT NOW.
+   *
+   * This used to be written inline, three times, as
+   * `countWords(loaded.text || text)`, and that was a price display that lied.
+   * `loaded` is the snapshot taken when a scan ran. `clearResults()` runs on
+   * every keystroke after a scan and resets the findings, the result and the
+   * phase — but never `loaded`. Only `startOver()` does. So once anything had
+   * been scanned, `loaded.text` held the old paste for the rest of the visit and
+   * `loaded.text || text` always preferred it.
+   *
+   * Reproduced in the browser before this fix: paste 10,500 words, scan, delete
+   * every character, and the line still read "10,500 words = 11". Type six new
+   * words and it still read "10,500 words = 11".
+   *
+   * For a file the words are never shown — the line says "1 file" — so the
+   * snapshot is only consulted in the one case where it is still true.
+   */
+  const wordsNow = countWords(isFile ? loaded.text : text);
+  const overLimit = !isFile && carriesProse && wordsNow > MAX_WORDS;
+
   const sanitise = async () => {
     // An image has no prose, so there is nothing for the rewrite to do and no
     // reason to spend a model call on it.
@@ -374,7 +398,7 @@ export function Workbench() {
         isFile,
         name: loaded.name,
         wantsRewrite,
-        words: countWords(loaded.text || text),
+        words: wordsNow,
       });
 
       /*
@@ -1173,7 +1197,7 @@ export function Workbench() {
             gone the moment the first character lands or a file loads. It never
             takes a click, so typing straight through it works.
           */}
-          {text === '' && !isFile && loaded.text === '' && phase !== 'locked' ? (
+          {text === '' && !isFile && phase !== 'locked' ? (
             <div
               className={
                 'pointer-events-none absolute bottom-3 left-4 flex flex-wrap items-center gap-x-2 gap-y-1'
@@ -1360,7 +1384,9 @@ export function Workbench() {
             <button
               type={'button'}
               onClick={() => void sanitise()}
-              disabled={busy}
+              // Over the word limit the server will refuse this, so the button
+              // does not offer it. The message beside it says why.
+              disabled={busy || overLimit}
               className={
                 'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
               }
@@ -1397,7 +1423,7 @@ export function Workbench() {
                       isFile,
                       name: loaded.name,
                       wantsRewrite: carriesProse,
-                      words: countWords(loaded.text || text),
+                      words: wordsNow,
                     })}
                   </span>
                 </>
@@ -1438,12 +1464,25 @@ export function Workbench() {
             ) : done ? (
               <span className={'text-emerald-700 font-medium'}>Sanitised</span>
             ) : phase === 'cleaning' ? (
-              // The existing sentence, with the clock appended once it is worth
-              // asking whether anything is still happening. Below three seconds
-              // a counter is noise; above it, it is the whole answer.
+              /*
+                HOW LONG THIS WILL TAKE, said out loud. Jon's instruction,
+                21 August 2026: a long run must tell people it is long, or a
+                working tool reads as a hung one.
+
+                The old sentence said "this takes a few seconds" whatever was
+                pasted. Measured, a 7,848 word document takes about 104 seconds.
+                Someone told "a few seconds" and then made to wait nearly two
+                minutes concludes the site is broken and leaves — and they leave
+                during the one operation we charged them for.
+
+                The figure is a CEILING, not an estimate, and the wording says
+                so ("up to"). Time here tracks retries rather than length, so a
+                number presented as an estimate would be wrong about half the
+                time; a number presented as a ceiling is one people beat.
+              */
               <>
                 {carriesProse
-                  ? 'Breaking up the wording. This takes a few seconds.'
+                  ? `Breaking up the wording. This can take ${humanDuration(estimateSeconds(wordsNow))}.`
                   : 'Working through the file.'}
                 {elapsed >= 3 ? (
                   <span
@@ -1453,7 +1492,7 @@ export function Workbench() {
                   </span>
                 ) : null}
               </>
-            ) : loaded.text || text || isFile ? (
+            ) : text || isFile ? (
               /*
                 THE PRICE, BEFORE THE BUTTON IS PRESSED. 03-pricing 11c: the
                 cost must be known before committing. The words and the coin
@@ -1462,13 +1501,30 @@ export function Workbench() {
                 the conversion. 04 entry 98.
               */
               (() => {
-                const words = countWords(loaded.text || text);
+                const words = wordsNow;
                 const price = costFor({
                   isFile,
                   name: loaded.name,
                   wantsRewrite: carriesProse,
                   words,
                 });
+
+                /*
+                  OVER THE LIMIT IS SAID HERE, BEFORE THE BUTTON, not after a
+                  two minute wait. The server refuses anything past MAX_WORDS
+                  (UC_MAX_WORDS in api/_shared.py) and refunds, so the money was
+                  never at risk — but being refused after waiting is a bad
+                  experience for a defect the interface can see instantly.
+                */
+                if (overLimit) {
+                  return (
+                    <span className={'text-destructive font-medium'}>
+                      {words.toLocaleString('en-US')} words. The rewrite takes{' '}
+                      {MAX_WORDS.toLocaleString('en-US')} at a time — split it
+                      and run it in parts.
+                    </span>
+                  );
+                }
 
                 return (
                   <span className={'inline-flex items-center gap-1.5'}>
@@ -1477,6 +1533,14 @@ export function Workbench() {
                       : `${words.toLocaleString('en-US')} ${words === 1 ? 'word' : 'words'}`}
                     <span className={'text-muted-foreground/60'}>=</span>
                     <CreditChip amount={price} tone={'spend'} />
+                    {/* A long document warns before the button, not only while
+                        it is running. Below a thousand words the run is quick
+                        enough that saying so is noise. */}
+                    {carriesProse && words >= 1_000 ? (
+                      <span className={'text-muted-foreground/70'}>
+                        · takes up to {humanDuration(estimateSeconds(words))}
+                      </span>
+                    ) : null}
                   </span>
                 );
               })()

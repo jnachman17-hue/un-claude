@@ -46,15 +46,21 @@ STRUCTURE_RETRIES = int(os.environ.get("UC_LAYER_B_STRUCTURE_RETRIES", "1"))
 # cents spent, and the request failed. A failed run is the most expensive
 # thing this engine does and it is the one the customer is refunded for.
 #
-# 100 SECONDS IS NOT AN ARBITRARY NUMBER. The site aborts its own call to the
-# engine at 120 seconds (lib/engine/client.ts, `slow ? 120_000 : 20_000`),
-# which is well below Vercel's 300 second function ceiling. Past that abort
-# the browser is told the service is unreachable, the credit is refunded, and
-# the engine carries on running and billing for work nobody will ever see.
-# The budget sits under that abort with room for the HTTP round trip and the
-# base64, so the engine gives up and RETURNS SOMETHING before the site stops
-# listening.
-DEADLINE = float(os.environ.get("UC_LAYER_B_DEADLINE", "100"))
+# 180 SECONDS IS NOT AN ARBITRARY NUMBER, IT IS THE MIDDLE OF THREE CEILINGS.
+# The site aborts its own call to the engine at 240 seconds
+# (lib/engine/client.ts), and Vercel kills the function at 300 (vercel.json).
+# This budget stops NEW retries; a model call already in flight has its own
+# 45 second timeout on top, so the true worst case is 180 + 45 = 225 seconds —
+# inside the site's abort with 15 seconds to spare and inside Vercel's cap with
+# 75. Past the site's abort the browser is told the service is unreachable, the
+# credit is refunded, and the engine carries on running and billing for work
+# nobody will ever see, so being the smaller number matters.
+#
+# This was 100 while the site's abort was 120. Both were raised together on
+# 21 August 2026; raising either alone does nothing, which is the mistake
+# `limits.md` made when it raised Vercel's cap from 60 to 300 and left the
+# site giving up at 120.
+DEADLINE = float(os.environ.get("UC_LAYER_B_DEADLINE", "180"))
 BACKOFF = 2.5            # seconds, multiplied each attempt, plus jitter
 
 

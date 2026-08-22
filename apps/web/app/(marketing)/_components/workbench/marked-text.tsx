@@ -70,7 +70,23 @@ export function MarkedText({
   return (
     <p
       className={
-        'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em]'
+        // whitespace-pre-wrap IS THE FORMATTING FIX, 21 August 2026.
+        //
+        // An HTML paragraph collapses every run of whitespace to one space by
+        // default, so a document's line breaks and blank lines were rendered as
+        // ordinary spaces and the whole essay came out as one block of text.
+        // Measured before the fix: textContent held all 16 of the document's
+        // newlines and innerText held none.
+        //
+        // The text arriving here was never damaged and the Copy button always
+        // handed over the real thing. It was the screen that lied, and a screen
+        // showing a wall of text is read as a broken tool — which is exactly how
+        // Jon read it.
+        //
+        // pre-wrap rather than pre: line breaks are kept AND long lines still
+        // wrap to the box. The hidden-character markers are unaffected; they sit
+        // in their own spans and the newlines sit in the text spans around them.
+        'text-foreground/90 text-[15px] leading-[1.75] tracking-[-0.005em] whitespace-pre-wrap'
       }
     >
       {pieces.map((piece, index) =>

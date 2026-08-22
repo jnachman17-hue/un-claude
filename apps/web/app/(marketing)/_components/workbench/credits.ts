@@ -16,6 +16,43 @@ export const WELCOME_CREDITS = 2;
 export const SIGNUP_CREDITS = 3;
 export const WORDS_PER_CREDIT = 1_000;
 
+/**
+ * The most words one rewrite will accept.
+ *
+ * MUST MATCH `UC_MAX_WORDS` in apps/web/api/_shared.py, which is what actually
+ * enforces it. This copy exists so the interface can refuse before the button
+ * rather than after a two minute wait. If they ever disagree the server wins and
+ * the user is refunded, so drift is annoying rather than dangerous — but it is
+ * still drift, and this project has been bitten by two lists that had to agree
+ * before.
+ *
+ * Measured rather than guessed. Words against seconds, engine only, no network:
+ * 2,616 -> 36s, 5,232 -> 69s, 7,848 -> 104s, 10,464 -> 79s. Above this the run
+ * does not reliably finish inside the time the site waits for it.
+ */
+export const MAX_WORDS = 10_000;
+
+/**
+ * Roughly how long a rewrite of this many words will take, rounded UP, so the
+ * number shown to somebody waiting is a ceiling they beat rather than a promise
+ * they watch slip.
+ *
+ * 15 seconds per 1,000 words comes from the worst measured run (7,848 words in
+ * 104 seconds, 13.4s per 1,000). Time tracks retries rather than length — the
+ * 7,848 word document took LONGER than the 10,464 word one — so this is honest
+ * as an upper bound and would be dishonest as an estimate.
+ */
+export function estimateSeconds(words: number): number {
+  return Math.max(10, Math.ceil((words / 1_000) * 15));
+}
+
+/** "about 40 seconds" / "about 2 minutes". Never a bare number. */
+export function humanDuration(seconds: number): string {
+  if (seconds < 90) return `about ${Math.ceil(seconds / 5) * 5} seconds`;
+
+  return `about ${Math.ceil(seconds / 60)} minutes`;
+}
+
 export interface CreditsState {
   /** Null until a first sanitise creates the account: show the welcome. */
   balance: number | null;

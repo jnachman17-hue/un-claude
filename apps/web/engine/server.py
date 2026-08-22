@@ -58,6 +58,9 @@ from common import (
 )
 from container_meta import clean_container, inspect_container
 from format_dispatch import classify_bytes
+from uc_policy import POLICY_ON, accepted as _product_accepts
+from uc_policy import over_word_limit as _over_word_limit
+from uc_policy import safe_name as _product_safe_name
 from image_meta import clean_image, inspect_image, run_synthid_score
 from score_stylometry import score_text_stylometry
 from text_detectors import detector_status, run_all_text_detectors, run_text_detectors
@@ -968,7 +971,48 @@ class Handler(BaseHTTPRequestHandler):
                 HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": "internal error"}
             )
 
+    def _product_gate(self, name: str, data: bytes, layer_b: bool = False) -> str | None:
+        """The live site's own front-door rules, applied here too.
+
+        LOCAL DEVELOPMENT TALKS TO THIS SERVER AND PRODUCTION DOES NOT. .env.local
+        points UC_ENGINE_URL at this process, while the deployed site calls the
+        Vercel functions in apps/web/api. Those functions enforce the four
+        accepted types and the word ceiling; this server did not, so anything
+        tested locally behaved differently from the live site — a test that
+        reassures without checking.
+
+        Off unless UC_PRODUCT_POLICY is set, because this is also the vendored
+        engine's own server and its test suite drives it with formats this
+        product does not sell (a .md, for one). The local development engine sets
+        the flag; the test suite does not.
+
+        Returns (code, message), or None to proceed.
+
+        THE CODE MATTERS AS MUCH AS THE MESSAGE. The site maps the engine's code
+        to its own sentence and falls back to "Something went wrong" for anything
+        it does not recognise, so a refusal without a code reaches the user as a
+        generic failure. Measured: an over-length document was refused correctly
+        and refunded correctly, and the person was told "Something went wrong.
+        Nothing was charged" instead of being told to split their document.
+        """
+        if not POLICY_ON:
+            return None
+        if not data:
+            return ("no_file", "no file or text was sent")
+        if not _product_accepts(name, data):
+            return ("bad_format", "that file type is not supported; "
+                                  "use text, a Word document, PNG or JPG")
+        if _over_word_limit(name, data, layer_b):
+            return ("too_many_words",
+                    "that is longer than 10,000 words, which is the most the "
+                    "rewrite can do in one go")
+        return None
+
     def _handle_inspect(self, data: bytes, name: str, body: dict[str, Any]) -> None:
+        refusal = self._product_gate(name, data)
+        if refusal:
+            return self._respond(HTTPStatus.BAD_REQUEST,
+                                 {"ok": False, "code": refusal[0], "error": refusal[1]})
         run_detect = body.get("detect") is True
         self._respond(HTTPStatus.OK, _inspect_payload(data, name, run_detect))
 
@@ -1008,6 +1052,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_clean(self, data: bytes, name: str, body: dict[str, Any]) -> None:
         options = _parse_clean_options(body.get("options"))
+        refusal = self._product_gate(name, data, bool(options.get("layer_b")))
+        if refusal:
+            return self._respond(HTTPStatus.BAD_REQUEST,
+                                 {"ok": False, "code": refusal[0], "error": refusal[1]})
         self._respond(HTTPStatus.OK, _clean_payload(data, name, options))
 
     def _handle_clean_batch(self, body: dict[str, Any]) -> None:

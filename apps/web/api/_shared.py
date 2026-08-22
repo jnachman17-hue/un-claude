@@ -15,26 +15,7 @@ if str(ENGINE) not in sys.path:
 
 MAX_BYTES = 5 * 1024 * 1024   # 5 MB ceiling on any single upload
 
-# THE MOST WORDS ONE REWRITE MAY BE ASKED TO DO. Jon's ruling, 21 August 2026.
-#
-# Measured before it was chosen, on this engine, with real prose and a real
-# model. Words against seconds, in-process with no HTTP in the way:
-#
-#     2,616 words -> 34s      7,848 words -> 64s
-#     5,232 words -> 64s     10,464 words -> 79s, and 95s on a second run
-#
-# The variance is the point: the same document twice differs by a fifth,
-# because retries chase figures rather than words. 10,464 words at 95 seconds
-# plus the HTTP round trip is already close to the 120 second abort the site
-# applies to its own engine call (lib/engine/client.ts). Beyond that the
-# browser is told the service is unreachable, the credit goes back, and the
-# engine keeps running and billing for a result nobody will ever receive.
-#
-# So the cap is an honest limit rather than a guess: it is roughly where the
-# measurements stop fitting inside the time the site is willing to wait.
-# 5 MB of plain text is about 800,000 words, so the byte cap above never
-# reaches this one — a limit in words needs saying in words.
-MAX_WORDS = int(os.environ.get("UC_MAX_WORDS", "10000"))
+# The word ceiling, and the reasoning behind the number, live in uc_policy.py.
 
 # The engine is a back room, not a public counter. Only our own site may call it.
 # /api/clean with layer_b spends real money on every request, so an unauthenticated
@@ -105,98 +86,18 @@ def fail(code: str, status: int = 400) -> tuple[int, dict]:
                     "error": ERRORS.get(code, ERRORS["engine_error"])}
 
 
-# WHAT THIS PRODUCT ACCEPTS, AND NOTHING ELSE. Jon's ruling, 21 August 2026.
-#
-# Four things, and the four are: pasted text, a Word document, a PNG and a JPG.
-# `.txt` is here because pasted text arrives as `paste.txt` — the browser has no
-# separate text path, so refusing `.txt` would refuse every paste.
-#
-# WHY THIS EXISTS AT ALL. Until this session NOTHING validated the extension
-# anywhere. `ACCEPTED_FILES` in encode.ts is the file picker's `accept`
-# attribute, which is a HINT: "All Files" in the chooser, or a drag and drop,
-# walks straight past it. The clean route has no allowlist. So the real set of
-# accepted types was the engine's own, which is 12 text extensions and 12
-# container extensions — 24 including `.pdf`, `.xlsx`, `.epub`, `.svg` and
-# `.html`, none of which anyone chose to support and none of which was ever
-# tested end to end.
-#
-# That is not a theoretical hole. It is exactly how the `.csv` undercharge got
-# in: a 100,000 word essay renamed `essay.csv` bought an unlimited rewrite for
-# one credit, because the price and the engine disagreed about what a text file
-# was. The pricing guard now stops the two lists drifting. This stops the list
-# being 24 items long in the first place.
-#
-# THIS IS DELIBERATELY NOT IN engine/format_dispatch.py. That file is vendored
-# upstream code, shared with the command line tools and the audit scripts, and
-# it is one of the two lists `verify-pricing-matches-engine.mjs` compares. This
-# is OUR product's front door, so the restriction belongs at the door.
-ACCEPTED_EXTS = (".txt", ".docx", ".png", ".jpg", ".jpeg")
-
-# Magic bytes, so a file cannot lie about what it is by being renamed. Checked
-# with plain byte prefixes rather than by importing the engine's detectors,
-# because the free scan path must not pay for a heavy import to refuse a file.
-_PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
-_JPEG_MAGIC = b"\xff\xd8\xff"
-_ZIP_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
-
-
-def _contents_match(ext: str, data: bytes) -> bool:
-    """Does the file's own content agree with the name it arrived under?
-
-    A .png renamed to .docx is the case this catches. Without it the engine
-    classifies by extension first, hands PNG bytes to the Word document reader,
-    and the user gets whatever that does — which nobody had ever looked at.
-    """
-    if ext == ".png":
-        return data.startswith(_PNG_MAGIC)
-    if ext in (".jpg", ".jpeg"):
-        return data.startswith(_JPEG_MAGIC)
-    if ext == ".docx":
-        # A .docx is a zip, and specifically a zip with a Word document in it.
-        # The second half matters: .xlsx, .pptx, .odt and .epub are all zips too,
-        # and all of them are containers the engine would happily open.
-        return data.startswith(_ZIP_MAGIC) and b"word/document.xml" in data
-    if ext == ".txt":
-        # Text is the one case with no magic number, so the test is negative:
-        # it must not be one of the binaries we DO recognise, and it must not
-        # carry NUL bytes, which no real UTF-8 text does.
-        if data.startswith(_PNG_MAGIC) or data.startswith(_JPEG_MAGIC):
-            return False
-        if data.startswith(_ZIP_MAGIC) or data[:5] == b"%PDF-":
-            return False
-        return b"\x00" not in data[:8192]
-    return False
-
-
-def safe_name(name: str) -> str:
-    """The bare filename, with any directory part thrown away.
-
-    A browser never sends a path, so a name carrying one is either an oddity or
-    somebody trying their luck. Measured before this existed: a file named
-    `../../etc/passwd.txt` was ACCEPTED by the front door, reached the engine,
-    and died inside `server._tmp_path` with `ValueError: unsafe filename`. That
-    was caught and reported to the user as "That file type is not supported",
-    which is the wrong sentence for the wrong problem. Nothing was ever written
-    outside the temp directory — `_tmp_path` refused first, which is what it is
-    for — but the request should not have got that far.
-
-    Taking the basename is friendlier than refusing: `../../etc/passwd.txt`
-    becomes `passwd.txt` and cleans normally, which is what the person almost
-    certainly wanted.
-    """
-    bare = str(name).replace("\\", "/").rsplit("/", 1)[-1].strip()
-    # A name that was nothing but separators, or is now a relative marker, has
-    # no filename left in it. Fall back rather than hand the engine an empty one.
-    if not bare or bare in (".", ".."):
-        return "paste.txt"
-    return bare[:255]
-
-
-def accepted(name: str, data: bytes) -> bool:
-    """True if this is one of the four things un-claude accepts, really is it."""
-    ext = Path(name).suffix.lower()
-    return ext in ACCEPTED_EXTS and _contents_match(ext, data)
-
+# The product's policy — which four types, and how many words — lives in
+# engine/uc_policy.py so that BOTH ways into this engine enforce the same thing.
+# These functions used to be defined here, which meant the live site enforced
+# them and the local development server did not, so every local test of file
+# handling proved nothing about production. See uc_policy.py's docstring.
+from uc_policy import (  # noqa: E402
+    ACCEPTED_EXTS,
+    MAX_WORDS,
+    accepted,
+    over_word_limit,
+    safe_name,
+)
 
 def read_request(raw: bytes):
     """Decode a request body into (bytes, filename, options), or an error tuple."""
