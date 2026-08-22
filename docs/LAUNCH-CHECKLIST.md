@@ -54,8 +54,8 @@ minutes earlier — see E16.
 | # | Item | Whose | Note |
 |---|---|---|---|
 | 1 | ~~Buy the Starter pack~~ | **DONE 22 Aug** | Real card, real money. **Verified by the conductor on the live database, not reported:** exactly **one** purchase row on the entire ledger (`id 486, +10`), carrying `pi_3U74cIHwIcwEXjEP0HaPlfow` and a `stripe_event_id`, and **all four ledger invariants PASS** across 61 rows and 5 conversions. |
-| 1a | **Refund yourself — the last untested money path** | **Jon, and it costs nothing** | The purchase is proven. **The refund is not, in live mode.** It was tested thoroughly in test mode including repeated partials and a lost dispute — but test mode has been wrong four times today. Refund your own $4.99 in the Stripe dashboard and confirm the 10 credits come back off. You get the money back either way, and it is the second most likely thing to happen to a real customer. |
-| 2 | **Search Console** | **Jon** | Unblocked by the deploy. W4's five-step walkthrough. |
+| 1a | ~~Refund yourself~~ | **DONE 22 Aug — verified** | `id 489, -10 money_refund`. **Removed exactly 10 and left the 3 signup credits untouched** — which is the live proof of the worst bug the Stripe audit found: `charge.amount_refunded` is a *running total* and was being read as the current refund, so two partial refunds on one pack would have eaten credits belonging to other purchases. **All four invariants still pass, 62 rows.** The complete money path — purchase, credit, refund, debit — is now proven on real money. |
+| 2 | **Search Console — now the next thing** | **Jon** | Unblocked by the deploy. W4's five-step walkthrough. |
 | 3 | **Measure on production** | Jon/session | W1's one open item. Every timing so far is local — no HTTP, no base64, no cold start. **Production will be slower.** |
 | 4 | **Push to GitHub** | **Jon** | **109 commits exist only on this laptop while the site is live.** |
 | 5 | W7 UI notes, paused | session | Five items, plus the mobile zoom now that the workbench is free. |
@@ -361,3 +361,9 @@ revenue, and it is the longest unstarted item on the board.**
   `stripe_payment_intent_id` and a `stripe_event_id`, which **confirms E2a on
   real data** — a lost ledger could rebuild its purchases from Stripe. All four
   invariants pass. **The refund path is still unproven in live mode (1a).**
+- **22 Aug — the refund path proven too.** `id 489, -10 money_refund`, removing
+  exactly ten and leaving the three signup credits alone. That is the live proof
+  of the most dangerous defect the Stripe audit caught: `amount_refunded` is a
+  running total, and reading it as the current refund would have taken credits
+  from other purchases. **The whole money path is now proven on real money, not
+  in test mode.** Four invariants still pass across 62 rows.
