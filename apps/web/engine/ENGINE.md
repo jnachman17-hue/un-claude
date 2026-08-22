@@ -27,6 +27,19 @@ prompt and our own chunking layer added. Provenance and licence obligations are 
 
 **Paste text and you get A and B. Upload a file and you get all three.**
 
+**FOUR THINGS ARE ACCEPTED AND NOTHING ELSE**, Jon's ruling, 21 August 2026:
+pasted text, a Word document, a PNG, a JPG — five extensions, `.txt` `.docx`
+`.png` `.jpg` `.jpeg`. The list lives in `uc_policy.py`, and the bytes are
+checked as well as the name, so a `.png` renamed `.docx` is refused rather than
+handed to the Word reader.
+
+**Until that date nothing validated the extension anywhere.** `ACCEPTED_FILES`
+in `encode.ts` is the file picker's `accept` attribute, which is a hint that
+"All Files" or a drag-and-drop walks straight past, and the clean route had no
+allowlist. So the real accepted set was this engine's own 24 extensions,
+including `.pdf`, `.xlsx`, `.epub` and `.svg` — none of them chosen, none of
+them tested. That is exactly how the `.csv` undercharge got in.
+
 ---
 
 ## 2. What each layer actually does, and what it must never claim
@@ -252,6 +265,10 @@ Every setting is an environment variable. **Nothing needs a code change to tune.
 | `UC_LAYER_B_CHUNK_WORDS` | **NOT SET. Code default is 350** | Words per chunk. The default happens to be the measured best value, so this one is correct by accident rather than by configuration |
 | `UC_LAYER_B_WORKERS` | **NOT SET. Code default is 8** | Chunks at once. Correct value, unset. If the default ever changes upstream this silently regresses to the 56 second failure below |
 | `UC_LAYER_B_RETRIES` | **NOT SET. Code default is 8** | Attempts per chunk. **This table said 3 and that was wrong.** Verified 19 Aug 2026: no `UC_LAYER_B_*` variable is set in production at all, so every default applies. The worst case cost per request is eight times what this document previously implied |
+| `UC_LAYER_B_STRUCTURE_RETRIES` | **NOT SET. Code default is 1** | Extra attempts a chunk may spend purely on getting its paragraphs back, when the facts already survived. Deliberately separate from `UC_LAYER_B_RETRIES` and deliberately tiny: a re-roll costs a model call against the clock. 0 turns structure re-rolls off |
+| `UC_LAYER_B_DEADLINE` | **NOT SET. Code default is 180 seconds** | How long the whole rewrite may spend RETRYING. Added 21 Aug 2026; this is improvement 0 from section 10, now done. Stops new retries only — a model call already in flight has its own 45s, so the true worst case is 225s |
+| `UC_MAX_WORDS` | **NOT SET. Code default is 10,000** | The most words one rewrite accepts. Refused in `api/clean.py` before any model call, and carried on the free scan so the interface can refuse before the button |
+| `UC_PRODUCT_POLICY` | **Not set in production and not needed there.** Set it to 1 when running `server.py` locally | Makes the standalone server apply the same four-type allowlist and word ceiling the live site applies. **Without it, local development accepts 24 file types and unlimited words and therefore tests nothing about production.** See section 7 |
 | `WATERMARKS_REWRITE_TEMPERATURE` | 1.0 | Cooled by 0.2 per retry, floor 0.2 |
 
 **`UC_LAYER_B_WORKERS` matters more than it looks.** At 3, the deployed engine
@@ -275,6 +292,33 @@ folder. `apps/web` is the Vercel root directory.
 importing its neighbour fails at runtime with `ModuleNotFoundError` while working
 perfectly locally. Both functions add their own directory and the engine directory
 explicitly, before any local import. **Do not remove those lines.**
+
+### THERE ARE TWO WAYS INTO THIS ENGINE AND THEY ARE DIFFERENT PROGRAMS
+
+**This is the single easiest way to test something and prove nothing.**
+
+| | Path | Reads |
+|---|---|---|
+| **Production** | browser → `/api/tool/clean` → `/api/clean` | the Vercel functions in `apps/web/api`, via `_shared.py` |
+| **Local development** | browser → `/api/tool/clean` → port 8765 | the standalone `server.py`, because `.env.local` sets `UC_ENGINE_URL` to it |
+
+They are separate implementations of the same idea. Found 21 August 2026: the
+four-type allowlist and the 10,000 word ceiling were added to `_shared.py` and
+were therefore enforced on the live site and **not locally**, so `essay.csv` was
+refused in production and accepted in development. Every local test of file
+handling would have proved nothing about the live site.
+
+**The policy now lives in `uc_policy.py` and both read it.** The standalone
+server applies it only when `UC_PRODUCT_POLICY` is set, because it is also the
+vendored engine's own server and the upstream suite drives it with formats this
+product does not sell (`test_clean_markdown_container` posts a `.md` and expects
+it to work).
+
+```bash
+UC_PRODUCT_POLICY=1 python3 server.py --port 8765
+```
+
+**Run it any other way and local development is not testing the product.**
 
 **The scan endpoint is deliberately not called `inspect.py`.** That would shadow
 Python's built-in `inspect` module, which the engine's own code imports.
@@ -305,7 +349,15 @@ cents.**
 |---|---|---|
 | `/api/scan` | **Nothing** | ~40ms |
 | `/api/clean`, no layer B | **Nothing** | ~40ms |
-| `/api/clean` with layer B | **~0.06 cents per 1,000 words** typical. **Worst case is eight times that**, because retries default to 8 and are invisible in this figure | 6s for 500 words, 22s for 5,000 |
+| `/api/clean` with layer B | **0.06 cents per 1,000 words on easy prose, and 0.21 measured on number-dense prose.** The 0.06 figure stood alone here until 21 Aug 2026 and read like a typical case when it is a best case | 36s for 2,600 words, 104s for 7,800, 79s for 10,500 |
+
+**The timings in that row replace an earlier "22s for 5,000 words", which was
+measured before the fact guard's retry behaviour was understood.** Measured 21
+Aug 2026 on number-dense prose, engine only with no HTTP: 2,616 words 36s;
+5,232 words 69s; 7,848 words 104s; 10,464 words 79s. **Time does not track
+length — it tracks how many retries the fact guard demands, and the 7,848 word
+document took longer than the 10,464 word one.** Any promise about how long a
+document of size N takes would be false.
 
 **Layer A and metadata call no model at all.** Only layer B costs anything, which
 is why it is the paid tier.
@@ -341,14 +393,21 @@ is why it is the paid tier.
 | Limit | Detail |
 |---|---|
 | **Non-deterministic** | Same input twice gives different output. One live run returned 205 of 206 numbers where another returned 206. This is why `figures_to_check` exists |
-| **60 second ceiling** | A document beyond roughly 8,000 words would need more workers or a different approach. **Length is not the only way to reach it:** a number-dense 674 word document took 38.4 seconds, because retries follow figures rather than words. `06` row 66 |
+| **Three ceilings, not one** | 45s per model call; **180s** of retries (`UC_LAYER_B_DEADLINE`); **240s** before the site aborts its own engine call (`lib/engine/client.ts`); 300s before Vercel kills the function. **The site's abort is the one that binds**, and it was 120s until 21 Aug 2026 — which is why raising `maxDuration` from 60 to 300 bought nothing. Raising either alone does nothing |
+| **10,000 word ceiling** | `UC_MAX_WORDS`. Refused before any model call and surfaced on the free scan. 9,900 words measured at 109 seconds through the real route |
 | **5 MB upload cap** | In `_shared.py` |
+| **Four accepted types, and only four** | `.txt` `.docx` `.png` `.jpg` `.jpeg`, in `uc_policy.py`, checked by magic bytes as well as by name. Before 21 Aug 2026 nothing validated the extension anywhere and the real accepted set was this engine's own 24 |
+| **The fact guard asks for retries it should not** | It reads "thirty thousand" as 30 and "30,000" as 30000. 126 of 149 attempts on a 10,000 word document were the fact guard. Roughly 4x the cost and time a clean run needs. Nothing breaks; it is money. Needs a proper number parser |
 | **No fact check on names** | Only numbers are guarded. A dropped or altered name is not caught |
 | **Provider watermarking** | If our chosen host starts marking output we would not know |
 
 **Improvements worth making, in order:**
 
-0. **A time budget on retries, not only a count.** The retry ceiling is 8 per
+0. ~~**A time budget on retries, not only a count.**~~ **DONE, 21 Aug 2026:**
+   `UC_LAYER_B_DEADLINE`, default 180 seconds. The measurement that justified it:
+   a 10,464 word document spent 149 model calls, 95 seconds and 2.5 cents and
+   then returned nothing. The original note is kept below for the reasoning.
+   The retry ceiling is 8 per
    chunk and the function ceiling is 60 seconds. Nothing connects them, so a
    number-dense document can spend its whole budget retrying and time out with
    nothing to show. `06` row 66.

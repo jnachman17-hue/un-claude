@@ -341,3 +341,42 @@ what the run consumed: `chunks`, `attempts`, `retries`, `model_calls`,
 `bytes_out`, `still_has_c2pa` and `still_has_ai_metadata`, and no `stats` block at
 all. Branching on the wrong one prints "0 removed" at somebody who just had three
 provenance blocks stripped out of a picture.
+
+
+---
+
+## Added 21 August 2026
+
+### New fields on a layer B response
+
+| Field | Meaning |
+|---|---|
+| `paragraphs_in` / `paragraphs_out` | How many paragraphs went in and came back. Present on both the single-chunk and multi-chunk paths |
+| `structure_kept` | `true` when every chunk returned the same number of paragraphs it was given, so the original spacing was restored exactly. `false` when the model merged or split something and its own layout was kept rather than guessed at |
+
+The deterministic half of paragraph handling — the separators between
+paragraphs, blank-line runs, the document's leading and trailing whitespace, and
+the joins between chunks — is **exact**. The rewrite half is best effort like
+everything else in layer B, and `structure_kept` is how it says so.
+
+### New fields on a scan's `billing` block
+
+| Field | Meaning |
+|---|---|
+| `limit` | The word ceiling, or `null` for anything not priced by words |
+| `over_limit` | `true` when this input is longer than the rewrite accepts |
+
+These ride on the **free** scan so the interface can refuse before anyone
+commits to paying, which is the same rule as the price itself.
+
+### New error code
+
+| Code | When |
+|---|---|
+| `too_many_words` | A rewrite was asked for on text longer than `UC_MAX_WORDS` (10,000). Refused before any model call, so it costs nothing and returns in milliseconds |
+
+**A refusal must carry its `code`, not only a message.** The site maps codes to
+its own sentences and falls back to "Something went wrong" for anything it does
+not recognise. An over-length document was once refused correctly and refunded
+correctly while telling the person nothing useful, purely because the code was
+missing from the reply.
