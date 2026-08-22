@@ -245,7 +245,7 @@ Read out of the rendered HTML of the running application:
 
     /terms-of-service   The agreement behind Un-Claude: what each of the three
                         layers is promised to do, how credits and payment work,
-                        and your 14 day right to cancel.                (143)
+                        and our 30 day refund policy.                   (140)
 
     /privacy-policy     What Un-Claude does with your text and files. Nothing you
                         submit is kept, the optional rewrite is the only thing
@@ -257,6 +257,15 @@ Read out of the rendered HTML of the running application:
 
 **All three under 155 characters.** Each describes its own page, and the terms
 one keeps the layer split rather than flattening the three into one promise.
+
+**One near miss worth recording as a pattern.** The terms description first read
+"and your 14 day right to cancel", written in the morning. The section behind it
+was deleted that afternoon when the market was cut to the US, and **nothing
+caught it**: the typechecker cannot see inside a string, and the page itself read
+correctly. **A meta description is copy that no reader of the page ever sees, so
+it does not get re-read when the page changes.** It was found on a final grep for
+"14 day" across the file. Commit `d859d99`. **Anything asserting a policy from
+outside the page body needs its own check when the policy moves.**
 
 ---
 
