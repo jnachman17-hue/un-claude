@@ -44,10 +44,10 @@ of it. That is why E15 is on the critical path in its own right.
 | Session | Scope | Territory | Status |
 |---|---|---|---|
 | **W1** | Engine correctness **+ the word/credit counter** | `engine/**`, `api/*.py`, **`workbench/**`, `lib/engine/client.ts`** | **IN FLIGHT** — 2 commits landed, scope widened by Jon |
-| **W2** | Legal + checkout consent | legal pages, pricing, `buy-button.tsx`, checkout route | **IN FLIGHT** — 1 commit landed |
+| **W2** | Legal + checkout consent | legal pages, pricing, `buy-button.tsx`, checkout route | **IN FLIGHT** — the America-only reversal landed |
 | **W3** | ~~Word counter + disclosure~~ | — | **SCRAPPED 21 Aug by Jon.** Both items resolved elsewhere — see B6 and C4. |
 | **W4** | SEO | `root-metdata.ts`, 3 page metadata | **DONE — verified by conductor** |
-| **W5** | Docs merge | `docs/04`, `docs/07` | Not started |
+| **W5** | Docs merge | `docs/04`, `docs/07` | **DONE — verified by conductor** |
 
 **The workbench is no longer free.** W1's scope was widened to take the word and
 credit counter, and it currently holds `workbench.tsx`, `credits.ts`,
@@ -81,13 +81,13 @@ conductor verified.** Territory `apps/web/engine/**`, `apps/web/api/*.py`.
 
 | ID | Item | Status | Blocks | Note |
 |---|---|---|---|---|
-| B1 | **Formatting is destroyed** | **IN FLIGHT — W1, commit landed, unverified** | F1, money | The biggest one. Hits everyone who pastes more than a paragraph. Cause unknown — `uc_chunk` chunking, the rewrite round-trip, clean-path normalisation, or the copy button. **Find before fixing.** |
+| B1 | **Formatting is destroyed** | **FIXED — W1, pending final verification** | F1, money | The biggest one. Hits everyone who pastes more than a paragraph. Cause unknown — `uc_chunk` chunking, the rewrite round-trip, clean-path normalisation, or the copy button. **W1 found four causes, and the biggest was not on the brief's list of three** — a flattened display in `marked-text.tsx:73`, i.e. the paragraphs survived the engine and were lost on screen. The other three: the chunker's spacing, the rewrite round-trip, and a bad last re-roll. |
 | B2 | **No file type tested end to end** | **IN FLIGHT — W1, commit landed, unverified** | F1, money | Does a `.docx` still open in Word afterwards? A corrupted output is worse than an uncleaned one. **See the correction below — this is bigger than the brief says.** |
 | B2a | **No extension allowlist on the clean route — NEW, conductor's finding** | **OPEN** | B2 | `ACCEPTED_FILES = '.txt,.md,.docx,.png,.jpg,.jpeg'` is only the **file-picker hint**. The clean route validates the extension **nowhere**. The engine handles ~24 extensions, and the Stripe audit's own `.csv` undercharge proves other types get through. **So the brief's "seven input paths" is wrong.** `.pdf` is in the engine's `CONTAINER_EXTS` while `04` entry 26 says PDF is deliberately unsupported — nobody knows what a PDF upload does today. |
 | B3 | **The two size ceilings** | **OPEN** | F1, money, G2 | Localhost 10,000 words fails with **nothing timing it out** = engine defect. Production: **nothing above 2,000 words has ever run.** Measure, then recommend one of raise the cap / background work / honest limit. |
 | B4 | **Pricing arbitrage** | **OPEN → then Jon** | H4 | 10k pasted = 10 credits; the same text as `.txt` = 1. Verify it is real; the ruling is Jon's. A session must **not** quietly change the pricing rule. |
 | B5 | **Retry exhaustion at 1,000 words** | **OPEN** | — | `uc_chunk`'s retry loop sometimes gives up. Both known cases refunded correctly. Never investigated. |
-| B6 | **Word counter freezes on a stale number** | **IN FLIGHT — absorbed by W1** | — | Delete 10,000 words, box empty, still reads "10,524 words". **A price display that lies.** *Conductor's untested hypothesis:* `workbench.tsx:1465` reads `countWords(loaded.text \|\| text)`, so a non-empty `loaded.text` wins forever once set. Read, not run — verify it. |
+| B6 | **Word counter freezes on a stale number** | **FIXED — W1, pending final verification** | — | Delete 10,000 words, box empty, still reads "10,524 words". **A price display that lies.** **The hypothesis was half right.** W1 confirmed `workbench.tsx:1465` and found a **second site at :557** that the conductor's read missed. Both fixed. |
 
 **Do not edit `ENGINE_TEXT_EXTS` or the engine's `TEXT_EXTS` without running
 `verify-pricing-matches-engine.mjs`.** It guards a 100x undercharge. It passes today.
@@ -96,17 +96,26 @@ conductor verified.** Territory `apps/web/engine/**`, `apps/web/api/*.py`.
 
 # C. LEGAL AND POLICY
 
-| ID | Item | Status | Blocks | Note |
-|---|---|---|---|---|
-| C1 | **Terms & privacy reconciliation** | **IN FLIGHT — W2, first commit landed, awaiting Jon's approval of the wording** | E12, F1 | **Re-verified live today:** the terms still read *"The service is currently free to use and no payment method is collected"* and *"go on sale when card checkout opens."* **Both become false statements in a binding legal document on the first charge.** Three edits queued: that sentence, a payment-security line for Stripe's website checklist, and terms for the 2+3 free-credit promotion. Draft in `legal-research.md` §9A–9H. **Jon approves the text.** |
-| C2 | **Checkout consent ceremony** | **IN FLIGHT — W2, mostly landed** | F1 | A legal requirement, not a nicety. The 30-day refund does **not** satisfy the UK/EU statutory withdrawal right. Needs express consent + a pay button stating the amount ("Pay $9.99", never "Continue") + durable-medium confirmation (the Stripe receipt covers it). **Cheap now, expensive to retrofit.** |
-| C2a | **Durable-medium limb only partly closed — W2's own finding** | **OPEN** | W2 reports the Stripe receipt is durable **but does not repeat the consent**. The statutory right is only lost if all three limbs hold, so this one is not finished. Recorded rather than papered over — verify against a real receipt before calling C2 done. |
-| C3 | **Refund on the pricing page** | **IN FLIGHT — W2** | — | The live terms already promise it word for word. Refund ≈ $0.56, dispute ≈ $24.50. **Must never be labelled "your right to cancel"** — the voluntary policy and the statutory right are two different things. |
-| C4 | **Disclosure line at the tool's button** | **DECLINED by Jon, 21 Aug — do not re-propose** | — | Jon does not want it at the button. **Checked before recording, and the decline is safe:** the transparency duty is already discharged in the privacy policy, which says in its own words that nothing submitted is kept, that the optional rewrite is the only thing that leaves, that it goes to an AI company's model and comes straight back, and that this happens only when the rewrite is run. So section 2D's suggestion was a trust and conversion idea, **not a legal requirement**, and nothing is exposed by leaving it out. A future session proposing it again should be pointed here. |
-| C5 | **Essay-mill advertising constraint into `unclaude-messaging`** | **OPEN** | — | The offence does not cover this product, but **advertising such a service to students is a separate offence.** A hard constraint on marketing. Put it in the skill so it binds all future copy. |
-| C6 | Deferred legal decisions | **JON** | — | Name and address handled inside the Stripe chat. **No entity will be formed — settled.** Remaining: MoR, VAT for EU sales, ICO registration. |
+**Rewritten 22 Aug after decision 115 — Jon removed the market instead of
+satisfying the law.** Credits are sold to **US customers only**, the UK/EU
+consumer regime is parked, and the checkout ceremony is Stripe's own single
+checkbox. That closes four items and opens four new ones.
 
----
+| ID | Item | Status | Note |
+|---|---|---|---|
+| C1 | **Terms & privacy reconciliation** | **DONE — verified** | The two sentences that would have gone false are in the present tense. Verified in source: the terms now read "We sell credits to customers in the United States only." |
+| C2 | ~~Checkout consent ceremony~~ | **CLOSED — built, proven, then deleted the same day** | The full UK/EU waiver ceremony was built and working: consent dialog, unticked express-consent checkbox, a pay button stating the amount, a consent flag the checkout route refused to proceed without, and the consent written onto the Stripe payment as metadata. **Entry 115 deleted all of it** — with no EU market there is no right to waive. Jon: *"just make them acknowledge they have read the T&C."* Now Stripe's own `consent_collection` checkbox and nothing on our side. **The deleted work survives in commit `b965e88` and `legal-applied-stripe.md` — that is the starting point if Europe is ever opened, not a fresh session.** |
+| C2a | ~~Durable-medium limb~~ | **CLOSED with C2** | Moot: no statutory right in scope to lose. |
+| C3 | **Refund policy** | **DONE — ruled 115a** | **Kept**, because the 40-to-1 arithmetic is sound and it is now the *only* refund route a US customer has. **But no longer advertised** — Jon: *"only people that are really fed up would go looking."* Discoverable in three places, none of them a tile: small print under the packs, the last FAQ, and in full in the terms. **It did not leave the pricing page** — Stripe's website checklist expects a visible refund policy, so hidden is fine and absent is an account risk. |
+| C7 | **Governing law: California** | **DONE — closes D1** | Verified in source. Named because Jon operates there, not as a preference: a California court applies California law to a California trader whatever the contract says, so naming a friendlier state buys nothing and reads as evasive. **His legal name and address are deliberately not published**, on his instruction. |
+| C8 | **US-only is a term of sale that NOTHING ENFORCES — NEW** | **JON — dashboard job** | Jon instructed the Stripe Radar country blocklist **not** be populated this session, so **a non-US card completes normally today.** That is acceptable for a term of sale, and the code is honest about it — **no page, comment or receipt claims cards are refused**, and none may until the rule is switched on. The mechanism is the built-in `card_country_blocklist` value list, confirmed reachable on the account; the rule that reads it is **dashboard-only and cannot be done from a session.** |
+| C9 | **GDPR did not go away — NEW, and nobody should later assume it did** | **OPEN** | Restricting **sales** does not restrict **use**. The free tool stays open worldwide, European visitors will keep pasting text into it, and **UK/EU GDPR still applies to that processing.** The privacy policy, the controller question and the supervisory-authority question are **untouched by entry 115.** What went away is only the consumer-contract half. |
+| C10 | **Arbitration clause + class action waiver — NEW** | **JON — needs a lawyer** | With US-only sales this is now **the highest-value legal addition available**, and it was not attempted because it is drafting work. Related: the "as is, without warranties" disclaimer **got stronger by accident** — weak against a UK consumer, broadly enforceable against a US one — so research item 9E drops down the list. |
+| C11 | **US state sales tax — NEW, parked with a trigger** | **PARKED** | Not VAT and it does not vanish with the EU. Economic-nexus thresholds are roughly **$100,000 or 200 transactions in a single state**, so it bites at nothing like current volume. Revisit at those numbers. |
+| C12 | **`legal-research.md` was written against the wrong country** | **DONE — flagged in place** | It drafted the trader as a **UK** sole trader throughout while the Stripe account is a **US** individual. Its UK conclusions must not be reused. W5 put a warning header on the file naming the superseded sections (1, 2, 3f, 5, 9A/9B). Verified. |
+| C5 | **Essay-mill advertising constraint into `unclaude-messaging`** | **OPEN** | Advertising such a service to students is a **separate offence** from the essay-mill offence itself. A hard constraint on marketing. Still not in the skill. |
+| C4 | **Disclosure line at the tool's button** | **DECLINED by Jon, 21 Aug — do not re-propose** | The privacy policy already discloses that the rewrite leaves for an AI model, so section 2D's line was a trust idea and **not a legal requirement**. Declining it exposes nothing. |
+| C6 | Deferred legal decisions | **MOSTLY CLOSED by 115** | EU VAT, the EU trader address and the model cancellation form are all gone with the market. **No entity will be formed — settled.** MoR and ICO registration fall away with EU sales; C11 replaces them. |
 
 # D. SEO
 
@@ -140,7 +149,7 @@ remain closed as non-defects.
 | E14 | **The "one port per session" rule is wrong — NEW, from W4** | **OPEN, belongs in the runbook** | Next.js 16 enforces **one dev server per build directory** via `.next/dev/lock`, scoped to the project folder and **not to the port**. Sessions share one working tree, so only the first session to start a dev server can have one, whatever port the others ask for. `HANDOFF-2026-08-21-launch.md` Part 0 rule 7 says to use a distinct port per session; that does not work and will waste a session's time. W4 worked around it by curling a peer's server on 3000 — valid, same tree, read-only. |
 | E1 | **Sentry not wired** | **JON approves dep** | Account created, never connected. **If the site breaks at 3am nobody finds out until Jon looks.** |
 | E2 | **No database backups** | **JON** | Accepted risk. Pro ($25/mo) and PITR ($100/mo) declined. **The ledger is the one unrecoverable failure in this system.** `backup-credit-ledger.mjs` works and is **not scheduled.** |
-| E3 | **25 session notes await merging** | **OPEN** | `CURRENT-HANDOFF.md` is now **fresh** (Stripe session rewrote it). Decision log at entry 114. Zero collision risk. |
+| E3 | **Session notes merged** | **DONE — verified** | **W5 merged 19 notes into decision-log entries 115–127 and deleted them**, holding back the five that live sessions are still reading (`limits`, `payments-tested`, `stripe-setup`, `legal-research`, `legal-reconciliation`) with a pointer line added at the top of each. Verified: 4,700 lines removed, 667 added, and the `legal-research.md` header correctly names the sections entry 115 superseded. **The conductor removes those five once W1 and W2 finish.** |
 | E4 | ~~Uncommitted working tree~~ | **DONE — 21 Aug** | Was the highest operational risk on the board. Five commits: the Stripe path, the icon fix, the density cuts, the records, the vendored skills. **Six session notes had never been committed at all**, including the entire legal research and the go-live procedure. Tree is clean. **Local is 76 commits ahead of origin — nothing is pushed.** Secret-scanned before committing: no keys, only placeholders and a public Turnstile site key. |
 | E13 | **Forged `uc-guest` cookie can move 2 credits — open by choice** | **OPEN** | A forged cookie can name another user's anonymous account and take up to 2 credits. Needs a UUID that is never published. Recorded in `docs/06` with a revisit trigger. Deliberately not fixed. |
 | E5 | `proxy.ts` excludes `/api/*` | **OPEN** | API routes skip middleware, so there is no natural home for a site-wide rule. Architectural, not urgent. |
@@ -263,3 +272,15 @@ revenue, and it is the longest unstarted item on the board.**
   was a trust idea and not a legal requirement, and declining it exposes
   nothing. Recorded as do-not-re-propose because a declined suggestion with no
   reasoning attached is exactly what a future session re-raises.
+- **22 Aug, after W5 and the America-only ruling.** Verified W5 rather than
+  filing it: 19 notes merged into entries 115–127 and deleted, the five that
+  live sessions still read held back with pointer headers, and the stale
+  `legal-research.md` correctly flagged down to the section number. Section C
+  rewritten around **decision 115** — Jon closed the UK/EU consumer question by
+  **removing the market**, so the whole consent ceremony was built, proven and
+  then deleted the same day. Four items closed, four opened: **nothing enforces
+  the US-only term** (C8, a dashboard job), **GDPR still applies to the free
+  tool worldwide** because restricting sales does not restrict use (C9),
+  arbitration is now the highest-value US addition (C10), and US state sales tax
+  replaces EU VAT with a nexus trigger (C11). Also corrected the conductor's own
+  word-counter hypothesis: half right, and W1 found a second site it missed.
