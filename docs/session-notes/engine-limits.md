@@ -1174,3 +1174,248 @@ A step skipped is a step that failed, so here they are, plainly:
    records. Not in this session's brief and the file is heavily cross-referenced.
 9. **No real Word/camera/AI-produced file was used**, and `exiftool`/`c2patool`
    are not installed, so metadata detection ran degraded throughout.
+
+---
+
+# ROUND TWO — the questions Jon asked back, answered by running them
+
+**Same session, 21 August 2026, after Jon read the note above.** He asked four
+things: is the formatting actually fixed, take the 10,000 word limit and the
+240 second abort and stress test them, tell people how long a long run takes,
+and fix the frozen word counter. All four are done and every claim below has a
+run behind it.
+
+## 1. "If I paste it in a certain format and copy it out, does it come out right?"
+
+**Yes — and it always did. It was the screen that was wrong, not the text.**
+
+Measured live in the browser, by intercepting the Copy button and reading exactly
+what it put on the clipboard:
+
+```
+input_paragraph_breaks              : 7
+COPY_BUTTON_paragraph_breaks        : 7
+COPY_BUTTON_first_120               : "The Printing Press’s Lasting Influence\n\nOpening\n\nWhen Johannes
+                                       Gutenberg put together his machine in Mainz about 1440, h"
+SCREEN_shows_line_breaks            : false      <-- the defect
+```
+
+The Copy button handed over the real thing with all seven paragraph breaks. The
+box on screen showed it as one block of text. So somebody who pressed **Copy the
+clean text** got correct formatting and somebody who looked at the box, or
+highlighted it with the mouse, saw and got a wall.
+
+**Now fixed.** `marked-text.tsx` renders with `whitespace-pre-wrap`. Verified in
+the running app after the change:
+
+```
+computed whiteSpace  : "pre-wrap"     (was "normal")
+lineBreaksOnScreen   : 18             (was 0)
+```
+
+## 2. The frozen word counter — reproduced, then fixed, then re-run
+
+**The previous session's hypothesis was right, and it is no longer a hypothesis.**
+Run in the browser against the live page, before the fix:
+
+```
+1_after_pasting_10500_words              : "10,500 words=11"
+2_after_scanning                         : "10,500 words=11"
+3_after_DELETING_everything_box_is_empty : "10,500 words=11"     <-- box is EMPTY
+4_after_typing_6_new_words               : "10,500 words=11"
+textarea_value_now                       : "just thirty new words here now"
+```
+
+**Cause**, confirmed: `clearResults()` runs on every keystroke after a scan and
+resets the findings, the result, the message and the phase — **but never
+`loaded`**. Only `startOver()` does. So `countWords(loaded.text || text)` kept
+preferring a snapshot that was dead.
+
+**Fixed** with one honest derived value, `wordsNow`, replacing three inline
+copies. Re-run after the fix, on a freshly loaded page:
+
+```
+A_300_words     : "300 words=1"                                    [textarea words=300]
+B_2500_words    : "2,500 words=3 · takes up to about 40 seconds"    [textarea words=2500]
+C_10000_words   : "10,000 words=10 · takes up to about 3 minutes"   [textarea words=10000]
+D_10500_words   : "10,500 words. The rewrite takes 10,000 at a time — split it and run it in parts."
+E_BOX_EMPTIED   : (no line shown)                                   [textarea words=0]
+F_7_NEW_WORDS   : "8 words=1"                                       [textarea words=8]
+```
+
+Two more defects with the same cause went with it: the placeholder never came
+back after an emptied box (`loaded.text === ''` was in its condition), and the
+price row survived an empty box.
+
+## 3. "How long will this take" — said before the button and while it runs
+
+Jon's instruction: a long run must say it is long, or a working tool reads as a
+hung one. The old sentence said *"this takes a few seconds"* whatever was pasted,
+and a 7,848 word document takes about 104 seconds. Somebody told "a few seconds"
+and then made to wait nearly two minutes concludes the site has crashed — during
+the one operation they were charged for.
+
+**It is a CEILING, never an estimate**, and the wording says "takes up to".
+Time here tracks retries rather than length — the 7,848 word document took longer
+than the 10,464 word one — so a number presented as an estimate would be wrong
+about half the time. 15 seconds per 1,000 words comes from the worst measured run.
+
+Below 1,000 words nothing is shown, because there the run is quick enough that
+saying so is noise.
+
+## 4. Both ceilings raised, together, and stress tested
+
+**`limits.md` raised Vercel's cap from 60 to 300 and that bought nothing**, because
+the site aborted its own engine call at 120 seconds first. Raising either alone
+does nothing. Both moved:
+
+| Ceiling | Was | Now |
+|---|---|---|
+| One model call | 45s | 45s |
+| Retries, whole document (`UC_LAYER_B_DEADLINE`) | 100s | **180s** |
+| **The site's own abort** (`lib/engine/client.ts`) | **120s** | **240s** |
+| Vercel's function cap | 300s | 300s |
+
+Worst case is now 180 seconds of retries plus one 45-second call already in
+flight = 225, inside the site's abort with 15 seconds spare and inside Vercel's
+cap with 75.
+
+### The stress test: real route, real session, real ledger, dev bypass OFF
+
+```
+throwaway account 8ab7716b funded +80
+real session: true (dev bypass NOT used)
+
+OVER the 10,000 limit       10464 words -> HTTP 400 engine_error     charged=-     1.3s  paragraphs 192->-
+just UNDER the limit         9900 words -> HTTP 200 ok               charged=10  109.3s  paragraphs 182->182
+the slowest measured size    7848 words -> HTTP 200 ok               charged=8    82.5s  paragraphs 144->146
+
+LEDGER:
+    +80  purchase           |   +2 anon_grant   |   +3 signup_grant
+    -11  spend   words_in=10464        +11  operation_refund
+    -10  spend   words_in=9900
+     -8  spend   words_in=7848
+
+account deleted; ledger rows remaining: 0 (must be 0)
+```
+
+**Read the 9,900 word row: 109.3 seconds.** Under the old 120-second abort that
+was a coin flip — one unlucky retry and the customer would have been told the
+service was unreachable after nearly two minutes. **182 paragraphs in, 182 out**,
+through the whole real stack.
+
+The over-limit document was refused in **1.3 seconds**, charged 11 and refunded
+11, net zero. Nothing was spent with the model.
+
+### The defect the stress test found
+
+Look at the first row: `code=engine_error`, and the user was told **"Something
+went wrong. Nothing was charged."** — not the sentence about splitting the
+document. The refusal was correct and the refund was correct and the message was
+useless.
+
+**Cause:** the site maps the engine's `code` to its own sentence and falls back to
+a generic one for any code it does not know. The local gate was returning a
+message with no code. Fixed, and re-run:
+
+```
+OVER the word limit                  HTTP 400  code=too_many_words   charged=-
+   what the user reads: "That is longer than 10,000 words, which is the most the
+                         rewrite can do in one go. Split it and run it in parts."
+a .csv (the 100x undercharge name)   HTTP 400  code=bad_format       charged=-
+   what the user reads: "That file type is not supported. Use text, a Word document, PNG or JPG."
+a .md (offered by the old picker)    HTTP 400  code=bad_format       charged=-
+   what the user reads: "That file type is not supported. Use text, a Word document, PNG or JPG."
+
+ledger: +40 purchase | +2 anon_grant | +3 signup_grant
+        -11 spend | +11 refund | -1 spend | +1 refund | -1 spend | +1 refund
+account deleted; rows remaining: 0
+```
+
+**Every refusal refunds to net zero.**
+
+## 5. THE BIG ONE THIS ROUND: local development was not testing the live site
+
+**Found while stress testing, and it invalidates a whole class of testing.**
+
+There are two ways into this engine and they are **different implementations**:
+
+- **Production**: browser → `/api/tool/clean` → `/api/clean`, the Vercel Python
+  function in `apps/web/api`, which reads `_shared.py`.
+- **Local development**: browser → `/api/tool/clean` → the standalone
+  `server.py` on port 8765, because `.env.local` sets `UC_ENGINE_URL` to it.
+
+The four-type allowlist and the word cap were added to `_shared.py` only. So they
+were enforced on the live site and **not locally**. Proven by asking the local
+engine directly:
+
+```
+before:  essay.csv -> ACCEPTED       (production refuses it)
+```
+
+**Every local test of file handling would have proved nothing about production.**
+That is the worst kind of gap: testing that reassures without checking.
+
+**Fixed.** The policy moved to `apps/web/engine/uc_policy.py` and both entry
+points read it. After:
+
+```
+  essay.csv    -> REFUSED: that file type is not supported; use text, a Word document, ...
+  essay.md     -> REFUSED
+  essay.pdf    -> REFUSED
+  notes.html   -> REFUSED
+  paste.txt    -> ACCEPTED
+  10,001 words -> REFUSED: that is longer than 10,000 words, which is the most the rewrite can do
+```
+
+**Opt-in for the standalone server** via `UC_PRODUCT_POLICY`, because `server.py`
+is also the vendored engine's own server and its test suite drives it over real
+HTTP with formats this product does not sell — `test_clean_markdown_container`
+posts a `.md` and expects it to work. The local development engine sets the flag;
+the test suite does not. The Vercel functions always enforce.
+
+**To run the local engine so it behaves like the live site:**
+
+```
+UC_PRODUCT_POLICY=1 python3 server.py --port 8765
+```
+
+**Without that variable, local development silently accepts 24 file types and
+unlimited words.** Anyone testing file handling locally must set it.
+
+## 6. Also done
+
+- **`.md` removed from the file picker** (`encode.ts`). It was offered and the
+  engine refuses it; offering a type that gets refused is worse than not offering
+  it.
+- **`too_many_words` added to `client.ts`'s message map**, which was handoff item
+  2 from part 4 above. Now closed.
+
+## Regression after all of it
+
+```
+495 passed, 1 skipped        (engine suite)
+3/3 PASS                     (verify-pricing-matches-engine.mjs)
+typecheck exit: 0            (tsc --noEmit)
+```
+
+## Part 5, restated plainly because the first write-up was not plain enough
+
+**The failures are fixed. The waste is bounded but not gone.**
+
+- **Fixed:** runs no longer fail through retry exhaustion. The cause was a chunk's
+  last roll coming back short and killing the whole document even when a good
+  rewrite was already in hand. Every size from 2,500 to 10,464 words now completes.
+- **Not fixed, and it is money rather than breakage:** the fact guard still asks
+  for retries it should not. It reads "thirty thousand" as the number 30 and
+  "30,000" as the number 30000, so a model doing exactly what it was told looks
+  like it dropped a figure. 126 of 149 attempts on a 10,000 word document were the
+  fact guard. That is roughly four times the cost and time a clean run needs.
+- **Why it was not fixed:** the obvious repair was built and measured against the
+  current one on twenty realistic pairs. It fixes one false alarm and creates
+  another ("two thousand five hundred" against "2,500"). `_numbers` has been got
+  wrong twice already in opposite directions. Shipping a change that measures as a
+  wash would be worse than leaving it.
+- **What it needs:** a proper number parser handling additive and multiplicative
+  compounds, with that table of pairs as its test. Its own small task. Nothing
+  breaks while it waits; it costs about four times what it should.
