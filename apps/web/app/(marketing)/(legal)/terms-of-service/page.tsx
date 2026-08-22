@@ -40,7 +40,7 @@ export async function generateMetadata() {
      * `lib/root-metdata.ts`, which belongs to the SEO session.
      */
     description:
-      'The agreement behind Un-Claude: what each of the three layers is promised to do, how credits and payment work, and your 14 day right to cancel.',
+      'The agreement behind Un-Claude: what each of the three layers is promised to do, how credits and payment work, and our 30 day refund policy.',
   };
 }
 
