@@ -357,12 +357,44 @@ work is needed and **no paid Radar tier is needed**. And a blocked card **never
 reaches the card network**, so it costs nothing and leaves no failed charge.
 
 **LIVE MODE IS NOT DONE.** The session was blocked from writing to live Stripe by
-a permission rule and did not work around it. **One command, from `apps/web`:**
+a permission rule and did not work around it. **One command, from the repo root:**
 
-    node scripts/block-eu-cards.mjs live
+    node apps/web/scripts/block-eu-cards.mjs live
 
-It prints the list before and after. It is idempotent, so running it twice is
-harmless. **Until it is run, a real EU card completes normally.**
+It prints the list before and after and names anything missing. **Until it is
+run, a real EU card completes normally.**
+
+**TWO DEFECTS THIS SCRIPT SHIPPED WITH, BOTH FOUND BY JON RUNNING IT AND NEITHER
+BY ANY CHECK IN THIS SESSION.** Recorded because the second one was an assertion
+this note made and was wrong about.
+
+**One, the path.** It was handed over as `node scripts/block-eu-cards.mjs live`,
+a path relative to `apps/web`, to someone standing at the repo root. It also read
+`.env.local` relative to the working directory, so it only worked from one
+place. **It now resolves the env files against its own location and runs from
+anywhere.**
+
+**Two, and this is the one that matters: it was described as idempotent and it
+was not.** Stripe stores country codes on the value list **lowercased**, whatever
+case you send. The script held them uppercase and compared raw, so
+`existing.has('AT')` was false against a stored `at`, and **every re-run tried to
+add all 31 again and died on the first** with "This item already exists in this
+case-insensitive list". Fixed by normalising case on both sides, plus a catch on
+the duplicate error so a partial run can never abort.
+
+**Proven idempotent now**, run twice back to back from two different directories:
+
+    before: 31 AT BE BG CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU
+               LV MT NL NO PL PT RO SE SI SK
+    added:  0
+    already present: 31
+    All 31 present. Done.
+
+**The lesson, since it is the second time today.** The meta description said "14
+day right to cancel" after the right was deleted, and this script said idempotent
+when it was not. **Both were claims about something no test exercised.** A script
+that is only ever run once has its second run untested by definition, and "run it
+again, it is harmless" is exactly the sentence that needs a second run behind it.
 
 ### 6.3 Vercel log retention. RULED, no change wanted
 
