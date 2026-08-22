@@ -41,7 +41,7 @@ minutes earlier — see E16.
 | 2. Production webhook + its own signing secret | **DONE** |
 | 3. EU card block | **SKIPPED** — needs paid Radar, see C8 |
 | 4. Deploy | **DONE** |
-| 5. **Prove the live path with a real purchase** | **NOT DONE — the next thing** |
+| 5. **Prove the live path with a real purchase** | **DONE — verified on the live ledger** |
 
 **Also live and verified:** the US-only terms, the old "currently free" sentence
 **gone (zero occurrences)**, the homepage canonical, the title template
@@ -53,7 +53,8 @@ minutes earlier — see E16.
 
 | # | Item | Whose | Note |
 |---|---|---|---|
-| 1 | **Step 5: buy the Starter pack, $4.99, real card** | **Jon** | The only thing that proves the live path. Five checks below. |
+| 1 | ~~Buy the Starter pack~~ | **DONE 22 Aug** | Real card, real money. **Verified by the conductor on the live database, not reported:** exactly **one** purchase row on the entire ledger (`id 486, +10`), carrying `pi_3U74cIHwIcwEXjEP0HaPlfow` and a `stripe_event_id`, and **all four ledger invariants PASS** across 61 rows and 5 conversions. |
+| 1a | **Refund yourself — the last untested money path** | **Jon, and it costs nothing** | The purchase is proven. **The refund is not, in live mode.** It was tested thoroughly in test mode including repeated partials and a lost dispute — but test mode has been wrong four times today. Refund your own $4.99 in the Stripe dashboard and confirm the 10 credits come back off. You get the money back either way, and it is the second most likely thing to happen to a real customer. |
 | 2 | **Search Console** | **Jon** | Unblocked by the deploy. W4's five-step walkthrough. |
 | 3 | **Measure on production** | Jon/session | W1's one open item. Every timing so far is local — no HTTP, no base64, no cold start. **Production will be slower.** |
 | 4 | **Push to GitHub** | **Jon** | **109 commits exist only on this laptop while the site is live.** |
@@ -183,7 +184,7 @@ remain closed as non-defects.
 | E14 | **The "one port per session" rule is wrong — NEW, from W4** | **OPEN, belongs in the runbook** | Next.js 16 enforces **one dev server per build directory** via `.next/dev/lock`, scoped to the project folder and **not to the port**. Sessions share one working tree, so only the first session to start a dev server can have one, whatever port the others ask for. `HANDOFF-2026-08-21-launch.md` Part 0 rule 7 says to use a distinct port per session; that does not work and will waste a session's time. W4 worked around it by curling a peer's server on 3000 — valid, same tree, read-only. |
 | E1 | **Sentry not wired** | **JON approves dep** | Account created, never connected. **If the site breaks at 3am nobody finds out until Jon looks.** |
 | E2 | **Ledger backups — Vercel Pro does NOT provide these** | **JON — decision needed** | **Correcting a wrong premise before it becomes a plan: nothing bought on 22 Aug backs up the database.** The ledger lives in **Supabase**; Vercel never sees it. The "7 days" is **Supabase Pro, $25/mo** — daily backups, 7-day retention — which Jon declined earlier. **What Pro *did* unlock is the mechanism, not the backup: Cron Jobs.** |
-| E2a | **The risk is smaller than this checklist has been claiming — conductor's finding** | **INFORMS E2** | Verified in migration `20260821150000`: every purchase row carries **`stripe_payment_intent_id`**, under a unique index. So if the ledger were lost tomorrow, **every purchase is reconstructible from Stripe.** What is genuinely unrecoverable is free grants and how much each person has already spent. That is a real loss but it is **not** the total-loss-of-the-money-record this board has been calling it. |
+| E2a | **Purchases are reconstructible from Stripe — now confirmed on real data** | **CONFIRMED 22 Aug** | Verified in migration `20260821150000`: every purchase row carries **`stripe_payment_intent_id`**, under a unique index. So if the ledger were lost tomorrow, **every purchase is reconstructible from Stripe.** What is genuinely unrecoverable is free grants and how much each person has already spent. That is a real loss but it is **not** the total-loss-of-the-money-record this board has been calling it. |
 | E2b | **The cheap path, and its honest caveat** | **OPEN — needs Jon's dependency approval** | `backup-credit-ledger.mjs` works but writes to the **local disk**, so it cannot simply be pointed at a Vercel Cron — a function's filesystem vanishes when it exits. It needs rewriting as a route that writes to **Vercel Blob**, which is a dependency (`@vercel/blob`) and therefore Jon's call under CLAUDE.md §5. **The caveat that must not be lost: restoring a CSV into an append-only ledger guarded by a trigger is an untested path, and a backup nobody has restored from is a hope rather than a backup.** Whatever is built, restore it once on a throwaway account before calling it done. |
 | E3 | **Session notes merged** | **DONE — verified** | **W5 merged 19 notes into decision-log entries 115–127 and deleted them**, holding back the five that live sessions are still reading (`limits`, `payments-tested`, `stripe-setup`, `legal-research`, `legal-reconciliation`) with a pointer line added at the top of each. Verified: 4,700 lines removed, 667 added, and the `legal-research.md` header correctly names the sections entry 115 superseded. **The conductor removes those five once W1 and W2 finish.** |
 | E4 | ~~Uncommitted working tree~~ | **DONE — 21 Aug** | Was the highest operational risk on the board. Five commits: the Stripe path, the icon fix, the density cuts, the records, the vendored skills. **Six session notes had never been committed at all**, including the entire legal research and the go-live procedure. Tree is clean. **Local is 76 commits ahead of origin — nothing is pushed.** Secret-scanned before committing: no keys, only placeholders and a public Turnstile site key. |
@@ -353,3 +354,10 @@ revenue, and it is the longest unstarted item on the board.**
   the deploy, and fixed before a single real card was used. Recorded as E16, and
   E17 records the `.env.local` overwrite prompt that nearly took the local test
   keys with it.
+- **22 Aug — first real purchase, verified.** $4.99, 10 credits. Checked against
+  the live database rather than taken on report: **exactly one purchase row on
+  the whole ledger**, so the webhook idempotency that was proven three times in
+  test mode held on its first real delivery. The row carries both a live
+  `stripe_payment_intent_id` and a `stripe_event_id`, which **confirms E2a on
+  real data** — a lost ledger could rebuild its purchases from Stripe. All four
+  invariants pass. **The refund path is still unproven in live mode (1a).**
