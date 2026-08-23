@@ -112,7 +112,7 @@ const VENDORS: Vendor[] = [
     color: '#141413',
     initial: 'A',
     files: 'yes',
-    text: 'committed',
+    text: 'yes',
     logo: { src: '/images/vendors/claude.svg' },
   },
   {
@@ -269,17 +269,27 @@ export function CoverageSection() {
                     'hover:bg-foreground/[0.014] grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-4 py-3 transition-colors sm:px-5'
                   }
                 >
-                  <div className={'flex min-w-0 items-start gap-3'}>
+                  <div className={'flex min-w-0 items-center gap-3'}>
                     {/* A neutral tile behind every vendor, so a full colour mark
                         and a black one carry the same weight down the column.
                         xAI has no artwork here on purpose: the file supplied is
                         clipped, and a cut off brand mark looks worse than a clean
-                        initial. */}
+                        initial.
+
+                        CENTERED ON THE TEXT BLOCK, not top-aligned. At phone
+                        width "by {company}" wraps under a longer product name
+                        (Meta AI, Stable Diffusion), which grows the row. With
+                        `items-start` the tile stayed pinned to the first line
+                        while the Files/Text dots on the same row are centered
+                        on the whole row height, so the tile drifted up to 28px
+                        above the dots it should sit level with. `items-center`
+                        keeps the tile centered on its own text block, which
+                        matches the row's own vertical center. */}
                     <span
                       aria-hidden
                       style={vendor.logo ? undefined : { backgroundColor: vendor.color }}
                       className={
-                        'bg-foreground/[0.045] mt-[1px] grid size-[28px] shrink-0 place-items-center overflow-hidden rounded-[8px]'
+                        'bg-foreground/[0.045] grid size-[28px] shrink-0 place-items-center overflow-hidden rounded-[8px]'
                       }
                     >
                       {vendor.logo ? (

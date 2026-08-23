@@ -103,6 +103,7 @@ export const metadata = {
   title: 'Pricing',
   description:
     'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size. Credits never expire.',
+  alternates: { canonical: '/pricing' },
 };
 
 /**

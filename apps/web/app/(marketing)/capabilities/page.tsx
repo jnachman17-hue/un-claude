@@ -18,7 +18,7 @@ import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { PageHeader } from '../_components/prose';
 
 export const metadata = {
-  title: 'What we can do',
+  title: 'What we do',
   description:
     'Give Un-Claude pasted text, a Word document or an image, and see exactly what happens: which marks come off, what comes back, and what we stand behind.',
   alternates: { canonical: '/capabilities' },
@@ -168,7 +168,7 @@ function Capabilities() {
   return (
     <div className={'flex flex-col'}>
       <PageHeader
-        title={'What we can do, exactly.'}
+        title={'What we do, exactly.'}
         standfirst={
           'Give us pasted text, a Word document or an image, and this page says precisely what happens: which marks come off, what comes back, and what we will put our name to.'
         }
@@ -326,8 +326,7 @@ function Capabilities() {
               </div>
 
               <p className={'text-muted-foreground/60 mt-4 text-[11px] leading-relaxed'}>
-                PDFs are not accepted yet. The reason is under the lines we
-                hold, below.
+                More file types are coming soon.
               </p>
             </div>
           </div>

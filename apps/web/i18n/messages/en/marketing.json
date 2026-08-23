@@ -36,6 +36,7 @@
   "footerDescription": "AI tools mark what they make, invisibly and without telling you. Un-Claude finds those marks and sanitises them.",
   "copyright": "© Copyright {year} {product}. All Rights Reserved.",
   "howItWorks": "How it works",
-  "capabilities": "What we can do",
-  "mission": "Our Mission"
+  "capabilities": "What we do",
+  "mission": "Our Mission",
+  "wallet": "Your credits"
 }

@@ -70,7 +70,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'What about Word documents and PDFs?',
-    a: 'Upload a Word document and we clean its hidden characters and metadata. For the statistical rewrite, paste the text itself into the box, and paste it back into your document when it is done. PDFs are not accepted yet.',
+    a: 'Upload a Word document and we clean its hidden characters and metadata. For the statistical rewrite, paste the text itself into the box, and paste it back into your document when it is done. More file types are coming soon.',
   },
   {
     q: 'What if the scan finds nothing?',

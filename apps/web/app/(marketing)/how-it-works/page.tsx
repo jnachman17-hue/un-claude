@@ -356,7 +356,7 @@ function HowItWorks() {
       <CtaBand
         heading={'See what your own text is carrying.'}
         sub={'The scan is free, takes seconds, and needs no account.'}
-        secondary={{ href: '/capabilities', label: 'What we can do' }}
+        secondary={{ href: '/capabilities', label: 'What we do' }}
       />
     </div>
   );

@@ -1231,7 +1231,17 @@ export function Workbench() {
                 'Paste your text here, or drop a file anywhere in this box.'
               }
               className={
-                'text-foreground placeholder:text-muted-foreground/60 max-h-[280px] min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[14.5px] leading-[1.75] tracking-[-0.005em] outline-none'
+                /*
+                 * 16PX ON PHONES, ONLY ON PHONES. iOS Safari auto-zooms the
+                 * page on focus of any input/textarea whose computed
+                 * font-size is under 16px, and does not zoom back out on
+                 * blur. Measured on this box at 375px width before this fix:
+                 * 14.5px, and the page stayed zoomed after tapping out.
+                 * `text-[16px]` holds the size at the default breakpoint
+                 * (mobile-first in Tailwind) and `sm:text-[14.5px]` restores
+                 * the original desktop size untouched.
+                 */
+                'text-foreground placeholder:text-muted-foreground/60 max-h-[280px] min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[16px] leading-[1.75] tracking-[-0.005em] outline-none sm:text-[14.5px]'
               }
             />
           ) : phase === 'locked' ? (
