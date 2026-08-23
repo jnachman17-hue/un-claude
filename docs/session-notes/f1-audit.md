@@ -1149,42 +1149,74 @@ attached. It is the best-written thing in the product.
 ---
 # WHAT THIS AUDIT COULD NOT COVER, AND WHY
 
-A step that was skipped is a step that failed. These are the gaps, stated plainly.
+A step that was skipped is a step that failed. These are the gaps, stated plainly, and
+this section was rewritten near the end because the second round closed several of them.
 
-### Live Stripe could not be read at all
-The Stripe key on this laptop is a **test-mode** key. The live key exists only inside
-Vercel, and the command to read it was **blocked by this machine's permission
-system**. I did not work around it.
+### Live Stripe — I could not read it; a gap-filling agent could
 
-**What that means concretely.** Nothing below could be checked: which webhook events
-are actually configured on the live Stripe endpoint; whether the live charge and
-refund records match the ledger; whether a second partial refund on one payment
-behaves; anything about disputes. Everything about Stripe in this note is either
-observed **through un-claude.com itself** (which does use the live key) or read from
-the ledger's own copies of the Stripe identifiers.
+**Corrected.** For most of this run I recorded live Stripe as unreachable: the key on
+this laptop is `sk_test_`, the live key exists only inside Vercel, and the command to
+read it was blocked by this machine's permission system. **That was true of me and not
+of the whole audit.** A gap-filling agent reached the live account and came back with
+things nobody else had: the webhook endpoint's **six subscribed events**
+(`charge.dispute.closed`, `charge.dispute.created`, `charge.refunded`,
+`checkout.session.async_payment_failed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.completed`), the absence of `refund.updated` among them, and **a live
+Stripe balance of −$0.44 carrying an unread warning that Stripe may debit the bank
+account.**
 
-**This is the exact trap that produced the Radar failure on 22 August** — a feature
-that works in test mode because Stripe gives paid features away there, and is absent
-in live. Any Stripe conclusion drawn from this laptop is worthless. If Jon wants the
-live reconciliation done, it needs either the live key made readable or a check run
-by him from the Stripe dashboard.
+**What is still not done:** a full ledger-to-Stripe reconciliation in both directions.
+Every money check in this audit ran outwards from the ledger, so **a payment Stripe took
+that never reached the ledger would be invisible to all of it.** That is the one failure
+mode where a customer pays and the site has no record. It needs a Stripe-side export
+compared against the ledger, and it is a ten-minute job for whoever has the dashboard.
 
-### Nobody used a screen reader
-Finding 12 is read from the live page's own markup and computed styles. It is
-accurate as far as it goes and it is not an accessibility pass. Colour contrast,
-focus order, announcement of the "Rewriting" state and everything that needs a real
-assistive technology were **not** tested.
+### No screen reader was run
+
+The accessibility work is markup, live CSS values, and Chrome's computed accessibility
+tree over CDP — which is more than reading source, and less than listening. **Nobody put
+VoiceOver on it.** That is why the strongest accessibility finding is recorded as
+unresolved rather than high, and why G1 should still be treated as open.
+
+### No real AI-generated document was ever put through the tool
+
+**A critic caught this and it is the sharpest gap in the list.** Every input across the
+whole audit — mine and every agent's — was written by us. **The product's central
+promise is that it removes what real AI tools leave behind, and that was never once
+demonstrated end to end.** The metadata layer was proven against a C2PA block I
+constructed by hand, which proves the mechanism and not the real case. Somebody should
+put an actual Claude-generated document and an actual AI-generated image through the
+live site and read the result.
+
+### Nobody saw a confirmation email
+
+Every one of the ~20 throwaway accounts was confirmed through the admin API. The public
+signup endpoint is captcha-gated and I have no inbox. **The one compulsory gate between
+a visitor and a paying account is completely unobserved.** Five minutes with a personal
+address would close it.
+
+### Nobody opened the site in Safari or on a real iPhone
+
+Every rendered observation in this note came from Chrome. The target customer is a
+student on a phone, and the two most interface-sensitive findings — the JavaScript-only
+render and the Cloudflare dead end — both behave differently in Safari.
 
 ### The card form was never opened
+
 By instruction, and correctly. The payment path was verified up to the point where
 Stripe's page begins and no further. That leg was already proven with real money on
 22 August and checked against the live ledger.
 
-### The browser pane could not be given to the agents
-The in-app browser is one shared window for the whole session, so fourteen agents
-could not each drive it. Everything visual in this note was done by the conductor by
-hand, plus phone-width rendering through the repo's own Chrome harness. The agents
-worked from the served HTML, the JavaScript bundles and the live API.
+### The refund customer was never walked as a human
+
+The refund arithmetic was tested hard — hard enough to find the confiscation bug (0a).
+But nobody went through it as a person: ask for a refund, wait, watch what arrives.
+That path depends on a mailbox nobody has tested and a support address that is a Gmail
+account.
+
+### The append-only trigger is still unproven
+
+What was demonstrated is a privilege refusal, not the trigger. See the ledger section.
 
 ### The divider defect could not be reproduced by the conductor
 One agent found the tool's internal `---` divider line scattered through finished
