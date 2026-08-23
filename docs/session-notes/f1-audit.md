@@ -1753,9 +1753,12 @@ in the product should look like — and it is the model for fixing findings 4 an
 ---
 # WHAT TO DO, IN ORDER
 
-Ranked by what protects a paying customer soonest, not by how hard it is. Re-ranked
-after the completeness critics sent a second round of agents at the surfaces nobody had
-opened — which is where four of the top five came from.
+Ranked by what protects a paying customer soonest, not by how hard it is. **Re-ranked
+late**, because three of the top four did not exist when the list was first written:
+they came out of the completeness critics naming surfaces nobody had opened, and a
+second round of agents going at them. The fourth came from the operations dimension.
+**The thing that found the worst money defect in this report was asking "what did
+nobody look at?"**
 
 ### Do these before anything else. They are all settings or single conditions.
 
