@@ -2623,3 +2623,31 @@ refund rather than return it. That is a string check, and it also removes the di
 from finished documents.
 
 ---
+# THE 500 ERRORS NOBODY SAW — reported, and I could not check it (HIGH, unconfirmed by me)
+
+The operations agent reports pulling Vercel's error log and finding **twelve `500`
+responses on `POST /home/settings` in twenty-four hours**, plus one `501` on
+`GET /api/scan`, with a sample message of `Invalid...`. Its point is not the errors
+themselves but that **nobody knew** — there is no Sentry and no alerting, so E1 has
+already cost something rather than being a hypothetical.
+
+**I could not verify this.** Vercel's runtime-errors API returned `403 Forbidden` to me
+and the project-protection endpoint returned `404`, so the credentials this session has
+do not reach that data. The agent had access I did not.
+
+**What I can say instead, and it makes the same point without needing the log.** During
+this audit I personally watched the live site return `500`-class outcomes I would never
+have known about if I had not been looking: the engine failing on 7,500, 8,500 and
+9,900-word documents, an eighteen-word noun list failing outright, and a run coming back
+as a chatbot refusal. **Not one of those produced any signal anywhere.** They were only
+visible because somebody was sitting there watching the responses.
+
+**So E1 is not a hypothetical any more, whatever the exact count.** The question is not
+whether errors happen — they demonstrably do — it is that the only monitoring on this
+site is Jon opening it himself.
+
+**Worth Jon checking directly**, because it is two clicks in the Vercel dashboard and it
+would settle both the count and whether `POST /home/settings` — the account-management
+page — is genuinely erroring for real customers.
+
+---
