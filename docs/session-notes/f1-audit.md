@@ -146,6 +146,10 @@ live site with the output pasted in.
 | N | **HIGH** | The site promises a three-word ceiling; its own receipt printed 6 | conductor |
 | — | **HIGH** | Three of the four "enforced rather than promised" FAQ claims fail against the product's own receipt | conductor |
 | — | **HIGH** | The prompt leak is not fixed — 3 runs in 7 return the model discussing its own rules, and this is also the `---` divider | conductor + 3 skeptics |
+| — | MEDIUM | A failed attempt costs 6–21 cents of model spend, costs the customer nothing, and the error says "Please try again" | conductor, measured |
+| — | MEDIUM | Five of the six standard browser security headers are absent, including on the sign-in page | conductor |
+| — | MEDIUM | The confirmation email is mandatory, never observed, and its link points at a raw Supabase domain rather than un-claude.com | conductor |
+| — | MEDIUM | Three different auth failures all say "please ensure you have a working internet connection" | conductor, in a browser |
 | — | **HIGH** | The refund tool says money is owed on a payment already refunded in full | conductor + skeptic |
 | 5 | MEDIUM | The rewrite returns documents 6–14% longer and calls it "Length 114% kept" | conductor, 8 runs |
 | 6 | MEDIUM | On repetitive text the rewrite silently deleted 22–29% of the document | conductor, twice |
