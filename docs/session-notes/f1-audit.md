@@ -122,7 +122,7 @@ live site with the output pasted in.
 |---|---|---|---|
 | 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
 | 0a | **CRITICAL** | Refunding one purchase confiscates the credits of a different purchase the customer paid for | gap agent, then conductor |
-| 0b | **HIGH** | Any free account can upload files of any type and size to a public bucket, served from your Supabase | conductor, as a customer |
+| 0b | **HIGH** | Any free account can upload any file to a public bucket — and deleting the account does not delete it, against the privacy policy | gap agent + conductor |
 | 0c | **HIGH** | Free credits can be minted repeatedly from one email — deleting the account destroys the record that prevents it | conductor, 3 rounds |
 | 0d | MEDIUM | A new customer's wallet says "0 credits" and offers to sell them some; the grants are minted only when they visit the tool | conductor |
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
@@ -331,7 +331,34 @@ size cap, so an account can upload as much as it likes and Jon pays. The worse o
 that **anything uploaded is served publicly from Jon's project URL** — so the site can
 be used to host whatever somebody wants hosted, and free accounts take a minute to make.
 
-**The audit's own file was deleted immediately and the bucket is back to zero objects.**
+**And deleting your account does not delete what you uploaded.** This is the half that
+touches the privacy policy, and it was reproduced end to end:
+
+```
+customer uploads a file        -> HTTP 200
+public URL responds            -> HTTP 200
+the account is DELETED         -> HTTP 200   (the same call the settings button makes)
+   accounts row afterwards     -> []          gone
+   auth user afterwards        -> 404         gone
+
+the uploaded file AFTER the account is deleted:
+   HTTP 200 | content-type: text/plain
+   "F1 AUDIT — pretend this is a photograph of the customer. DELETE ME."
+   *** STILL PUBLIC. The account is gone and the file is not. ***
+```
+
+**Read that as the customer.** They uploaded a photograph of their face as a profile
+picture. Later they deleted their account specifically to have their data removed. Their
+email, their name and their whole credit history really are gone — **and the photograph
+of their face is still sitting at a permanent public web address that anyone with the
+link can open.**
+
+**The privacy policy promises otherwise**, and the deletion cascade this audit verified
+elsewhere is genuinely thorough — it takes the account row, the auth user and every
+ledger row. **It simply does not know about storage.**
+
+**The audit's own files were deleted immediately and the bucket is back to zero
+objects.**
 
 **Fix sketch, and it is settings rather than code.** Set a MIME allowlist of image types
 and a size limit on the bucket — or, since nothing in the product shows a profile
