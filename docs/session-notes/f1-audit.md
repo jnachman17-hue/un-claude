@@ -84,8 +84,9 @@ content-credential block had it found, named, removed, and confirmed absent in t
 returned bytes. A Word document came back uncorrupted with every word intact and its
 author name gone, and the panel told the truth about what it did and did not do. The
 money boundary holds — no browser can change the price. Six simultaneous jobs against
-one balance never overspent. The ledger passes every integrity check. And a credit
-sells for between 67 and 135 times what it costs to run.
+one balance never overspent. The ledger passes every integrity check. **And the pricing
+is comfortable: even the cheapest pack against the most expensive work returns
+twenty-seven times what the job costs to run.**
 
 ---
 
