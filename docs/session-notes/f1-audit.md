@@ -150,6 +150,10 @@ live site with the output pasted in.
 | — | MEDIUM | Five of the six standard browser security headers are absent, including on the sign-in page | conductor |
 | — | MEDIUM | The confirmation email is mandatory, never observed, and its link points at a raw Supabase domain rather than un-claude.com | conductor |
 | — | MEDIUM | Three different auth failures all say "please ensure you have a working internet connection" | conductor, in a browser |
+| — | MEDIUM | The scanner's AI-marker list fires on the three ordinary words "in the world" | conductor |
+| — | MEDIUM | The wallet renders every ledger row with no pagination — 82 rows is already 210 KB | conductor |
+| — | — | **A correction to the board**: another session committed that analytics never loads. It does — checked in a real browser. | conductor |
+| — | — | **Never tested by anyone**: no input in the whole audit was written by an AI. I closed half of it; the image half is open. | critic + conductor |
 | — | **HIGH** | The refund tool says money is owed on a payment already refunded in full | conductor + skeptic |
 | 5 | MEDIUM | The rewrite returns documents 6–14% longer and calls it "Length 114% kept" | conductor, 8 runs |
 | 6 | MEDIUM | On repetitive text the rewrite silently deleted 22–29% of the document | conductor, twice |
