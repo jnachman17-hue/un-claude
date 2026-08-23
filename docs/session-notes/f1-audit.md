@@ -120,7 +120,7 @@ live site with the output pasted in.
 | 11 | MEDIUM | Sixteen news logos under "The story, as covered by:" with no link to anything | conductor + agent |
 | D | MEDIUM | The served page is a menu and a footer; 483 KB of script draws the rest | conductor |
 | G | MEDIUM | Every page's link preview shows the homepage | conductor, 9 pages |
-| H | MEDIUM | Header credit count and workbench chip disagree on screen | conductor, screenshot |
+| H | KNOWN (6d) | Header credit count and workbench chip disagree on screen — already on the board, now photographed | conductor, screenshot |
 | L | MEDIUM | The only support channel is a `mailto:` that does nothing without a mail app | conductor |
 | O | MEDIUM | "Nine classes checked" — the lookalike-letter class finds nothing | conductor |
 | — | MEDIUM | A dropped connection charges the customer and does not refund | conductor, watched 8 min |
@@ -131,7 +131,7 @@ live site with the output pasted in.
 | — | UNRESOLVED | After a scan the result is wrapped in a button — the computed tree does not support the strongest reading; needs VoiceOver | agent, partly refuted by conductor |
 | — | MEDIUM | Little announces working, finished or failed — the status line carries no role | conductor |
 | 12 | LOW | The file input is in the tab order with no name; the paste box has only a placeholder | conductor |
-| 13 | LOW | The header credit chip wraps onto two lines | conductor, both widths |
+| 13 | KNOWN (6e) | The header credit chip wraps onto two lines — already on the board, now photographed | conductor, both widths |
 | I | LOW | A Word document is told "the picture itself is untouched" | conductor |
 | Q | LOW | The privacy policy describes a cost record the database never writes | agent + conductor |
 | — | LOW | "100% of detectable marks removed" — 15 found, 12 removed, 3 kept on purpose | conductor |
@@ -478,9 +478,24 @@ The engine counted 53 figures going in and 47 surviving. `figuresToCheck` — th
 field whose entire job is to tell the customer which numbers to go and verify — came
 back **empty**. The tool noticed and said nothing.
 
-**Worth knowing:** the engine's count of "figures" and a plain count of the numbers
-in the text disagree, so the 53/47 pair cannot be taken at face value either. What is
-certain is the independently checked one: a year disappeared, and nothing said so.
+**And the 53/47 pair turns out to be worthless as evidence, which a skeptic established
+while trying to refute a different finding.** It ran a document containing **no digits
+at all** through the live site and the receipt came back reporting `figuresIn: 21,
+figuresKept: 18` — three figures lost from a document that has no figures.
+
+```
+receipt {"wordsIn":1000,"wordsOut":1037,"figuresIn":21,"figuresKept":18,"figuresToCheck":[]}
+digits in the input document: 0
+```
+
+**So the counter is not counting figures**, and neither its alarms nor its all-clears
+mean what the panel says they mean. That resolves the discrepancy I hit — my own run
+reported 53 in and 47 kept on a document containing ten occurrences of one number.
+
+**What survives, and it is the part that matters:** a year really did disappear from the
+customer's document, independently counted, and nothing on the receipt or the screen
+said so. **The mechanism meant to catch exactly that is reporting numbers it cannot
+justify.**
 
 ---
 
@@ -619,7 +634,7 @@ audit did not have.
 
 ---
 
-### 13. The credit chip in the top bar breaks onto two lines
+### 13. The credit chip in the top bar breaks onto two lines (KNOWN — 6e, confirmed not new)
 
 Confirmed live at both desktop and phone width, signed in: the pill reads "35" on one
 line and "credits" underneath. This is `LAUNCH-CHECKLIST` 6e, still open, now with
@@ -1037,7 +1052,10 @@ onto every page, which is precisely what standing rule D14 warns about for canon
 paid tool. Its preview says nothing about pricing.
 
 ---
-### H. Two different credit counts on the same screen, photographed (MEDIUM)
+### H. Two different credit counts on the same screen, photographed (KNOWN — 6d, confirmed not new)
+*(The skeptics killed the agent's version of this as a restatement of a board item that
+is already open, and they were right. It is kept here only because nobody had a picture
+of it before, and a picture is worth having when the fix is scheduled.)*
 
 `LAUNCH-CHECKLIST` 6d says the header credit count freezes at page load and does not
 move when you spend. Reproduced live, and both wrong numbers are visible at once in a
