@@ -36,6 +36,14 @@ Everything after that is the working detail behind those seven, one subject per 
 
 ## THE SHORT VERSION
 
+**Start here: the product is being given away free at four addresses, on your money.**
+Every deploy leaves a permanent public URL. Twenty exist. Four of them run the paid
+rewrite for anyone — no account, no credits, no charge — and bill the AI Gateway. There
+is no rate limit because there is no account, and no spend cap because there is no
+credit check. **This is the one item in this report with no ceiling on what it can
+cost.** Vercel's Deployment Protection closes all four and every future one; it is a
+settings switch, not code.
+
 **One thing is badly wrong and it is the thing the product is sold on.** The rewrite
 invents quotations. Give it a direct quote from a named person and it hands back
 different words, still inside quotation marks, still attributed to that person. Three
@@ -106,6 +114,7 @@ live site with the output pasted in.
 
 | # | severity | finding | verified by |
 |---|---|---|---|
+| 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
 | 1b | **HIGH** | The tool inserts em dashes, curly apostrophes and markdown asterisks the customer never typed | conductor, 8 of 8 and 3 of 3 |
 | 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
@@ -159,6 +168,73 @@ the live database, and the output pasted below is the real output.
 ---
 
 ## CRITICAL
+
+### 0. Old copies of the site are still on the internet and give the paid product away free
+
+**What this is.** Every deploy leaves its own permanent public address. Twenty of them
+exist for this project. **Four of those twenty run the paid rewrite for anybody, with no
+account, no sign-in, no credits, and no charge** — on Jon's AI Gateway key.
+
+**Tested with no cookie and no account of any kind:**
+
+```
+*** FREE REWRITE, NO ACCOUNT ***   https://un-claude-1h60qtg8l-....vercel.app
+401 no_session                     https://un-claude-1xm7lx76f-....vercel.app
+*** FREE REWRITE, NO ACCOUNT ***   https://un-claude-4yocntf4w-....vercel.app
+401 no_session                     https://un-claude-6z6ij2eee-....vercel.app
+   ... (twelve more correctly refusing) ...
+*** FREE REWRITE, NO ACCOUNT ***   https://un-claude-c70s83ies-....vercel.app
+*** FREE REWRITE, NO ACCOUNT ***   https://un-claude-jwa231z8d-....vercel.app
+401 no_session                     https://un-claude.com          <- the real site is fine
+```
+
+**One of them, in full:**
+
+```
+HTTP 200
+ok            : true
+credits block : (none — nobody was charged)
+model used    : mistral/mistral-medium | gateway: https://ai-gateway.vercel.sh
+cost to Jon   : $0.0001556
+
+INPUT : The scope of urban transport policy has grown markedly across the last two...
+OUTPUT: Over the past twenty years, the reach of policies governing urban transportation
+        has expanded significantly. Because of this, the committee determined that...
+
+gateway balance before: $9.754154
+gateway balance after : $9.721069
+>> a stranger just spent $0.0331 of Jon's money, for free
+```
+
+**Why this is the worst thing in this report.** Every other finding costs a customer
+some friction or costs Jon a few cents. **This one has no ceiling.** There is no
+account, so there is no per-account rate limit; no credit check, so there is no spend
+cap; and the address works forever. Anyone who finds one — and deployment URLs turn up
+in build logs, in browser history, in link previews, and can simply be tried — has an
+unmetered tap into the paid model on Jon's card.
+
+**A rough sense of scale.** A 6,000-word rewrite costs about 5.6 cents. The gateway
+balance is about $10. **A script doing nothing clever would drain it in under an hour**,
+and what happens after that depends on how the account is topped up.
+
+**These are old builds** — the live site and sixteen of the twenty correctly return
+`401 no_session`, so the sign-in requirement was added at some point and these four
+predate it. **They were never turned off, because nothing turns them off.**
+
+**Fix sketch, and it is a settings change rather than code.** Vercel has Deployment
+Protection, which puts every preview and retired deployment behind authentication while
+leaving the real domain public. Turning it on closes all four at once and every future
+one automatically. **I did not change it** — configuration is out of this audit's
+territory — but it is one switch and it should be the first thing done after reading
+this.
+
+**Credit where it is due, and a lesson.** The operations agent found this. I very nearly
+dismissed it: I tested three retired URLs, all three refused, and I was about to record
+it as not reproducing. **It only appears in four of twenty.** A sample of three was not
+a test, it was a coin toss — which is the same mistake in the opposite direction from
+the ones this audit exists to catch.
+
+---
 
 ### 1. A 9,900-word document fails, and 9,900 is inside the limit the site advertises
 
