@@ -1032,6 +1032,22 @@ returns a real 404 status. `GET /api/tool/scan` returns 405.
 ### The one claim the homepage sources, it sources correctly
 `anthropic.com/news/claude-text-watermark` → HTTP 200.
 
+### An impatient student cannot be charged twice
+
+A completeness critic asked whether anyone had clicked anything twice in a browser.
+Nobody had. Tested at phone width, signed in, tapping Sanitise twice:
+
+```
+150 ms after the first tap the button is:
+   [{"text":"Rewriting","disabled":true,"pointerEvents":"none"}]
+second tap: blocked — the element is not clickable
+requests actually sent to /api/tool/clean: 1
+```
+
+**One request, one charge.** An agent found that two identical requests 120 ms apart are
+both charged **at the API**, which is true — but the interface disables the button
+before a second tap can land, so a real customer cannot reach it.
+
 ### And these, each with its evidence in its own section further down
 
 - **Layer A detection: 15 planted invisible characters, 15 found.** The scanner works.
