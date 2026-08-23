@@ -2315,3 +2315,46 @@ metadata layer that looked dead on production and works perfectly, and a credit 
 that looked like an overspend and was my own concurrent tests.
 
 ---
+# THREE SMALL ONES, CONFIRMED BY HAND (LOW)
+
+### The sign-in failure page wears the homepage's title
+
+```
+/auth/callback/error     200   title: Un-Claude · AI Watermark Remover
+/auth/verify             200   title: Sign In · Un-Claude
+/update-password         200   title: Update Password · Un-Claude
+/auth/password-reset     200   title: Reset Password · Un-Claude
+```
+
+Three of the four name themselves. The one that does not is the page a customer lands
+on when their sign-in link fails — so with several tabs open they cannot find it, and
+Google sees two pages claiming to be "Un-Claude · AI Watermark Remover".
+
+### The sign-up page promises three credits and gives five
+
+**The live page, verbatim:** *"Create an account — **3 free credits** — Email Address —
+Password — Sign up with Email"*.
+
+A brand-new account actually receives five: two welcome credits and three signup
+credits. That is decision B12 and it is confirmed intended, so **the account is right
+and the page is wrong.** Under-promising is the harmless direction, but it is another
+number about money that does not match what the customer was told.
+
+### The sign-up page says the terms twice, and its Google button says "Sign in"
+
+Same page, same read, in order:
+
+```
+Create an account
+3 free credits
+Email Address / Password / Sign up with Email
+By creating an account you agree to our Terms of Service and Privacy Policy.
+Sign in with Google
+By creating an account you agree to our Terms of Service and Privacy Policy.
+```
+
+The consent line appears twice and the Google button offers to sign you in on a page
+headed "Create an account". It reads as two half-finished forms stacked up — and this
+is the page standing between a visitor and the five free credits.
+
+---
