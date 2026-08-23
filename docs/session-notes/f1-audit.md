@@ -1069,73 +1069,90 @@ in the product should look like — and it is the model for fixing findings 4 an
 ---
 # WHAT TO DO, IN ORDER
 
-Ranked by what protects a paying customer soonest, not by how hard it is.
+Ranked by what protects a paying customer soonest, not by how hard it is. Revised
+after the engine and accessibility results landed.
 
-**1. Stop the rewrite touching anything inside quotation marks.** A fabricated quote
+**1. Strip the tool's own fingerprints out of the output.** A post-pass that maps em
+dashes back to the punctuation the customer used, restores straight apostrophes, and
+removes markdown the input never had. **This is the cheapest item on the list and
+close to the most valuable**, because right now the product adds the exact mark its
+audience uses to spot machine writing — 95 of them in a 10,000-word essay. It needs no
+model, changes no meaning, and can ship on its own.
+
+**2. Stop the rewrite touching anything inside quotation marks.** A fabricated quote
 attributed to a real person is the only defect here that can damage a student's
-academic record, and they cannot see it. Everything else on this list is money or
-friction; this one is their degree. Protected spans, passed through untouched.
+academic record, and they cannot see it. Everything else is money or friction; this
+one is their degree.
 
-**2. Make the advertised size limit a size that finishes.** Today the page sells
-10,000 words and 9,900 fails after three and a half minutes. 6,000 words completed —
-in 196 seconds, against a 240-second cut-off, with four retries. That is not a
-margin. Either drop the limit to something that reliably completes, or take long
-documents as a job the customer comes back to rather than one they sit and wait for.
-**Do this before any marketing spend**, because the Pro pack is sold as "a
-dissertation, with room to spare".
+**3. Make the advertised size a size that finishes.** 6,000 words completes in 196
+seconds against a 240-second cut-off. 7,500, 8,500 and 9,900 all fail. Either drop the
+limit to what reliably completes, or take long documents as a job the customer returns
+to. **Do this before any marketing spend** — the Pro pack is sold as "a dissertation,
+with room to spare".
 
-**3. Do not charge for a rewrite that did not run — and stop the screen saying it
+**4. Do not charge for a rewrite that did not run — and stop the screen saying it
 did.** Under 16 words the customer pays a credit, gets their own text back byte for
-byte, and reads "Rewritten · Measured, not estimated". The engine already writes a
-clear, correct explanation that nothing displays. Show it, and refund the credit.
+byte, and reads "Rewritten · Measured, not estimated". The engine already writes the
+correct explanation; nothing displays it.
 
-**4. Close the open redirect.** `/auth/callback` should only ever send a browser to a
-path on this site. One condition, and it removes a ready-made phishing link that
-starts with your own domain.
+**5. Close the open redirect.** `/auth/callback` should only send a browser to a path
+on this site. One condition, and it removes a phishing link wearing your own domain.
 
-**5. Move the file-size check into the browser, at about 3.2 MB of actual file.**
-Right now Vercel rejects the upload before any of your code runs, so the polite
-message you already wrote can never be shown. Phone photos routinely exceed this and
-the pricing page says "any size".
+**6. Move the file-size check into the browser, at about 3.2 MB of actual file.**
+Vercel rejects the upload before your code runs, so the polite message you already
+wrote can never be shown. Phone photos routinely exceed this and the page says "any
+size".
 
-**6. Fix the six claims that are checkable and wrong.** These cost nothing but copy
-and they are the ones that will be checked first:
+**7. Fix the claims that are checkable and wrong.** Copy only, and they are the ones a
+careful reader will check first:
+   - "Will it change my meaning, my facts, or my numbers? **No, and this is enforced
+     rather than promised**" — three of its four enforcement promises fail against the
+     product's own receipt.
    - "Upload a file and you get all three" — no accepted file type gets all three.
    - "a hard three-word ceiling" — your own receipt printed 6.
+   - "100% of detectable marks removed" — 15 found, 12 removed, 3 deliberately kept.
    - "Nine classes ... checked" — the lookalike-letter class finds nothing.
    - "About four college essays" — your own calculator makes it three.
    - "in seconds" — your own price line says three minutes.
-   - "94 to 100% of the original length kept" — live receipts came back 102% to 114%.
 
-**7. Put a link behind the news logos, or take them down.** Nine national mastheads
-scroll across the homepage under 13-pixel grey type. Either every logo links to the
-piece it refers to, or the section goes. On a site now taking money from Americans,
-implied endorsement is a category regulators recognise, and this is the one thing on
-the list that could arrive as a letter rather than a refund request.
+**8. Put a link behind the news logos, or take them down.** Nine national mastheads
+scroll across the homepage under 13-pixel grey type with nothing behind them. This is
+the one item that could arrive as a letter rather than a refund request.
 
-**8. Tell the visitor when Cloudflare is the problem.** They currently reach a dead
-end that blames their internet and invites them to retry forever.
+**9. Give the tool a voice for screen readers.** Three things: stop wrapping the result
+in a single button so it can be read; put `role="status"` on the line that says
+"Rewriting" / "Sanitised" / the errors; name the paste box and the file input. A blind
+student can currently pay and not hear the result.
 
-**9. Rewrite the account-deletion warning.** It talks about teams and subscriptions
+**10. Tell the visitor when Cloudflare is the problem**, instead of a dead end that
+blames their internet and invites them to retry forever.
+
+**11. Rewrite the account-deletion warning.** It talks about teams and subscriptions
 that do not exist and never mentions the credits they paid for and are about to lose.
 
-**10. Give every page its own share tags.** Nine pages, one line each. The canonical
-work already did exactly this and the Open Graph tags were missed.
+**12. Add MX records and a real support address.** One DNS change closes three things:
+`support@un-claude.com` becoming possible, a home for the DMARC reports, and the trust
+gap when a customer sees `UN-CLAUDE.COM` on a statement and is asked to email a Gmail
+account. A dispute costs ~$24.50; a refund ~$0.56.
 
-**11. The two numbers about money that are wrong on screen.** The header credit count
-freezes at page load while the chip beside it updates, and the credit history prints
-dates in UTC so anyone in the Americas sees tomorrow. Both are the same family as the
-word counter that lied.
+**13. Give every page its own share tags.** Nine pages, one line each. The canonical
+work already did exactly this and Open Graph was missed.
 
-**12. Give the paste box and the file input a name.** Two attributes. Right now the
-product's two primary controls are unnamed to a screen reader, and one of them is in
-the tab order.
+**14. The three numbers about money that are wrong on screen.** The header credit count
+freezes at page load while the chip beside it updates; the credit history prints dates
+in UTC so the Americas see tomorrow; and the receipt can report "Length 4000% of the
+original kept" under a heading reading "Measured, not estimated".
 
-**13. Schedule the ledger backup while it is still 84 rows and 30 accounts.** Only
-one row on the whole ledger could be rebuilt from Stripe. This is the cheapest this
-decision will ever be.
+**15. Record what a run costs.** The `cost_usd` column exists, the engine returns the
+figure on every response, the privacy policy already tells customers it is stored, and
+nothing writes it. It is the difference between knowing the margin and rebuilding it by
+hand, as this note had to.
+
+**16. Schedule the ledger backup while it is still 84 rows and 30 accounts.** Only one
+row on the whole ledger could be rebuilt from Stripe.
 
 ---
+
 # THE SIZE CEILING, SETTLED — the board's longest-open question
 
 `LAUNCH-CHECKLIST` B3 set an "honest limit at 10,000 words" and B11 recorded that
@@ -1646,5 +1663,162 @@ No screen reader was run. No zoom or reflow testing at 320px or 400%. No keyboar
 order was walked in a real browser. No axe-core, no Lighthouse. **This is a first look
 that found real things, not an accessibility pass**, and G1 should still be treated as
 open.
+
+---
+# THE REFUND TOOL TELLS JON TO REFUND MONEY THAT IS ALREADY REFUNDED (HIGH)
+
+`CURRENT-HANDOFF.md` tells Jon to run `stripe-refund-check.mjs` **before refunding
+anyone**, and the webhook route points at it too. It is the one thing standing between
+him and a mistake with real money.
+
+**Run tonight against the only real purchase the site has ever taken — the $4.99 pack
+that was bought and then fully refunded on 22 August:**
+
+```
+ACCOUNT          3c559e2e-0b73-4bd8-8c7c-5daebd0248ce
+PAYMENT          pi_3U74cIHwIcwEXjEP0HaPlfow
+PURCHASED        10 credits for $4.99
+                 2026-08-22  (1 days ago)
+
+BALANCE NOW      1 credits
+SPENT (lifetime) 2 credits
+ALREADY REFUNDED 10 credits
+
+>> REFUNDABLE    1 of 10 credits
+>> THAT IS       $0.50 of $4.99
+...
+Refund in the Stripe dashboard.
+```
+
+**It prints "ALREADY REFUNDED 10 credits" and then, four lines later, tells him to
+refund another 50 cents.**
+
+**Two separate errors, both confirmed:** the already-refunded figure is calculated and
+displayed but never subtracted from the refundable one; and the balance it works from
+includes free grant credits, so the 1 credit it is offering to refund is a **signup
+gift the customer never paid for**.
+
+**Fifty cents today.** But this is a decision aid on the path where money leaves, it
+will be run before every refund from now on, and it is wrong in the direction of
+paying out too much. It was found by the money agent, re-run by the reproduction
+skeptic against the live database, and re-run again here.
+
+**One thing the skeptic caught that is mine, not the product's.** The briefing I wrote
+for the fourteen agents repeated the broken command from that script's own header —
+`cd apps/web && node scripts/read-ledger.mjs`, which crashes because the script reads
+its environment relative to itself. It must be run from `apps/web/scripts/`. Several
+agents lost time to it before working it out.
+
+---
+# PERFORMANCE, MEASURED ON THE LIVE SITE (dimension 11)
+
+The performance agent never returned — it died with the run's second usage limit. This
+section is the conductor's own measurement.
+
+### Delivering the page is genuinely fast, and that deserves saying
+
+**Three runs per page, the middle one reported:**
+
+| page | TTFB | total | HTML size | Vercel cache | compression |
+|---|---|---|---|---|---|
+| `/` | 228 ms | 237 ms | 25.0 KB | HIT | brotli |
+| `/pricing` | 146 ms | 150 ms | 30.3 KB | HIT | brotli |
+| `/how-it-works` | 241 ms | 249 ms | 33.1 KB | HIT | brotli |
+| `/capabilities` | 183 ms | 188 ms | 26.8 KB | HIT | brotli |
+| `/mission` | 201 ms | 213 ms | 20.5 KB | HIT | brotli |
+| `/contact` | 172 ms | 182 ms | 18.1 KB | HIT | brotli |
+| `/terms-of-service` | 197 ms | 203 ms | 25.8 KB | HIT | brotli |
+| `/privacy-policy` | 144 ms | 161 ms | 28.0 KB | HIT | brotli |
+| `/cookie-policy` | 145 ms | 158 ms | 20.8 KB | HIT | brotli |
+
+**Every page a cache hit, every page brotli-compressed, every page under 250 ms.**
+Nothing to fix here.
+
+### What arrives after the page is the problem
+
+```
+HTML                        25 KB
+CSS                          (2 files)
+JavaScript   28 files      483 KB
+images       18 files       ~33 KB   (all SVG except one 6.8 KB PNG — nothing to fix)
+PostHog      array.js        81 KB
+Cloudflare Turnstile        (loaded on top)
+                          -------
+a first visit             ~620 KB, of which ~564 KB is script
+```
+
+**And none of the page's content exists until that script has run** (section D). So the
+fast HTML buys nothing: the visitor gets a menu and a footer in 230 ms and then waits
+on half a megabyte of JavaScript for the headline and the tool.
+
+**One line item worth a decision.** PostHog is **81 KB — about one sixth of all the
+script on the page** — and `LAUNCH-CHECKLIST` G3 records that nothing is instrumented:
+no funnel, and nothing measuring the different-device gap (H1) that the board calls the
+most likely real-world failure left. **The site is paying the weight and not getting
+the answers.** Either instrument it or drop it; carrying it unused is the worst of both.
+
+### What could not be measured
+
+No Core Web Vitals. LCP, CLS and INP need a real browser with field or lab
+instrumentation, and I had one shared browser and no Lighthouse. **I did not estimate
+them and will not present a guess as a measurement.** What can be said from the numbers
+above is that LCP is bounded below by the script parse, because the largest element on
+the page does not exist until then.
+
+The engine's cold start was also not isolated: production is warm most of the time now,
+and I could not establish a genuinely cold function with confidence.
+
+---
+# OPERATIONS — the deploy gap, and two corrections to the board (dimension 14)
+
+The operations agent never returned; this is the conductor's own work.
+
+### Correction 1: almost everything the board lists as "awaiting deploy" is live
+
+`LAUNCH-CHECKLIST` records P1 as "FIXED — AWAITING DEPLOY" and item 6a says "a second
+deploy is pending ... W7's seven fixes are committed and verified locally but **are not
+on the live site**". **Tested one at a time against production:**
+
+| item | what it is | live? | how I know |
+|---|---|---|---|
+| **P1** | the prompt-leak fix — rules moved into a system role | **DEPLOYED** | a 29-word paste, rewrite ran, response reports `message_roles: system+user` |
+| **P2** | the 16-word floor below which the rewrite is skipped | **DEPLOYED** | `{"skipped":"input_too_short","min_words":16}` |
+| **B7a** | `.txt` behaves like a paste — priced by the word and rewritten | **DEPLOYED** | a 4,800-word `.txt` with the rewrite on: `charged 5`, `layer_b_used: true` |
+| **B7** | a Word document says "NOT REWRITTEN" instead of "Rewriting" | **DEPLOYED** | the live panel, quoted earlier in this note |
+| **W7** | nav label changed to "What we do" | **DEPLOYED** | live homepage: "What we do" ×4, "Capabilities" ×0 |
+| **D6** | canonical on every page | **DEPLOYED** | 9 of 9 checked |
+
+**One caution I hit myself and it is worth passing on.** My first attempt at this table
+got two of them wrong — I tested P1 with a 16-word input, which is below the floor so
+the rewrite never ran and the field I was looking for was absent; and I tested the
+`.txt` pricing with the rewrite switched off, which is the case that has always cost 1
+credit. Both looked like "NOT DEPLOYED" and both were my own test error. **A negative
+result from a badly-built probe is the same shape as the phantom findings this audit
+exists to prevent.**
+
+**What genuinely is still broken on the live site** — these are open defects, not
+undeployed fixes: the header credit count freezing (6d), the credit chip wrapping (6e),
+the rewrite altering quotations (6f), and the stale FAQ answer (6c).
+
+### Correction 2: the "nothing is pushed" risk is closed
+
+The board's tracked risk #5 says *"Nothing is pushed (E4). 76 commits exist only on this
+machine"*, and item 4 says *"109 commits exist only on this laptop while the site is
+live."*
+
+```
+commits on this laptop:      250
+commits not on GitHub:       5      (and 5 of those are this audit's own, from tonight)
+newest on GitHub:            069de01 "Two launch briefs, to be run from their own chats"
+```
+
+**Everything that existed before this session is on GitHub.** The laptop is no longer
+the only copy. That risk can come off the board.
+
+### Still true, and still worth doing
+
+Nothing is watching production (E1, no Sentry) and nothing backs up the ledger (E2).
+Both stand. The backup's real stakes are in the section above: 84 rows across 30
+accounts, of which exactly one could be rebuilt from Stripe.
 
 ---
