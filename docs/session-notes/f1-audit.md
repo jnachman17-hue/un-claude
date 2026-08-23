@@ -1655,75 +1655,95 @@ the content credentials without them. I chased this expecting the metadata layer
 dead in production and it is not. Worth writing down so nobody else chases it.
 
 ---
-# STILL BEING CHECKED WHEN THIS WAS WRITTEN — leads, not verdicts
+# THE AGENTS' OTHER FINDINGS, WITH THEIR CURRENT VERDICTS
 
-**Read this section differently from every other section.** Everything above was
-reproduced against the live site by hand, with the output pasted in. Everything below
-was found by one agent and **has not yet been through the three skeptics**, so it is a
-lead worth following rather than a finding to act on.
+**Read this differently from the rest of the note.** Everything above was reproduced by
+hand. What follows is the agents' remaining findings — the ones I did not personally
+re-run — with the state of their skeptic panels beside each.
 
-**Why they are unadjudicated.** The audit was designed so every finding faces three
-independent agents each trying to refute it, one of which re-runs the reproduction
-command itself. Those skeptics were still queued behind the remaining dimension
-probes when this note was written. **They are not "refuted" and they are not
-"confirmed" — nobody has checked them yet.**
+**How to read the "skeptics" column:**
 
-**Two of them I did adjudicate myself and they are covered above:** the homepage
-shipping no content (section D — the SEO half of that claim is wrong; the page head is
-correctly server-rendered) and the `---` divider leaking into documents (I could not
-reproduce it in 8 live runs; see "what this audit could not cover").
+- **"stands (3 skeptics)"** — three independent agents tried to refute it, one of them
+  by re-running the reproduction command against the live site, and fewer than two
+  succeeded. **This is strong.** Treat it as verified.
+- **"1 of 3 checked" / "2 of 3 checked"** — partially judged when the run ended.
+- **"not yet judged"** — **nobody has checked it. A lead, not a verdict.** These are
+  worth reading and worth following up; they are not worth acting on until checked.
 
-**Nine of the fourteen dimensions had reported when this was written.** Dimensions 4
-(the engine), 10 (accessibility), 11 (performance), 12 (friction) and 13 (failure
-modes) and 14 (operations) were still running.
+**Findings a majority of skeptics killed are not in this table** — they are in the
+section below on what died and why.
 
-| severity | what | dimension | live? | already known |
+| severity | finding | dimension | skeptics | on the board |
 |---|---|---|---|---|
-| **high** | If you refund someone who has deleted their account, the site rejects the refund message from Stripe over a... | 1 | yes | — |
-| **high** | The tool's own internal divider line gets scattered through the customer's finished document | 5 | yes | — |
-| **high** | The homepage sends Google an empty page — no headline, no words, nothing but the menu and the footer | 9 | yes | — |
-| **medium** | The ledger records what every job earned but never what it cost, so nothing can tell whether a job made mon... | 2 | yes | — |
-| **medium** | Every rewrite tells the customer's browser exactly what the job cost us, which model ran it, and how long o... | 2 | yes | — |
-| **medium** | The tool Jon is told to run before refunding says money is still owed on a payment that has already been re... | 1 | yes | — |
-| **medium** | Guest credits really can be left behind when the confirmation email is opened on another device, and nothin... | 3 | yes | H1 |
-| **medium** | A 5,000-word essay failed outright on the first live attempt, then worked on the second | 5 | yes | B11 |
-| **medium** | The homepage answers "Will it change my meaning, my facts, or my numbers?" with a flat No, on the one layer... | 7 | yes | — |
-| **medium** | The Starter pack says it covers about four college essays. By the site's own calculator it covers three. | 7 | yes | — |
-| **medium** | Plain text files are missing from every list of what you can upload, and they are the one upload charged by... | 7 | yes | — |
-| **medium** | The website is missing five of the six standard browser safety headers on every page, including the pages t... | Dimension 6 | yes | — |
-| **medium** | HYPOTHESIS, not confirmed: every free scan may write the visitor's raw IP address into our own database, an... | 8 | **no** | — |
-| **low** | On a refund row the money column stores Stripe's running total, so adding the refund rows up says more mone... | 2 | yes | — |
-| **low** | The instruction printed at the top of the money-record reader does not work — it crashes | 1 | yes | — |
-| **low** | The site sends none of the standard browser security headers except HSTS | Security | yes | — |
-| **low** | The rewrite response tells any caller which AI model, gateway, temperature and prompt size it uses | Security | yes | — |
-| **low** | Live evidence suggests the P1 prompt-leak fix is ALREADY deployed, though the checklist says it is not | Security | yes | P1 |
-| **low** | The sign-up page promises 3 free credits and a brand-new account is actually given 5 | 3 | yes | B12 |
-| **low** | Signing out on one device signs you out of every device, with no warning | 3 | yes | — |
-| **low** | The sign-up page shows the same terms sentence twice and its Google button says "Sign in" on a page headed ... | 3 | yes | — |
-| **low** | The sign-in failure page tells the browser tab it is the homepage | 3 | yes | — |
-| **low** | If copying the clean text fails, the button does nothing at all and never says why | 5 | yes | — |
-| **low** | Six sign-in and account pages are open to Google with no address of their own, and two of them wear another... | 9 | yes | — |
-| **low** | The site has no structured data in the pages it serves, and the one piece that was written never gets there | 9 | yes | D12 |
-| **low** | The pricing page's search-result summary is two characters over the length Google shows | 9 | yes | — |
-| **low** | The site has no web app manifest, so saving it to a phone home screen gives a generic tile | 9 | yes | — |
-| **low** | A heading says every major lab has signed up. The table an inch to the right says one has not. | 7 | yes | — |
-| **low** | An FAQ asks about PDFs and never answers, and never mentions images, which the tool has always accepted. | 7 | yes | 6c |
-| **low** | The cookie policy says exactly three things are stored on your device. A signed-in customer who collapses t... | 8 | yes | — |
+| **high** | A short paste is charged a credit and told its wording was rewritten, when the rewrite was deliberat... | 5 | stands (3 skeptics) | P2 |
+| **high** | After a scan, the whole text panel becomes one button — a blind student cannot read their own result | 10 | **not yet judged** | — |
+| **high** | An ordinary phone photo is refused by the hosting platform, and the site blames itself by saying the... | 5 | stands (3 skeptics) | — |
+| **high** | If you refund someone who has deleted their account, the site rejects the refund message from Stripe... | 1 | stands (3 skeptics) | — |
+| **high** | Nothing is announced while the tool is working, when it finishes, or when it fails | 10 | **not yet judged** | — |
+| **high** | Short or odd pastes still come back as a chatbot talking about "the given rules" instead of the cust... | D4 | stands (3 skeptics) | P1 |
+| **high** | The file picker has no name at all, and it is an invisible extra stop when you tab through the page | 10 | **not yet judged** | — |
+| **high** | The homepage sends an empty page. Everything except the top menu and the footer is drawn by JavaScri... | 5 | stands (3 skeptics) | — |
+| **high** | The pricing calculator quotes a pack for documents the tool refuses to run | 12 | **not yet judged** | — |
+| **high** | When Cloudflare's invisible check fails, the visitor is dead-ended at the Sanitise button and cannot... | 12 | **not yet judged** | — |
+| **medium** | A 5,000-word essay failed outright on the first live attempt, then worked on the second | 5 | **not yet judged** | B11 |
+| **medium** | A Cloudflare bot challenge runs on every page of the site, including the privacy policy, for visitor... | 11 | **not yet judged** | — |
+| **medium** | A returning customer on a phone has to scroll four and a half screens to find Sign In | 12 | **not yet judged** | — |
+| **medium** | Choosing a pack and then signing up loses the pack you chose | 12 | **not yet judged** | — |
+| **medium** | Clicking an expired or already-opened confirmation email drops you on the homepage and says nothing ... | 12 | **not yet judged** | — |
+| **medium** | Every rewrite tells the customer's browser exactly what the job cost us, which model ran it, and how... | 2 | stands (3 skeptics) | — |
+| **medium** | HYPOTHESIS, not confirmed: every free scan may write the visitor's raw IP address into our own datab... | 8 | **not yet judged** | — |
+| **medium** | Looking up a signed-in customer's credit balance takes about three quarters of a second, and it happ... | 11 | **not yet judged** | — |
+| **medium** | No page has a 'main content' region and no page has a skip link | 10 | **not yet judged** | — |
+| **medium** | On the pricing page, the 'Most popular' card is the hardest one to read — including the number of wo... | 10 | **not yet judged** | — |
+| **medium** | Plain text files are missing from every list of what you can upload, and they are the one upload cha... | 7 | 1 of 3 checked | — |
+| **medium** | PostHog treats every single page load as a brand-new stranger, and the site pays 111 KB a page for it | 11 | **not yet judged** | — |
+| **medium** | Production has never recorded what a single run cost — 155 money rows, every cost column empty | D4 | stands (3 skeptics) | — |
+| **medium** | The Starter pack says it covers about four college essays. By the site's own calculator it covers th... | 7 | 1 of 3 checked | — |
+| **medium** | The essay you pasted is thrown away when the site sends you off to sign up | 12 | **not yet judged** | H1 |
+| **medium** | The homepage answers "Will it change my meaning, my facts, or my numbers?" with a flat No, on the on... | 7 | 1 of 3 checked | — |
+| **medium** | The homepage is the only page on the site that arrives empty — every other page arrives with its wor... | 11 | **not yet judged** | — |
+| **medium** | The homepage never once uses the word 'credit', and the label beside the free balance says the oppos... | 12 | **not yet judged** | — |
+| **medium** | The ledger records what every job earned but never what it cost, so nothing can tell whether a job m... | 2 | stands (3 skeptics) | — |
+| **medium** | The paste box has no label of its own — the grey placeholder is doing that job — and it removes its ... | 10 | **not yet judged** | — |
+| **medium** | The receipt shows impossible figures — "Length 4000% of the original kept" — under a heading that sa... | D4 | stands (3 skeptics) | — |
+| **medium** | The tool is not in the page the server sends: a phone gets a header, a blank gap and a footer until ... | 12 | **not yet judged** | — |
+| **medium** | The tool's own colours are too faint to read: the Sanitise button, the result rows and the error mes... | 10 | **not yet judged** | — |
+| **medium** | When the tool refuses your file, the message is just text floating on the page, not attached to anyt... | 10 | **not yet judged** | — |
+| **low** | A heading says every major lab has signed up. The table an inch to the right says one has not. | 7 | 1 of 3 checked | — |
+| **low** | An FAQ asks about PDFs and never answers, and never mentions images, which the tool has always accep... | 7 | 1 of 3 checked | 6c |
+| **low** | Every logo on the page asks the server 'has this changed?' on every single repeat visit — sixteen times | 11 | **not yet judged** | — |
+| **low** | Four pages have no top-level heading, one has two, and the settings page has none at all | 10 | **not yet judged** | — |
+| **low** | If copying the clean text fails, the button does nothing at all and never says why | 5 | **not yet judged** | — |
+| **low** | Live evidence suggests the P1 prompt-leak fix is ALREADY deployed, though the checklist says it is not | Security | **not yet judged** | P1 |
+| **low** | On the fast path, the engine does 0.05 seconds of work and the customer waits 1.3 seconds — the wait... | 11 | **not yet judged** | B11 |
+| **low** | One shape of confirmation link returns a completely blank white page | 12 | **not yet judged** | — |
+| **low** | Signing out on one device signs you out of every device, with no warning | 3 | stands (3 skeptics) | — |
+| **low** | Six sign-in and account pages are open to Google with no address of their own, and two of them wear ... | 9 | **not yet judged** | — |
+| **low** | The cookie policy says exactly three things are stored on your device. A signed-in customer who coll... | 8 | **not yet judged** | — |
+| **low** | The page waits until it is nearly a second in before it even starts shaking hands with Cloudflare an... | 11 | **not yet judged** | — |
+| **low** | The pricing page's search-result summary is two characters over the length Google shows | 9 | **not yet judged** | — |
+| **low** | The rewrite response tells any caller which AI model, gateway, temperature and prompt size it uses | Security | **not yet judged** | — |
+| **low** | The single largest file the site downloads is the Supabase login library, and it carries a live-upda... | 11 | **not yet judged** | — |
+| **low** | The site has no structured data in the pages it serves, and the one piece that was written never get... | 9 | **not yet judged** | D12 |
+| **low** | The site has no web app manifest, so saving it to a phone home screen gives a generic tile | 9 | **not yet judged** | — |
 
-**The three worth looking at first, if only these are ever followed up:**
 
-1. **Refunding someone who has already deleted their account.** The agent reports that
-   Stripe's refund message is rejected by the site over and over for about three days,
-   with nobody watching. Plausible, unverified, and it touches real money.
-2. **The ledger never records what a job cost.** Confirmed independently by the legal
-   agent against the privacy policy, and it is the reason the economics table in this
-   note had to be assembled by hand.
-3. **The rewrite response hands any caller the model name, the gateway, the
-   temperature and the length of the internal prompt.** Two agents found this
-   separately. It is reconnaissance for exactly the prompt-injection family that
-   produced the P1 defect.
+### The three worth reading first
 
----
+1. **"Short or odd pastes still come back as a chatbot talking about 'the given
+   rules'"** — this **stands with all three skeptics**, and it means the P1 prompt leak
+   is not fully closed. **I tried to reproduce it myself and could not**, across
+   punctuation soup, bare noun lists, heading-only documents and numbers-only input.
+   Three skeptics reproduced it, I failed thirteen times. It is intermittent and real,
+   and it is the same defect family as the `---` divider. **Do not treat P1 as done.**
+2. **"If you refund someone who has deleted their account, the site rejects the refund
+   message from Stripe over and over"** — stands with three skeptics, and it touches
+   money.
+3. **"The pricing calculator quotes a pack for documents the tool refuses to run"** —
+   not yet judged, and it is the same ordering problem I found from the other end: the
+   calculator goes to 100,000 words while the engine stops at 10,000 and in practice
+   fails above about 7,000.
+
 # THE FOUR ENFORCEMENT PROMISES, MEASURED AGAINST MY OWN LIVE RUNS (HIGH)
 
 The homepage FAQ makes four specific, checkable promises about the rewrite. They are
