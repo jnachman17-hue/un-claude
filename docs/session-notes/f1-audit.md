@@ -1286,9 +1286,30 @@ LIVE LEDGER, excluding this audit's throwaway accounts
 ```
 
 Nobody is in credit they did not earn, nobody is in debt, and no payment has been
-counted twice. **The append-only guard is genuinely on in production** — on a
-throwaway account a row was inserted, then an attempt was made to change it and to
-delete it, and both were refused by the database.
+counted twice.
+
+**The ledger is protected, and I have to be precise about how — my first draft was
+not.** On a throwaway account a row was inserted, then changed and deleted. Both were
+refused and the row survived untouched:
+
+```
+INSERT a row                -> HTTP 201, id 2531
+UPDATE it (as service_role) -> HTTP 403  42501 "permission denied for table credit_ledger"
+                               hint: "GRANT UPDATE ON public.credit_ledger TO service_role"
+DELETE it                   -> HTTP 403  42501 "permission denied for table credit_ledger"
+the row afterwards          -> [{"id":2531,"delta":1}]   unchanged
+```
+
+**Read the error, not the outcome.** `42501` is the *privilege* layer refusing, and the
+hint says so — the role simply does not hold `UPDATE`. **The append-only trigger was
+never reached, so nothing here proves it is installed in production.**
+
+**Why the difference matters.** Privileges are one `GRANT` away from being gone, and a
+migration or a session with admin access can issue one. The trigger is the layer that is
+supposed to hold even then. **A completeness critic flagged exactly this** — that the
+audit had proven a privilege refusal and written it up as a trigger — and it was right.
+Confirming the trigger needs direct SQL against the database, which this session did not
+have. **It remains unverified.**
 
 ### K. What losing the database would actually cost, as a number (context for E2)
 
