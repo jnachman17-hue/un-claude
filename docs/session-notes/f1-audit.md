@@ -359,10 +359,32 @@ already records both halves of the silence: *"the engine returns a `reason` stri
 nothing in the workbench renders"*, and *"pricing is unchanged on both branches of the
 cost expression — checked, not assumed"*. **So the charge is known and was accepted.**
 
-**What is new is that the interface does not stay silent — it says the opposite.** The
-panel reports `Statistical watermark: Rewritten`, under a heading reading *"What the
-rewrite changed"* and a label reading *"Measured, not estimated"*, with
-`Replaced 0% of your wording`, `Length 100% kept`, and every bar on the chart at 100%.
+**What is new is that the interface does not stay silent — it says the opposite.**
+Reproduced by hand in a real browser on the live site, signed in, with a six-word paste.
+**This is the panel, verbatim:**
+
+```
+Statistical watermark
+The exact sequence of your words
+REWRITTEN
+Rewritten. The longest stretch of your original wording left is 6 words in a row.
+The mark rides only on unbroken stretches of your original words.
+
+WHAT THE REWRITE CHANGED          Measured, not estimated
+REPLACED      0%    of your wording
+LONGEST RUN   6     words of your original left in a row
+LENGTH        100%  of the original kept
+RETURNED      6     words handed back
+```
+
+**Read the two halves against each other.** The headline says **REWRITTEN**. The numbers
+underneath say **0% of the wording was replaced** and **100% of the length kept** — which
+is the truth, sitting directly beneath the claim it contradicts, under a label that says
+*"Measured, not estimated"*.
+
+**And it breaks the three-word promise in the same breath.** The site says *"a hard
+three-word ceiling on surviving sequences"*. This panel reports **6 words surviving in a
+row** — which on a six-word document is the entire thing, untouched.
 
 P2 describes a product that is **correct and silent**. The live product is **correct
 and wrong on screen** — it charges, does nothing, and reports the rewrite as done and
