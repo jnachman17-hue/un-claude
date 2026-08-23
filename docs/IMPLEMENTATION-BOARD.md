@@ -12,27 +12,60 @@ writers in one file — the failure this repo has had every single time it happe
 
 ---
 
-# ★ PART 1 — DECISIONS ONLY JON CAN MAKE
+# ★ PART 1 — DECISIONS — ALL SETTLED 23 AUGUST
 
-**Nothing in the engine lane can be briefed until D1–D5 are settled.**
+| # | Decision | **JON'S RULING** |
+|---|---|---|
+| **D1** | Ship the quotation freeze, or only the cheap structure tier? | **SHIP BOTH.** Cost is not the question. |
+| **D2** | A quoted run with no attribution cue — freeze it or leave it? | **FREEZE ATTRIBUTED, LEAVE UNATTRIBUTED FREE** — and the reasoning is Jon's, not the workflow's. See below. |
+| **D3** | When the freeze fails: refund, or hand back the chunk unrewritten? | **BOTH — hand back the chunk, explain, and refund — WITH A THRESHOLD.** One chunk failing: hand back and explain, no refund, because they received the work. A meaningful share failing: refund the job. Without the threshold, a customer who can reliably trip the freeze gets nine-tenths of a rewritten document *and* their money back — the same free-tier shape as the mintable credits. **Explain in every case. CHANGES `04` entry 22.** |
+| **D4** | Tell the visitor what fraction will be frozen before they pay? | **YES, with a Continue/Cancel, and a louder prompt above 60%.** Wording below. |
+| **D5** | Which model? | **DECIDE AFTER THE ENGINE LANE SHIPS. OPEN-WEIGHT ONLY** — no frontier models. **But the field tested was too narrow**: six models, four completing, all picked when cost was the constraint. Capability is the constraint now. **A wider bake-off is its own item — see E-10.** |
+| **D6** | The advertised size ceiling | **Do not set the number yet.** W9 measured 6,000 completing at 196s against a 240s cut-off and 7,500+ failing — **but W10's chunk fix took one document 61% cheaper and job failures from 2-of-8 to 0-of-8.** Ship E-3, re-measure, then publish. |
+| **D7** | `support@un-claude.com` on the site | Waits on the forwarding test email arriving. |
 
-| # | Decision | Recommendation | Why it matters |
-|---|---|---|---|
-| **D1** | **Ship the quotation freeze, or only the cheap structure tier?** | **Ship both.** | Structure alone costs **+0.016** trigram overlap. Adding quotations takes it to **+0.079**. *"The question is not four cents per thousand words; it is whether the product is willing to put invented words in a named person's mouth."* |
-| **D2** | **A quoted run with no attribution cue — freeze it or leave it?** | **Leave it free.** | Wrong one way costs one essay three reworded phrases. Wrong the other hands a student their own short story back **59% unchanged** after paying for a rewrite. Not the same size of mistake. |
-| **D3** | **When the freeze fails: refund, or hand back that chunk unrewritten?** | **Hand back the chunk and say so.** | **This CHANGES `04` entry 22**, which says a failed rewrite refunds. W10 named it rather than resolving it quietly. Either answer needs a decision-log line. The customer still receives layer A and metadata — the two **provable** layers. |
-| **D4** | **Tell the visitor what fraction of their document will be frozen, before they pay?** | **Yes — but not in the words the plan proposed.** | *"About a third of this is quoted"* would have said **56%** about an essay containing no quotation at all. Say only what the program knows: *"We will return about 56% of this document exactly as you sent it, and rewrite the rest."* |
-| **D5** | **Which model?** | **`mistral-medium` — after the engine lane ships, not before.** | Everything medium is worse at (headings, labels, markdown) is what phases 1 and 4 fix deterministically. Everything small is worse at (facts, names, terms, language flips) is what this plan leaves broken. **The plan changes which model is right.** |
-| **D6** | **The advertised size ceiling** | **Do not set the number yet.** | W9 measured 6,000 words completing in 196s against a 240s cut-off, and 7,500 / 8,500 / 9,900 all failing after ~3½ minutes. **But W10's chunk-boundary fix took one document 61% cheaper and job failures from 2-of-8 to 0-of-8.** The honest ceiling is a different number before and after that fix. **Ship ENGINE-3, re-measure, then publish.** |
-| **D7** | **`support@un-claude.com` on the site** | Waits on the forwarding test email arriving. | Publishing an address that bounces is worse than the Gmail one. |
+## D2's reasoning, in Jon's terms — record this in `04`
 
----
+**A statistical watermark is embedded through the model's word choices.** That
+signal can only exist where the model had a choice.
+
+**Inside a genuine quotation the model had no choice** — it reproduced fixed text
+from a source. So there is little or no watermark there to begin with, and
+freezing it costs almost nothing real. The trigram number rises; what it measures
+in those spans is largely irrelevant. **This is a stronger argument for the freeze
+than the cost-benefit one the workflow made.**
+
+**It inverts for invented dialogue.** Ask a model for a short story and it chooses
+every word inside the quotation marks — full discretion, so that dialogue is
+watermarked like the narration, arguably more, since dialogue is where a model's
+tells concentrate. **Freezing it hands back the most watermarked part of the
+document untouched, and charges for a rewrite.**
+
+**So the test is: did the model have discretion over these words?** The attribution
+cue ("Smith wrote", "according to") is the machine-readable proxy for *these words
+came from outside*. Not a guess about importance.
+
+## D4's exact wording — do not improvise it
+
+> **We will return about 42% of this document exactly as you sent it.**
+> That's text we've protected from being reworded — quotations, references and
+> similar — so it comes back character for character. The other 58% gets the
+> full rewrite.
+>
+> **Continue** · **Cancel**
+
+**Two things it must NOT say.** Not *"to keep quotations verbatim"* — the machine
+knows what it froze, not that it found a quotation, and the Sources latch would
+have said that about an essay containing none. And **not that it reduces watermark
+removal** — by D2's own reasoning the frozen spans carry little watermark, so that
+warning understates the product, and it is unprovable in either direction anyway.
+**Layer B is unverifiable; that cuts both ways.**
 
 # ★ PART 2 — THE LANES
 
 ## LANE A — ENGINE. The biggest, and it has hard internal sequencing.
 **Territory:** `apps/web/engine/**`, `apps/web/api/*.py`
-**Blocked by:** D1–D5. **One session at a time — never parallel inside this lane.**
+**Blocked by:** nothing — D1–D5 are settled. **One session at a time — never parallel inside this lane.**
 
 | ID | Work | Source | Note |
 |---|---|---|---|
@@ -45,6 +78,7 @@ writers in one file — the failure this repo has had every single time it happe
 | **E-6** | **Honest length + loss reporting.** Documents come back 6–14% longer reported as "Length 114% kept"; on repetitive text **22–29% silently deleted**. | **W9** | Pairs with E-7. |
 | **E-7** | **Surface `structure_kept`.** The engine already computes it and **no file anywhere reads it.** | W10 rank 13 | *"The engine knew the equation had been deleted and told nobody."* |
 | **E-8** | **Re-measure the ceiling and publish an honest number.** | W9 + D6 | After E-3. |
+| **E-10** | **A wider open-weight bake-off.** Enumerate what the gateway actually offers and test credible candidates against W10's existing harness. **Measure timeouts (2 of 6 timed out last time) and SPEED — the ceiling is time, not money, so a better-but-slower model shrinks the document size that can be served.** After E-3. | D5 | Open weights only. |
 | **E-9** | **FREEZE — its own session, and NOT YET.** Masking machinery: tolerant restore, mask numbers via the engine's own number reader, verify step, per-chunk masking and fallback. | W10 phase 4 | **See PART 3. This does not ship on the numbers the plan published.** |
 
 ## LANE B — MONEY. Start first. The only lane losing real money today.
