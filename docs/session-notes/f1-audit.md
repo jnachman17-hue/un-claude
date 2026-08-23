@@ -115,6 +115,7 @@ live site with the output pasted in.
 | # | severity | finding | verified by |
 |---|---|---|---|
 | 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
+| 0b | **HIGH** | Any free account can upload files of any type and size to a public bucket, served from your Supabase | conductor, as a customer |
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
 | 1b | **HIGH** | The tool inserts em dashes, curly apostrophes and markdown asterisks the customer never typed | conductor, 8 of 8 and 3 of 3 |
 | 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
@@ -233,6 +234,46 @@ dismissed it: I tested three retired URLs, all three refused, and I was about to
 it as not reproducing. **It only appears in four of twenty.** A sample of three was not
 a test, it was a coin toss — which is the same mistake in the opposite direction from
 the ones this audit exists to catch.
+
+---
+
+### 0b. Anyone with a free account gets public file hosting on your Supabase (HIGH)
+
+**Nobody in the audit looked at Supabase Storage.** A completeness critic pointed at it
+and it turned out to be worth the look.
+
+**The live project has one bucket, and it is public with no limits of any kind:**
+
+```
+bucket: account_image | PUBLIC: true | size limit: null | allowed mime types: null
+objects: 0
+```
+
+**`size limit: null` and `allowed mime types: null` mean exactly what they say.** Tested
+as an ordinary signed-in customer using their own session token — not the service key,
+which would have proved nothing:
+
+```
+upload a TEXT file as a customer  -> HTTP 200
+read it back with NO credentials  -> HTTP 200  content-type: text/plain
+                                     "F1 AUDIT test upload as an ordinary customer."
+```
+
+**So a free account is a public file host.** The control that feeds it is the "Upload a
+Profile Picture" box on the settings page — part of the starter-kit boilerplate (finding
+B), on a product that **never displays a profile picture anywhere**.
+
+**Two costs, and the second is the one that matters.** The obvious one is storage: no
+size cap, so an account can upload as much as it likes and Jon pays. The worse one is
+that **anything uploaded is served publicly from Jon's project URL** — so the site can
+be used to host whatever somebody wants hosted, and free accounts take a minute to make.
+
+**The audit's own file was deleted immediately and the bucket is back to zero objects.**
+
+**Fix sketch, and it is settings rather than code.** Set a MIME allowlist of image types
+and a size limit on the bucket — or, since nothing in the product shows a profile
+picture, remove the upload control and the bucket together. That is the cleaner answer:
+the whole feature is inherited boilerplate that this product does not use.
 
 ---
 
