@@ -3140,3 +3140,64 @@ we sent you a link" with a **Resend it** control, and map `captcha_failed` to so
 that says the security check could not load rather than blaming their connection.
 
 ---
+# THE ONE THING NOBODY TESTED: TEXT AN AI ACTUALLY WROTE
+
+**A completeness critic's sharpest catch was that not one input across the whole audit
+was written by an AI** — every document, mine and every agent's, was composed by us to
+have particular properties. The product's central promise is that it removes what real
+AI tools leave behind, and that had never been demonstrated.
+
+**I closed half of it.** The passage below was written by this model, unprompted for any
+particular shape, and put through the live scan:
+
+```
+words: 222
+
+suspicious_total : 0
+hits             : []
+stylometry       : score 0.4375, confidence LOW, burstiness 0.4122,
+                   lexical_diversity 0.8066, ai_ngram_density 0.6306
+em dashes in it  : 0
+```
+
+**Layer A found nothing.** No invisible characters, no unusual spaces, no direction
+marks — in genuinely machine-written prose.
+
+**Be careful what that does and does not mean.** It is one sample, generated through one
+path, and text passing through a terminal and a file may well be normalised on the way.
+**It does not show that AI text carries no marks.** What it does show is that the first
+time this product's core case was actually tried, the provable layer came back empty —
+and **nobody should assume otherwise without repeating this with a document downloaded
+straight from a chat interface**, which is a five-minute job and the obvious next step.
+
+**The other half is still open and cannot be closed from here:** whether the *metadata*
+layer catches a real AI-generated image. The C2PA block this audit proved the tool
+against was one I built by hand. That proves the mechanism and not the real case.
+
+### And it exposed a false positive in the scanner (MEDIUM)
+
+The scan of that passage reported one matched AI marker:
+
+```
+{"phrase":"in today's fast-paced world/landscape","count":1,"weight":1.4,
+ "samples":["in the world"]}
+```
+
+**It matched the three ordinary words "in the world".** Tested directly:
+
+```
+"The tallest mountain in the world is Everest..."     -> marker FIRES, weight 1.4
+"The tallest mountain on the planet is Everest..."    -> no marker
+"In today's fast-paced world, businesses must..."     -> marker fires (correctly)
+```
+
+**A marker written to catch a specific corporate cliché fires on some of the most
+common words in English.** Any document containing "in the world" has its AI score
+inflated.
+
+**The customer-facing damage is limited today**, because the statistical row says
+"PRESUMED PRESENT" whatever the score. But the score is computed, stored and shown, and
+this is the layer the site offers as evidence. **A number presented as measurement should
+not be movable by the phrase "in the world".**
+
+---
