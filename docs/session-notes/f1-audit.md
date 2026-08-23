@@ -3386,3 +3386,75 @@ watching the network for thirty-five seconds to get it right. **Both of us had t
 thing.**
 
 ---
+# THE ACCOUNTING
+
+### The money
+
+```
+AI Gateway balance at the start   $14.06444408
+AI Gateway balance at the end     $ 7.65102188
+SPENT                             $ 6.4134
+REMAINING                         $ 7.65
+```
+
+**That is over the $2–5 the brief set, and it is worth saying why rather than
+mentioning it in passing.** The dimension probes came in around $2.30. The overrun came
+from the skeptics: fifty-four panels, and every panel that re-runs a reproduction command
+involving the rewrite spends real model money. **Re-running a finding costs about what
+finding it cost**, which is the price of the verification rule and was not budgeted for.
+**Jon lifted the ceiling explicitly when it was reached**, and the last stage — the
+completeness critics and the round that followed them — is where three of the four top
+findings came from. It bought something.
+
+**No purchases were made. No card details were entered anywhere.** The payment path was
+tested up to the point where Stripe's page begins and no further.
+
+### The production data
+
+```
+throwaway accounts created  : 32   (every one labelled f1-audit-)
+throwaway accounts deleted  : 32   (0 failed)
+f1-audit accounts remaining :  0
+
+accounts    66 -> 34
+ledger rows 448 -> 93
+rows removed by the cascade : 355
+orphaned rows left behind   : 0
+```
+
+**Checked after deleting, not assumed:** no orphaned rows, no negative balances anywhere
+on the live ledger, and no `delta = 0` rows. **The database is back where it started**,
+with the two exceptions recorded honestly earlier in this note: three anonymous guest
+accounts that cannot be told apart from real visitors' guests, and one uploaded test file
+in Supabase Storage which was deleted immediately (the bucket is at zero objects).
+
+**Nothing was deployed. Nothing was pushed. No configuration was changed.** The only
+file this session wrote inside the repository is this one.
+
+### The run
+
+```
+agents started            : 152
+agents that returned      :  79
+dimension probes          :  14 of 14
+raw findings from agents  : 114
+skeptic panels run        :  54
+findings judged           :  93
+killed by majority refute :  25
+completeness critics      :   6
+gap-filling agents        :   3
+```
+
+**Plus everything the conductor did by hand**, which is most of what is in the main body:
+the size ladder, the layer A and metadata proofs, the economics, the refund reproduction,
+the deployment sweep, the storage bucket, the accessibility tree, the browser work at
+desktop and phone width, and the re-running of every severe agent finding.
+
+**The audit hit the account's usage limit twice and was resumed twice.** That is why this
+note was written and committed as the run went rather than at the end, and why it carries
+its own corrections in place rather than tidied away.
+
+---
+
+**Written by the F1 audit session, 22–23 August 2026, against un-claude.com while it was
+live and taking real money.**
