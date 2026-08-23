@@ -2578,7 +2578,7 @@ the only copy. That risk can come off the board.
 ### Still true, and still worth doing
 
 Nothing is watching production (E1, no Sentry) and nothing backs up the ledger (E2).
-Both stand. The backup's real stakes are in the section above: 84 rows across 30
+Both stand. The backup's real stakes are in the section above: 93 rows across 33
 accounts, of which exactly one could be rebuilt from Stripe.
 
 ---
