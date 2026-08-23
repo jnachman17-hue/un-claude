@@ -16,6 +16,22 @@ the file metadata are provable. **Layer B is best effort and nothing below claim
 otherwise** — no public detector exists, so nobody can check whether a statistical
 watermark was removed, including us.
 
+
+## WHERE THINGS ARE IN THIS NOTE
+
+It is long, because every finding carries its evidence. Read the first two sections and
+the last one and you have the whole thing.
+
+1. **The short version** — twelve lines, and what to do first.
+2. **Every finding, in one table** — the complete list by severity.
+3. **What was found** — the findings in full, worst first, with the real output.
+4. **What passed** — the things that are right, recorded so nobody re-investigates them.
+5. **What was measured** — production numbers that did not exist before this run.
+6. **What this audit could not cover** — the gaps, named.
+7. **What to do, in order** — sixteen items, ranked by what protects a customer soonest.
+
+Everything after that is the working detail behind those seven, one subject per section.
+
 ---
 
 ## THE SHORT VERSION
@@ -1631,7 +1647,7 @@ quotations and figures intact, and today they are not guaranteed to be. **That i
 engine work, and it is the same work as finding 2.**
 
 ---
-# OPERATIONS — the domain, the mail and the certificate
+# THE DOMAIN, THE MAIL AND THE CERTIFICATE
 
 ```
 A record        un-claude.com -> 76.76.21.21   (Vercel)
@@ -1885,7 +1901,7 @@ The engine's cold start was also not isolated: production is warm most of the ti
 and I could not establish a genuinely cold function with confidence.
 
 ---
-# OPERATIONS — the deploy gap, and two corrections to the board (dimension 14)
+# THE DEPLOY GAP, AND TWO CORRECTIONS TO THE BOARD (dimension 14)
 
 The operations agent never returned; this is the conductor's own work.
 
