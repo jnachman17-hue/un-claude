@@ -2809,3 +2809,51 @@ would settle both the count and whether `POST /home/settings` — the account-ma
 page — is genuinely erroring for real customers.
 
 ---
+# THE CONFIRMATION EMAIL — mandatory, unobserved, and the link is not your domain (MEDIUM)
+
+Three of the completeness critics independently flagged the same hole: **nobody in the
+whole audit ever saw a confirmation email**, and every one of the ~20 throwaway accounts
+was confirmed through the admin API instead. It is the only compulsory gate between a
+visitor and a paying account, and it was 100% unobserved.
+
+**What the live auth service says about itself:**
+
+```
+mailer_autoconfirm : false        <- a confirmation email IS required for every signup
+disable_signup     : false
+providers          : email, google, anonymous_users
+```
+
+**So the email is not optional. If it does not arrive, the paid funnel is closed.**
+
+**I could not observe a send.** The public signup endpoint is captcha-gated and refuses
+a headless request, and I have no inbox to receive one. That gap stays open and it is
+worth Jon spending five minutes on: sign up with a personal address, and see whether the
+mail arrives, how long it takes, and whether it lands in spam.
+
+**But one thing I could check is concrete, and it is not good.** The link the
+confirmation email carries points at:
+
+```
+https://itdgggoxsoolbfiwujvt.supabase.co/auth/v1/verify
+```
+
+**Not `un-claude.com`.** A student who has just signed up for un-claude.com receives an
+email asking them to click a link to `itdgggoxsoolbfiwujvt.supabase.co` — a random
+string on a domain they have never heard of.
+
+**Two costs, and both are ordinary rather than exotic.** It reads exactly like a
+phishing email, which is the one thing people are now trained to distrust in a
+confirmation message. And spam filters weight the match between the sending brand and
+the link domain heavily, so it makes the mail more likely to be filtered — on the one
+message the entire funnel depends on.
+
+**It connects to the missing MX records** (see the domain section): with no mail on
+`un-claude.com`, there is no address on the brand's own domain for any of this to come
+from or go to.
+
+**Fix sketch.** Supabase supports a custom redirect domain for auth links, so the URL in
+the email becomes `un-claude.com/auth/confirm?...`. Combined with the MX record and a
+`support@un-claude.com` sender, the whole signup message stops looking like a stranger.
+
+---
