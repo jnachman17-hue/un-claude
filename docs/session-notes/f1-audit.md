@@ -36,9 +36,12 @@ credit, comes back byte for byte identical, and the screen says "Rewritten · Me
 not estimated". And if a customer's connection drops mid-job they are charged and, so
 far as I could see, not refunded.
 
-**One security hole worth closing this week.** Any link beginning
+**One security hole worth closing while it is cheap.** Any link beginning
 `https://un-claude.com/` can be made to land the visitor on any other website, signed
-out, no account needed. That is a ready-made phishing link wearing your domain.
+out, no account needed. Three skeptics reproduced it and then talked me down from
+"high" to "medium", on the grounds that a phishing link is only worth what the domain's
+reputation is worth and this domain is two days old. **They are right, and it is still
+one line of code — cheapest now, before the name is worth stealing.**
 
 **Several claims are wrong in ways a curious visitor can disprove in ten seconds** —
 "100% of detectable marks removed", "a hard three-word ceiling" (the site's own receipt
@@ -73,10 +76,10 @@ live site with the output pasted in.
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
 | 1b | **HIGH** | The tool inserts em dashes and curly apostrophes — the marks it exists to remove | conductor, 8 of 8 runs |
 | 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
-| 3 | **HIGH** | Any `un-claude.com` link can redirect to any website, signed out | conductor + skeptic |
+| 3 | MEDIUM | Any `un-claude.com` link can redirect to any website, signed out *(skeptics downgraded from high)* | conductor + 3 skeptics |
 | 4 / C | **HIGH** | A paste under 16 words is charged a credit, returns identical text, and the screen says "Rewritten" | conductor + agent |
-| A | **HIGH** | If Cloudflare is blocked the visitor hits an unrecoverable dead end that blames their internet | conductor |
-| B | **HIGH** | "Delete your Account" destroys paid credits; the warning names teams and subscriptions that do not exist | conductor |
+| A | MEDIUM | If Cloudflare is blocked the visitor hits an unrecoverable dead end that blames their internet *(downgraded)* | conductor + 3 skeptics |
+| B | MEDIUM | The delete-account warning names teams and subscriptions that do not exist and never mentions credits *(reframed by a skeptic)* | conductor + 3 skeptics |
 | E | **HIGH** | Any file over 3.2 MB fails; the site's own size message can never fire | conductor + agent |
 | M | **HIGH** | "Upload a file and you get all three" — no accepted file type gets all three | conductor + 2 agents |
 | N | **HIGH** | The site promises a three-word ceiling; its own receipt printed 6 | conductor |
@@ -269,6 +272,8 @@ rewrite untouched. There is no quote handling anywhere in the engine today.
 ---
 
 ### 3. Any un-claude.com link can be made to send a visitor to any other website
+*(I first called this HIGH. Three skeptics reproduced it and argued it down to MEDIUM,
+and they were right — the reasoning is below.)*
 
 **What a student sees.** A link that starts `https://un-claude.com/`, so they trust
 it, and a browser that lands somewhere else entirely. If that somewhere else is a
@@ -282,6 +287,14 @@ next=//example.com                HTTP/2 307  location: //example.com
 next=https://evil.example/phish   HTTP/2 307  location: https://evil.example/phish
 next=/home                        HTTP/2 307  location: /home
 ```
+
+**Why it is medium and not high, in the skeptics' words rather than mine.** All three
+reproduced it. The consequence skeptic then made the point I had missed: *"The callback
+carries no token to the attacker's site (the code is exchanged server-side), so nothing
+leaks; this is purely a phishing dressing — and un-claude.com is a two-day-old domain
+with ~40 accounts, so its name buys a phisher almost nothing today."* **A phishing link
+is worth what the domain's reputation is worth, and this domain has none yet.** That
+will change, which is the argument for fixing it now while it is one line.
 
 **Fix sketch.** `/auth/callback` should only ever redirect to a path on this site.
 Reject anything with a scheme or a leading `//`.
@@ -720,7 +733,9 @@ Fourteen agents probed the live site. Three of their most serious findings were
 re-run independently by hand, because a finding nobody probed twice is exactly this
 project's characteristic failure. These three reproduced.
 
-### A. If Cloudflare is blocked, the visitor is walked all the way to a dead end (HIGH)
+### A. If Cloudflare is blocked, the visitor is walked all the way to a dead end (MEDIUM)
+*(I called this HIGH; the skeptics reproduced both halves and settled on MEDIUM, because
+nothing measures how many visitors actually hit it. The dead end itself is not in doubt.)*
 
 **What a student sees.** They paste an essay. The scan works. It tells them a
 statistical watermark is presumed present and that they have 2 free credits. They
@@ -747,7 +762,11 @@ never work. And the hero says *"Free. No account needed"*, so the visitor cannot
 guess that signing up might help. Every step before the wall works perfectly, which
 is what makes it expensive: they spend their attention and get nothing.
 
-### B. Deleting an account destroys paid credits, and the warning is about a product this is not (HIGH)
+### B. The warning before an irreversible money-destroying click describes a different product (MEDIUM)
+*(Originally written as "deleting an account destroys paid credits". The consequence
+skeptic reframed it and improved it: losing your credits when you ask to delete your
+account is the expected outcome and every service does it — that half is not a defect.
+What survives, and is a defect, is the warning.)*
 
 **The live text, from the settings page, word for word:**
 
