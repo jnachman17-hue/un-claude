@@ -1123,6 +1123,36 @@ requests actually sent to /api/tool/clean: 1
 both charged **at the API**, which is true — but the interface disables the button
 before a second tap can land, so a real customer cannot reach it.
 
+### Nobody can read anybody else's data, and this is the one that mattered most
+
+The database sits at a public address with a public key — that is how Supabase works —
+so the only thing standing between a stranger and every customer's records is row-level
+security. **Tested at the strongest point: asking for a thousand rows.**
+
+**A stranger, with only the key that is printed in the page:**
+
+```
+GET /rest/v1/accounts           401  "permission denied for schema public"
+GET /rest/v1/credit_ledger      401  "permission denied for schema public"
+GET /rest/v1/guest_conversions  401  "permission denied for schema public"
+GET /rest/v1/rate_limits        401  "permission denied for schema public"
+```
+
+**An ordinary signed-in customer, asking for everything:**
+
+```
+accounts           HTTP 200   rows:  1   theirs:  1   somebody else's: 0
+credit_ledger      HTTP 200   rows: 82   theirs: 82   somebody else's: 0
+guest_conversions  HTTP 403   not readable at all
+
+for scale, the database actually holds 445 ledger rows across 66 accounts
+```
+
+**One row out of sixty-six. Eighty-two out of four hundred and forty-five. Nothing
+belonging to anyone else, at any point.** A stranger gets nothing and a customer gets
+exactly their own. **This is the property that would have been the worst thing in the
+report if it were broken, and it is not.**
+
 ### And these, each with its evidence in its own section further down
 
 - **Layer A detection: 15 planted invisible characters, 15 found.** The scanner works.
