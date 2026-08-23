@@ -353,10 +353,20 @@ newest ledger row: {"id":895,"delta":-1,"reason":"spend","endpoint":"clean",
 Nothing was removed. Nothing was rewritten. It cost us nothing to run — `cost_usd`
 is empty. The customer paid a credit.
 
-**And the engine wrote the explanation the customer never sees.** That `reason`
-sentence is well written and completely correct. It is in the response and nothing
-on the page renders it. This is `LAUNCH-CHECKLIST` P2, confirmed live, with the
-charge attached: the board records the silence, not the credit.
+**Being precise about what is new here, because a skeptic killed the agent's version
+of this finding for being a restatement of P2 — and it was right to.** The board's P2
+already records both halves of the silence: *"the engine returns a `reason` string that
+nothing in the workbench renders"*, and *"pricing is unchanged on both branches of the
+cost expression — checked, not assumed"*. **So the charge is known and was accepted.**
+
+**What is new is that the interface does not stay silent — it says the opposite.** The
+panel reports `Statistical watermark: Rewritten`, under a heading reading *"What the
+rewrite changed"* and a label reading *"Measured, not estimated"*, with
+`Replaced 0% of your wording`, `Length 100% kept`, and every bar on the chart at 100%.
+
+P2 describes a product that is **correct and silent**. The live product is **correct
+and wrong on screen** — it charges, does nothing, and reports the rewrite as done and
+measured. That is a different and worse thing, and it is the half worth acting on.
 
 **It goes further than short pastes. One space costs a credit.**
 
@@ -640,6 +650,19 @@ actions: ["scrub docProps/core.xml field dc:creator",
 ```
 Every one of the 3,000 words survived unchanged and the author name was removed. **A
 corrupted document would be worse than an uncleaned one, and it is not corrupted.**
+
+### Every API route refuses the methods it should
+
+```
+                         GET  OPTIONS  PUT  DELETE
+/api/credits             200    204    405   405     (GET is correct — it is a read)
+/api/checkout            405    204    405   405
+/api/tool/scan           405    204    405   405
+/api/tool/clean          405    204    405   405
+/api/stripe/webhook      405    204    405   405
+```
+
+Nothing answers a method it has no business answering.
 
 ### The development pages are not exposed
 `/dev/credits` and `/dev/states` both return `307` on the live site. A 404 page
