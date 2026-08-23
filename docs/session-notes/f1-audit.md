@@ -39,8 +39,12 @@ Everything after that is the working detail behind those seven, one subject per 
 **Start here, because it takes real money from a real customer.** Buy credits, use them,
 buy more, then ask for the first purchase back inside the thirty days the site offers —
 and **the second purchase's credits are taken instead.** The customer has paid for them,
-never used them, never asked for them back, and ends with nothing. Reproduced on the
-live database, step by step, below.
+never used them, never asked for them back, and ends with nothing.
+
+**And the same fault runs the other way.** Buy ten, spend fourteen, ask for a full
+refund: the customer gets the whole $4.99 back and **one** credit is recovered. They keep
+nine credits' worth of work they were refunded for, and nothing records it. **One
+mistake, two opposite losses, both reproduced on the live database below.**
 
 **And second: the product is being given away free at four addresses, on your money.**
 Every deploy leaves a permanent public URL. Twenty exist. Four of them run the paid
@@ -1755,11 +1759,12 @@ opened — which is where four of the top five came from.
 
 ### Do these before anything else. They are all settings or single conditions.
 
-**1. Fix the refund so it cannot take a different purchase's credits.** A customer who
-buys, uses it, buys again and then asks for the first purchase back loses the second
-purchase's credits. They paid, never used them, never asked. Clamp against what remains
-of *that payment*, not against the account balance. **Real money, ordinary path, live
-today.**
+**1. Fix the refund. It is wrong in both directions and one change fixes both.** Refund a
+purchase while another is sitting unused and it takes the other one's credits. Refund a
+purchase whose credits are spent and it returns all the money while recovering almost
+nothing, with the shortfall recorded nowhere. **Clamp against what remains of *that
+payment*, not against the account balance, and write the shortfall down.** Real money,
+ordinary path, live today.
 
 **2. Turn on Vercel Deployment Protection.** Four old deployment URLs run the paid
 rewrite for anybody with no account and no charge, on your gateway key. No account means
