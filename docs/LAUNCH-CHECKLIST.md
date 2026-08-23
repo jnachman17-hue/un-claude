@@ -297,7 +297,7 @@ wrong place to discover 10,000-word documents need background processing.
 |---|---|---|---|
 | G1 | Accessibility pass | **OPEN** | Site-wide — **collides with everything. Must run alone.** |
 | G2 | File-size-limit behaviour + its copy | **BLOCKED by B3** | Cannot write the copy before the limit is known. |
-| G3 | Analytics funnel instrumentation | **OPEN** | Nothing measures H1 either. |
+| G3 | **Analytics has never collected anything — ANSWERED, and it is worse than "not checked"** | **OPEN — one Vercel value** | **Verified 23 Aug: the live page contains zero occurrences of `posthog`.** The wiring is all correct — `AnalyticsProvider` is mounted at `root-providers.tsx:50`, and both vars *are* declared in `turbo.json` `globalEnv`, so the Turborepo trap the `.env` comment warns about was avoided. But `analytics-provider.tsx` does `if (!KEY) return null`, and no script is emitted, so **`NEXT_PUBLIC_POSTHOG_KEY` is empty at build time.** It is listed in Vercel production, which means it is almost certainly **set to an empty string** — the same blank value it has locally. **Consequence: every visitor since launch is unmeasured, and a PostHog dashboard has no data to sit on.** `NEXT_PUBLIC_` values are inlined at BUILD time, so fixing it needs a redeploy — **not while F1 is auditing production.** |
 | G4 | Concurrent-user stress test | **OPEN** | Folds into F1. |
 
 ---
