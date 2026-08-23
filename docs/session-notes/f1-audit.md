@@ -26,15 +26,24 @@ different words, still inside quotation marks, still attributed to that person. 
 times out of three. For a student that is a misquoted source — an academic misconduct
 problem caused by the tool they paid to protect them, and invisible to them.
 
+**The tool adds the signature it exists to remove.** Every document comes back with em
+dashes and curly apostrophes it did not go in with — eight runs out of eight in my own
+testing, and the engine agent measured 95 em dashes added to a 10,000-word essay that
+had none. Those are among the most commonly cited tells for spotting AI writing. The
+scan does not look for them, because it only checks invisible characters and these are
+visible. **This is the cheapest thing on the whole list to fix and close to the most
+valuable.**
+
 **The advertised size is roughly twice what works.** The site sells 10,000 words. On
 production 6,000 completes in 196 seconds against a 240-second cut-off; 7,500, 8,500
 and 9,900 all fail after about three and a half minutes. The customer waits and gets
 nothing. Their credits do come back.
 
-**Two ways the site takes money for nothing.** A paste under 16 words is charged a
+**Three ways the site takes money for nothing.** A paste under 16 words is charged a
 credit, comes back byte for byte identical, and the screen says "Rewritten · Measured,
-not estimated". And if a customer's connection drops mid-job they are charged and, so
-far as I could see, not refunded.
+not estimated". A box containing a single space is charged too. And if a customer's
+connection drops mid-job they are charged and — watched for eight minutes against a
+known three-minute refund window — not refunded.
 
 **One security hole worth closing while it is cheap.** Any link beginning
 `https://un-claude.com/` can be made to land the visitor on any other website, signed
