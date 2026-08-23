@@ -3210,3 +3210,58 @@ this is the layer the site offers as evidence. **A number presented as measureme
 not be movable by the phrase "in the world".**
 
 ---
+# A CORRECTION TO THE BOARD, FROM OUTSIDE THIS AUDIT'S SCOPE
+
+**While F1 was running, another session was working in the same folder** and committed
+three changes to `LAUNCH-CHECKLIST.md`. **One of them is wrong, and it is about to send
+somebody looking in the wrong place**, so it is recorded here — the checklist is not this
+audit's to edit.
+
+**What the board now says** (item G3, committed 23 August):
+
+> "Analytics has never collected anything — ANSWERED... **Verified 23 Aug: the live page
+> contains zero occurrences of `posthog`.**... `NEXT_PUBLIC_POSTHOG_KEY` is empty at
+> build time... **The leading candidate is Vercel's 'Sensitive' flag**... Check that flag
+> first. **Consequence: every visitor since launch is unmeasured.**"
+
+**The observation is right and the conclusion is wrong.** The served HTML really does
+contain zero occurrences of `posthog` — I checked, and it does. **But the script is
+injected by the client bundle after hydration, not inlined into the HTML.** In a real
+browser on the live site:
+
+```
+GET https://us.i.posthog.com/static/array.js                                  200
+GET https://us-assets.i.posthog.com/array/phc_AWsW2Eb53AoF385ZZ.../config.js  200
+GET https://us-assets.i.posthog.com/static/1.418.5/surveys.js                 200
+
+window.posthog : { "posthogObject":"object", "hasCapture":true,
+                   "configToken":"phc_AWsW2Eb5…",
+                   "distinctId":"01a03062-677c-7934-b47e-702280f0fd81" }
+```
+
+**The key is present at build time** — it is right there in `config.token`. There is
+nothing wrong with Vercel's Sensitive flag, and checking it will find nothing.
+
+**This is the same failure shape this audit exists to catch**, and it happened to a
+neighbouring session: grep the source or the served bytes, conclude, commit. The live
+page had to be *run* to see it.
+
+### What is probably true instead, and it is a better diagnosis
+
+PostHog loads and is correctly keyed. What the performance agent found is that **it keeps
+no persistence at all** — `cookieNames: []`, `localStorageKeys: []`,
+`sessionStorageKeys: []`, and a fresh `distinct_id` on every page load. My own run got a
+brand-new UUID too.
+
+**So every page load looks like a new stranger.** Nobody can be followed from the
+homepage to the pricing page to a signup, which is exactly the funnel question G3 exists
+to answer — and it would make a dashboard look useless in a way that is easy to mistake
+for empty.
+
+**What I did not establish:** whether any event is actually *sent*. I watched for eleven
+seconds and saw the library load and initialise but no capture request leave. That may be
+batching, or a disabled pageview capture, or nothing firing. **Somebody should open the
+PostHog dashboard and look**, which settles it in one glance and is the step the board
+should be pointing at instead of the Sensitive flag.
+
+---
