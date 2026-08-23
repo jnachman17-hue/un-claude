@@ -49,6 +49,34 @@ minutes earlier — see E16.
 
 ---
 
+# ★★ P0 — LIVE DEFECT, 22 AUGUST
+
+| ID | Item | Status |
+|---|---|---|
+| **P1** | **The engine hands its own prompt to the customer as their "sanitised" text** | **OPEN — happening on the live site** |
+
+Jon sanitised text on the live site and received **a rewrite of the engine's own
+prompt** — the rewrite rules restated, opening "Here's a fresh take where the
+facts remain untouched…". **Cause found in source:** `rewrite_text.py:329`/`:390`
+send the rules and the customer's text as **one `user` message**, with only a
+bare `---` line between them and **no `system` role**. The model has no
+structural signal for which half to rewrite, so it can rewrite the rules.
+
+**The likely trigger is a SHORT input** — when the text is short the rules are
+the largest block of prose in the message. That is exactly what a first-time
+visitor pastes to try the product.
+
+**Nothing checks the output relates to the input.** The existing guards check
+facts and length; none asks whether the returned text is even the customer's.
+
+**Costs, right now:** a paying customer receives the prompt instead of their
+document, and the internal prompt is disclosed to anyone who triggers it.
+
+**Also suspect:** the model changed to `mistral/mistral-medium` hours ago. Test
+both. Brief: `docs/briefs/W8-URGENT-prompt-leak.md`.
+
+---
+
 # ★ WHAT IS LEFT, IN ORDER
 
 | # | Item | Whose | Note |
