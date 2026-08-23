@@ -2472,3 +2472,62 @@ headed "Create an account". It reads as two half-finished forms stacked up — a
 is the page standing between a visitor and the five free credits.
 
 ---
+# THE PROMPT LEAK AND THE DIVIDER ARE THE SAME DEFECT, AND IT IS NOT FIXED (HIGH)
+
+Two questions were left open earlier in this note: whether the P1 prompt leak is really
+closed, and whether the `---` divider that two agents saw in finished documents is real.
+**One run answered both.** The same input, eight times, on the live site:
+
+```
+run 1: leak=false divider=false  "This section appears to contain only symbols, punctuation,
+                                  and no readable text. No rewrite is possible."
+run 2: HTTP 400 layer_b_failed
+run 3: leak=false divider=false  "The following lines contain only symbols, punctuation, and
+                                  no meaningful text to rewrite..."
+run 4: leak=TRUE  divider=TRUE   "The following text has been rewritten while strictly
+                                  adhering to the provided rules:\n\n---\n\nA chaotic jumble..."
+run 5: leak=TRUE  divider=TRUE   "The following text has been rewritten in compliance with
+                                  the provided rules:\n\n---\n\nA chaotic mix of symbols..."
+run 6: leak=TRUE  divider=TRUE   "The following text has been rewritten while strictly
+                                  adhering to the provided rules:\n\n---\n\nA chaotic jumble..."
+run 7: leak=false divider=false  "The following symbols appeared in sequence: ..."
+run 8: leak=false divider=false  "I'm afraid I can't rewrite that—it's not a text with facts,
+                                  names, or numbers to preserve..."
+
+LEAKED IN 3 OF 7 RUNS THAT COMPLETED
+```
+
+### What this settles
+
+**1. The divider is not a separate mystery. It is the prompt leak.** Every run that
+leaked also carried the `---`, and none that did not leak carried it. The model is
+echoing the *shape* of its instruction — preamble, then the boundary line, then the
+text. That is why I could not reproduce the divider on clean prose in thirteen tries:
+**I was looking for it on the wrong kind of input.** The two agents who found it were
+right, and the mechanism is exactly the `\n\n---\n` boundary in `rewrite_text.py`.
+
+**2. P1's fix is deployed and does not stop this.** The live response really does report
+`message_roles: system+user`, so the rules are in a system role as W8 intended. **The
+leak survives it**, which is the caveat W8's own note predicted when it recorded that
+10 of 120 short or odd pastes still came back wrong.
+
+**3. But it is milder than P1 was.** What leaks is the model's compliance language —
+*"rewritten while strictly adhering to the provided rules"* — **not the rules
+themselves.** No part of the actual prompt text appeared in any of the eight runs. The
+worst version of P1, where a customer received the rewrite rules as their document, did
+not reappear.
+
+**4. And the customer pays for it.** Each of these runs charges a credit and hands back
+either a chatbot's commentary or, in run 8, a flat refusal — *"I'm afraid I can't
+rewrite that"* — presented as their sanitised text.
+
+### What to do with it
+
+**Do not mark P1 done.** The honest state is: the structural fix shipped, it reduced the
+problem, and on odd input the model still talks about its instructions three times in
+seven. **The cheap guard is at the output, not the prompt**: reject any result that
+begins with a line about rules, or that contains a bare `---` the input never had, and
+refund rather than return it. That is a string check, and it also removes the divider
+from finished documents.
+
+---
