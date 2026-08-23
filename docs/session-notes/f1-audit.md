@@ -1084,10 +1084,27 @@ credit bypass off.
 | 4,800 | ok | 83.4 s | 2 | 3,398 | 5 | $0.0248 |
 | **6,000** | **ok** | **196.3 s** | **4** | **4,670** | 6 | $0.0562 |
 | **7,500** | **FAILED** | **192.9 s** | — | — | 0, refunded | — |
+| **8,500** | **FAILED** | **197.7 s** | — | — | 0, refunded | — |
 | **9,900** | **FAILED** | **198 s / 227.8 s** | — | — | 0, refunded | — |
 | 10,064 | refused, correctly | 0.8 s | — | — | 0 | $0 |
 
 **The real ceiling is between 6,000 and 7,500 words. The site advertises 10,000.**
+
+**Every failure gave the money back, and the ledger proves it four separate times:**
+
+```
+    -6 spend              words=6000        (succeeded, kept)
+    -8 spend              words=7500
+    +8 operation_refund
+    -9 spend              words=8500
+    +9 operation_refund
+```
+
+**The failures all land between 192 and 198 seconds**, whether the document is 7,500
+words or 9,900. That is the signature of a fixed internal cut-off, not of a job that
+grows too big — which matters, because it means the fix is not "make it faster for
+long documents", it is "stop starting jobs that cannot finish inside the window, and
+say so up front".
 
 **And 6,000 is not a comfortable pass.** 196 seconds against a 240-second cut-off,
 reached only after four retries. Whether a 6,000-word document works depends on how
@@ -1102,5 +1119,132 @@ a different model — but it is the concrete reason B11 mattered.
 **A cost figure Jon has never had.** 6,000 words cost **5.6 cents** to run and sold
 for 6 credits — $3.00 at the Starter price, $1.50 at Pro. Even at the worst pack
 price that is a 27x margin, and the retries are already in the number.
+
+---
+# LAYER A, TESTED PROPERLY — the one layer that can be proved
+
+Fifteen different invisible characters, one from each family the engine names, planted
+in ordinary prose and put through the live site.
+
+**Detection: fifteen out of fifteen. Nothing was missed.**
+
+```
+PLANTED: 15 distinct invisible characters
+SCAN FOUND: suspicious_total = 15
+   U+00A0 NO-BREAK SPACE          U+061C ARABIC LETTER MARK    U+180E MONGOLIAN VOWEL SEP
+   U+2009 THIN SPACE              U+200B ZERO WIDTH SPACE      U+200C ZERO WIDTH NON-JOINER
+   U+200D ZERO WIDTH JOINER       U+200E LEFT-TO-RIGHT MARK    U+200F RIGHT-TO-LEFT MARK
+   U+202F NARROW NO-BREAK SPACE   U+2060 WORD JOINER           U+E000 PRIVATE USE
+   U+FE0F VARIATION SELECTOR-16   U+FEFF ZERO WIDTH NBSP       U+E0041 TAG LATIN CAPITAL A
+
+PLANTED BUT NOT REPORTED BY THE SCAN: (none)
+```
+
+**That is a genuine, countable pass and it deserves saying plainly: the scanner
+works.** This is the layer the product can prove, and it proved it.
+
+**Removal: twelve of the fifteen. Three are left behind on purpose.**
+
+```
+removed_count: 9 | replaced_count: 3
+STILL PRESENT IN THE CLEANED TEXT: U+200E LRM, U+200F RLM, U+061C ARABIC LETTER MARK
+RE-SCAN of the cleaned text: suspicious_total = 3   hits: ["U+061C","U+200E","U+200F"]
+```
+
+**And leaving them is the right call.** The engine says so in its own note, which the
+scan returns on every run:
+
+> "Load-bearing invisibles are preserved by default during cleaning: ... RTL
+> directional marks/paired embeddings, and orthographic Arabic/Syriac Cf marks.
+> **Inspection still reports bidi controls.**"
+
+Those three characters carry meaning in Arabic and Hebrew. Stripping them would
+corrupt a real document. **The engineering is correct.**
+
+### The problem is that two sentences on the live site say otherwise (MEDIUM)
+
+> Homepage hero: **"100% of detectable marks removed"**
+> `/capabilities`: "Nine classes of invisible character checked on every scan. Each
+> one is named, given its exact position, and **the text is read back afterwards to
+> confirm none remain.** You see the count."
+
+The tool detected 15 and removed 12. Read the text back and 3 remain. **Any curious
+visitor can disprove both sentences in about ten seconds** — scan, clean, scan again —
+and this is a site whose entire argument is that its claims survive checking.
+
+**The fix is a sentence, not a change to the engine.** Something like "every mark that
+can be safely removed, and we show you the ones we deliberately keep and why" is both
+true and a better sales line, because it demonstrates the care rather than asserting a
+round number.
+
+---
+### The plumbing under the site is correct (PASS)
+
+```
+http://un-claude.com/          308 -> https://un-claude.com/
+https://www.un-claude.com/     308 -> https://un-claude.com/
+http://www.un-claude.com/      308 -> https://www.un-claude.com/   (then to the apex)
+
+robots.txt:  User-Agent: *  /  Allow: /  /  Sitemap: https://un-claude.com/sitemap.xml
+
+every URL in the sitemap, fetched:
+  /  200   /how-it-works 200   /capabilities 200   /mission 200   /contact 200
+  /pricing 200   /cookie-policy 200   /terms-of-service 200   /privacy-policy 200
+```
+
+Every redirect is a permanent 308, the sitemap is complete and every address in it
+answers. Nothing here is broken.
+
+**One gap worth a line of robots.txt:** `Allow: /` with no exclusions means the
+sign-in, sign-up, password-reset and account pages are open to search engines. Nobody
+is harmed, but a stranger searching for the product can land on a bare "Update
+Password" screen, and one of those pages carries the homepage's own title, so two
+pages claim to be "Un-Claude · AI Watermark Remover".
+
+---
+# THE ECONOMICS, MEASURED — numbers Jon has never had
+
+Every figure here comes from the `cost_usd` the AI Gateway itself reported on live
+runs tonight, not from arithmetic on a token count.
+
+| what | measured cost to us |
+|---|---|
+| 2,553 words | $0.0094 |
+| 4,800 words | $0.0248 |
+| 6,000 words | $0.0562 |
+| **so, roughly** | **0.37 cents per 1,000 words — i.e. per credit sold** |
+
+**What a credit costs versus what it sells for**
+
+| pack | price per credit | cost to run | margin |
+|---|---|---|---|
+| Starter $4.99 / 10 | 50¢ | ~0.37¢ | **135x** |
+| Plus $9.99 / 25 | 40¢ | ~0.37¢ | **108x** |
+| Pro $24.99 / 100 | 25¢ | ~0.37¢ | **67x** |
+
+**The pricing is not the problem, and it is not close.** Even the cheapest pack sells
+a credit for 67 times what it costs, with the fact-guard retries already inside the
+number.
+
+**What the free tier costs.** A brand-new signed-up account is given 5 credits and can
+spend them all on the rewrite, which is the only layer that costs real money:
+
+- an anonymous visitor: 2 credits = 2,000 words ≈ **0.7 cents**
+- a signed-up account: 5 credits = 5,000 words ≈ **1.9 cents**
+
+**So a hundred strangers cost about 70 cents and a hundred signups about $1.90.** That
+is a cheap way to buy a trial, and it means the free tier is not a leak worth
+engineering against — including the forged-guest-cookie item (E13) that was
+deliberately left open. **The worst that hole can do is give away about 0.7 cents at a
+time**, which is the missing number that makes leaving it open the obviously right
+call rather than a gamble.
+
+**One caveat, and it is the reason to keep watching.** These figures are for
+`mistral/mistral-medium` at tonight's gateway prices. The model has already changed
+once (`mistral-small` to `mistral-medium`, which made the prompt-leak defect three
+times worse). If it changes again, every number in this section changes with it, and
+nothing in the product records what a job cost — see the ledger's empty `cost_usd`
+column, which the ledger agent flagged and which is the one thing that would make this
+table self-maintaining.
 
 ---
