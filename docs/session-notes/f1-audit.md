@@ -110,6 +110,7 @@ live site with the output pasted in.
 | M | **HIGH** | "Upload a file and you get all three" — no accepted file type gets all three | conductor + 2 agents |
 | N | **HIGH** | The site promises a three-word ceiling; its own receipt printed 6 | conductor |
 | — | **HIGH** | Three of the four "enforced rather than promised" FAQ claims fail against the product's own receipt | conductor |
+| — | **HIGH** | The prompt leak is not fixed — 3 runs in 7 return the model discussing its own rules, and this is also the `---` divider | conductor + 3 skeptics |
 | — | **HIGH** | The refund tool says money is owed on a payment already refunded in full | conductor + skeptic |
 | 5 | MEDIUM | The rewrite returns documents 6–14% longer and calls it "Length 114% kept" | conductor, 8 runs |
 | 6 | MEDIUM | On repetitive text the rewrite silently deleted 22–29% of the document | conductor, twice |
@@ -846,13 +847,14 @@ so the model can copy it into its answer.
 document of bare headings; numbers only; and a plain control. Zero dividers, and zero
 occurrences of the prompt's own language, in every one.
 
-**So: two agents reproduced it with the bytes quoted, and the conductor could not
-reproduce it thirteen times.** The mechanism is confirmed in the engine's source —
-`\n\n---\n` really is the literal boundary between the instructions and the customer's
-text — so it is not imaginary. It is intermittent, and **nobody knows how often**. It is
-recorded as real-but-unquantified rather than confirmed or dismissed, because both of
-those would be a guess. **Settling it needs a proper measurement run, not a fix on
-faith.**
+**THIS WAS LATER SETTLED — see the section "The prompt leak and the divider are the
+same defect".** I was looking for it on the wrong kind of input. On odd input it appears
+in **3 runs out of 7**, always alongside the model announcing that it has "rewritten
+[the text] while strictly adhering to the provided rules". The two agents were right,
+the mechanism is the `\n\n---\n` boundary in the prompt, and the divider and the prompt
+leak are one defect rather than two. **This paragraph is left in place rather than
+deleted, because "I could not reproduce it, therefore it may not be real" was the wrong
+conclusion and it is worth seeing that in the record.**
 
 **One thing that did turn up while chasing it, and is new.** An eighteen-word list of
 ordinary nouns — `apple bicycle mountain window telephone garden ocean pencil...` — came
@@ -2072,7 +2074,7 @@ on the live site**". **Tested one at a time against production:**
 
 | item | what it is | live? | how I know |
 |---|---|---|---|
-| **P1** | the prompt-leak fix — rules moved into a system role | **DEPLOYED** | a 29-word paste, rewrite ran, response reports `message_roles: system+user` |
+| **P1** | the prompt-leak fix — rules moved into a system role | **DEPLOYED, and it does not fully work** | a 29-word paste, rewrite ran, response reports `message_roles: system+user`. But on odd input the leak still appears 3 times in 7 — see the section on the prompt leak. **Do not mark P1 done.** |
 | **P2** | the 16-word floor below which the rewrite is skipped | **DEPLOYED** | `{"skipped":"input_too_short","min_words":16}` |
 | **B7a** | `.txt` behaves like a paste — priced by the word and rewritten | **DEPLOYED** | a 4,800-word `.txt` with the rewrite on: `charged 5`, `layer_b_used: true` |
 | **B7** | a Word document says "NOT REWRITTEN" instead of "Rewriting" | **DEPLOYED** | the live panel, quoted earlier in this note |
