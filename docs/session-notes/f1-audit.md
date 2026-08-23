@@ -130,7 +130,7 @@ live site with the output pasted in.
 | # | severity | finding | verified by |
 |---|---|---|---|
 | 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
-| 0a | **CRITICAL** | Refunding one purchase confiscates the credits of a different purchase the customer paid for | gap agent, then conductor |
+| 0a | **CRITICAL** | The refund is wrong in both directions: it confiscates another purchase's credits, or gives back the money and recovers almost nothing | gap agent, then conductor, both cases |
 | 0b | **HIGH** | Any free account can upload any file to a public bucket — and deleting the account does not delete it, against the privacy policy | gap agent + conductor |
 | 0c | **HIGH** | Free credits can be minted repeatedly from one email — deleting the account destroys the record that prevents it | conductor, 3 rounds |
 | 0d | MEDIUM | A new customer's wallet says "0 credits" and offers to sell them some; the grants are minted only when they visit the tool | conductor |
@@ -310,11 +310,34 @@ total, "so two partial refunds on one pack would have eaten credits belonging to
 purchases". **That shape was fixed. This one — spend the pack, buy another, refund the
 first — was not.**
 
-**Fix sketch.** Clamp against the credits still attributable to that payment intent, not
-against the account. If the customer has already spent what they are refunding, the
-honest answer is to remove nothing and record the shortfall, not to take somebody else's
-credits — which is a second finding the same agent raised: a full refund on spent credits
-returns all the money and takes back only the leftovers, with nothing anywhere saying so.
+### And the same clamp is wrong in the other direction too
+
+The same agent raised the mirror case and I reproduced that as well. **Buy ten, spend
+more than ten, then ask for a full refund:**
+
+```
+signs up                          balance 5
+buys 10 credits for $4.99         balance 15
+sanitises 14,000 words            balance 1     <- 4 of those were free grants
+Stripe refunds the whole $4.99    credits actually removed: 1
+                                  balance 0
+
+the ledger row written:   -1  money_refund   cents: 499
+```
+
+**The customer gets the entire $4.99 back and keeps nine credits' worth of work they were
+just refunded for.** The ledger says `$4.99 refunded` beside `1 credit removed`, and
+nothing anywhere records the nine-credit shortfall.
+
+**So the refund path is wrong in both directions, from one cause.** Clamping against the
+account balance means: **if another purchase is sitting there, raid it** (above); **if
+the credits are already spent, take almost nothing** (here). One customer is robbed, the
+other gets nine credits free, and the ledger looks tidy in both cases.
+
+**Fix sketch.** Clamp against the credits still attributable to *that payment intent*,
+not against the account. When the customer has already spent what they are refunding,
+remove what remains of that purchase and **write the shortfall down** — a refund that
+gave back more value than it recovered is a number Jon needs, and today it is invisible.
 
 ---
 
