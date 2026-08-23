@@ -119,6 +119,51 @@ on. The current limit is a promise the engine cannot keep.
 
 ## HIGH
 
+### 1b. The tool that removes AI signatures inserts the most famous one
+
+**What a student sees.** Their teacher says the long dash is how she spots ChatGPT.
+Their essay had none. It comes back with several, and every apostrophe has changed
+shape.
+
+**Eight live runs of my own, two different documents. Every single one:**
+
+```
+input -> output                          em-dash      curly apostrophe
+varied2500 -> run 1                       0 -> 6            0 -> 18
+varied2500 -> run 2                       0 -> 9            0 -> 22
+varied2500 -> run 3                       0 -> 7            0 -> 22
+varied2500 -> run 4                       0 -> 7            0 -> 22
+varied2500 -> run 5                       0 -> 7            0 -> 16
+essay      -> run 1                       0 -> 5            0 ->  6
+essay      -> run 2                       0 -> 7            0 ->  6
+essay      -> run 3                       0 -> 10           0 ->  7
+```
+
+**Zero going in. Never zero coming out. Eight times out of eight.**
+
+**One of them, from my own run, in full:**
+
+> "...notes imply she did not. Public sentiment eventually aligned with the contested
+> appraisal**—**but only after a wait of close to two years."
+
+**The engine agent measured how it scales**, and it scales with length: 100 words → 1
+em dash, 1,000 → 6, 2,500 → 16, 5,000 → 34, **10,000 → 95**. It also found the same
+run converting every straight apostrophe to a curly one, and — on some documents —
+inserting markdown asterisks around headings and numbers, which paste into Word as
+literal stars the student has to delete by hand.
+
+**Why this belongs near the top.** The product exists to remove the marks that identify
+writing as machine-made. The em dash is the single most widely recognised of those
+marks in the eyes of the actual audience — teachers. **The tool is adding it, every
+time, in proportion to how much the customer paid.** Nothing in the scan flags it,
+because the scanner checks invisible characters and the em dash is visible.
+
+**It is also the cheapest thing on this list to fix**: a post-pass that maps em dashes
+back to the punctuation the customer used, restores straight apostrophes, and strips
+markdown the input never had. It changes no meaning and needs no model.
+
+---
+
 ### 2. The rewrite invents quotations and leaves them attributed to a real person
 
 **What a student sees.** Nothing. That is the problem. The quotation marks are still
@@ -1409,5 +1454,197 @@ modes) and 14 (operations) were still running.
    temperature and the length of the internal prompt.** Two agents found this
    separately. It is reconnaissance for exactly the prompt-injection family that
    produced the P1 defect.
+
+---
+# THE FOUR ENFORCEMENT PROMISES, MEASURED AGAINST MY OWN LIVE RUNS (HIGH)
+
+The homepage FAQ makes four specific, checkable promises about the rewrite. They are
+not marketing adjectives — they are engineering claims, stated as enforced. **They are
+also inside the page's FAQPage structured data**, which is the text Google may show
+directly in a search result.
+
+**Promise 1, live, verbatim:**
+
+> **"Will it change my meaning, my facts, or my numbers?"**
+> "**No, and this is enforced rather than promised.** Every number, date and name is
+> checked against your original and the section retries if one drifts. **Length is
+> held within a tenth**, and the receipt shows the figures carried through."
+
+**Promise 2, live, verbatim:**
+
+> "Ours is a purpose-built engine, not a prompt: **a hard three-word ceiling on
+> surviving sequences** ... every number, date and name checked against your original
+> with a retry if one drifts, and length held within a tenth. Across our test set it
+> **breaks over 90% of three-word sequences with zero figures lost**."
+
+**What I measured on the live site tonight:**
+
+| the promise | what happened |
+|---|---|
+| "it will not change my facts" | **A quotation attributed to a named person came back with different words inside the quotation marks. Three runs out of three.** A quotation is a fact about what someone said. |
+| "every number ... checked" | **One of ten mentions of the year 1974 was dropped.** The engine's own receipt said 53 figures in, 47 kept, and its "figures to check" list was empty. |
+| "length is held within a tenth" | **Broken in both directions and by a wide margin.** 2,553 → 2,833 words is +11.0%. 4,800 → 3,398 is −29%. 6,000 → 4,670 is −22%. |
+| "a hard three-word ceiling" | **My own receipt from a live run printed `"longestRun": 6`.** |
+
+**Why this cluster matters more than any single item in it.** "Enforced rather than
+promised" is the strongest sentence on the site, and it is the one a careful reader
+will believe. It is also the one they can check, because the product hands them the
+receipt to check it with. Three of the four promises fail against that same receipt.
+
+**And it is the one part of the copy that is not fixable by rewording alone.** "Length
+is held within a tenth" can be softened. "It will not change your facts" cannot be
+softened into something that is both true and worth saying — a student needs their
+quotations and figures intact, and today they are not guaranteed to be. **That is the
+engine work, and it is the same work as finding 2.**
+
+---
+# OPERATIONS — the domain, the mail and the certificate
+
+```
+A record        un-claude.com -> 76.76.21.21   (Vercel)
+MX              (none at all)
+SPF at the root (none)
+DMARC           v=DMARC1; p=reject;            (no rua= reporting address)
+DKIM            resend selector present
+TLS             Let's Encrypt, 18 Aug 2026 -> 16 Nov 2026, auto-renewing
+```
+
+**The certificate is healthy** and renews itself. Nothing to do.
+
+**DMARC is set to `p=reject`, which is the strict setting and the right one.** With no
+`rua=` address nobody ever sees the reports, which is `LAUNCH-CHECKLIST` E7 and is
+confirmed here. E8 (no SPF at the root) is confirmed too; DKIM carries alignment, so
+outbound mail still authenticates.
+
+**The one worth acting on: the domain cannot receive email at all.** There are no MX
+records. That means:
+
+- `support@un-claude.com`, which is the address a confused customer will guess, does
+  not exist and never bounces into anyone's inbox.
+- The DMARC reporting address in E7 has nowhere to point until this changes.
+- It is why the contact page is a `mailto:` to a Gmail address (finding L), and why a
+  customer who disputes a charge sees `UN-CLAUDE.COM` on their statement and is asked
+  to write to a personal-looking Gmail account.
+
+**This is one DNS change and it closes three items at once** — a real support address,
+a home for the DMARC reports, and the trust mismatch at the moment a customer is
+deciding between emailing you and calling their bank. A dispute costs about $24.50; a
+refund costs about $0.56.
+
+---
+# THE CONNECTION-DROP CASE — charged, and not refunded (MEDIUM)
+
+Nobody had tested what happens when the customer's connection dies mid-job. It is the
+student on a train, the phone that locks, the tab closed by accident. **With jobs
+running for minutes, that window is wide.**
+
+**Run live: a 2,553-word paste, connection dropped by the client at 6 seconds.**
+
+```
+balance before: 58
+>>> connection dropped by the client at 6s (the train goes into a tunnel)
+client saw: AbortError - This operation was aborted
+balance immediately after the drop: 55        <- 3 credits taken
+```
+
+**Then watched for eight minutes.** For reference, the two genuine server-side failures
+earlier that night were refunded after 3 minutes 11 seconds and 3 minutes 16 seconds,
+so the window was known:
+
+```
+  +1 min: refunds after row 1630: none
+  +2 min: none
+  ...
+  +8 min: none
+
+CONCLUSION: no refund after 8 minutes. The credit was kept.
+```
+
+The ledger shows `id 1630, -3 spend, words=2553` with no matching `operation_refund`,
+while every server-side failure that night has one.
+
+**This is not a coding mistake, and saying so matters.** The credit is spent up front,
+the engine does the work, and the answer is delivered to a browser that is no longer
+there. From the server's point of view the operation succeeded. From the customer's
+point of view they paid and got nothing, and the pricing page says *"A failed run costs
+nothing. The credits go straight back to your balance."*
+
+**It compounds the size problem.** A job that takes three minutes has three minutes in
+which a phone can lock or a train can enter a tunnel. Shortening the jobs (finding 1)
+shrinks this one too.
+
+---
+# ACCESSIBILITY — never started, and now opened (G1)
+
+The accessibility agent did the fullest pass, and it was scrupulous about what it
+could not see: no browser, no screen reader, no zoom testing. What follows is what I
+re-ran and confirmed myself, plus its strongest finding.
+
+### No page has a main landmark and no page has a skip link (MEDIUM)
+
+**Checked on ten live pages. Not one has any of them:**
+
+```
+/                      <main>=0  role=main=0  skip-link=0  <h1>=0
+/pricing               <main>=0  role=main=0  skip-link=0  <h1>=1
+/how-it-works          <main>=0  role=main=0  skip-link=0  <h1>=1
+/capabilities          <main>=0  role=main=0  skip-link=0  <h1>=1
+/mission               <main>=0  role=main=0  skip-link=0  <h1>=1
+/contact               <main>=0  role=main=0  skip-link=0  <h1>=1
+/terms-of-service      <main>=0  role=main=0  skip-link=0  <h1>=1
+/privacy-policy        <main>=0  role=main=0  skip-link=0  <h1>=1
+/cookie-policy         <main>=0  role=main=0  skip-link=0  <h1>=1
+/auth/sign-in          <main>=0  role=main=0  skip-link=0  <h1>=0
+```
+
+Every visit, on every page, a screen-reader user walks past the logo, four menu links
+and two buttons before reaching anything they came for, with no way to jump.
+
+**The homepage has no `<h1>` in the page it serves** — a consequence of everything
+being drawn by JavaScript (section D), not a separate defect.
+
+### After a scan, the result becomes a single button — a blind student cannot read what they paid for (HIGH)
+
+The agent's sharpest catch. Once a scan completes, the whole text panel is wrapped in:
+
+```
+role: "button", tabIndex: 0, "aria-label": "Edit this text"
+```
+
+**I saw this myself in the browser's own accessibility tree** — before the scan it read
+`textbox "Paste your text here..."`, and afterwards the same region read
+`button "Edit this text"`.
+
+Under the ARIA rule for presentational children, everything inside a button collapses
+into its label. So a screen reader announces *"Edit this text, button"* and will not
+read out the essay, will not say where the hidden characters were, and after the
+customer pays, will not read back the clean text either. **They have bought a result
+they cannot hear.**
+
+Stated honestly: this rests on the ARIA specification and on the live markup, not on a
+screen-reader run. Nobody put VoiceOver on it. It is the first thing to check with one.
+
+### Nothing announces that the tool is working, has finished, or has failed (HIGH)
+
+The whole served homepage contains **one** `aria-live` region and no `role="status"` or
+`role="alert"` on the status line that carries "Rewriting", "Sanitised" and every error
+message. A sighted user watches the button change for up to three minutes. A screen
+reader user gets silence, and never hears the error at all.
+
+### The colours on the part that takes the money are the hardest to read (MEDIUM)
+
+Measured from the live stylesheet's own tokens: the muted grey used for the scan
+results (`#6A6963` on `#FAF9F5`), the white label on the orange Sanitise button
+(`--mark #D97756`), and the pale white numbers on the "Most popular" pricing card all
+fall below the readable minimum. **The card you most want a customer to read is the
+one they can read least**, including "25,000 words" and "40¢ a credit" — the two
+numbers they use to choose a pack.
+
+### What nobody did, and it should be said plainly
+
+No screen reader was run. No zoom or reflow testing at 320px or 400%. No keyboard tab
+order was walked in a real browser. No axe-core, no Lighthouse. **This is a first look
+that found real things, not an accessibility pass**, and G1 should still be treated as
+open.
 
 ---
