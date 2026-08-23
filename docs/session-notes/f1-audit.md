@@ -857,6 +857,20 @@ This is the money-display defect family again — the same one as the frozen hea
 count (6d) and the word counter that lied (B6). It is on the page that is a
 financial record.
 
+**And one thing about that page that will bite later rather than now.** A critic asked
+whether anyone had loaded the wallet for an account with a long history. Nobody had, so
+I did — the audit's own account, with **82 ledger rows**, the longest on the site:
+
+```
+GET /home -> HTTP 200 | page bytes 210,693
+every row rendered, no pagination, no "load more"
+```
+
+**Nothing is missing, which is the good news.** But 82 rows already costs 210 KB, so a
+customer with a few hundred jobs gets a page measured in megabytes and a phone that
+struggles with it. It is not a defect today and it is the kind of thing that becomes one
+quietly.
+
 ---
 
 ### 9. The "words cleaned" figure goes backwards when you reload the page
