@@ -206,10 +206,16 @@ inserting markdown asterisks around headings and numbers, which paste into Word 
 literal stars the student has to delete by hand.
 
 **Why this belongs near the top.** The product exists to remove the marks that identify
-writing as machine-made. The em dash is the single most widely recognised of those
-marks in the eyes of the actual audience — teachers. **The tool is adding it, every
-time, in proportion to how much the customer paid.** Nothing in the scan flags it,
-because the scanner checks invisible characters and the em dash is visible.
+writing as machine-made. The em dash and the curly apostrophe are among the most
+commonly cited stylistic tells in the public conversation about spotting AI writing —
+**I have not measured how many teachers actually use them, and this note does not claim
+to**, but they are the marks the discussion is about, and the tool is adding them every
+time, in proportion to how much the customer paid.
+
+**What is measured, and is not a matter of opinion:** the customer's document goes in
+with none and comes back with several, and **nothing in the product tells them.** The
+scan checks invisible characters; an em dash is visible, so it is not looked for, and
+the receipt does not mention punctuation at all.
 
 **It is also the cheapest thing on this list to fix**: a post-pass that maps em dashes
 back to the punctuation the customer used, restores straight apostrophes, and strips
@@ -2044,5 +2050,54 @@ people who have not come back yet, not people who lost anything.
 cookie was present. Then "converted with credits carried" and "converted with nothing
 to carry" become countable, and this stops being a matter of opinion. That is a smaller
 job than the analytics work G3 describes, and it answers the question G3 was raised for.
+
+---
+# SECURITY HEADERS — five of the six standard ones are absent (MEDIUM)
+
+**The complete header block the live site returns, with the routine ones stripped out:**
+
+```
+HTTP/2 200
+access-control-allow-origin: *
+cache-control: public, max-age=0, must-revalidate
+content-type: text/html; charset=utf-8
+strict-transport-security: max-age=63072000
+x-vercel-cache: HIT
+```
+
+**Checked one at a time:**
+
+```
+PRESENT  strict-transport-security
+missing  content-security-policy
+missing  x-frame-options
+missing  x-content-type-options
+missing  referrer-policy
+missing  permissions-policy
+```
+
+**And the same on `/auth/sign-in`** — the page where people type their password:
+
+```
+missing  content-security-policy   (sign-in page)
+missing  x-frame-options           (sign-in page)
+```
+
+**What each missing one actually allows, in plain terms.** `x-frame-options` is the one
+that matters most here: without it another website can load the un-claude sign-in page
+inside an invisible frame on top of its own, so a visitor believes they are clicking
+one thing and are really clicking another. `content-security-policy` is the safety net
+that limits the damage if a bad script ever reaches a page. The other three are smaller:
+they stop a browser guessing file types wrongly, control what address is leaked to other
+sites, and switch off browser features the site does not use.
+
+**Nothing is broken today and no customer is affected today.** These are missing safety
+nets rather than an open door, which is why this sits at medium and not higher.
+
+**It pairs badly with the open redirect (finding 3), though, and the pair is worth
+seeing together:** an attacker can already produce a link that starts with
+`https://un-claude.com/` and lands wherever they like, and the sign-in page can be
+framed. Those two are individually modest and jointly make a convincing phishing setup
+out of your own domain. Closing the redirect is the cheaper half and closes most of it.
 
 ---
