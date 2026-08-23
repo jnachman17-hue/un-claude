@@ -68,6 +68,13 @@ out, no account needed. Three skeptics reproduced it and then talked me down fro
 reputation is worth and this domain is two days old. **They are right, and it is still
 one line of code — cheapest now, before the name is worth stealing.**
 
+**The prompt leak is not fixed, and it is the same defect as a stray divider line
+appearing in people's documents.** On odd input, three runs in seven come back beginning
+*"The following text has been rewritten while strictly adhering to the provided
+rules:"* — the model talking about its instructions, handed to the customer as their
+document, for a credit. The structural fix from W8 did ship and did reduce it. **It did
+not close it, and the board should not mark it done.**
+
 **Several claims are wrong in ways a curious visitor can disprove in ten seconds** —
 "100% of detectable marks removed", "a hard three-word ceiling" (the site's own receipt
 printed 6), "nine classes checked" (one of the nine finds nothing), "upload a file and
