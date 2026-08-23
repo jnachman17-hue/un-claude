@@ -193,7 +193,7 @@ remain closed as non-defects.
 | ID | Item | Status | Note |
 |---|---|---|---|
 | D1–D3 | Search Console property · sitemap · robots.txt | **DONE** | Sitemap 200, robots correct. |
-| D4 | ~~noindex blocking Google~~ | **NOT A DEFECT** | No `noindex` anywhere. Stale 15 Aug crawl. **Do not hunt for it.** |
+| D4 | ~~noindex blocking Google~~ | **NOT A DEFECT — SETTLED TWICE. DO NOT INVESTIGATE A THIRD TIME.** | Search Console said "Excluded by 'noindex' tag" again on 22 Aug, this time for `www`. **Verified three independent ways that no such tag exists or ever has:** (1) zero `noindex` in the live HTML of every page; (2) **no `X-Robots-Tag` header** on `www` or the apex — `www` returns a clean `308` to the apex and following it gives `200`; (3) **the only `noindex` in the repo's entire history was the word inside a code comment**, added in `099ac08` and removed in `50d9f39` — never a tag. Search Console reports its **last crawl**, not the live page, and its own UI hints at this with "Page changed?". **The fix is Test Live URL, never a search of the source.** |
 | D5 | ~~Temporary redirects~~ | **NOT A DEFECT** | All 308 permanent. |
 | D9 | **Title template** | **DONE — verified** | One field in `root-metdata.ts` fixed **every page site-wide**, including four W4 never touched. Verified: `/pricing` "Pricing · Un-Claude", `/privacy-policy`, `/terms-of-service`, `/cookie-policy` all now carry the brand where they were bare words. Homepage uses an absolute title so the brand is not appended twice. |
 | D10 | **Meta descriptions over length** | **DONE for the pages W4 owned** | Verified by measuring the served strings: homepage **162 → 145**, `/how-it-works` **181 → 151**, `/mission` 136 unchanged. Claims were checked, not just character counts. |
