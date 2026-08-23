@@ -1822,3 +1822,123 @@ Both stand. The backup's real stakes are in the section above: 84 rows across 30
 accounts, of which exactly one could be rebuilt from Stripe.
 
 ---
+# ERROR HANDLING AND FAILURE MODES (dimension 13)
+
+That agent died with the run's usage limit too. This is the conductor's own pass.
+
+### Ten deliberately broken inputs, sent to the live site
+
+**Correctly refused, and nothing charged:**
+
+```
+a .docx that is not a zip at all           400  bad_format
+a zip with no word/document.xml            400  bad_format
+a .png that is not a PNG                   400  bad_format
+a real PNG renamed .docx                   400  bad_format
+a single null byte                         400  bad_format
+a .pdf                                     400  bad_format
+```
+
+All six get the same message, and it is a good one: **"That file type is not supported.
+Use text, a Word document, PNG or JPG."** Clear, and it names the way out.
+
+**This answers an open question on the board.** `LAUNCH-CHECKLIST` B2a says *"`.pdf` is
+in the engine's `CONTAINER_EXTS` while 04 entry 26 says PDF is deliberately unsupported
+— nobody knows what a PDF upload does today."* **It is refused, cleanly, free of
+charge.** That item can be closed.
+
+**Accepted and charged one credit each:**
+
+```
+text that is only whitespace               200  OK  charged=1  kind=text
+text that is only emoji                    200  OK  charged=1  kind=text
+text that is only invisible characters     200  OK  charged=1  kind=text
+a .jpg with a truncated scan               200  OK  charged=1  kind=image
+```
+
+**The whitespace one is a defect** and it is the same family as finding 4: a customer
+whose paste silently failed, or who hit the button with an empty-looking box, is
+charged a credit to have nothing done to nothing. The "only invisible characters" case
+is the opposite — that is a legitimate document that is entirely watermark, and
+charging for it is right.
+
+### The credit check runs before the file check, and it costs a sale (MEDIUM)
+
+**With the account at zero, all ten of those inputs returned the same thing:**
+
+```
+HTTP 402  insufficient_credits: This needs 1 credit and you have 0.
+```
+
+Including the six the site would have refused anyway.
+
+**So a visitor can be told to buy credits for a job that will never run.** They top up,
+come back, and are then told their file is not supported. The same ordering showed up
+on the 45,000-word paste earlier: quoted 45 credits for a document that is over the
+10,000-word limit and would be refused at any price.
+
+**Cheap fix, and it is a conversion fix rather than a bug fix:** validate the format and
+the size before pricing, so "we cannot use this file" always beats "you need to pay
+first".
+
+---
+# FRICTION AND THE VISITOR'S JOURNEY (dimension 12)
+
+The friction agent died with the run's usage limit. This is the conductor's own walk,
+done as the visitor the working agreement names: a student on a phone who wants a
+document unwatermarked and knows nothing yet.
+
+### The path to a first result is genuinely short, and that is the best thing about the product
+
+```
+land on the homepage  ->  paste  ->  click "Scan it"
+   one click, no fields, no account, no card, and the scan is free and unlimited
+```
+
+Then one more click sanitises it, using the two free credits a stranger is given
+without asking for anything. **Two clicks and zero form fields from arriving to having
+a cleaned document.** Very few paid tools get a visitor to value that fast, and nothing
+in this audit should obscure it.
+
+**Every internal link on the site works** — all ten, checked:
+
+```
+/auth/sign-in 200   /auth/sign-up 200   /capabilities 200   /contact 200
+/cookie-policy 200  /how-it-works 200   /mission 200        /pricing 200
+/privacy-policy 200 /terms-of-service 200
+```
+
+### The walls, in the order a visitor meets them
+
+**1. Cloudflare has to load, or nothing works and the site blames their internet.**
+This is the first wall and the worst, because it is invisible and unrecoverable — see
+finding A. Everything before it works perfectly, which is what makes it expensive.
+
+**2. Two free credits, then five.** Generous and clearly signposted. The one confusion
+is on the same line as the counter: **"Scanning is always free"** sits directly beside
+a chip reading **"1 left"**, and a first-time visitor cannot tell what the counter is
+counting. One of those two phrases should say what it applies to.
+
+**3. Then the price, and the pricing page is the strongest page on the site.** The
+calculator, the "your five free credits already cover this" line, the four small
+reassurances, and the honest layer table are all good work. Its defects are the
+arithmetic ones already listed: "about four college essays" for a pack its own
+calculator makes three, and "files are one credit each whatever their size" beside a
+`.txt` that is charged by the word.
+
+### The dead ends, all reachable, all reproduced
+
+| dead end | what the visitor does next |
+|---|---|
+| Cloudflare blocked | retries forever; nothing else is offered |
+| a 3.3 MB photo | gets a generic failure; is never told the size limit |
+| a 9,900-word document | waits three and a half minutes, then is told to try again — which fails again |
+| the contact form with no mail app | taps Send message and nothing happens |
+| zero credits + an unsupported file | is told to buy credits for a job that will be refused anyway |
+
+**Four of those five end with the visitor being invited to retry something that cannot
+succeed.** That is the single most consistent shape in this audit, and it is worth
+naming as one thing rather than five: **when this product fails, it does not say why,
+and it suggests trying again.**
+
+---
