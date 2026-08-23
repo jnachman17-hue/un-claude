@@ -2012,8 +2012,10 @@ agents lost time to it before working it out.
 ---
 # PERFORMANCE, MEASURED ON THE LIVE SITE (dimension 11)
 
-The performance agent never returned — it died with the run's second usage limit. This
-section is the conductor's own measurement.
+**The performance agent did return, late in the run, after this section was already
+written by hand.** What follows is the conductor's own measurement; the agent's eight
+findings are in the agents' table with their verdicts. Two independent passes over the
+same ground, which is a good thing to have on a dimension nobody had ever measured.
 
 ### Delivering the page is genuinely fast, and that deserves saying
 
@@ -2071,7 +2073,8 @@ and I could not establish a genuinely cold function with confidence.
 ---
 # THE DEPLOY GAP, AND TWO CORRECTIONS TO THE BOARD (dimension 14)
 
-The operations agent never returned; this is the conductor's own work.
+**The operations agent returned late, with four findings.** This is the conductor's own
+work on the same dimension.
 
 ### Correction 1: almost everything the board lists as "awaiting deploy" is live
 
@@ -2124,7 +2127,8 @@ accounts, of which exactly one could be rebuilt from Stripe.
 ---
 # ERROR HANDLING AND FAILURE MODES (dimension 13)
 
-That agent died with the run's usage limit too. This is the conductor's own pass.
+**That agent returned late too, with eight findings.** This is the conductor's
+independent pass over the same ground.
 
 ### Ten deliberately broken inputs, sent to the live site
 
@@ -2184,9 +2188,10 @@ first".
 ---
 # FRICTION AND THE VISITOR'S JOURNEY (dimension 12)
 
-The friction agent died with the run's usage limit. This is the conductor's own walk,
-done as the visitor the working agreement names: a student on a phone who wants a
-document unwatermarked and knows nothing yet.
+**The friction agent also returned late, with nine findings of its own.** This is the
+conductor's independent walk, done as the visitor the working agreement names: a student
+on a phone who wants a document unwatermarked and knows nothing yet. The agent's
+findings are in the agents' table.
 
 ### The path to a first result is genuinely short, and that is the best thing about the product
 
@@ -2420,9 +2425,11 @@ nobody checked. It was fixed before the second run — a finding with no votes i
 | **Found by an agent and passed by the skeptics** | Strong. The skeptics re-ran the commands themselves. |
 | **Found by an agent, not yet judged** | **A lead, not a verdict.** In its own section, marked as such. |
 
-**Four dimensions never returned an agent** — performance, friction, failure modes and
-operations — and I covered all four by hand instead. They have their own sections and
-they say so at the top.
+**All fourteen dimensions eventually reported**, but four of them — performance,
+friction, failure modes and operations — landed so late that I had already covered them
+by hand. **That turned out well rather than badly:** those four have two independent
+passes over the same ground, mine in their own sections and the agents' in the agents'
+table.
 
 **The skeptics changed real conclusions, which is the point of having them.** They killed
 six findings, including one of the engine agent's for being a restatement of a board item
