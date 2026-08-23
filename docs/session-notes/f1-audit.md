@@ -116,6 +116,8 @@ live site with the output pasted in.
 |---|---|---|---|
 | 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
 | 0b | **HIGH** | Any free account can upload files of any type and size to a public bucket, served from your Supabase | conductor, as a customer |
+| 0c | **HIGH** | Free credits can be minted repeatedly from one email — deleting the account destroys the record that prevents it | conductor, 3 rounds |
+| 0d | MEDIUM | A new customer's wallet says "0 credits" and offers to sell them some; the grants are minted only when they visit the tool | conductor |
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
 | 1b | **HIGH** | The tool inserts em dashes, curly apostrophes and markdown asterisks the customer never typed | conductor, 8 of 8 and 3 of 3 |
 | 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
@@ -274,6 +276,81 @@ be used to host whatever somebody wants hosted, and free accounts take a minute 
 and a size limit on the bucket — or, since nothing in the product shows a profile
 picture, remove the upload control and the bucket together. That is the cleaner answer:
 the whole feature is inherited boilerplate that this product does not use.
+
+---
+
+### 0c. Free credits can be minted over and over from one email address (HIGH)
+
+**A completeness critic asked whether anyone had deleted an account and signed up again
+with the same address. Nobody had.**
+
+**Three rounds, same email, delete and recreate each time:**
+
+```
+round 1: balance 5   rows ["signup_grant 3", "anon_grant 2"]
+round 2: balance 5   rows ["signup_grant 3", "anon_grant 2"]
+round 3: balance 5   rows ["signup_grant 3", "anon_grant 2"]
+```
+
+**Five credits every time.** There is a dedupe index designed to stop the signup grant
+repeating for an address that has already had it — `20260821120300_signup_grant_email_
+dedupe.sql`. It works by looking for an existing grant row **on the ledger**, and
+deleting the account cascades those rows away. **The guard is deleted along with the
+thing it was guarding against.**
+
+**And the product ships the button.** "Delete your Account" is live on the settings page
+(finding B). A person does not need any tools: delete, sign up again, collect five more.
+
+**Stated precisely, because the path matters.** I deleted and recreated through the
+admin API, which is faster than a person could go. A real user would click the button
+and then re-register through the normal flow, which still requires clicking a
+confirmation email — **a delay, not an obstacle, since it is the same inbox every time.**
+
+**What it costs.** Five credits is 5,000 words, which is two to five cents of model
+spend. Slow by hand; unbounded by script.
+
+**This is the third finding in this report with no ceiling on it** — alongside the
+retired deployments (0) and the public bucket (0b). They share a shape: **things that
+spend Jon's money with nothing counting.**
+
+**Fix sketch.** Key the dedupe on something that outlives the account — a `granted_
+emails` table that deletion does not cascade, holding a hash of the address rather than
+the address itself.
+
+---
+
+### 0d. A new customer's first look at their wallet says "0 credits" (MEDIUM)
+
+**Another critic gap: nobody had fetched `/home` for an account that had not already
+called `/api/credits`.** That is precisely what a new customer does — sign up, confirm
+the email, go and look at their account.
+
+**Live, on a brand-new confirmed account that had done nothing else:**
+
+```
+ledger rows before anything : 0
+GET /home                   : HTTP 200
+what the wallet says        : "Your credits · 0 credits · About 0 words of sanitising.
+                               Credits never expire. · Get credits"
+ledger rows after /home     : 0
+
+then GET /api/credits       : {"ok":true,"balance":5}
+ledger rows after that      : 2  ["signup_grant 3", "anon_grant 2"]
+```
+
+**The free credits are minted lazily by `/api/credits`, and `/home` never calls it.** So
+the wallet shows zero until the customer happens to visit the tool.
+
+**Read the sequence as the customer.** The sign-up page promised **3 free credits**. The
+first page they open after confirming their email says **0 credits** and offers a **Get
+credits** button. Later, if they find the tool, it becomes **5**.
+
+**Three different numbers about their money, in the first two minutes, and the middle
+one is the one that asks them to pay.** That is the worst possible moment for it: they
+have just committed, and the product's first act is to tell them they have nothing.
+
+**Fix sketch.** Mint the grants when the account is created, or have `/home` call the
+same code path `/api/credits` does before it renders.
 
 ---
 
