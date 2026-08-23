@@ -1335,10 +1335,13 @@ careful reader will check first:
 scroll across the homepage under 13-pixel grey type with nothing behind them. This is
 the one item that could arrive as a letter rather than a refund request.
 
-**9. Give the tool a voice for screen readers.** Three things: stop wrapping the result
-in a single button so it can be read; put `role="status"` on the line that says
-"Rewriting" / "Sanitised" / the errors; name the paste box and the file input. A blind
-student can currently pay and not hear the result.
+**9. Spend ten minutes on the tool with VoiceOver, then fix what it tells you.** Three
+things are worth doing regardless, because they are cheap and unambiguous: put
+`role="status"` on the line that says "Rewriting" / "Sanitised" / the errors; give the
+paste box and the file input a name; add a `<main>` landmark and a skip link. **The
+bigger question — whether wrapping the result in a button stops a screen reader reading
+it — I could not settle**, and it deserves the ten minutes before anyone rebuilds that
+component. See the accessibility section for why the computed tree left it open.
 
 **10. Tell the visitor when Cloudflare is the problem**, instead of a dead end that
 blames their internet and invites them to retry forever.
