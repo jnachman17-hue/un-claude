@@ -53,7 +53,7 @@ minutes earlier — see E16.
 
 | ID | Item | Status |
 |---|---|---|
-| **P1** | **The engine hands its own prompt to the customer as their "sanitised" text** | **OPEN — happening on the live site** |
+| **P1** | **The engine hands its own prompt to the customer as their "sanitised" text** | **FIXED — W8, verified. AWAITING DEPLOY.** |
 
 Jon sanitised text on the live site and received **a rewrite of the engine's own
 prompt** — the rewrite rules restated, opening "Here's a fresh take where the
@@ -72,8 +72,53 @@ facts and length; none asks whether the returned text is even the customer's.
 **Costs, right now:** a paying customer receives the prompt instead of their
 document, and the internal prompt is disclosed to anyone who triggers it.
 
-**Also suspect:** the model changed to `mistral/mistral-medium` hours ago. Test
-both. Brief: `docs/briefs/W8-URGENT-prompt-leak.md`.
+**FIXED, and it was worse than reported.** 720 rewrites and 360 end-to-end runs,
+$0.26 of gateway spend. Short or odd pastes came back wrong **48 of 120 (40%)**;
+now **10 of 120 (8.3%)**. **Outputs containing our prompt's own example figures —
+hard proof the rules themselves were being handed over — went from 13 to zero.**
+
+**The model change made it ~3x worse but did not create it:** `mistral-small`
+failed 24.2% of suspect inputs, `mistral-medium` 68.3%.
+
+**The number that matters most: zero false positives on 240 legitimate rewrites.**
+A guard that fires on good work refunds a customer whose rewrite succeeded, which
+is worse than the defect. Two of the three guard ideas were **measured and
+rejected** — an input-overlap floor cannot be set safely (good rewrites reach
+0.08, leaks reach 0.14, the ranges overlap) and prompt-resemblance is near
+useless because the model *rewrites* the prompt rather than copying it. **What
+works is length**: every leak runs long, good rewrites never exceeded 1.35x.
+
+**Confirmed trigger: short input.** Not one defect had an input over 25 words.
+
+**Still gets through: 10 of 120**, all short conversational replies on junk input,
+**none disclosing any part of the prompt.**
+
+**NOT DEPLOYED.** Brief: `docs/briefs/W8-URGENT-prompt-leak.md`, note:
+`docs/session-notes/prompt-leak.md`.
+
+---
+
+| **P2** | **A short paste silently gets no rewrite and the page never says so** | **OPEN — interface** |
+
+Jon ruled layer B should refuse pastes too short to carry a watermark. Built at a
+**measured 16 words** (W8 first recommended 25, then measured the 14–32 band —
+144 runs, all clean — and found 25 would have refused the whole 16–24 band and
+caught nothing extra). It **skips the rewrite rather than failing the job**, so
+the two provable layers still run, and **pricing is unchanged on both branches of
+the cost expression** — checked, not assumed.
+
+**But the engine returns a `reason` string that nothing in the workbench renders.**
+So today a short paste quietly receives layer A only and the interface says
+nothing. That is the same defect class as a `.docx` saying "Rewriting" when it
+was not. **Correct and silent, rather than correct and explained.**
+
+| **P3** | **`mistral-small` spells years out, corrupting the customer's numbers** | **OPEN — engine** |
+
+Found by W8 and deliberately left as out of scope. It turns `2028` into
+`two thousand twenty-eight` and `2024` into `twenty-four`, which **rule 5a
+explicitly forbids**. Seen in **3 of 120 ordinary-prose runs** — ordinary prose,
+not junk input. Same family as the quoted-text problem: **the rewrite altering
+something factually load-bearing.** Belongs in the rewrite-intelligence work.
 
 ---
 
