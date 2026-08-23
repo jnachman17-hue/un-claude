@@ -50,6 +50,15 @@ credit check. **This is the one item in this report with no ceiling on what it c
 cost.** Vercel's Deployment Protection closes all four and every future one; it is a
 settings switch, not code.
 
+**Two more with no ceiling, and they share the shape.** Any free account can upload any
+file of any type and size to a **public** bucket served from your Supabase — **and
+deleting the account does not delete the file**, which the privacy policy says it does.
+And free credits can be minted over and over from one email address: delete the account,
+sign up again, collect another five, because the record that stops it lives on the
+ledger and the deletion cascade takes it with everything else. **Three findings in this
+report spend your money with nothing counting, and all three are settings or a single
+condition rather than engineering.**
+
 **One thing is badly wrong and it is the thing the product is sold on.** The rewrite
 invents quotations. Give it a direct quote from a named person and it hands back
 different words, still inside quotation marks, still attributed to that person. Three
