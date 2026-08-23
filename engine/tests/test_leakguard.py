@@ -154,3 +154,58 @@ def test_strip_edge_separator(raw, expected):
 def test_an_internal_horizontal_rule_is_left_alone():
     doc = "First part.\n\n---\n\nSecond part."
     assert strip_edge_separator(doc)[0] == doc
+
+
+# --- the short-paste minimum -----------------------------------------------
+
+def _clean_text_payload(text, **options):
+    import server
+
+    return server._clean_payload(text.encode("utf-8"), "paste.txt", {"layer_b": True, **options})
+
+
+def test_a_short_paste_skips_the_rewrite_and_never_calls_a_model(monkeypatch):
+    import server
+
+    def explode(*a, **k):  # a model call here would be the bug
+        raise AssertionError("layer B was called on a paste below the minimum")
+
+    monkeypatch.setattr(server, "layer_b_rewrite", explode)
+    report = _clean_text_payload("The meeting went well.")["report"]
+    assert report["layer_b"]["skipped"] == "input_too_short"
+    assert report["layer_b"]["words_in"] == 4
+    assert report["layer_b"]["figures_to_check"] == []
+
+
+def test_a_short_paste_still_gets_layer_a():
+    # A rewrite that cannot run must not take invisible-character removal with
+    # it. Those are the two provable layers and they work at any length.
+    text = "The meeting​ went well and everyone‌ seemed pleased."
+    result = _clean_text_payload(text)
+    import base64
+
+    assert "​" not in base64.b64decode(result["cleaned"]).decode("utf-8")
+    assert result["report"]["stats"]["removed_count"] == 2
+    assert result["report"]["layer_b"]["skipped"] == "input_too_short"
+
+
+def test_the_minimum_is_configurable(monkeypatch):
+    import importlib
+
+    import server
+
+    monkeypatch.setenv("UC_LAYER_B_MIN_WORDS", "3")
+    importlib.reload(server)
+    try:
+        # Four words now clears a minimum of three, so the rewrite is attempted.
+        called = {}
+        monkeypatch.setattr(
+            server, "layer_b_rewrite",
+            lambda chunk, **k: (called.setdefault("yes", True), ("rewritten words here now", {}))[1],
+        )
+        report = server._clean_payload(
+            b"The meeting went well.", "paste.txt", {"layer_b": True})["report"]
+        assert report["layer_b"].get("skipped") is None
+    finally:
+        monkeypatch.delenv("UC_LAYER_B_MIN_WORDS", raising=False)
+        importlib.reload(server)

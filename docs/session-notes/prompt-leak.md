@@ -35,7 +35,10 @@ prose.
 create it.** On the same suspect inputs, `mistral-small` failed 24.2% of the
 time and `mistral-medium` 68.3%. The defect existed before the switch.
 
-**One thing is Jon's to decide and it is in section 7.**
+**Jon ruled during the session that layer B should refuse pastes too short to
+carry a watermark. It is built, at a measured 16 words rather than the 25 I
+first recommended, and it SKIPS the rewrite rather than failing the job, so the
+two provable layers still run. Section 7.**
 
 ---
 
@@ -284,24 +287,91 @@ customer — measured **13 occurrences before and 0 after.**
 
 ---
 
-## 7. THE DECISION THAT IS JON'S
+## 7. THE SHORT-PASTE MINIMUM — DECIDED BY JON, BUILT, AND THE NUMBER CORRECTED
 
-**Every single defect, before and after, had an input under 25 words.** With a
-minimum input length on Layer B, delivered-bad goes to **0 of 120 on both arms**.
+**Jon ruled during the session: add a minimum input length.** It is built.
 
-There is nothing to de-watermark in "Hi". A statistical watermark is not present,
-let alone detectable, in two words — so Layer B on a tiny paste is spending a
-model call and a customer's credit to produce nothing but risk.
+### 7.1 The number is 16 words, not the 25 I first recommended
 
-**The recommendation: refuse Layer B below about 25 words rather than turning it
-off.** It removes the entire remaining defect class, it costs nothing real (no
-one is unwatermarking a two-word paste), and it does not touch pricing.
+**I recommended 25 on data that had a hole in exactly the deciding band, and
+measuring that band showed 25 was wrong.** Every input in the original suspect
+corpus was under 16 words, so 25 and 16 were indistinguishable on it — 25 simply
+looked safer.
 
-**`UC_ENABLE_LAYER_B=false` is not recommended.** Pricing charges pasted text by
-the word *because* the rewrite runs. Switching it off silently recreates the
-"customer paying and not receiving" defect that was just fixed for Word
-documents, so it is only an option alongside a pricing and copy change — and both
-of those are Jon's, not this session's.
+So the 14 to 32 word band was measured properly: nine ordinary pastes a real
+visitor would send, both models, **144 end-to-end runs on the fixed engine.**
 
-A minimum-input rule needs a copy line telling the visitor why a short paste was
-refused, so it is a small interface change and therefore also his call.
+```
+input  words    small ok/bad/ref   medium ok/bad/ref
+b14       16               8/0/0               8/0/0
+b16       17               8/0/0               8/0/0
+b18       18               8/0/0               8/0/0
+b20       20               8/0/0               8/0/0
+b22       21               8/0/0               8/0/0
+b24       24               8/0/0               8/0/0
+b27       26               8/0/0               8/0/0
+b30       31               8/0/0               8/0/0
+b32q      29               8/0/0               8/0/0
+
+144 of 144 fine. Zero defects, zero refunds, and the guard fired zero times.
+```
+
+**Every defective output measured end to end had an input of 15 words or fewer.**
+A 25-word minimum would have refused the entire 16 to 24 band — 144 measured runs
+of perfectly good work — and caught nothing that 16 does not. **Refusing work
+that succeeds is the expensive mistake here**, so the constant is 16, and
+`UC_LAYER_B_MIN_WORDS` changes it without shipping new code.
+
+### 7.2 It skips the rewrite; it does not fail the job
+
+The first design failed the request, which the route turns into a refund. That
+was wrong, and the reason is worth keeping: **there is no rewrite toggle.** For
+any pasted text the workbench sets `layer_b` unconditionally
+(`wantsRewrite = carriesProse`), so failing would have handed a short paste
+nothing at all — not even invisible-character removal, which works perfectly well
+at nine words and is one of the two **provable** layers.
+
+So layer B is skipped and everything else runs. Real output, a 9-word paste:
+
+```
+INPUT  : 'The meeting\u200b went well and everyone\u200c seemed genuinely pleased.'
+OUTPUT : 'The meeting went well and everyone seemed genuinely pleased.'
+layer A removed: {'U+200B ZERO WIDTH SPACE (Cf)': 1,
+                  'U+200C ZERO WIDTH NON-JOINER (Cf)': 1}
+layer_b: {"skipped": "input_too_short", "min_words": 16, "words_in": 9,
+          "reason": "The rewrite needs at least 16 words and this is 9.
+                     Hidden characters and file data were still removed."}
+```
+
+And the boundary holds — a 16 word paste still rewrites, in one model call:
+
+```
+IN  : The deadline moved to Friday, so I rewrote the introduction and cut the
+      third section entirely.
+OUT : They shifted the due date to Friday, which meant I had to rework the
+      opening part from scratch. As for the third portion, I removed it in full.
+```
+
+### 7.3 Pricing is untouched, and that was checked rather than assumed
+
+The route charges `creditsForWords(wordsIn)` for pasted text **on both branches
+of its cost expression**, so what a short paste costs does not depend on whether
+the rewrite ran. Skipping layer B therefore changes no price. A short paste costs
+what it costs today and now reliably receives the two provable layers instead of
+a rewrite that was junk about 8% of the time.
+
+**`UC_ENABLE_LAYER_B=false` was considered and is still not recommended**, for
+the reason in the brief: pricing charges pasted text by the word *because* the
+rewrite runs, so switching it off silently recreates the "paying and not
+receiving" defect just fixed for Word documents. It remains a pricing and copy
+decision, not an engine one.
+
+### 7.4 The one thing left, and it is interface work
+
+**The visitor is told why in the engine's report, not yet on the page.** The
+`reason` string above is returned in `report.layer_b.reason` and nothing in the
+workbench renders it, so today a short paste quietly gets layer A and the
+interface says nothing about the rewrite. **That is a copy and interface change,
+outside this brief's territory** (`apps/web/engine/**`, `apps/web/api/*.py`), and
+it is the next piece of this item. Until it ships the behaviour is correct and
+silent rather than correct and explained.

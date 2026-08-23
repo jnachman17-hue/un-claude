@@ -689,6 +689,17 @@ def _detect_payload(data: bytes, name: str) -> dict[str, Any]:
             }
 
 
+# THE SHORTEST PASTE LAYER B WILL TOUCH, in words.
+#
+# 16 IS MEASURED. Every defective rewrite seen end to end had an input of 15
+# words or fewer; 144 runs over the 16 to 32 word band, on both models, produced
+# no defect and no guard rejection at all. An earlier draft of this used 25,
+# which measured identically on the leak and refused the entire 16 to 24 band
+# for nothing — the corpus that suggested it simply had no examples in that
+# range. Refusing work that succeeds is the expensive mistake here.
+LAYER_B_MIN_WORDS = int(os.environ.get("UC_LAYER_B_MIN_WORDS", "16"))
+
+
 def _layer_b_failure(message: str, cause: BaseException) -> ValueError:
     """The user-facing error for a failed rewrite, carrying what the run cost.
 
@@ -723,7 +734,38 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                 )
             text = data.decode("utf-8", errors="surrogateescape")
             layer_b_report: dict[str, Any] | None = None
-            if options.get("layer_b"):
+            words_in = len(text.split())
+            if options.get("layer_b") and words_in < LAYER_B_MIN_WORDS:
+                # TOO SHORT TO REWRITE, SO IT IS NOT SENT TO A MODEL AT ALL.
+                #
+                # Added 22 August 2026 by Jon's ruling, after the prompt-leak
+                # session. A statistical watermark is not present, let alone
+                # detectable, in a handful of words, so a rewrite here buys the
+                # customer nothing and costs a model call. Worse, it is where
+                # every leak lives: measured end to end, EVERY defective output
+                # had an input of 15 words or fewer, and 144 runs across the 16
+                # to 32 word band produced none at all.
+                # See docs/session-notes/prompt-leak.md section 7.
+                #
+                # SKIPPED, NOT FAILED, and the difference matters. Failing would
+                # refund the customer but hand back nothing — and layers A and
+                # metadata work perfectly well on a short paste. They still run
+                # below. The customer keeps the two PROVABLE layers and is told
+                # plainly why the third did not run.
+                layer_b_report = {
+                    "skipped": "input_too_short",
+                    "min_words": LAYER_B_MIN_WORDS,
+                    "words_in": words_in,
+                    "words_out": words_in,
+                    "chunks": 0,
+                    "figures_to_check": [],
+                    "reason": (
+                        f"The rewrite needs at least {LAYER_B_MIN_WORDS} words "
+                        f"and this is {words_in}. Hidden characters and file "
+                        "data were still removed."
+                    ),
+                }
+            elif options.get("layer_b"):
                 # Layer B rewrites with a NON-Anthropic, NON-Google model. Rewriting
                 # Claude text with Claude re-applies the watermark at full strength.
                 # Configured entirely by environment variable so the model is one
