@@ -2857,3 +2857,51 @@ the email becomes `un-claude.com/auth/confirm?...`. Combined with the MX record 
 `support@un-claude.com` sender, the whole signup message stops looking like a stranger.
 
 ---
+# THE MOST COMMON SIGNUP PROBLEM IS ANSWERED WITH "CHECK YOUR INTERNET" (MEDIUM)
+
+A completeness critic named this as the single most common real-world signup problem:
+somebody signs up, the confirmation email lands in spam or they close the tab, and later
+they come back and try to sign in. **Nobody had tested it.**
+
+**Live, in a real browser, with a genuinely unconfirmed account:**
+
+```
+Sign in to Un-Claude
+
+  Sorry, we could not authenticate you
+  We have encountered an error. Please ensure you have a working internet
+  connection and try again
+
+  Email Address / Password / Password forgotten? / Sign in with Email
+```
+
+**Their internet is fine. Their email is unconfirmed.** The message names the wrong
+cause, offers no way forward, and there is no "resend the confirmation email" anywhere
+on the page.
+
+### The pattern underneath it, which is the actual finding
+
+**This is the third distinct cause this audit has watched land on that same sentence:**
+
+| what actually went wrong | what the customer is told |
+|---|---|
+| Cloudflare's captcha did not load (finding A) | "Please ensure you have a working internet connection" |
+| the account exists but the email is unconfirmed | "Please ensure you have a working internet connection" |
+| a wrong password, a rate limit, or anything else auth returns | "Please ensure you have a working internet connection" |
+
+The sign-in page ships a list of error strings and **that list has no case for a
+captcha failure and no case for an unconfirmed email**, so everything falls through to
+the default. One sentence is doing the work of every possible failure, and it happens to
+name the one cause that is almost never the real one.
+
+**Why this is worth more than its severity suggests.** Every other error in this product
+is well written — the 402 names the exact numbers and offers two ways forward, the
+`bad_format` message names the accepted types, the `too_many_words` message says to split
+the document. **The auth pages are the exception, and they are the one place where the
+customer has already decided to buy.**
+
+**Fix sketch.** Two cases and a button: map `email_not_confirmed` to "Check your inbox —
+we sent you a link" with a **Resend it** control, and map `captcha_failed` to something
+that says the security check could not load rather than blaming their connection.
+
+---
