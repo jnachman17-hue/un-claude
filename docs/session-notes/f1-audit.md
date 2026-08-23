@@ -3274,55 +3274,66 @@ not be movable by the phrase "in the world".**
 # A CORRECTION TO THE BOARD, FROM OUTSIDE THIS AUDIT'S SCOPE
 
 **While F1 was running, another session was working in the same folder** and committed
-three changes to `LAUNCH-CHECKLIST.md`. **One of them is wrong, and it is about to send
-somebody looking in the wrong place**, so it is recorded here — the checklist is not this
-audit's to edit.
+three changes to `LAUNCH-CHECKLIST.md`. **One of them reaches the right conclusion for
+the wrong reason, and the wrong reason is about to send somebody to the wrong place.**
+It is recorded here because the checklist is not this audit's to edit.
 
 **What the board now says** (item G3, committed 23 August):
 
-> "Analytics has never collected anything — ANSWERED... **Verified 23 Aug: the live page
-> contains zero occurrences of `posthog`.**... `NEXT_PUBLIC_POSTHOG_KEY` is empty at
-> build time... **The leading candidate is Vercel's 'Sensitive' flag**... Check that flag
-> first. **Consequence: every visitor since launch is unmeasured.**"
+> "Analytics has never collected anything — ANSWERED... Verified 23 Aug: the live page
+> contains zero occurrences of `posthog`... `NEXT_PUBLIC_POSTHOG_KEY` is empty at build
+> time... **The leading candidate is Vercel's 'Sensitive' flag**... Check that flag
+> first."
 
-**The observation is right and the conclusion is wrong.** The served HTML really does
-contain zero occurrences of `posthog` — I checked, and it does. **But the script is
-injected by the client bundle after hydration, not inlined into the HTML.** In a real
-browser on the live site:
+### The conclusion is right. The cause is not.
+
+**Analytics really has collected nothing** — I confirmed it, and more directly than the
+board did. Across three page views and an interaction over about thirty-five seconds on
+the live site: **zero capture requests sent.**
+
+**But the key is not empty and the library is not missing.** In a real browser:
 
 ```
 GET https://us.i.posthog.com/static/array.js                                  200
 GET https://us-assets.i.posthog.com/array/phc_AWsW2Eb53AoF385ZZ.../config.js  200
-GET https://us-assets.i.posthog.com/static/1.418.5/surveys.js                 200
 
-window.posthog : { "posthogObject":"object", "hasCapture":true,
-                   "configToken":"phc_AWsW2Eb5…",
-                   "distinctId":"01a03062-677c-7934-b47e-702280f0fd81" }
+window.posthog : { hasCapture: true, configToken: "phc_AWsW2Eb5…" }
 ```
 
-**The key is present at build time** — it is right there in `config.token`. There is
-nothing wrong with Vercel's Sensitive flag, and checking it will find nothing.
+**The served HTML contains no `posthog` because the script is injected by the client
+bundle after hydration, not inlined.** Grepping the served bytes is what produced the
+wrong cause. **There is nothing wrong with Vercel's Sensitive flag and checking it will
+find nothing.**
 
-**This is the same failure shape this audit exists to catch**, and it happened to a
-neighbouring session: grep the source or the served bytes, conclude, commit. The live
-page had to be *run* to see it.
+### The actual cause, which is two config values
 
-### What is probably true instead, and it is a better diagnosis
+```
+posthog config on the live page:
+  { "persistence": "memory",
+    "capture_pageview": "history_change",
+    "disable_persistence": false,
+    "opt_out": false,
+    "api_host": "https://us.i.posthog.com" }
+```
 
-PostHog loads and is correctly keyed. What the performance agent found is that **it keeps
-no persistence at all** — `cookieNames: []`, `localStorageKeys: []`,
-`sessionStorageKeys: []`, and a fresh `distinct_id` on every page load. My own run got a
-brand-new UUID too.
+**`persistence: "memory"`** — nothing is written to a cookie or to storage, so every page
+load is a brand-new person and nothing queued survives a navigation. That matches what
+the performance agent found independently: `cookieNames: []`, `localStorageKeys: []`, a
+fresh `distinct_id` every time.
 
-**So every page load looks like a new stranger.** Nobody can be followed from the
-homepage to the pricing page to a signup, which is exactly the funnel question G3 exists
-to answer — and it would make a dashboard look useless in a way that is easy to mistake
-for empty.
+**`capture_pageview: "history_change"`** — a pageview fires only on an in-app navigation,
+**not on a page being loaded.** A visitor arriving at the homepage, reading it and
+leaving generates nothing at all.
 
-**What I did not establish:** whether any event is actually *sent*. I watched for eleven
-seconds and saw the library load and initialise but no capture request leave. That may be
-batching, or a disabled pageview capture, or nothing firing. **Somebody should open the
-PostHog dashboard and look**, which settles it in one glance and is the step the board
-should be pointing at instead of the Sensitive flag.
+**Together those two mean a correctly-installed, correctly-keyed library that captures
+nothing on the paths real visitors take.** That is why the dashboard is empty, and it is
+a two-value fix rather than an environment hunt.
+
+**Worth stating as a general point, because it cuts both ways.** The other session
+grepped the served bytes and got the cause wrong. **My first version of this very section
+then said their conclusion was wrong, and it was not** — I had proven the library loads
+and stopped there, which is the same mistake one step further on. It took actually
+watching the network for thirty-five seconds to get it right. **Both of us had to run the
+thing.**
 
 ---
