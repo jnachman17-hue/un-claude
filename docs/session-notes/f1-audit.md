@@ -551,11 +551,30 @@ paragraphs in/out: 1 / 154   structure_kept: false
 own verdict on its own output, and it returned the result anyway without telling
 anyone.
 
-**Stated honestly: this was repetitive text and it does not happen to ordinary
-prose.** On varied writing the length holds or grows (finding 5). But a document
-with repetition in it — a reference list, a table, a survey instrument, a legal
-schedule — is a document a student may well upload, and there is no floor stopping
-the rewrite from collapsing it.
+**Settled properly, because an agent reported the same loss at 5,000 words and I needed
+to know whether it was about repetition or about size.** It is about repetition. Varied
+academic prose was run at the same length:
+
+```
+5,025 words of varied prose  ->  5,679 words back   =  +13.0%    21.6 s   $0.021
+4,800 words of repetitive text ->  3,398 words back  =  -29.2%    83.4 s   $0.025
+6,000 words of repetitive text ->  4,670 words back  =  -22.2%   196.3 s   $0.056
+```
+
+**Ordinary writing is never shortened — it grows.** Repetitive writing collapses, and it
+is also three to nine times slower and dearer to run.
+
+**Why that matters for a real customer.** A student's essay is ordinary prose and will
+come back longer (finding 5, and the reason it matters is word limits). But a
+**bibliography, a glossary, a reference list, a table of results or a survey
+instrument** is repetitive, and there is no floor stopping the rewrite from deleting a
+quarter of it. Those are things students upload.
+
+**And it means one of the agents' findings needs reading carefully.** Dimension 13
+reports "loses up to a quarter of the essay" from a 5,000-word run. That run used
+synthetic repetitive text, as mine did. **On an actual essay the number goes the other
+way**, and the finding is right about the mechanism and wrong about which documents it
+hits.
 
 ---
 
