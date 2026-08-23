@@ -152,6 +152,7 @@ live site with the output pasted in.
 | — | MEDIUM | Three different auth failures all say "please ensure you have a working internet connection" | conductor, in a browser |
 | — | MEDIUM | The scanner's AI-marker list fires on the three ordinary words "in the world" | conductor |
 | — | MEDIUM | The wallet renders every ledger row with no pagination — 82 rows is already 210 KB | conductor |
+| — | MEDIUM | `/favicon.ico` 404s, so 97% of the production log is that one error and the log is unreadable | conductor |
 | — | — | **A correction to the board**: another session committed that analytics never loads. It does — checked in a real browser. | conductor |
 | — | — | **Never tested by anyone**: no input in the whole audit was written by an AI. I closed half of it; the image half is open. | critic + conductor |
 | — | **HIGH** | The refund tool says money is owed on a payment already refunded in full | conductor + skeptic |
@@ -3044,9 +3045,34 @@ responses on `POST /home/settings` in twenty-four hours**, plus one `501` on
 themselves but that **nobody knew** — there is no Sentry and no alerting, so E1 has
 already cost something rather than being a hypothetical.
 
-**I could not verify this.** Vercel's runtime-errors API returned `403 Forbidden` to me
-and the project-protection endpoint returned `404`, so the credentials this session has
-do not reach that data. The agent had access I did not.
+**I could not verify the count, and I later found out why — but I did get into the logs
+in the end, and what is in them is its own finding.** Vercel's runtime-errors API returns
+`403` to this session and the project-protection endpoint returns `404`. **The CLI works
+though**, and reading production's log stream turned up something nobody had looked at:
+
+```
+log lines captured: 100
+   404  /favicon.ico     x97
+   200  /                 x2
+     0  /favicon.ico      x1
+
+5xx in this window: 0
+```
+
+**Ninety-seven of a hundred log lines are the same 404.** `GET /favicon.ico` returns 404
+on the live site — confirmed directly. The page declares its icons properly at
+`/images/favicon/favicon.ico`, `/icon.svg` and an apple-touch-icon, **but nothing answers
+the root `/favicon.ico` path that every browser asks for by default.**
+
+**Why that is worse than a stray 404.** It is the reason E1 is not just "nothing is
+watching" but "nothing *could* watch": **the production log is 97% noise.** If Jon opened
+it tomorrow looking for the errors this audit caused, he would be reading a wall of
+favicon 404s. **A one-file fix — put a `favicon.ico` at the web root — makes the log
+readable, and that is a precondition for any monitoring being useful.**
+
+**I found no 5xx in the window I captured**, so the agent's count of twelve is neither
+confirmed nor refuted here; my window was a hundred recent lines and its claim was over
+twenty-four hours.
 
 **What I can say instead, and it makes the same point without needing the log.** During
 this audit I personally watched the live site return `500`-class outcomes I would never
