@@ -314,8 +314,22 @@ sentence is well written and completely correct. It is in the response and nothi
 on the page renders it. This is `LAUNCH-CHECKLIST` P2, confirmed live, with the
 charge attached: the board records the silence, not the credit.
 
+**It goes further than short pastes. One space costs a credit.**
+
+```
+an empty string              HTTP 400  no_file        balance 26 -> 26   (correctly refused)
+a single space               HTTP 200  charged 1      balance 26 -> 25   input " "  output " "
+spaces and newlines only     HTTP 200  charged 1      balance 25 -> 24   identical in and out
+one word "Hello"             HTTP 200  charged 1      balance 24 -> 23   identical in and out
+```
+
+An empty box is guarded. **A box containing one space is not.** A customer who taps
+the box, brushes the space bar and presses the button pays a credit for a space. With
+five free credits, a stranger can burn the lot on nothing and never learn why.
+
 **Fix sketch.** Either do not charge when the rewrite is skipped, or show the reason
 and say plainly that only layer A ran. Charging silently is the worst of the three.
+And the guard that already refuses an empty string should refuse a blank one too.
 
 ---
 ## MEDIUM
@@ -1993,5 +2007,42 @@ calculator makes three, and "files are one credit each whatever their size" besi
 succeed.** That is the single most consistent shape in this audit, and it is worth
 naming as one thing rather than five: **when this product fails, it does not say why,
 and it suggests trying again.**
+
+---
+# THE DIFFERENT-DEVICE GAP (H1), GIVEN A NUMBER FOR THE FIRST TIME
+
+`LAUNCH-CHECKLIST` H1 calls this *"the most likely real-world failure left in the
+funnel, and nothing measures it"*: a guest earns credits on a laptop, opens the
+confirmation email on a phone with no guest cookie, and the merge cannot fire.
+
+**Counted on the live database tonight:**
+
+```
+anonymous guest accounts                    23
+real accounts (excluding this audit's)       8
+rows in guest_conversions                    7
+
+guests still holding credits                12   (13 credits between them)
+guests who spent everything                 10
+```
+
+**The merge is working for almost everyone who converts.** Seven of the eight real
+accounts have a conversion row, which means the guest's credits followed them into
+their account exactly as designed.
+
+**The upper bound on the damage is one account.** Exactly one real account has no
+conversion row — and that is either someone who signed up directly without ever
+guesting (which decision B12 confirms is normal and expected), or someone who hit H1.
+**Nothing in the data tells the two apart**, which is precisely what H1 says.
+
+**So the honest position, which is better than the board's:** the gap is real, the
+mechanism is real, and at today's volume it has affected **at most one person out of
+eight, and possibly nobody.** The twelve guests holding credits are overwhelmingly
+people who have not come back yet, not people who lost anything.
+
+**What would settle it** is one column: record on the conversion row whether a guest
+cookie was present. Then "converted with credits carried" and "converted with nothing
+to carry" become countable, and this stops being a matter of opinion. That is a smaller
+job than the analytics work G3 describes, and it answers the question G3 was raised for.
 
 ---
