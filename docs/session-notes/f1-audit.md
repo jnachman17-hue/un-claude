@@ -20,29 +20,44 @@ watermark was removed, including us.
 
 ## THE SHORT VERSION
 
-**The single most important thing: a 9,900-word document fails.** That is inside
-the site's own advertised 10,000-word limit, it is the product's core case, and it
-failed both times it was tried, after more than three minutes of the customer
-waiting. The credit is correctly given back. The customer gets nothing.
+**One thing is badly wrong and it is the thing the product is sold on.** The rewrite
+invents quotations. Give it a direct quote from a named person and it hands back
+different words, still inside quotation marks, still attributed to that person. Three
+times out of three. For a student that is a misquoted source — an academic misconduct
+problem caused by the tool they paid to protect them, and invisible to them.
 
-**The second: the rewrite invents quotations.** Give it a direct quote from a named
-person and it hands back different words, still inside quotation marks, still
-attributed to that person. It did this three times out of three. For a student that
-is a misquoted source — an academic misconduct problem caused by the tool they paid
-to protect them, and invisible to them.
+**The advertised size is roughly twice what works.** The site sells 10,000 words. On
+production 6,000 completes in 196 seconds against a 240-second cut-off; 7,500, 8,500
+and 9,900 all fail after about three and a half minutes. The customer waits and gets
+nothing. Their credits do come back.
 
-**The third: a short paste is charged and nothing is done.** Paste fewer than 16
-words and you are charged a credit, your text comes back byte for byte identical,
-and the screen does not say why.
+**Two ways the site takes money for nothing.** A paste under 16 words is charged a
+credit, comes back byte for byte identical, and the screen says "Rewritten · Measured,
+not estimated". And if a customer's connection drops mid-job they are charged and, so
+far as I could see, not refunded.
 
-**A security hole worth fixing this week:** any link beginning `https://un-claude.com/`
-can be made to land the visitor on any other website, with no sign-in needed.
+**One security hole worth closing this week.** Any link beginning
+`https://un-claude.com/` can be made to land the visitor on any other website, signed
+out, no account needed. That is a ready-made phishing link wearing your domain.
 
-**And the good news, which is real.** The money boundary holds: a browser cannot
-change the price, the quantity or where checkout returns to. The promise that a
-failed run costs nothing is true, and the ledger proves it. Word documents come
-back as valid, uncorrupted Word files. The 10,000-word limit is enforced in under a
-second and charges nothing.
+**Several claims are wrong in ways a curious visitor can disprove in ten seconds** —
+"100% of detectable marks removed", "a hard three-word ceiling" (the site's own receipt
+printed 6), "nine classes checked" (one of the nine finds nothing), "upload a file and
+you get all three" (no file type gets all three). On a site whose whole argument is
+that its claims survive checking, these are the expensive ones.
+
+**And the news logos need a link or need to go.** Nine national mastheads scroll across
+the homepage under 13-pixel grey type with nothing behind them.
+
+**Now the good news, and it is substantial.** The two layers this product can actually
+prove both work, and I tested them properly rather than taking them on trust. The
+scanner found 15 of 15 planted invisible characters. A JPEG carrying a real C2PA
+content-credential block had it found, named, removed, and confirmed absent in the
+returned bytes. A Word document came back uncorrupted with every word intact and its
+author name gone, and the panel told the truth about what it did and did not do. The
+money boundary holds — no browser can change the price. Six simultaneous jobs against
+one balance never overspent. The ledger passes every integrity check. And a credit
+sells for between 67 and 135 times what it costs to run.
 
 ---
 
@@ -926,6 +941,12 @@ REWRITTEN ... Paste the text instead"*). The pages that sell the product are not
 The fix is copy, not code, and `CLAUDE.md`'s own summary table needs the same
 correction.
 
+**Three independent confirmations.** The copy agent and the legal agent found this
+separately, and my own live `.docx` run measured it. The legal agent also found the
+sentence on `/how-it-works`: *"Paste text and the first and third apply to you. Upload
+a file and all three do."* — and noted that the same pricing page contradicts itself
+four screens further down.
+
 ### N. The site promises a three-word ceiling and its own receipt reports six (HIGH)
 
 **The live pages say, in three places:**
@@ -1246,5 +1267,147 @@ times worse). If it changes again, every number in this section changes with it,
 nothing in the product records what a job cost — see the ledger's empty `cost_usd`
 column, which the ledger agent flagged and which is the one thing that would make this
 table self-maintaining.
+
+---
+
+### Q. The privacy policy describes a record the database does not keep (LOW)
+
+**The live privacy policy:**
+
+> "Each time you clean something, one line is added to your credit history. It records
+> the date and time, whether the input was a file or pasted text, how many words it
+> contained, and how many credits it cost, **along with what the run cost us to
+> perform.**"
+
+**The live database:** the `cost_usd` column is empty on every spend row that exists.
+Words, credits, input kind and timing are all recorded faithfully. What the run cost
+is not recorded at all.
+
+**Nobody is harmed** — the policy claims we store *more* than we do, which is the safe
+direction. **But it is the reason the economics table earlier in this note had to be
+assembled by hand from live runs**, and the reason it will go stale the next time the
+model changes. One column, already in the schema, already populated in the engine's
+own response, and nothing writes it.
+
+---
+# THE METADATA LAYER, TESTED END TO END — and it works (PASS)
+
+This is the other layer the product can prove, and it had never been checked on
+production against a real content-credential block.
+
+**A JPEG was built carrying a C2PA block the way a real AI-generated image carries
+one** — an APP11/JUMBF segment with the `c2pa` identifier and a claim generator
+naming Claude — plus an ordinary EXIF block.
+
+**The live scan found it:**
+
+```
+{
+ "format": "jpeg",
+ "has_c2pa": true,
+ "has_ai_metadata": true,
+ "findings": [
+  "JPEG APP11 segment (JUMBF/C2PA common)",
+  "JPEG APP11: c2pa, C2PA, Claude, c2pa, C2PA, jumb, JUMB"
+ ],
+ "findings_confidence": ["confirmed", "probable"],
+ "tools": { "c2patool": {"available": false}, "exiftool": {"available": false} }
+}
+```
+
+**The live clean removed it, and said exactly what it did:**
+
+```
+"actions": ["drop APP11 (C2PA/JUMBF)", "drop APP1", "copied remainder after non-marker byte"],
+"bytes_in": 1083915, "bytes_out": 1083711,
+"still_has_c2pa": false, "still_has_ai_metadata": false, "post_findings": []
+```
+
+**Checked independently against the returned bytes, not taken on report:**
+
+```
+before:  segments [APP11, APP0, APP1]   c2pa: yes   jumb: yes   claim_generator: yes   "Claude": yes
+after:   segments [APP0]                c2pa: NO    jumb: NO    claim_generator: NO    "Claude": NO
+```
+
+**Every trace gone, and the picture itself untouched.** A plain EXIF-only JPEG was
+tested the same way and its whole EXIF block was removed while the image data stayed
+byte-identical.
+
+**One thing that looked alarming and is not.** The scan reports
+`c2patool: available: false` and `exiftool: available: false` — neither external tool
+is installed on the production function. **That does not matter**: the engine does its
+own byte-level scan of the file's segments and, as shown above, both finds and removes
+the content credentials without them. I chased this expecting the metadata layer to be
+dead in production and it is not. Worth writing down so nobody else chases it.
+
+---
+# STILL BEING CHECKED WHEN THIS WAS WRITTEN — leads, not verdicts
+
+**Read this section differently from every other section.** Everything above was
+reproduced against the live site by hand, with the output pasted in. Everything below
+was found by one agent and **has not yet been through the three skeptics**, so it is a
+lead worth following rather than a finding to act on.
+
+**Why they are unadjudicated.** The audit was designed so every finding faces three
+independent agents each trying to refute it, one of which re-runs the reproduction
+command itself. Those skeptics were still queued behind the remaining dimension
+probes when this note was written. **They are not "refuted" and they are not
+"confirmed" — nobody has checked them yet.**
+
+**Two of them I did adjudicate myself and they are covered above:** the homepage
+shipping no content (section D — the SEO half of that claim is wrong; the page head is
+correctly server-rendered) and the `---` divider leaking into documents (I could not
+reproduce it in 8 live runs; see "what this audit could not cover").
+
+**Nine of the fourteen dimensions had reported when this was written.** Dimensions 4
+(the engine), 10 (accessibility), 11 (performance), 12 (friction) and 13 (failure
+modes) and 14 (operations) were still running.
+
+| severity | what | dimension | live? | already known |
+|---|---|---|---|---|
+| **high** | If you refund someone who has deleted their account, the site rejects the refund message from Stripe over a... | 1 | yes | — |
+| **high** | The tool's own internal divider line gets scattered through the customer's finished document | 5 | yes | — |
+| **high** | The homepage sends Google an empty page — no headline, no words, nothing but the menu and the footer | 9 | yes | — |
+| **medium** | The ledger records what every job earned but never what it cost, so nothing can tell whether a job made mon... | 2 | yes | — |
+| **medium** | Every rewrite tells the customer's browser exactly what the job cost us, which model ran it, and how long o... | 2 | yes | — |
+| **medium** | The tool Jon is told to run before refunding says money is still owed on a payment that has already been re... | 1 | yes | — |
+| **medium** | Guest credits really can be left behind when the confirmation email is opened on another device, and nothin... | 3 | yes | H1 |
+| **medium** | A 5,000-word essay failed outright on the first live attempt, then worked on the second | 5 | yes | B11 |
+| **medium** | The homepage answers "Will it change my meaning, my facts, or my numbers?" with a flat No, on the one layer... | 7 | yes | — |
+| **medium** | The Starter pack says it covers about four college essays. By the site's own calculator it covers three. | 7 | yes | — |
+| **medium** | Plain text files are missing from every list of what you can upload, and they are the one upload charged by... | 7 | yes | — |
+| **medium** | The website is missing five of the six standard browser safety headers on every page, including the pages t... | Dimension 6 | yes | — |
+| **medium** | HYPOTHESIS, not confirmed: every free scan may write the visitor's raw IP address into our own database, an... | 8 | **no** | — |
+| **low** | On a refund row the money column stores Stripe's running total, so adding the refund rows up says more mone... | 2 | yes | — |
+| **low** | The instruction printed at the top of the money-record reader does not work — it crashes | 1 | yes | — |
+| **low** | The site sends none of the standard browser security headers except HSTS | Security | yes | — |
+| **low** | The rewrite response tells any caller which AI model, gateway, temperature and prompt size it uses | Security | yes | — |
+| **low** | Live evidence suggests the P1 prompt-leak fix is ALREADY deployed, though the checklist says it is not | Security | yes | P1 |
+| **low** | The sign-up page promises 3 free credits and a brand-new account is actually given 5 | 3 | yes | B12 |
+| **low** | Signing out on one device signs you out of every device, with no warning | 3 | yes | — |
+| **low** | The sign-up page shows the same terms sentence twice and its Google button says "Sign in" on a page headed ... | 3 | yes | — |
+| **low** | The sign-in failure page tells the browser tab it is the homepage | 3 | yes | — |
+| **low** | If copying the clean text fails, the button does nothing at all and never says why | 5 | yes | — |
+| **low** | Six sign-in and account pages are open to Google with no address of their own, and two of them wear another... | 9 | yes | — |
+| **low** | The site has no structured data in the pages it serves, and the one piece that was written never gets there | 9 | yes | D12 |
+| **low** | The pricing page's search-result summary is two characters over the length Google shows | 9 | yes | — |
+| **low** | The site has no web app manifest, so saving it to a phone home screen gives a generic tile | 9 | yes | — |
+| **low** | A heading says every major lab has signed up. The table an inch to the right says one has not. | 7 | yes | — |
+| **low** | An FAQ asks about PDFs and never answers, and never mentions images, which the tool has always accepted. | 7 | yes | 6c |
+| **low** | The cookie policy says exactly three things are stored on your device. A signed-in customer who collapses t... | 8 | yes | — |
+
+**The three worth looking at first, if only these are ever followed up:**
+
+1. **Refunding someone who has already deleted their account.** The agent reports that
+   Stripe's refund message is rejected by the site over and over for about three days,
+   with nobody watching. Plausible, unverified, and it touches real money.
+2. **The ledger never records what a job cost.** Confirmed independently by the legal
+   agent against the privacy policy, and it is the reason the economics table in this
+   note had to be assembled by hand.
+3. **The rewrite response hands any caller the model name, the gateway, the
+   temperature and the length of the internal prompt.** Two agents found this
+   separately. It is reconnaissance for exactly the prompt-injection family that
+   produced the P1 defect.
 
 ---
