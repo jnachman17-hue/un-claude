@@ -2144,3 +2144,42 @@ framed. Those two are individually modest and jointly make a convincing phishing
 out of your own domain. Closing the redirect is the cheaper half and closes most of it.
 
 ---
+# A FAILED ATTEMPT COSTS JON REAL MONEY AND THE SITE INVITES A REPEAT (MEDIUM)
+
+Found by the engine agent, measured here.
+
+**One 7,500-word document — a size the site accepts and cannot finish:**
+
+```
+gateway balance before : $10.462808
+customer credits before: 19
+
+HTTP 400 after 198.5s
+the customer is told   : "The rewrite could not be completed. Nothing was charged.
+                          Please try again."
+
+gateway balance after  : $10.250312
+customer credits after : 19
+
+>> cost to Jon of this one failed attempt : $0.2125
+>> cost to the customer                   : 0 credits
+```
+
+**The caveat on that figure, stated because it matters.** Other agents from this audit
+were running at the same time, so the $0.2125 is an upper bound rather than a clean
+attribution. The defensible floor comes from the engine's own reported figure for
+comparable work: a 6,000-word run that *succeeded* after 196 seconds reported
+`cost_usd: 0.0562`. **So one failed attempt costs somewhere between about 6 and 21
+cents. Either number makes the point.**
+
+**The point being: the failure is free to the customer, expensive to Jon, and the
+message asks them to do it again.** A student with a dissertation chapter will try
+three or four times before giving up. At the low end that is a quarter of what a
+Starter pack earns; at the high end, more than the pack is worth.
+
+**And it needs no bad actor.** Every honest customer with a document over about 7,000
+words is invited into this loop by the product's own error message. Fixing finding 1 —
+refusing sizes that cannot finish, up front and free — closes this at the same time,
+which is another reason it is the item to do first.
+
+---
