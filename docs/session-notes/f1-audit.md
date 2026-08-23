@@ -1564,13 +1564,22 @@ have. **It remains unverified.**
 correctly softened it. Here is the real figure, today:
 
 ```
+real ledger rows (this audit's throwaways excluded)   : 93
+distinct real accounts                                : 33
 RECONSTRUCTIBLE FROM STRIPE if the database were lost :  1 row
-NOT RECONSTRUCTIBLE (grants, spends, refunds, adjustments) : 84 rows across 30 accounts
+NOT RECONSTRUCTIBLE (grants, spends, refunds, adjustments) : 92 rows
 ```
 
 **Only one purchase has ever been made, and it carries its Stripe payment intent, so
 that one row could be rebuilt.** Everything else — who was granted what, who has spent
 what — is only here.
+
+**And this audit left a small mark on that list, which should be said.** An operations
+agent flagged it: driving the live site through a real browser created **three anonymous
+guest accounts** that are indistinguishable from real visitors' guests, because that is
+what an anonymous guest is. The ~29 labelled `f1-audit-` accounts and all their ledger
+rows are deleted at the end of this note; **those three cannot be, without risking a
+real visitor's.** So Jon's account count is three higher than his real traffic, for good.
 
 **The honest reading: the stakes are small today and they only grow.** Thirty
 accounts is a cheap thing to protect and a cheap thing to lose. Both of those stop
@@ -1803,7 +1812,7 @@ kept" under the words "Measured, not estimated".
 **21. Record what a run costs.** The column exists, the engine returns the figure, the
 privacy policy already promises it is stored, and nothing writes it.
 
-**22. Schedule the ledger backup while it is still 84 rows and 30 accounts.**
+**22. Schedule the ledger backup while it is still 93 rows and 33 accounts.**
 
 ---
 
