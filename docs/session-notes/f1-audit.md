@@ -365,7 +365,14 @@ and it will be read as press coverage of un-claude.
 
 **Sixteen logo files are shipped and every one serves 200 on the live site:**
 `abc, axios, cnet, cnn, forbes, fortune, guardian, npr, nyt, register, techcrunch,
-wired, wsj`.
+wired, wsj`. Nine of them scroll past in the marquee.
+
+**And it is far more prominent than the description suggests.** In a full-width
+screenshot of the live homepage the logos — CNET, THE WALL STREET JOURNAL, The
+Guardian, WIRED, The New York Times, CNN — run edge to edge at roughly 40 pixels
+tall across the whole viewport. The qualifying line above them, *"The story, as
+covered by:"*, is 13-pixel grey type. On a phone, scrolling, nobody reads the
+13-pixel line.
 
 **Why this is a finding and not a matter of taste.** The charitable reading — that
 these outlets covered *AI watermarking*, not us — is defensible, and it is probably
@@ -498,12 +505,28 @@ and sold for 5 credits — $2.50 at the Starter price, $1.25 at Pro. That is bet
 took 83. The difference is how many times the internal fact-check demanded another go.
 So no promise about how long a document of a given size will take can be true.
 
-**A Word document never gets the rewrite.** `layer_b_used: false`, confirmed twice
-live. This is disclosed correctly on `/capabilities` ("Paste the text instead") and in
-the pricing FAQ — **it is not a false claim.** But the homepage says "We sanitise
-every kind of AI watermark in seconds" and the tool's own panel lists all three layers
-for every input, and nothing says it at the moment of the upload, which is the moment
-it matters. Same family as finding 4: correct, and silent.
+**A Word document never gets the rewrite** — `layer_b_used: false`, confirmed twice
+live. **And the interface says so properly, which I initially doubted and then went
+and checked.** A 3,000-word `.docx` was uploaded through the real file picker on the
+live site, and the panel reads:
+
+```
+Statistical watermark        NOT REWRITTEN
+  A Word document is cleaned of its metadata and its hidden characters. Its
+  wording is not rewritten, so a statistical mark in the writing itself would
+  stay. Paste the text instead to have it rewritten.
+
+Metadata                     2 REMOVED
+  Stripped, and the file was re-read afterwards to confirm nothing was left.
+  1615 bytes in, 1593 out.
+  Removed - scrub docProps/core.xml field dc:creator
+  Removed - scrub docProps/core.xml field cp:lastModifiedBy
+```
+
+It also correctly identified the file as Claude's: *"This file names Claude as its
+maker, in a signed record anyone can read with a free tool."* **That is item B7 fixed,
+deployed and working**, told plainly at the moment of the upload with the remedy
+attached. It is the best-written thing in the product.
 
 ---
 # WHAT THIS AUDIT COULD NOT COVER, AND WHY
@@ -774,5 +797,310 @@ onto every page, which is precisely what standing rule D14 warns about for canon
 
 **Why it costs money.** The pricing page is the one people share when recommending a
 paid tool. Its preview says nothing about pricing.
+
+---
+### H. Two different credit counts on the same screen, photographed (MEDIUM)
+
+`LAUNCH-CHECKLIST` 6d says the header credit count freezes at page load and does not
+move when you spend. Reproduced live, and both wrong numbers are visible at once in a
+single screen of text taken straight after a sanitise:
+
+```
+Your credits
+7 credits          <-- the header, still showing the balance from page load
+...
+WHAT WE REMOVED
+Read the result before you use it
+6
+left               <-- the workbench chip, showing the real balance
+```
+
+Seven at the top of the page, six in the middle, at the same instant, both about
+money. The customer has no way to know which is real without navigating away and back.
+
+**The chip below it also wraps onto two lines** — that is 6e, and it is visible in
+the same capture: the number and the word "credits" land on separate lines.
+
+### I. A Word document is told the picture is untouched (LOW)
+
+In the same live capture, the metadata panel for a `.docx` reads:
+
+> "Stripped, and the file was re-read afterwards to confirm nothing was left. 1615
+> bytes in, 1593 out, **and the picture itself is untouched.**"
+
+A Word document is not a picture. The sentence was written for images and is reused
+for every file type. It is the only wrong note in an otherwise very well-written
+panel.
+
+---
+### J. The ledger itself is sound — every integrity check passed (PASS)
+
+Run against the whole live ledger, with this audit's own throwaway accounts excluded
+so the numbers are the real product's:
+
+```
+LIVE LEDGER, excluding this audit's throwaway accounts
+  rows                : 85
+  distinct accounts   : 30
+  rows by reason      : {"anon_grant":24, "spend":40, "operation_refund":3,
+                         "signup_grant":8, "adjustment":8, "purchase":1,
+                         "money_refund":1}
+  accounts with a NEGATIVE balance : 0   (none)
+  ledger rows with delta = 0       : 0   (the table forbids it)
+  duplicate payment intents        : 0
+```
+
+Nobody is in credit they did not earn, nobody is in debt, and no payment has been
+counted twice. **The append-only guard is genuinely on in production** — on a
+throwaway account a row was inserted, then an attempt was made to change it and to
+delete it, and both were refused by the database.
+
+### K. What losing the database would actually cost, as a number (context for E2)
+
+`LAUNCH-CHECKLIST` E2 has been calling this a total loss of the money record and E2a
+correctly softened it. Here is the real figure, today:
+
+```
+RECONSTRUCTIBLE FROM STRIPE if the database were lost :  1 row
+NOT RECONSTRUCTIBLE (grants, spends, refunds, adjustments) : 84 rows across 30 accounts
+```
+
+**Only one purchase has ever been made, and it carries its Stripe payment intent, so
+that one row could be rebuilt.** Everything else — who was granted what, who has spent
+what — is only here.
+
+**The honest reading: the stakes are small today and they only grow.** Thirty
+accounts is a cheap thing to protect and a cheap thing to lose. Both of those stop
+being true at the first hundred customers. This is the least painful moment this
+decision will ever have.
+
+---
+### L. The only way to reach anybody is a mail app the visitor may not have (MEDIUM)
+
+The contact page looks like a form — Subject, Your message, Send message — and it is
+not one. There is no `<form>` tag on the page. The button opens the visitor's own mail
+application with a draft. The page says so, honestly:
+
+> "Or email unclaudeapp@gmail.com. **Nothing is sent from this page and nothing you
+> type here is stored.** Your address is used to reply..."
+
+**Where it breaks.** A student on a phone who reads mail through a browser rather than
+a mail app taps Send message and nothing happens. They have typed out their problem
+and it goes nowhere. This is `LAUNCH-CHECKLIST` E9, with the live consequence attached:
+**this is the only support channel on a site that takes payments**, and it fails
+silently for a plausible slice of the audience.
+
+**One related thing for Jon, not a defect.** A customer who disputes a charge sees
+`UN-CLAUDE.COM` on their card statement and is asked to write to a Gmail address. A
+`support@un-claude.com` address costs nothing and answers that mismatch. A dispute
+costs about $24.50 against a refund's ~$0.56, so anything that keeps a confused
+customer emailing rather than calling their bank pays for itself immediately.
+
+**Confirmed while I was there:** the refund policy really is discoverable — "refund"
+appears 11 times on `/pricing` (including the small print, *"Unspent credits are
+refundable for 30 days at the price you paid"*) and 20 times in the terms. C3 holds.
+
+---
+### M. "Upload a file and you get all three" — no file the tool accepts gets all three (HIGH)
+
+Found by the copy agent, and it is the sharpest catch of the run because **this
+project's own working agreement says it too**: *"Paste text and you get A and B.
+Upload a file and you get all three."*
+
+**Checked against my own live runs, file type by file type:**
+
+| what you upload | invisible characters | metadata | the rewrite |
+|---|---|---|---|
+| `.txt` | yes | **nothing to remove — a text file has no wrapper** | yes |
+| `.docx` | yes | yes | **no** — `layer_b_used: false`, confirmed twice |
+| `.png` / `.jpg` | **no text to check** | yes | **no text to rewrite** |
+| pasted text | yes | no file, so none | yes |
+
+**There is no input that receives all three.** The live pricing page says *"Paste text
+and you get the first and the third. Upload a file and you get all three."* A student
+who uploads their essay as a Word file because the page told them uploading gets
+everything pays a credit and never gets the rewrite — which is the layer they came for.
+
+**The interface itself is honest about this** (see the panel quoted earlier: *"NOT
+REWRITTEN ... Paste the text instead"*). The pages that sell the product are not.
+The fix is copy, not code, and `CLAUDE.md`'s own summary table needs the same
+correction.
+
+### N. The site promises a three-word ceiling and its own receipt reports six (HIGH)
+
+**The live pages say, in three places:**
+
+> `/how-it-works` heading: **"Three words in a row, maximum"**
+> homepage FAQ: **"a hard three-word ceiling on surviving sequences"**
+> the workbench: "Three words in a row is the most that survives"
+
+**My own receipt, from a 2,553-word run on the live site earlier tonight:**
+
+```
+"longestRun": 6,
+"runs": [{"length":3,...},{"length":4,...},{"length":5,...},{"length":6,...}]
+```
+
+The receipt the site puts on screen to prove the claim is the thing that disproves it.
+A reader who checks — which is exactly the reader this site says it wants — finds the
+number wrong on the same screen.
+
+### O. "Nine classes of invisible character checked" — one of the nine finds nothing (MEDIUM)
+
+**The claim, on two live pages and in the tool itself:**
+
+> "Nine classes of invisible character checked on every scan. Each one is named, given
+> its exact position, and the text is read back afterwards to confirm none remain.
+> **You see the count.**"
+
+**A sentence containing eleven Cyrillic lookalike letters hidden inside English
+words — `rаpid`, `cоmmittee`, `repоrt`, `wаs`, `рublished` — scanned live:**
+
+```
+text contains 11 Cyrillic lookalike letters inside English words
+suspicious_total : 0
+hits             : []
+classes the engine says it checks: strip, bidi, tag_chars, variation_selector,
+                                   zwj_family, private_use, space, confusable, other_cf
+```
+
+`confusable` is on the engine's own list of nine and it found none of the eleven. The
+workbench then tells the reader *"None in this text. 9 classes checked."*
+
+**Why it is worth fixing rather than rewording.** Swapping Latin letters for
+identical-looking Cyrillic ones is a real, widely used trick for slipping past text
+matching. A student told their document is clean of all nine classes has been told
+something the product did not check.
+
+---
+### P. The tool's own estimate says three minutes; the hero says seconds; the job then fails (adds to finding 1)
+
+Captured live from the workbench with a 9,900-word paste in the box:
+
+```
+Sanitise it   10
+9,900 words  =  10  ·  takes up to about 3 minutes
+```
+
+**The homepage, at the top of the same page:** *"We sanitise every kind of AI
+watermark in seconds."*
+
+So the product contradicts its own headline at the moment of the sale — which is the
+honest half. The unhonest half is that **the job does not take about three minutes.
+It takes three and a half and then fails** (198s and 228s, both times).
+
+**The 402 is well done, and worth saying so.** When the same paste met an account
+without enough credits, the screen read:
+
+```
+This needs 10 credits and you have 6. Scanning stays free and unlimited.
+[ Get credits ]   [ Back to the scan ]
+```
+
+Exact numbers, a reassurance, and two ways forward. That is what every error message
+in the product should look like — and it is the model for fixing findings 4 and E.
+
+---
+# WHAT TO DO, IN ORDER
+
+Ranked by what protects a paying customer soonest, not by how hard it is.
+
+**1. Stop the rewrite touching anything inside quotation marks.** A fabricated quote
+attributed to a real person is the only defect here that can damage a student's
+academic record, and they cannot see it. Everything else on this list is money or
+friction; this one is their degree. Protected spans, passed through untouched.
+
+**2. Make the advertised size limit a size that finishes.** Today the page sells
+10,000 words and 9,900 fails after three and a half minutes. 6,000 words completed —
+in 196 seconds, against a 240-second cut-off, with four retries. That is not a
+margin. Either drop the limit to something that reliably completes, or take long
+documents as a job the customer comes back to rather than one they sit and wait for.
+**Do this before any marketing spend**, because the Pro pack is sold as "a
+dissertation, with room to spare".
+
+**3. Do not charge for a rewrite that did not run — and stop the screen saying it
+did.** Under 16 words the customer pays a credit, gets their own text back byte for
+byte, and reads "Rewritten · Measured, not estimated". The engine already writes a
+clear, correct explanation that nothing displays. Show it, and refund the credit.
+
+**4. Close the open redirect.** `/auth/callback` should only ever send a browser to a
+path on this site. One condition, and it removes a ready-made phishing link that
+starts with your own domain.
+
+**5. Move the file-size check into the browser, at about 3.2 MB of actual file.**
+Right now Vercel rejects the upload before any of your code runs, so the polite
+message you already wrote can never be shown. Phone photos routinely exceed this and
+the pricing page says "any size".
+
+**6. Fix the six claims that are checkable and wrong.** These cost nothing but copy
+and they are the ones that will be checked first:
+   - "Upload a file and you get all three" — no accepted file type gets all three.
+   - "a hard three-word ceiling" — your own receipt printed 6.
+   - "Nine classes ... checked" — the lookalike-letter class finds nothing.
+   - "About four college essays" — your own calculator makes it three.
+   - "in seconds" — your own price line says three minutes.
+   - "94 to 100% of the original length kept" — live receipts came back 102% to 114%.
+
+**7. Put a link behind the news logos, or take them down.** Nine national mastheads
+scroll across the homepage under 13-pixel grey type. Either every logo links to the
+piece it refers to, or the section goes. On a site now taking money from Americans,
+implied endorsement is a category regulators recognise, and this is the one thing on
+the list that could arrive as a letter rather than a refund request.
+
+**8. Tell the visitor when Cloudflare is the problem.** They currently reach a dead
+end that blames their internet and invites them to retry forever.
+
+**9. Rewrite the account-deletion warning.** It talks about teams and subscriptions
+that do not exist and never mentions the credits they paid for and are about to lose.
+
+**10. Give every page its own share tags.** Nine pages, one line each. The canonical
+work already did exactly this and the Open Graph tags were missed.
+
+**11. The two numbers about money that are wrong on screen.** The header credit count
+freezes at page load while the chip beside it updates, and the credit history prints
+dates in UTC so anyone in the Americas sees tomorrow. Both are the same family as the
+word counter that lied.
+
+**12. Give the paste box and the file input a name.** Two attributes. Right now the
+product's two primary controls are unnamed to a screen reader, and one of them is in
+the tab order.
+
+**13. Schedule the ledger backup while it is still 84 rows and 30 accounts.** Only
+one row on the whole ledger could be rebuilt from Stripe. This is the cheapest this
+decision will ever be.
+
+---
+# THE SIZE CEILING, SETTLED — the board's longest-open question
+
+`LAUNCH-CHECKLIST` B3 set an "honest limit at 10,000 words" and B11 recorded that
+nothing had ever been measured on production. Both are now answered. Every row below
+was run through https://un-claude.com against a funded account with the developer
+credit bypass off.
+
+| words in | result | wall clock | retries | words back | charged | cost to us |
+|---|---|---|---|---|---|---|
+| 730 | ok | ~8 s | 0 | 670–760 | 1 | — |
+| 2,553 | ok | 14.3 s | 1–3 | 2,698–2,833 | 3 | $0.0094 |
+| 4,800 | ok | 83.4 s | 2 | 3,398 | 5 | $0.0248 |
+| **6,000** | **ok** | **196.3 s** | **4** | **4,670** | 6 | $0.0562 |
+| **7,500** | **FAILED** | **192.9 s** | — | — | 0, refunded | — |
+| **9,900** | **FAILED** | **198 s / 227.8 s** | — | — | 0, refunded | — |
+| 10,064 | refused, correctly | 0.8 s | — | — | 0 | $0 |
+
+**The real ceiling is between 6,000 and 7,500 words. The site advertises 10,000.**
+
+**And 6,000 is not a comfortable pass.** 196 seconds against a 240-second cut-off,
+reached only after four retries. Whether a 6,000-word document works depends on how
+many times the internal fact-check happens to demand another attempt, which is not
+something a customer can predict and not something the page can promise.
+
+**This is why the timings could not be extrapolated from the laptop.** The local
+measurement was 10,464 words in 78.7 seconds. On production the same size does not
+finish at all. Nothing about that gap is mysterious — network, base64, cold start and
+a different model — but it is the concrete reason B11 mattered.
+
+**A cost figure Jon has never had.** 6,000 words cost **5.6 cents** to run and sold
+for 6 credits — $3.00 at the Starter price, $1.50 at Pro. Even at the worst pack
+price that is a 27x margin, and the retries are already in the number.
 
 ---
