@@ -721,10 +721,25 @@ bytes. **The mechanism is real and confirmed in the engine's source**: `\n\n---\
 the literal boundary between the instructions and the customer's text in the prompt,
 so the model can copy it into its answer.
 
-**I could not reproduce it in 8 live runs** across 730, 2,553 and 4,800 words. So it
-happens, it happens on some documents and not others, and nobody yet knows how often.
-It is recorded here as real-but-unquantified rather than confirmed or dismissed,
-because both of those would be a guess.
+**I could not reproduce it in 13 live runs** across eight different shapes of input:
+730, 2,553 and 4,800 words of ordinary prose; real essay prose; punctuation soup; a
+document of bare headings; numbers only; and a plain control. Zero dividers, and zero
+occurrences of the prompt's own language, in every one.
+
+**So: two agents reproduced it with the bytes quoted, and the conductor could not
+reproduce it thirteen times.** The mechanism is confirmed in the engine's source —
+`\n\n---\n` really is the literal boundary between the instructions and the customer's
+text — so it is not imaginary. It is intermittent, and **nobody knows how often**. It is
+recorded as real-but-unquantified rather than confirmed or dismissed, because both of
+those would be a guess. **Settling it needs a proper measurement run, not a fix on
+faith.**
+
+**One thing that did turn up while chasing it, and is new.** An eighteen-word list of
+ordinary nouns — `apple bicycle mountain window telephone garden ocean pencil...` — came
+back `HTTP 400 layer_b_failed`. It is over the sixteen-word floor and it is not long.
+**So length is not the only thing that makes the rewrite fail**, and a student pasting a
+bibliography, a glossary or a list of terms may hit the same wall. That is worth a look
+in whatever session takes finding 1.
 
 ---
 # FOUND BY THE FLEET, THEN RE-RUN BY THE CONDUCTOR
