@@ -249,9 +249,25 @@ unmetered tap into the paid model on Jon's card.
 balance is about $10. **A script doing nothing clever would drain it in under an hour**,
 and what happens after that depends on how the account is topped up.
 
-**These are old builds** — the live site and sixteen of the twenty correctly return
-`401 no_session`, so the sign-in requirement was added at some point and these four
-predate it. **They were never turned off, because nothing turns them off.**
+**These are builds from before the product had accounts at all**, which is exactly why
+they have no sign-in check. Probing one of them with no account:
+
+```
+POST /api/tool/clean      200   *** the paid rewrite, free ***
+POST /api/tool/scan       200   (free on the real site too — fine)
+POST /api/checkout        404   does not exist on this build
+GET  /api/credits         404   does not exist on this build
+POST /api/stripe/webhook  404   does not exist on this build
+GET  /                    200   the whole site, browsable
+```
+
+**So the exposure is bounded and worth stating precisely: it is model spend, not
+payments.** There is no checkout, no webhook and no credit system on these builds, so
+nobody can buy, refund or tamper with money through them. What they can do is run the
+paid rewrite as often as they like on Jon's gateway key.
+
+**They were never turned off, because nothing turns them off.** Sixteen of the twenty
+URLs — every build since accounts were added — correctly return `401 no_session`.
 
 **Fix sketch, and it is a settings change rather than code.** Vercel has Deployment
 Protection, which puts every preview and retired deployment behind authentication while
