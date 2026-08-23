@@ -15,6 +15,8 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from uc_leakguard import LeakSuspected, check_leak, strip_edge_separator
+
 # Words per chunk. Smaller chunks carry fewer facts each, so each one is more
 # likely to survive intact, and more of them run in parallel anyway. Measured:
 # at 700 words, half of long documents were rejected for dropping a number.
@@ -406,6 +408,30 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # The chunk's own paragraph spacing goes back on here, before any
             # guard reads it, so every path below returns the restored text.
             out, kept = _restore(out, inner, wanted)
+            # A bare `---` at either edge is the prompt's own separator showing
+            # through. Removed rather than rejected: it turned up in 1.7% of
+            # perfectly good rewrites, and refunding a customer over a stray
+            # punctuation mark would be worse than the mark.
+            out, _stripped = strip_edge_separator(out)
+            # IS THIS EVEN THE CUSTOMER'S TEXT? Nothing above asks. The length
+            # guard catches a rewrite that came back too SHORT and the fact guard
+            # catches one that dropped a number, but a response that is our own
+            # prompt rewritten, or an answer to the customer's question, or an
+            # invented document, passes both. That is what reached a customer on
+            # 22 August 2026. This runs BEFORE `best_out` can be recorded below,
+            # so a suspect rewrite can never become the fallback that gets
+            # returned when a later attempt fails.
+            leak = check_leak(chunks[i], out)
+            if leak:
+                last_err = LeakSuspected(
+                    f"chunk {i + 1} {leak}")
+                if attempt < RETRIES - 1 and time.monotonic() < deadline:
+                    time.sleep(0.4)
+                    continue
+                # Retries exhausted. A suspect rewrite is NEVER returned, so this
+                # falls through to whatever clean attempt is already in hand and
+                # otherwise raises, which refunds. 04 entry 22.
+                break
             try:
                 _guard_facts(chunks[i], out, i)     # facts: advisory, keep the best
                 if kept or structure_rerolls >= STRUCTURE_RETRIES or attempt >= RETRIES - 1:

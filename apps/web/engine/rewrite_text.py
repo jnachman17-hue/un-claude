@@ -274,33 +274,73 @@ def _per_candidate_detections(
     return detections
 
 
-def build_prompt(strength: str, text: str, *, lang: str, original_lang: str) -> str:
+#: The tail every prompt template ends with: a blank line, a horizontal rule, and
+#: the slot the customer's text used to be pasted into.
+_TEXT_SUFFIX = "\n\n---\n{TEXT}"
+
+
+def build_rules(strength: str, *, lang: str, original_lang: str) -> str:
+    """The instruction half of a prompt, with NO customer text anywhere in it.
+
+    Split out on 22 August 2026. The rules and the customer's text used to be
+    concatenated into one string before either reached a model, so the only
+    boundary between them was the `---` line at the join. A model has no
+    structural reason to treat that line as a wall, and on short inputs the
+    rules were the largest block of prose in the message, so it sometimes
+    rewrote those instead. A customer was handed a rewrite of this text.
+    See docs/session-notes/prompt-leak.md.
+    """
     if strength == "unclaude":
-        return PROMPTS["unclaude"].format(TEXT=text)
-    if strength.startswith("unclaude_retry:"):
+        body = PROMPTS["unclaude"]
+    elif strength.startswith("unclaude_retry:"):
         missing = strength.split(":", 1)[1] or "(unknown)"
-        return PROMPTS["unclaude_retry"].format(TEXT=text, MISSING=missing)
-    if strength == "paraphrase":
-        return PROMPTS["paraphrase"].format(TEXT=text)
-    if strength == "humanize":
-        return PROMPTS["humanize"].format(TEXT=text)
-    if strength == "code":
-        return PROMPTS["code"].format(TEXT=text)
-    if strength == "backtranslate":
-        # single combined instruction for print-prompt / one-shot backends
-        return (
+        body = PROMPTS["unclaude_retry"].replace("{MISSING}", missing)
+    elif strength in ("paraphrase", "humanize", "code"):
+        body = PROMPTS[strength]
+    elif strength == "backtranslate":
+        body = (
             f"Translate the text to {lang}, then translate that result back to "
             f"{original_lang}. Preserve all facts, numbers, and names. "
-            f"Output only the final {original_lang} text.\n\n---\n{text}"
+            f"Output only the final {original_lang} text." + _TEXT_SUFFIX
         )
-    if strength == "structural":
-        return (
+    elif strength == "structural":
+        body = (
             "First extract a bullet outline of all claims (no full sentences). "
             "Then write a complete document from that outline in natural, varied human "
-            "prose without omitting any bullet. Output only the final document.\n\n---\n"
-            f"{text}"
+            "prose without omitting any bullet. Output only the final document."
+            + _TEXT_SUFFIX
         )
-    raise ValueError(f"unknown strength: {strength}")
+    else:
+        raise ValueError(f"unknown strength: {strength}")
+    if not body.endswith(_TEXT_SUFFIX):
+        raise ValueError(f"prompt template for {strength!r} has no text slot at its end")
+    return body[: -len(_TEXT_SUFFIX)]
+
+
+def build_messages(strength: str, text: str, *, lang: str, original_lang: str) -> list[dict]:
+    """The rules as a `system` turn, the customer's text ALONE as the `user` turn.
+
+    This is the boundary a chat model is actually trained to respect, rather
+    than a horizontal rule it has to infer. Every backend this engine speaks to
+    accepts a system role: the OpenAI-compatible endpoint (the Vercel AI Gateway
+    in production) and Ollama's /api/chat both do.
+    """
+    return [
+        {"role": "system", "content": build_rules(
+            strength, lang=lang, original_lang=original_lang)},
+        {"role": "user", "content": text},
+    ]
+
+
+def build_prompt(strength: str, text: str, *, lang: str, original_lang: str) -> str:
+    """The old single-message form: rules, a `---` line, then the text.
+
+    Still used by the `print-prompt` backend, which has no roles to put anything
+    in, and available as a fallback for any backend that rejects a system turn
+    (WATERMARKS_REWRITE_SINGLE_MESSAGE=1). Byte-for-byte what it always was.
+    """
+    rules = build_rules(strength, lang=lang, original_lang=original_lang)
+    return rules + _TEXT_SUFFIX.replace("{TEXT}", text)
 
 
 def _http_json(url: str, payload: dict, headers: dict[str, str], timeout: float) -> dict:
@@ -319,14 +359,16 @@ def _http_json(url: str, payload: dict, headers: dict[str, str], timeout: float)
         return json.loads(resp.read().decode("utf-8"))
 
 
-def call_ollama(base_url: str, model: str, prompt: str, timeout: float, temperature: float) -> str:
+def call_ollama(
+    base_url: str, model: str, messages: list[dict], timeout: float, temperature: float
+) -> str:
     url = base_url.rstrip("/") + "/api/chat"
     data = _http_json(
         url,
         {
             "model": model,
             "stream": False,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "options": {"temperature": temperature},
         },
         {},
@@ -374,7 +416,7 @@ def accumulate_usage(into: dict, usage: object) -> None:
 def call_openai_compatible(
     base_url: str,
     model: str,
-    prompt: str,
+    messages: list[dict],
     api_key: str | None,
     timeout: float,
     temperature: float,
@@ -387,7 +429,7 @@ def call_openai_compatible(
         headers["Authorization"] = f"Bearer {api_key}"
     payload: dict = {
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": messages,
         "temperature": temperature,
     }
     if reasoning_effort:
@@ -443,7 +485,18 @@ def rewrite(
     """
     usage: dict = usage_out if usage_out is not None else {}
     prompt = build_prompt(strength, text, lang=lang, original_lang=original_lang)
+    # THE RULES GO IN A SYSTEM TURN AND THE CUSTOMER'S TEXT GOES IN A USER TURN.
+    # Set WATERMARKS_REWRITE_SINGLE_MESSAGE=1 to fall back to the old one-message
+    # form for a backend that will not accept a system role. Nothing we ship
+    # needs it; it exists so a future backend cannot force this file to change.
+    single_message = _flag_env("WATERMARKS_REWRITE_SINGLE_MESSAGE")
+    messages = (
+        [{"role": "user", "content": prompt}]
+        if single_message
+        else build_messages(strength, text, lang=lang, original_lang=original_lang)
+    )
     info: dict = {
+        "message_roles": "user" if single_message else "system+user",
         "backend": backend,
         "strength": strength,
         "model": model,
@@ -492,11 +545,11 @@ def rewrite(
             # Ollama runs locally and reports no usage block. Counted anyway, so
             # the number of calls is right whatever the backend is.
             usage["model_calls"] = usage.get("model_calls", 0) + 1
-            outs.append(call_ollama(base_url, model, prompt, timeout, temperature))
+            outs.append(call_ollama(base_url, model, messages, timeout, temperature))
         elif backend == "openai-compatible":
             outs.append(
                 call_openai_compatible(
-                    base_url, model, prompt, api_key, timeout, temperature,
+                    base_url, model, messages, api_key, timeout, temperature,
                     reasoning_effort, usage_out=usage,
                 )
             )
