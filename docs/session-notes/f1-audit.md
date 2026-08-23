@@ -128,8 +128,8 @@ live site with the output pasted in.
 | — | MEDIUM | A whitespace-only paste is charged a credit | conductor |
 | — | MEDIUM | The domain has no MX records, so `support@un-claude.com` cannot exist | conductor |
 | — | MEDIUM | No page has a main landmark or a skip link | conductor, 10 pages |
-| — | HIGH (a11y) | After a scan the result becomes one button — a screen reader cannot read it | agent + conductor |
-| — | HIGH (a11y) | Nothing announces working, finished or failed | conductor |
+| — | UNRESOLVED | After a scan the result is wrapped in a button — the computed tree does not support the strongest reading; needs VoiceOver | agent, partly refuted by conductor |
+| — | MEDIUM | Little announces working, finished or failed — the status line carries no role | conductor |
 | 12 | LOW | The file input is in the tab order with no name; the paste box has only a placeholder | conductor |
 | 13 | LOW | The header credit chip wraps onto two lines | conductor, both widths |
 | I | LOW | A Word document is told "the picture itself is untouched" | conductor |
@@ -1816,33 +1816,53 @@ and two buttons before reaching anything they came for, with no way to jump.
 **The homepage has no `<h1>` in the page it serves** — a consequence of everything
 being drawn by JavaScript (section D), not a separate defect.
 
-### After a scan, the result becomes a single button — a blind student cannot read what they paid for (HIGH)
+### After a scan, the result is wrapped in a button — but the strongest version of this did not survive checking (UNRESOLVED)
 
-The agent's sharpest catch. Once a scan completes, the whole text panel is wrapped in:
+**The agent's finding, and it was the sharpest one it made:** once a scan completes the
+whole text panel is wrapped in `role="button"`, `tabIndex 0`, `aria-label="Edit this
+text"`. Under the ARIA rule for presentational children, everything inside a button
+collapses into its label — so a screen reader would announce *"Edit this text, button"*
+and never read the essay, the findings, or the cleaned result. **A blind student would
+have paid for something they cannot hear.**
+
+**The markup is exactly as described** — I confirmed the wrapper in the browser's own
+tree, where the region reads `textbox` before the scan and `button "Edit this text"`
+after it.
+
+**But I then pulled Chrome's full computed accessibility tree over CDP, which is what
+assistive technology actually consumes, and it does not support the strongest reading:**
 
 ```
-role: "button", tabIndex: 0, "aria-label": "Edit this text"
+the customer's own sentence is still present in the tree : true
+   InlineTextBox "The committee reviewed the proposal carefully and agreed that further "
+   InlineTextBox "warranted before any decision."
+a textbox role still exists                              : true
+an "Edit this text" button exists                        : true
+a live region (status/alert) exists somewhere            : true
 ```
 
-**I saw this myself in the browser's own accessibility tree** — before the scan it read
-`textbox "Paste your text here..."`, and afterwards the same region read
-`button "Edit this text"`.
+**So the customer's text is not stripped out of the tree.**
 
-Under the ARIA rule for presentational children, everything inside a button collapses
-into its label. So a screen reader announces *"Edit this text, button"* and will not
-read out the essay, will not say where the hidden characters were, and after the
-customer pays, will not read back the clean text either. **They have bought a result
-they cannot hear.**
+**What I can honestly say, and no more.** The wrapper is real and it is an odd thing to
+do to a block of the customer's own writing. Whether a screen reader flattens it in
+practice is **not settled by the computed tree either way**, because a text node being
+present is not the same as a screen reader announcing it as prose. **This needs ten
+minutes with VoiceOver and nobody has done it.**
 
-Stated honestly: this rests on the ARIA specification and on the live markup, not on a
-screen-reader run. Nobody put VoiceOver on it. It is the first thing to check with one.
+**It is recorded this way deliberately.** The agent reasoned from the ARIA specification
+and the markup, which is exactly the source-over-reality shape this audit exists to
+catch — and it turned up inside the audit's own findings. The honest verdict is
+unresolved, not high.
 
-### Nothing announces that the tool is working, has finished, or has failed (HIGH)
+### Very little announces that the tool is working, has finished, or has failed (MEDIUM)
 
-The whole served homepage contains **one** `aria-live` region and no `role="status"` or
-`role="alert"` on the status line that carries "Rewriting", "Sanitised" and every error
-message. A sighted user watches the button change for up to three minutes. A screen
-reader user gets silence, and never hears the error at all.
+The served homepage contains **one** `aria-live` region, and the computed tree confirms
+a live region exists — **so the agent's "zero live regions" was wrong, and it is
+corrected here.** What is true is that the status line carrying "Rewriting", "Sanitised"
+and every error message is a plain paragraph with no `role="status"` and nothing
+pointing at it. A sighted user watches the button change for up to three minutes;
+whether a screen reader user hears anything at the moments that matter is, again, **a
+ten-minute check with VoiceOver that nobody has done.**
 
 ### The colours on the part that takes the money are the hardest to read (MEDIUM)
 
