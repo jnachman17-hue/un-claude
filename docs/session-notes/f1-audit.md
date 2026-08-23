@@ -100,7 +100,7 @@ live site with the output pasted in.
 | # | severity | finding | verified by |
 |---|---|---|---|
 | 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
-| 1b | **HIGH** | The tool inserts em dashes and curly apostrophes — the marks it exists to remove | conductor, 8 of 8 runs |
+| 1b | **HIGH** | The tool inserts em dashes, curly apostrophes and markdown asterisks the customer never typed | conductor, 8 of 8 and 3 of 3 |
 | 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
 | 3 | MEDIUM | Any `un-claude.com` link can redirect to any website, signed out *(skeptics downgraded from high)* | conductor + 3 skeptics |
 | 4 / C | **HIGH** | A paste under 16 words is charged a credit, returns identical text, and the screen says "Rewritten" | conductor + agent |
@@ -229,10 +229,24 @@ essay      -> run 3                       0 -> 10           0 ->  7
 > appraisal**—**but only after a wait of close to two years."
 
 **The engine agent measured how it scales**, and it scales with length: 100 words → 1
-em dash, 1,000 → 6, 2,500 → 16, 5,000 → 34, **10,000 → 95**. It also found the same
-run converting every straight apostrophe to a curly one, and — on some documents —
-inserting markdown asterisks around headings and numbers, which paste into Word as
-literal stars the student has to delete by hand.
+em dash, 1,000 → 6, 2,500 → 16, 5,000 → 34, **10,000 → 95**.
+
+**And it does the same thing with formatting.** The agent reported markdown asterisks
+being injected; I could not reproduce that on flowing prose and then worked out why —
+**it needs the document to have a heading.** Given one, it happens every time:
+
+```
+input : a plain-text heading, "The Case for Slower Committees", no formatting anywhere,
+        0 asterisks in the whole document
+
+run 1 : asterisks 4 (1 bold span)   first line: "**Why Committees Should Slow Down**"
+run 2 : asterisks 4 (1 bold span)   "**Why Committees Should Move More Deliberately**"
+run 3 : asterisks 4 (1 bold span)   "**Why Committees Should Move More Deliberately**"
+```
+
+**Three out of three.** The student's heading comes back wrapped in literal asterisk
+characters. Pasted into Word or Google Docs those are not formatting — they are two
+stars sitting either side of the title, to be deleted by hand.
 
 **Why this belongs near the top.** The product exists to remove the marks that identify
 writing as machine-made. The em dash and the curly apostrophe are among the most
