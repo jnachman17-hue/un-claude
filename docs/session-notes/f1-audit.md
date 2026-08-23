@@ -2475,10 +2475,17 @@ fast HTML buys nothing: the visitor gets a menu and a footer in 230 ms and then 
 on half a megabyte of JavaScript for the headline and the tool.
 
 **One line item worth a decision.** PostHog is **81 KB — about one sixth of all the
-script on the page** — and `LAUNCH-CHECKLIST` G3 records that nothing is instrumented:
-no funnel, and nothing measuring the different-device gap (H1) that the board calls the
-most likely real-world failure left. **The site is paying the weight and not getting
-the answers.** Either instrument it or drop it; carrying it unused is the worst of both.
+script on the page** — and it **does** load: confirmed in a real browser, keyed to a
+real `phc_` token, with `window.posthog` live and `capture` available. (A neighbouring
+session concluded the opposite from the served HTML; see the correction near the end of
+this note.)
+
+**What it is not doing is remembering anybody.** No cookie, no localStorage, no
+sessionStorage, and a fresh `distinct_id` on every page load — so every visit looks like
+a new stranger and nobody can be followed from the homepage to pricing to a signup.
+**That is precisely the funnel question G3 exists to answer, and the weight is being
+paid for an answer that cannot be produced.** Either turn persistence on or drop the
+library; carrying it like this is the worst of both.
 
 ### What could not be measured
 
