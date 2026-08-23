@@ -55,11 +55,14 @@ minutes earlier — see E16.
 |---|---|---|---|
 | 1 | ~~Buy the Starter pack~~ | **DONE 22 Aug** | Real card, real money. **Verified by the conductor on the live database, not reported:** exactly **one** purchase row on the entire ledger (`id 486, +10`), carrying `pi_3U74cIHwIcwEXjEP0HaPlfow` and a `stripe_event_id`, and **all four ledger invariants PASS** across 61 rows and 5 conversions. |
 | 1a | ~~Refund yourself~~ | **DONE 22 Aug — verified** | `id 489, -10 money_refund`. **Removed exactly 10 and left the 3 signup credits untouched** — which is the live proof of the worst bug the Stripe audit found: `charge.amount_refunded` is a *running total* and was being read as the current refund, so two partial refunds on one pack would have eaten credits belonging to other purchases. **All four invariants still pass, 62 rows.** The complete money path — purchase, credit, refund, debit — is now proven on real money. |
-| 2 | **Search Console — now the next thing** | **Jon** | Unblocked by the deploy. W4's five-step walkthrough. |
+| 2 | **Search Console** | **Jon — wait for the pending deploy** | Unblocked by the deploy. W4's five-step walkthrough. |
 | 3 | **Measure on production** | Jon/session | W1's one open item. Every timing so far is local — no HTTP, no base64, no cold start. **Production will be slower.** |
 | 4 | **Push to GitHub** | **Jon** | **109 commits exist only on this laptop while the site is live.** |
-| 5 | W7 UI notes, paused | session | Five items, plus the mobile zoom now that the workbench is free. |
-| 6 | `/pricing` canonical | session | The ninth of nine. W1 has released the file. |
+| 5 | ~~W7 UI notes~~ | **DONE — verified, awaiting deploy** | All seven. Verified by the conductor against a fresh dev server: nav reads "What we do" (×4, zero of the old label), the PDF sentence is gone from both places, the paste box is `text-[16px] sm:text-[14.5px]`, and **the viewport tag was correctly left alone**. |
+| 6 | ~~`/pricing` canonical~~ | **DONE — nine of nine** | Every page in the sitemap now names its own address. Verified page by page. |
+| 6a | **A second deploy is pending** | **Jon** | W7's seven fixes are committed and verified locally but **are not on the live site.** The tree is clean and typecheck passes. |
+| 6b | **Two things W7 could not prove, both small** | **Jon, after the deploy** | **The signed-in wallet link** is code-reviewed only — the signed-out path is proven (no `/home` link renders), but nobody has clicked it signed in. **The iOS zoom** is fixed at the cause (measured 14.5px, now 16px on phones) but was never reproduced on a real iPhone. Both are ten-second checks once live. |
+| 6c | **The FAQ answer W7 touched is otherwise stale** | **OPEN** | It describes Word documents and pasted text but **not images**, which the tool has accepted all along. W7 flagged it and correctly left it — out of its scope. |
 | 7 | **F1 Fable audit** | Jon triggers | The final gate. |
 
 ---
@@ -367,3 +370,12 @@ revenue, and it is the longest unstarted item on the board.**
   running total, and reading it as the current refund would have taken credits
   from other purchases. **The whole money path is now proven on real money, not
   in test mode.** Four invariants still pass across 62 rows.
+- **22 Aug, W7 landed and was verified by render.** Its own note listed four
+  things it could not confirm; the conductor closed two by starting a fresh dev
+  server — which is also the only way an i18n label change is ever visible — and
+  checking each page. **Canonicals now cover nine of nine.** The zoom fix is the
+  one worth keeping: the paste box was 14.5px, iOS Safari zooms any focused
+  input under 16px and never zooms back, and **the fix deliberately did not use
+  the viewport tag**, which would have bought the layout back by taking pinch
+  zoom from everyone who needs to magnify the page. W7 also left its work
+  uncommitted — the third session in a row to do so.
