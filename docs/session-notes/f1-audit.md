@@ -2509,12 +2509,12 @@ real `phc_` token, with `window.posthog` live and `capture` available. (A neighb
 session concluded the opposite from the served HTML; see the correction near the end of
 this note.)
 
-**What it is not doing is remembering anybody.** No cookie, no localStorage, no
-sessionStorage, and a fresh `distinct_id` on every page load — so every visit looks like
-a new stranger and nobody can be followed from the homepage to pricing to a signup.
-**That is precisely the funnel question G3 exists to answer, and the weight is being
-paid for an answer that cannot be produced.** Either turn persistence on or drop the
-library; carrying it like this is the worst of both.
+**What it is not doing is capturing anything at all.** Watched across three page views
+and an interaction: **zero capture requests sent.** Its config is
+`persistence: "memory"` and `capture_pageview: "history_change"` — so nothing survives a
+page load, and a pageview only fires on an in-app navigation, never on somebody simply
+arriving. **81 KB on every page, on every visitor, for an empty dashboard.** Two config
+values fix it, or drop the library; see the board correction near the end of this note.
 
 ### What could not be measured
 
