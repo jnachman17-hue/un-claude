@@ -2266,3 +2266,52 @@ a signed-in customer collapses the sidebar in their account area. Nobody is harm
 list is simply not complete, and it says it is. One row.
 
 ---
+# HOW THIS AUDIT ACTUALLY RAN, AND HOW MUCH TO TRUST EACH PART
+
+**The design.** Fourteen agents, one per dimension, probing the live site. Every finding
+then put to three independent skeptics with different jobs: one re-runs the reproduction
+command, one asks whether it is true of the deployed system rather than of source or of
+Stripe's test mode, and one asks whether it harms anybody. Two of three refuting kills
+the finding. Then completeness critics naming what nobody opened, a round to fill those
+gaps, and a synthesis.
+
+**What actually happened.** The run hit the account's usage limit twice and was resumed
+twice. The first stop killed every skeptic before any had reported; the second stopped
+four dimension probes and most of the panels again. **A workflow that dies takes its
+agents' work with it**, which is why this note was written and committed as the run went
+rather than at the end.
+
+**One thing the first stop exposed, and it is worth recording as a lesson.** My script
+counted "no skeptic voted" as "the finding did not survive", so the first run reported
+26 findings as refuted when in truth **not one of them had been looked at.** That is the
+same defect this audit exists to find, in the audit's own machinery: a confident verdict
+nobody checked. It was fixed before the second run — a finding with no votes is now
+`UNVERIFIED`, never `REFUTED` — and no such finding reached this note.
+
+**So the evidence in here comes from three different places, and they are not equal:**
+
+| where it came from | how much to trust it |
+|---|---|
+| **Reproduced by hand against the live site, output pasted in** | The strongest. Most of this note. Anything marked "conductor". |
+| **Found by an agent AND re-run by hand** | Equally strong. Marked as both. |
+| **Found by an agent and passed by the skeptics** | Strong. The skeptics re-ran the commands themselves. |
+| **Found by an agent, not yet judged** | **A lead, not a verdict.** In its own section, marked as such. |
+
+**Four dimensions never returned an agent** — performance, friction, failure modes and
+operations — and I covered all four by hand instead. They have their own sections and
+they say so at the top.
+
+**The skeptics changed real conclusions, which is the point of having them.** They killed
+six findings, including one of the engine agent's for being a restatement of a board item
+already ruled on, and one whose reproduction turned out to be **a simulation rather than
+an observation** — an agent inserting figures it chose itself and then reporting what the
+database stored. They also talked me down from "high" to "medium" on three of my own, and
+reframed a fourth better than I had written it. Every one of those corrections is
+recorded in place rather than quietly applied.
+
+**Three of my own hypotheses died the same way**, and are recorded because a killed
+hypothesis is worth as much as a finding: a font that looked corrupt and was not, a C2PA
+metadata layer that looked dead on production and works perfectly, and a credit balance
+that looked like an overspend and was my own concurrent tests.
+
+---
