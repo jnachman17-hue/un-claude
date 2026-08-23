@@ -61,6 +61,59 @@ sells for between 67 and 135 times what it costs to run.
 
 ---
 
+# EVERY FINDING, IN ONE TABLE
+
+The report below grew as the audit ran, so findings are numbered in one section,
+lettered in another, and a few have sections of their own. **This table is the whole
+list in one place.** Everything marked "conductor" was reproduced by hand against the
+live site with the output pasted in.
+
+| # | severity | finding | verified by |
+|---|---|---|---|
+| 1 | **CRITICAL** | A 9,900-word document fails after 3½ minutes; the site advertises 10,000 | conductor, twice |
+| 1b | **HIGH** | The tool inserts em dashes and curly apostrophes — the marks it exists to remove | conductor, 8 of 8 runs |
+| 2 | **HIGH** | The rewrite invents quotations and leaves them attributed to a named person | conductor, 3 of 3 runs |
+| 3 | **HIGH** | Any `un-claude.com` link can redirect to any website, signed out | conductor + skeptic |
+| 4 / C | **HIGH** | A paste under 16 words is charged a credit, returns identical text, and the screen says "Rewritten" | conductor + agent |
+| A | **HIGH** | If Cloudflare is blocked the visitor hits an unrecoverable dead end that blames their internet | conductor |
+| B | **HIGH** | "Delete your Account" destroys paid credits; the warning names teams and subscriptions that do not exist | conductor |
+| E | **HIGH** | Any file over 3.2 MB fails; the site's own size message can never fire | conductor + agent |
+| M | **HIGH** | "Upload a file and you get all three" — no accepted file type gets all three | conductor + 2 agents |
+| N | **HIGH** | The site promises a three-word ceiling; its own receipt printed 6 | conductor |
+| — | **HIGH** | Three of the four "enforced rather than promised" FAQ claims fail against the product's own receipt | conductor |
+| — | **HIGH** | The refund tool says money is owed on a payment already refunded in full | conductor + skeptic |
+| 5 | MEDIUM | The rewrite returns documents 6–14% longer and calls it "Length 114% kept" | conductor, 8 runs |
+| 6 | MEDIUM | On repetitive text the rewrite silently deleted 22–29% of the document | conductor, twice |
+| 7 | MEDIUM | A date vanished; the field designed to flag that came back empty | conductor |
+| 8 | MEDIUM | The credit history prints dates in UTC, so the Americas see tomorrow | conductor |
+| 9 | MEDIUM | The "words cleaned" counter goes backwards on reload | conductor, 4 loads |
+| 10 | MEDIUM | The pricing page quotes 1 credit for a file and charges 5 | conductor |
+| 11 | MEDIUM | Sixteen news logos under "The story, as covered by:" with no link to anything | conductor + agent |
+| D | MEDIUM | The served page is a menu and a footer; 483 KB of script draws the rest | conductor |
+| G | MEDIUM | Every page's link preview shows the homepage | conductor, 9 pages |
+| H | MEDIUM | Header credit count and workbench chip disagree on screen | conductor, screenshot |
+| L | MEDIUM | The only support channel is a `mailto:` that does nothing without a mail app | conductor |
+| O | MEDIUM | "Nine classes checked" — the lookalike-letter class finds nothing | conductor |
+| — | MEDIUM | A dropped connection charges the customer and does not refund | conductor, watched 8 min |
+| — | MEDIUM | The credit check runs before the file check, so you can be told to pay for a job that will be refused | conductor |
+| — | MEDIUM | A whitespace-only paste is charged a credit | conductor |
+| — | MEDIUM | The domain has no MX records, so `support@un-claude.com` cannot exist | conductor |
+| — | MEDIUM | No page has a main landmark or a skip link | conductor, 10 pages |
+| — | HIGH (a11y) | After a scan the result becomes one button — a screen reader cannot read it | agent + conductor |
+| — | HIGH (a11y) | Nothing announces working, finished or failed | conductor |
+| 12 | LOW | The file input is in the tab order with no name; the paste box has only a placeholder | conductor |
+| 13 | LOW | The header credit chip wraps onto two lines | conductor, both widths |
+| I | LOW | A Word document is told "the picture itself is untouched" | conductor |
+| Q | LOW | The privacy policy describes a cost record the database never writes | agent + conductor |
+| — | LOW | "100% of detectable marks removed" — 15 found, 12 removed, 3 kept on purpose | conductor |
+
+**And what passed** — the price boundary, the failure refund, the 10,000-word refusal,
+Word-document integrity, layer A detection, the C2PA metadata layer, concurrency, the
+ledger's integrity, every internal link, and the speed of the site itself. Those are in
+"WHAT PASSED" and in the two layer sections, with their evidence.
+
+---
+
 # WHAT WAS FOUND — worst first
 
 Everything in this section was run by the conductor against https://un-claude.com or
