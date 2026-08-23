@@ -1464,48 +1464,66 @@ pages claim to be "Un-Claude · AI Watermark Remover".
 ---
 # THE ECONOMICS, MEASURED — numbers Jon has never had
 
-Every figure here comes from the `cost_usd` the AI Gateway itself reported on live
-runs tonight, not from arithmetic on a token count.
+Every figure here is the `cost_usd` the AI Gateway itself reported on live runs, not
+arithmetic on a token count.
 
-| what | measured cost to us |
-|---|---|
-| 2,553 words | $0.0094 |
-| 4,800 words | $0.0248 |
-| 6,000 words | $0.0562 |
-| **so, roughly** | **0.37 cents per 1,000 words — i.e. per credit sold** |
+### The cost per credit is not flat, and I nearly reported it as though it were
 
-**What a credit costs versus what it sells for**
+```
+ 2,553 words   $0.0094   ->  0.37 cents per 1,000 words
+ 4,800 words   $0.0248   ->  0.52 cents per 1,000 words
+ 6,000 words   $0.0562   ->  0.94 cents per 1,000 words
+```
 
-| pack | price per credit | cost to run | margin |
+**A credit sells for the same price whatever the document, and costs us two and a half
+times more at the top of the working range than at the bottom.** The reason is the same
+one behind finding 1: the fact guard demands retries, and the bigger the document the
+more of them it demands.
+
+**This note first quoted the 0.37 figure as "roughly the cost per credit". That was
+wrong in exactly the way `LAUNCH-CHECKLIST` B3 already records ENGINE.md being wrong** —
+*"'~0.06 typical' was a best case read as a typical"*. It is corrected here rather than
+quietly, because making the same recorded mistake twice is worth a line.
+
+### What a credit costs against what it sells for
+
+| pack | price per credit | margin on small jobs | margin on 6,000-word jobs |
 |---|---|---|---|
-| Starter $4.99 / 10 | 50¢ | ~0.37¢ | **135x** |
-| Plus $9.99 / 25 | 40¢ | ~0.37¢ | **108x** |
-| Pro $24.99 / 100 | 25¢ | ~0.37¢ | **67x** |
+| Starter $4.99 / 10 | 50¢ | 136x | **53x** |
+| Plus $9.99 / 25 | 40¢ | 109x | **43x** |
+| Pro $24.99 / 100 | 25¢ | 68x | **27x** |
 
-**The pricing is not the problem, and it is not close.** Even the cheapest pack sells
-a credit for 67 times what it costs, with the fact-guard retries already inside the
-number.
+**The pricing is comfortable and it is not close.** Even the worst cell in that table —
+the cheapest pack against the dearest work — returns twenty-seven times what the job
+costs, with retries already inside the number. **Nothing here argues for raising
+prices.** What it does argue is that the retry behaviour is the single lever that moves
+the cost, and finding 1 is about that same lever.
 
-**What the free tier costs.** A brand-new signed-up account is given 5 credits and can
-spend them all on the rewrite, which is the only layer that costs real money:
+### What the free tier costs
 
-- an anonymous visitor: 2 credits = 2,000 words ≈ **0.7 cents**
-- a signed-up account: 5 credits = 5,000 words ≈ **1.9 cents**
+- an anonymous visitor: 2 credits ≈ 2,000 words ≈ **1 to 2 cents**
+- a signed-up account: 5 credits ≈ 5,000 words ≈ **2 to 5 cents**
 
-**So a hundred strangers cost about 70 cents and a hundred signups about $1.90.** That
-is a cheap way to buy a trial, and it means the free tier is not a leak worth
-engineering against — including the forged-guest-cookie item (E13) that was
-deliberately left open. **The worst that hole can do is give away about 0.7 cents at a
-time**, which is the missing number that makes leaving it open the obviously right
-call rather than a gamble.
+**A hundred strangers cost a pound or two, and a hundred signups a few pounds more.**
+That is a cheap trial, and it means the free tier is not a leak worth engineering
+against — including the forged-guest-cookie item (E13) that was deliberately left open.
+**The worst that hole gives away is one or two cents at a time**, which is the missing
+number that makes leaving it open obviously right rather than a gamble.
 
-**One caveat, and it is the reason to keep watching.** These figures are for
-`mistral/mistral-medium` at tonight's gateway prices. The model has already changed
-once (`mistral-small` to `mistral-medium`, which made the prompt-leak defect three
-times worse). If it changes again, every number in this section changes with it, and
-nothing in the product records what a job cost — see the ledger's empty `cost_usd`
-column, which the ledger agent flagged and which is the one thing that would make this
-table self-maintaining.
+### And a failed job costs more than a successful one
+
+A 7,500-word attempt that fails after 198 seconds does most of the work of a 6,000-word
+attempt that succeeds, and hands back nothing. See the section on retry burn: somewhere
+between 6 and 21 cents, charged to Jon, free to the customer, with "Please try again"
+underneath it.
+
+### The caveat that keeps this table honest
+
+These figures are `mistral/mistral-medium` at today's gateway prices. **The model has
+already changed once** — `mistral-small` to `mistral-medium` — and that change made the
+prompt-leak defect three times worse. If it changes again every number here changes with
+it, and **nothing in the product records what a job cost**: the ledger's `cost_usd`
+column is empty on every row, which is why this table had to be built by hand.
 
 ---
 
