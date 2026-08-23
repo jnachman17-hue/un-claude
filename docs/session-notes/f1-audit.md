@@ -36,7 +36,13 @@ Everything after that is the working detail behind those seven, one subject per 
 
 ## THE SHORT VERSION
 
-**Start here: the product is being given away free at four addresses, on your money.**
+**Start here, because it takes real money from a real customer.** Buy credits, use them,
+buy more, then ask for the first purchase back inside the thirty days the site offers —
+and **the second purchase's credits are taken instead.** The customer has paid for them,
+never used them, never asked for them back, and ends with nothing. Reproduced on the
+live database, step by step, below.
+
+**And second: the product is being given away free at four addresses, on your money.**
 Every deploy leaves a permanent public URL. Twenty exist. Four of them run the paid
 rewrite for anyone — no account, no credits, no charge — and bill the AI Gateway. There
 is no rate limit because there is no account, and no spend cap because there is no
@@ -115,6 +121,7 @@ live site with the output pasted in.
 | # | severity | finding | verified by |
 |---|---|---|---|
 | 0 | **CRITICAL** | Four old deployment URLs give the paid rewrite away free, with no account and no charge, on Jon's gateway key | agent, then conductor across all 20 URLs |
+| 0a | **CRITICAL** | Refunding one purchase confiscates the credits of a different purchase the customer paid for | gap agent, then conductor |
 | 0b | **HIGH** | Any free account can upload files of any type and size to a public bucket, served from your Supabase | conductor, as a customer |
 | 0c | **HIGH** | Free credits can be minted repeatedly from one email — deleting the account destroys the record that prevents it | conductor, 3 rounds |
 | 0d | MEDIUM | A new customer's wallet says "0 credits" and offers to sell them some; the grants are minted only when they visit the tool | conductor |
@@ -236,6 +243,60 @@ dismissed it: I tested three retired URLs, all three refused, and I was about to
 it as not reproducing. **It only appears in four of twenty.** A sample of three was not
 a test, it was a coin toss — which is the same mistake in the opposite direction from
 the ones this audit exists to catch.
+
+---
+
+### 0a. Refunding one purchase takes the credits out of a different purchase (CRITICAL)
+
+**A gap-filling agent found this and I reproduced it on the live database. It is the
+most serious money defect in this report.**
+
+**The path is ordinary, not exotic: buy, use it up, buy again, then ask for the first
+one back inside the thirty days the site offers.**
+
+```
+1. signs up                          balance 5
+2. buys pack A, $4.99, 10 credits    balance 15
+3. sanitises 15,000 words            balance 0
+4. buys pack B, $4.99, 10 credits    balance 10   <- paid for, untouched
+5. Stripe refunds pack A only        rpc HTTP 200, removed 10 credits
+                                     balance 0    <-- pack B is gone
+
+the customer's ledger:
+    +2  anon_grant
+    +3  signup_grant
+   +10  purchase       pi_..._A
+   -15  spend
+   +10  purchase       pi_..._B
+   -10  money_refund   pi_..._A      <- tagged to pack A, took pack B's credits
+   SUM = 0
+```
+
+**The customer paid $4.99 for pack B, never used it, never asked for it back, and has
+nothing.** The refund row even carries pack A's payment intent, so the ledger says the
+money came from a purchase whose credits were already spent.
+
+**The cause, and it is one word in the wrong place.** `refund_purchase` clamps what it
+removes against **the whole account balance** rather than against what remains of *that
+purchase*. When pack A's credits are already spent, the clamp finds pack B's and takes
+those instead.
+
+**The clamp itself is deliberate and correct** — the function's own comment explains
+that a negative balance "would refuse every job including the free scan, show the
+customer a number nobody can explain, and leave them no way out except buying their way
+back to zero". That reasoning is sound. **The mistake is which pool it clamps against.**
+
+**This is the same family as the bug the board believes it fixed.** `LAUNCH-CHECKLIST`
+item 1a records the Stripe audit catching that `charge.amount_refunded` is a running
+total, "so two partial refunds on one pack would have eaten credits belonging to other
+purchases". **That shape was fixed. This one — spend the pack, buy another, refund the
+first — was not.**
+
+**Fix sketch.** Clamp against the credits still attributable to that payment intent, not
+against the account. If the customer has already spent what they are refunding, the
+honest answer is to remove nothing and record the shortfall, not to take somebody else's
+credits — which is a second finding the same agent raised: a full refund on spent credits
+returns all the money and takes back only the leftovers, with nothing anywhere saying so.
 
 ---
 
