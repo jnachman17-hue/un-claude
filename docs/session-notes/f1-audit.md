@@ -2199,3 +2199,25 @@ refusing sizes that cannot finish, up front and free — closes this at the same
 which is another reason it is the item to do first.
 
 ---
+# COOKIES AND CONSENT — the legal page's central claim is justified (PASS)
+
+The cookie policy's whole argument is that no consent banner is needed because nothing
+is stored until the visitor asks for something. **Checked on a genuine first visit:**
+
+```
+Set-Cookie headers on the homepage response : none
+cookie jar after loading the homepage       : empty
+```
+
+**Nothing at all is set until the visitor uses the tool.** That is the strongest form
+of the claim the page makes, and it is true. On a site that could easily have shipped a
+cookie banner it did not need, this is the right call and it is worth recording rather
+than passing over.
+
+**One gap, and it is small.** The page says *"Three things stored on your device"* and
+*"Clearing your browser data clears everything on this page"*, presented as a complete
+list. The legal agent found a fourth — a `sidebar_state` cookie set for seven days when
+a signed-in customer collapses the sidebar in their account area. Nobody is harmed; the
+list is simply not complete, and it says it is. One row.
+
+---
