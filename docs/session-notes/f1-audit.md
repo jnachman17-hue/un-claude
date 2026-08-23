@@ -1226,6 +1226,13 @@ Hidden characters      NONE FOUND
 Statistical watermark  PRESUMED PRESENT
 ```
 
+**And it does NOT happen on an ordinary connection — a skeptic checked, and that matters
+for how alarmed to be.** Three of five skeptics killed the agent's version of this
+finding precisely because it claimed a general dead end; one of them ran the same flow in
+a real browser on the live site and it worked fine. **The site is not broken for normal
+visitors.** What is true is the narrower thing tested above: if Cloudflare cannot be
+reached, the visitor is dead-ended and told their internet is broken.
+
 **Why it is worse than a plain outage.** The free scan still works, so the site looks
 alive. The message blames the connection and suggests retrying, and retrying can
 never work. And the hero says *"Free. No account needed"*, so the visitor cannot even
@@ -2749,6 +2756,63 @@ a signed-in customer collapses the sidebar in their account area. Nobody is harm
 list is simply not complete, and it says it is. One row.
 
 ---
+# WHAT DIED, AND WHY
+
+**This section exists so nobody re-raises these next month.** Every finding below was
+found by an agent, reproduced or examined by three independent skeptics, and killed
+because at least two of them refused it. The reason each one died is worth as much as
+the findings that survived.
+
+| claimed | the finding | killed | why a majority refused it |
+|---|---|---|---|
+| high | Twelve server errors hit the live site yesterday and nothing told anyone… | 4 of 4 | The substance is E1 verbatim ("If the site breaks at 3am nobody finds out until Jon looks") plus E6 (log retention unverified), both already known and ruled. The only new live… |
+| high | When Cloudflare's invisible check fails, the visitor is dead-ended at th… | 3 of 5 | The dead-end does not exist on the live site — it was the reporting agent's own environment. I ran the exact user flow in a real browser on https://un-claude.com just now: the… |
+| medium | A Cloudflare bot challenge runs on every page of the site, including the… | 3 of 6 | Nothing a visitor can see, nothing a customer gets wrong, no money. It is also plausibly the point: mounting the widget globally means a token is already minted when someone r… |
+| medium | A document too long to rewrite is still accepted and charged 11 credits … | 2 of 3 | The path is not reachable from production. I pulled the deployed client bundle and the layer_b flag it sends is computed as eT=!eA//y?.kind==="text", so every text paste and e… |
+| medium | A one-word paste is charged a credit for doing nothing, and the engine's… | 2 of 3 | Everything in it reproduces on live, and every part of it is already written down as P2, which states the same thing in the same words: the engine returns a reason string that… |
+| medium | Guest credits really can be left behind when the confirmation email is o… | 3 of 3 | This is H1 plus G3 restated. LAUNCH-CHECKLIST H1 already says in these words: guest credits earned on a laptop, email opened on a phone, 'credits stranded silently... and noth… |
+| medium | HYPOTHESIS, not confirmed: every free scan may write the visitor's raw I… | 3 of 3 | It is unconfirmed by its own admission — the live table read returned permission denied, so this is a source-code hypothesis, which the briefing says is never a finding on its… |
+| medium | Plain text files are missing from every list of what you can upload, and… | 2 of 3 | The user story is contradicted by the live page. The pricing page does mention .txt explicitly and prices it exactly as the finding says the server behaves, so nobody is surpr… |
+| medium | The credit count in the top bar is fetched once when the page loads and … | 3 of 3 | This is LAUNCH-CHECKLIST item 6d verbatim, and the finding says so. 6d already records the live observation (Jon saw the chip drop to 2 while the header read 3), already names… |
+| medium | The function that holds a customer's credit for up to four minutes has n… | 4 of 4 | Self-declared probed_live: false, and its own user-impact field says 'Nothing today.' It is a source read of vercel.json plus a hypothetical about a platform default changing … |
+| medium | The hero claims 100% of detectable marks removed, in a slot that reads a… | 2 of 3 | The line is already hedged by the one word that does the work: '100% of detectable marks removed'. Layer A marks are detectable and countable and are removed completely; the s… |
+| medium | When the tool refuses your file, the message is just text floating on th… | 2 of 3 | Duplicate of d10-no-live-region dressed differently. Both say the same thing about the same bare <p> in the same button row — the error is never announced. Both quote the iden… |
+| low | On a refund row the money column stores Stripe's running total, so addin… | 2 of 4 | The repro is a simulation, not an observation: it inserts a fake purchase and then calls refund_purchase directly with cents values the agent chose itself (200 then 499), so i… |
+| low | On the fast path, the engine does 0.05 seconds of work and the customer … | 3 of 6 | The finding says in its own words 'No defect.' A measurement is not a finding, and putting it in front of Jon as one asks him to act on something that needs no action. The num… |
+| low | One shape of confirmation link returns a completely blank white page | 4 of 5 | No real user reaches this URL. The live project's own confirmation emails go through /auth/v1/verify and come back as a hash fragment on the homepage — that is proved by the s… |
+| low | The Copy button has no handling for a failed copy, so if the browser ref… | 3 of 3 | probed_live is false by the finder's own admission: the missing .catch was read out of the bundle and no rejection was ever produced. Under the briefing that is a hypothesis, … |
+| low | The credit chip in the top bar still has nothing stopping it breaking ac… | 3 of 3 | LAUNCH-CHECKLIST item 6e, cited by the finding itself, already states the chip wraps on desktop and mobile and already prescribes whitespace-nowrap. Status OPEN means not fixe… |
+| low | The fact counter told a customer a figure was lost when all 28 were pres… | 2 of 3 | A fact guard that occasionally warns when nothing is wrong is failing in the safe direction, and in a product whose real danger is silently altering the customer's facts, that… |
+| low | The hero says seconds. The tool's own price line says a full-size job ta… | 2 of 3 | The product corrects the hero before any money moves: the button area shows an honest per-job estimate, and the finding's own live measurement came in faster than that estimat… |
+| low | The instruction printed at the top of the money-record reader does not w… | 4 of 6 | Reproduced, and it changes nothing. No customer, no money, no data. A session pastes the command, gets an error, and moves one directory. Routing this to Jon costs more of his… |
+| low | The pricing page's search-result summary is two characters over the leng… | 2 of 3 | Two characters. Google routinely rewrites meta descriptions from page content anyway, and 157 characters is inside the range search results display in practice — the '155' fig… |
+| low | The site has no structured data in the pages it serves, and the one piec… | 2 of 3 | It is a restatement of a ruling already on the board. LAUNCH-CHECKLIST D12 reads 'Structured data / OPEN / W4 skipped it deliberately rather than rush it at session end. Addit… |
+| low | The site has no web app manifest, so saving it to a phone home screen gi… | 3 of 3 | The stated user experience is factually wrong, and I checked it live. The homepage does declare <link rel="apple-touch-icon" href="/images/favicon/apple-touch-icon.png">, whic… |
+| low | This audit created three guest accounts on the live database that can ne… | 3 of 4 | Self-refuting, and not a production defect. The finding's own script tells the audit's anonymous accounts apart from real visitors by created_at — that is precisely how it pri… |
+
+**24 of 93 judged findings were killed.**
+
+
+**The four most instructive kills:**
+
+- **A reproduction that was a simulation.** One agent "proved" a refund defect by
+  inserting a fake purchase and then calling the refund function with figures it had
+  chosen itself, and reporting that the database stored those figures. A skeptic spotted
+  that it proved only that the function stores what it is given.
+- **A dead end that was the agent's own environment.** The Cloudflare lockout was
+  reported as a general failure; a skeptic ran the same flow in a real browser on the
+  live site and it worked. The narrower version — a visitor whose network blocks
+  Cloudflare — is real and is kept, at a lower severity.
+- **Several restatements of items already on the board.** The frozen header count, the
+  wrapping credit chip, the short-paste charge and the different-device gap are all
+  already recorded and ruled on. Re-finding an open item is not a finding, and the
+  skeptics held that line even when the underlying observation was correct.
+- **A path unreachable from the product.** An over-limit document being charged 11
+  credits is true at the API and impossible from the site, because the browser always
+  sends the flag that triggers the size refusal first.
+
+---
+
 # HOW THIS AUDIT ACTUALLY RAN, AND HOW MUCH TO TRUST EACH PART
 
 **The design.** Fourteen agents, one per dimension, probing the live site. Every finding
