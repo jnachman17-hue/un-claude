@@ -709,6 +709,26 @@ returns a real 404 status. `GET /api/tool/scan` returns 405.
 ### The one claim the homepage sources, it sources correctly
 `anthropic.com/news/claude-text-watermark` → HTTP 200.
 
+### And these, each with its evidence in its own section further down
+
+- **Layer A detection: 15 planted invisible characters, 15 found.** The scanner works.
+- **The metadata layer, end to end on a real C2PA block** — found, named, removed, and
+  confirmed absent in the returned bytes, without either external tool being installed.
+- **Six simultaneous jobs against one balance never overspent**, and the ledger summed
+  to exactly zero.
+- **The whole live ledger passes every integrity check** — no negative balances, no
+  zero-delta rows, no duplicate payment intents.
+- **A first visit sets no cookies at all**, which is what justifies having no consent
+  banner.
+- **Every internal link on the site works** — all ten.
+- **Every page is fast**: a Vercel cache hit, brotli-compressed, under 250 ms.
+- **Every redirect is a permanent 308** and every sitemap URL answers 200.
+- **Canonicals and titles are correct on all nine pages.**
+- **Six deliberately malformed files were refused cleanly and free of charge**, with a
+  message that names the way out — including `.pdf`, which closes an open board item.
+- **Almost everything the board lists as "awaiting deploy" is already live** — P1, P2,
+  B7, B7a, W7 and D6, tested one at a time.
+
 ---
 
 # WHAT WAS MEASURED — production numbers that did not exist before
