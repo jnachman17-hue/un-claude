@@ -1646,90 +1646,98 @@ in the product should look like — and it is the model for fixing findings 4 an
 ---
 # WHAT TO DO, IN ORDER
 
-Ranked by what protects a paying customer soonest, not by how hard it is. Revised
-after the engine and accessibility results landed.
+Ranked by what protects a paying customer soonest, not by how hard it is. Re-ranked
+after the completeness critics sent a second round of agents at the surfaces nobody had
+opened — which is where four of the top five came from.
 
-**1. Strip the tool's own fingerprints out of the output.** A post-pass that maps em
-dashes back to the punctuation the customer used, restores straight apostrophes, and
-removes markdown the input never had. **This is the cheapest item on the list and
-close to the most valuable**, because right now the product adds the exact mark its
-audience uses to spot machine writing — 95 of them in a 10,000-word essay. It needs no
-model, changes no meaning, and can ship on its own.
+### Do these before anything else. They are all settings or single conditions.
 
-**2. Stop the rewrite touching anything inside quotation marks.** A fabricated quote
-attributed to a real person is the only defect here that can damage a student's
-academic record, and they cannot see it. Everything else is money or friction; this
-one is their degree.
+**1. Fix the refund so it cannot take a different purchase's credits.** A customer who
+buys, uses it, buys again and then asks for the first purchase back loses the second
+purchase's credits. They paid, never used them, never asked. Clamp against what remains
+of *that payment*, not against the account balance. **Real money, ordinary path, live
+today.**
 
-**3. Make the advertised size a size that finishes.** 6,000 words completes in 196
-seconds against a 240-second cut-off. 7,500, 8,500 and 9,900 all fail. Either drop the
-limit to what reliably completes, or take long documents as a job the customer returns
-to. **Do this before any marketing spend** — the Pro pack is sold as "a dissertation,
-with room to spare".
+**2. Turn on Vercel Deployment Protection.** Four old deployment URLs run the paid
+rewrite for anybody with no account and no charge, on your gateway key. No account means
+no rate limit; no credit check means no spend cap. One switch closes all four and every
+future one.
 
-**4. Do not charge for a rewrite that did not run — and stop the screen saying it
-did.** Under 16 words the customer pays a credit, gets their own text back byte for
-byte, and reads "Rewritten · Measured, not estimated". The engine already writes the
-correct explanation; nothing displays it.
+**3. Lock down the storage bucket, or delete it.** Any free account can upload any file
+of any type and size to a public bucket served from your Supabase, and **deleting the
+account does not delete the file** — which the privacy policy says it does. Nothing in
+the product displays a profile picture, so removing the control and the bucket is the
+cleaner answer.
 
-**5. Close the open redirect.** `/auth/callback` should only send a browser to a path
-on this site. One condition, and it removes a phishing link wearing your own domain.
+**4. Stop free credits being mintable on repeat.** Delete the account, sign up again on
+the same address, collect five more, forever — because the dedupe record lives on the
+ledger and the deletion cascade takes it. Key it to something deletion does not touch.
 
-**6. Move the file-size check into the browser, at about 3.2 MB of actual file.**
-Vercel rejects the upload before your code runs, so the polite message you already
-wrote can never be shown. Phone photos routinely exceed this and the page says "any
-size".
+### Then these, which are the product working wrongly rather than leaking.
 
-**7. Fix the claims that are checkable and wrong.** Copy only, and they are the ones a
-careful reader will check first:
-   - "Will it change my meaning, my facts, or my numbers? **No, and this is enforced
-     rather than promised**" — three of its four enforcement promises fail against the
-     product's own receipt.
-   - "Upload a file and you get all three" — no accepted file type gets all three.
-   - "a hard three-word ceiling" — your own receipt printed 6.
-   - "100% of detectable marks removed" — 15 found, 12 removed, 3 deliberately kept.
-   - "Nine classes ... checked" — the lookalike-letter class finds nothing.
-   - "About four college essays" — your own calculator makes it three.
-   - "in seconds" — your own price line says three minutes.
+**5. Strip the tool's own fingerprints out of the output.** Map em dashes back to the
+customer's punctuation, restore straight apostrophes, remove markdown the input never
+had. **The cheapest item here and close to the most valuable** — the product currently
+adds the marks its audience uses to spot machine writing.
 
-**8. Put a link behind the news logos, or take them down.** Nine national mastheads
-scroll across the homepage under 13-pixel grey type with nothing behind them. This is
-the one item that could arrive as a letter rather than a refund request.
+**6. Stop the rewrite touching anything inside quotation marks.** The only defect here
+that can damage a student's academic record, and they cannot see it.
 
-**9. Spend ten minutes on the tool with VoiceOver, then fix what it tells you.** Three
-things are worth doing regardless, because they are cheap and unambiguous: put
-`role="status"` on the line that says "Rewriting" / "Sanitised" / the errors; give the
-paste box and the file input a name; add a `<main>` landmark and a skip link. **The
-bigger question — whether wrapping the result in a button stops a screen reader reading
-it — I could not settle**, and it deserves the ten minutes before anyone rebuilds that
-component. See the accessibility section for why the computed tree left it open.
+**7. Make the advertised size a size that finishes.** 6,000 words takes 196 seconds
+against a 240-second cut-off; 7,500 and up fail. Fixing this also closes the retry burn,
+where every failed attempt costs 6–21 cents and the error invites another one.
 
-**10. Tell the visitor when Cloudflare is the problem**, instead of a dead end that
-blames their internet and invites them to retry forever.
+**8. Guard the output, not the prompt.** Reject any result that opens with a line about
+rules or contains a bare `---` the input never had, and refund instead of returning it.
+That closes the prompt leak and the stray divider in one string check.
 
-**11. Rewrite the account-deletion warning.** It talks about teams and subscriptions
-that do not exist and never mentions the credits they paid for and are about to lose.
+**9. Do not charge for a rewrite that did not run — and stop the screen saying it did.**
+Under 16 words, and for a single space, the customer pays and gets their text back while
+the panel reports "Rewritten · Measured, not estimated" with 0% replaced.
 
-**12. Add MX records and a real support address.** One DNS change closes three things:
-`support@un-claude.com` becoming possible, a home for the DMARC reports, and the trust
-gap when a customer sees `UN-CLAUDE.COM` on a statement and is asked to email a Gmail
-account. A dispute costs ~$24.50; a refund ~$0.56.
+**10. Close the open redirect.** One condition on `/auth/callback`.
 
-**13. Give every page its own share tags.** Nine pages, one line each. The canonical
-work already did exactly this and Open Graph was missed.
+**11. Move the file-size check into the browser at about 3.2 MB.** The polite message you
+already wrote can never fire, because Vercel rejects the upload first.
 
-**14. The three numbers about money that are wrong on screen.** The header credit count
-freezes at page load while the chip beside it updates; the credit history prints dates
-in UTC so the Americas see tomorrow; and the receipt can report "Length 4000% of the
-original kept" under a heading reading "Measured, not estimated".
+### Then the words, which cost nothing but copy.
 
-**15. Record what a run costs.** The `cost_usd` column exists, the engine returns the
-figure on every response, the privacy policy already tells customers it is stored, and
-nothing writes it. It is the difference between knowing the margin and rebuilding it by
-hand, as this note had to.
+**12. Fix the claims that are checkable and wrong** — the four "enforced rather than
+promised" FAQ promises (three fail against the product's own receipt), "upload a file and
+you get all three", "a hard three-word ceiling", "100% of detectable marks removed",
+"nine classes checked", "about four college essays", "in seconds".
 
-**16. Schedule the ledger backup while it is still 84 rows and 30 accounts.** Only one
-row on the whole ledger could be rebuilt from Stripe.
+**13. Put a link behind the news logos, or take them down.**
+
+**14. Give the auth pages real error messages.** Three different failures — a blocked
+captcha, an unconfirmed email, everything else — all say "please ensure you have a
+working internet connection". Two cases and a **Resend it** button.
+
+**15. Rewrite the account-deletion warning.** It names teams and subscriptions that do
+not exist and never mentions credits.
+
+### Then the rest.
+
+**16. Mint the free credits at signup**, so a new customer's wallet does not say "0
+credits · Get credits" the first time they open it.
+
+**17. Point the confirmation email at your own domain**, add MX records and a real
+support address. One DNS change and one Supabase setting close three things at once.
+
+**18. Give every page its own share tags** — nine pages, one line each.
+
+**19. Screen readers: `role="status"` on the working/finished/failed line, a name on the
+paste box and the file input, a `<main>` landmark and a skip link.** Then spend ten
+minutes with VoiceOver before rebuilding anything bigger.
+
+**20. The numbers about money that are wrong on screen** — the frozen header count, UTC
+dates in the credit history, and a receipt that can report "Length 4000% of the original
+kept" under the words "Measured, not estimated".
+
+**21. Record what a run costs.** The column exists, the engine returns the figure, the
+privacy policy already promises it is stored, and nothing writes it.
+
+**22. Schedule the ledger backup while it is still 84 rows and 30 accounts.**
 
 ---
 
