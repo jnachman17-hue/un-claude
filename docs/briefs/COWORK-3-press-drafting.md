@@ -63,7 +63,7 @@ reason any of them would write.
 
 ---
 
-## THE UPSTREAM QUESTION. Jon fills this in before you start
+## THE UPSTREAM QUESTION — RULED. Nothing here is open.
 
 The engine began as a copy of `guillaumemeyer/watermarks-remover`, MIT licensed, by
 Guillaume Meyer. The licence is satisfied. **Ax Sharma named that project in print
@@ -101,11 +101,10 @@ likely to cover this already has the lineage in his notes.
    placement rather than the safest. **Put both readings to Jon with a
    recommendation and let him choose. Do not silently re-rank the list.**
 
-*(The "if the decision is to disclose" branch that stood here is void — the
-decision is above.)*
-
-**If the decision is not to disclose:** no email mentions it, and Jon needs a
-prepared answer for the interview, because it will be asked.
+*(Both conditional branches that stood here are void — the decision is above.
+One point survives from them and is worth keeping: **Jon should have his own
+answer ready before any email goes out, because sooner or later it will be
+asked.** That answer is his to write, not a drafting session's.)*
 
 ---
 
