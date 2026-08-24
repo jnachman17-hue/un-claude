@@ -42,7 +42,57 @@ from uc_wordcount import count_words
 
 #: Inline quotation: straight or curly double quotes around at least a few
 #: words. Single quotes are NOT detected — apostrophes make them unreliable.
-_QUOTE = re.compile(r'"([^"\n]{12,600})"|“([^”\n]{12,600})”')
+#:
+#: THE 12-CHARACTER FLOOR IS LOAD-BEARING and must not be lowered. It is what
+#: keeps a scare quote — «the so-called "gig economy"» — out of the freeze. A
+#: scare quote is not a quotation.
+#:
+#: A QUOTATION MAY NOW CROSS A LINE BREAK (24 August 2026). It could not
+#: before, and the consequence was silent: a hard-wrapped document — a .txt
+#: upload, a plain-text email, anything out of a terminal editor — had NO
+#: quotation protection whatever, while the identical text pasted from Word
+#: had full protection. Measured on one sample: 48.6% frozen unwrapped,
+#: 20.0% hard-wrapped at 72 columns. Under Jon's ruling a wrapped quotation
+#: is still a quotation.
+#:
+#: THE RUNAWAY THIS WALKS TOWARD, AND THE THREE THINGS THAT BOUND IT. A quote
+#: pattern that crosses newlines can swallow paragraphs of ordinary prose the
+#: moment a document contains one unbalanced quotation mark, and that is the
+#: Sources-latch failure shape that nearly killed the freeze: a 221-word
+#: essay came back 56.1% frozen, 12 runs of 12. So a match may not cross a
+#: BLANK line (a paragraph break ends any quotation), may not exceed 600
+#: characters, and may not span more than `_MAX_WRAPPED_LINES` line breaks —
+#: the last enforced in `_iter_quotes`, which resumes scanning INSIDE a
+#: rejected run so a later real quotation is not skipped with it. Matching is
+#: non-greedy, so a quotation ends at the first closing mark and never at a
+#: later one.
+_MAX_WRAPPED_LINES = 8
+_QUOTE = re.compile(
+    r'"((?:[^"\n]|\n(?![^\S\n]*\n)){12,600}?)"'
+    r'|“((?:[^”\n]|\n(?![^\S\n]*\n)){12,600}?)”'
+)
+
+
+def _iter_quotes(text: str):
+    """Quotation matches, refusing any that spans too many lines.
+
+    The line cap cannot live in the pattern without making it unreadable, and
+    it must not be applied by simply dropping the match: an over-long run
+    starts at a real quotation mark, so skipping past its end could swallow a
+    genuine quotation that begins inside it. Scanning resumes one character
+    after the opening mark instead.
+    """
+    pos = 0
+    while True:
+        m = _QUOTE.search(text, pos)
+        if m is None:
+            return
+        inner = m.group(1) or m.group(2)
+        if inner.count("\n") > _MAX_WRAPPED_LINES:
+            pos = m.start() + 1
+            continue
+        yield m
+        pos = m.end()
 
 #: A CITATION SHAPE: "(2019)", "(Smith, 2019, p. 47)", "p. 47".
 #:
@@ -57,9 +107,15 @@ _QUOTE = re.compile(r'"([^"\n]{12,600})"|“([^”\n]{12,600})”')
 #: page ranges, sums of money, years in ordinary prose and equation numbers,
 #: every one of which would then drag the text beside it into the freeze.
 #: See docs/session-notes/freeze-every-quotation.md.
+#: A hard wrap breaks a citation across lines too — «(Smith, 2019, p.\n47)» —
+#: so the inner run tolerates a single line break by the same rule the
+#: quotation pattern uses: never a blank line, because a paragraph break ends
+#: any citation.
+_CIT_INNER = r"(?:[^()\n]|\n(?![^\S\n]*\n))"
 _CITATION = re.compile(
     # (Smith, 2019) · (Smith, 2019, p. 47) · (2019) · (p. 47) · (pp. 88-104)
-    r"\([^()\n]{0,60}(?:(?:19|20)\d\d|pp?\.\s*\d+)[^()\n]{0,25}\)"
+    r"\(" + _CIT_INNER + r"{0,60}(?:(?:19|20)\d\d|pp?\.\s*\d+)"
+    + _CIT_INNER + r"{0,25}\)"
     # a bare page reference outside brackets: p. 47 / pp. 88-104
     r"|\bpp?\.\s*\d+(?:\s*[-–—]\s*\d+)?"
 )
@@ -241,7 +297,7 @@ def detect_protected_spans(text: str) -> list[dict]:
 
     # Quotation ranges first, so each can be widened over its citations
     # without reaching into a neighbouring quotation's territory.
-    quote_marks = [(m.start(), m.end()) for m in _QUOTE.finditer(text)]
+    quote_marks = [(m.start(), m.end()) for m in _iter_quotes(text)]
     claimed = 0            # nothing below this is still available to claim
     for i, (qlo, qhi) in enumerate(quote_marks):
         ceil = quote_marks[i + 1][0] if i + 1 < len(quote_marks) else len(text)

@@ -344,3 +344,87 @@ unclipped text and failed against working code.
 ```
 engine suite   833 passed, 1 skipped
 ```
+
+---
+
+# JOB 3 — the hard-wrap gap. BUILT, after asking
+
+**Gated on Jon and he approved it**, with the measured evidence in front of
+him: the prototype recovered a wrapped document and moved nothing else in the
+corpus, including a document built to trigger the runaway.
+
+## 3.1 The gap
+
+`uc_spans._QUOTE` forbade a newline inside a quotation, so **a hard-wrapped
+document had no quotation protection at all, silently** — while the identical
+text pasted from Word had full protection. un-claude accepts `.txt` uploads
+and `.txt` is routinely wrapped.
+
+## 3.2 What bounds the runaway, and it is four things
+
+A pattern that crosses newlines can swallow paragraphs of prose the moment a
+document contains one unbalanced quotation mark. **That is the Sources-latch
+shape that nearly killed the freeze: 56.1% of a 221-word essay, 12 runs of
+12.** So:
+
+- **A blank line always ends a quotation.** A paragraph break is a hard stop,
+  which is what keeps one stray mark from reaching the next stray mark
+  wherever it is.
+- **At most 8 line breaks** inside one quotation (`_MAX_WRAPPED_LINES`).
+- **The 600-character ceiling stays**, and so does the 12-character floor that
+  keeps a scare quote out.
+- **Matching is non-greedy**, so a quotation ends at the first closing mark
+  and never a later one.
+
+**One subtlety worth recording.** The line cap is applied by *rescanning from
+one character inside* a rejected run, not by skipping past its end — an
+over-long run begins at a real quotation mark, and skipping past it would take
+any genuine quotation starting inside it along with it. There is a test for
+exactly that.
+
+## 3.3 The result: wrapped and unwrapped now freeze identically
+
+Whole corpus, `engine/lab/wrap_and_runaway.py`, no model:
+
+```
+document                    words  unwrapped   wrapped  longest span
+--------------------------------------------------------------------
+doc_1000                     1260       0.0%      0.0%           0 words
+doc_2000                     2105       0.0%      0.0%           0 words
+doc_3000                     3367       0.0%      0.0%           0 words
+doc_5000                     5047       0.0%      0.0%           0 words
+ladder_1000                   919      29.7%     29.7%          56 words
+ladder_10000                 9946      23.9%     23.9%          57 words
+ladder_2000                  1942      25.9%     25.9%          56 words
+ladder_3000                  2971      26.0%     26.0%          56 words
+ladder_500                    463      28.3%     28.3%          55 words
+ladder_5000                  4958      24.8%     24.8%          57 words
+ladder_7500                  7498      24.4%     24.4%          57 words
+prose_2500                   2478       0.0%      0.0%           0 words
+CITED sample                   70      48.6%     48.6%          20 words
+UNBALANCED (adversarial)      114       2.6%      2.6%           3 words
+MANY STRAYS (adversarial)     216       0.0%      0.0%           0 words
+
+WORST ADVERSARIAL FROZEN FRACTION: 2.6%
+(the Sources-latch failure this guards against was 56.1%)
+```
+
+**Every document now freezes the same amount wrapped as unwrapped** — the
+column is identical top to bottom — **and the two adversarial documents did
+not move at all.** The longest frozen span in the unbalanced document is 3
+words.
+
+## 3.4 One thing the measurement caught that the brief did not name
+
+**A hard wrap breaks the citation too** — «(Smith, 2019, p.\n47)» — and job
+2's citation pattern forbade a newline inside the brackets, so a wrapped
+citation stopped attaching to its quotation even once the quotation itself was
+found. That is why the CITED sample first came back at 42.9% rather than
+48.6%. The citation's inner run now tolerates a single line break by the same
+rule, with the same blank-line stop.
+
+```
+engine suite   842 passed, 1 skipped
+pre-flight vs delivered   DISAGREEMENTS: 0
+orphaned spans            0
+```
