@@ -14,8 +14,8 @@ AI Gateway balance at start   $7.57668008
 |---|---|---|
 | 1 — safety net | **DONE** | fc6a11e |
 | 2 — repair | **DONE** | dc8354d |
-| 3 — six fixes + two handovers | in progress | |
-| 4 — report | not started | |
+| 3 — six fixes + two handovers | **DONE** (two write-ups instead of two of the fixes — see step 3) | 4a217f3, 4d7ea40 |
+| 4 — report | in progress | |
 | 5 — bake-off | not started | |
 | 6 — freeze re-scope | not started | |
 
@@ -126,4 +126,200 @@ $0.036685, read from the gateway's own cost figures.
 
 ---
 
-*(Steps 3–6 below are appended as they finish.)*
+# STEP 3 — FIX. Six engine fixes, and two items that ended as write-ups.
+
+## 3.1 Layer A now runs BEFORE the rewrite — verified live, both ways
+
+The one layer this product can prove was being measured after the rewrite had
+already destroyed its evidence. Reproduced against the committed code, then
+against the fix, with a real model call each way — the same document, carrying
+two zero-width characters built from escape codes:
+
+```
+BEFORE THE FIX                        AFTER THE FIX
+zero-width characters in: 2           zero-width characters in: 2
+layer A reports:                      layer A reports:
+  removed_count: 0                      removed_count: 2
+  removed: {}                           removed: {
+                                          "U+200B ZERO WIDTH SPACE (Cf)": 1,
+                                          "U+200D ZERO WIDTH JOINER (Cf)": 1 }
+zero-width chars in output: 0         zero-width chars in output: 0
+```
+
+The output was already clean in both cases — the rewrite destroys these
+characters as collateral — but before the fix **the customer's receipt said
+nothing was found in a document that arrived carrying two.** Layer A now runs
+first, on what the customer actually sent; the rewrite receives the cleaned
+text; and a second quiet pass after the rewrite catches anything the model
+itself emits, reported separately under `stats.after_rewrite`, never mixed
+into the customer's evidence. `detect_before` also now runs on the original
+rather than the rewritten text — same defect, same fix.
+
+## 3.2 Words are now counted in a way that works in Chinese, Japanese and Thai — where that cannot change a price
+
+`uc_wordcount.py`: CJK characters count one word each, Thai/Lao/Khmer/Myanmar
+one per four characters, everything else splits on spaces exactly as before.
+English documents count identically to the old rule.
+
+```
+                         old rule   new rule
+8-ideograph Chinese          1          8
+11-char Japanese             1         11
+31-char Thai                 1          8
+9-word English               9          9
+```
+
+**Wired into: chunk planning, the truncation guard's ratio, and the leak
+guard's expansion ratio.** Those are engine-internal safety numbers and were
+meaningless on unspaced scripts (both sides of every ratio counted "1").
+
+**NOT wired into: billing, the 10,000-word ceiling, or the 16-word rewrite
+floor.** See "What needs Jon's ruling" below — those three change what a
+customer is charged and what runs, they are coupled, and the brief's stopping
+rule says record it rather than decide it.
+
+## 3.3 The number reader's fourth repair, regression-locked
+
+```
+                       old            new
+_numbers('[1,3-5]')    {'13','5'}     {'1','3','5'}
+_numbers('[1, 3-5]')   {'1','3','5'}  {'1','3','5'}   (space no longer changes the answer)
+_numbers('p = .015')   {'15'}         {'0.015'}
+_numbers('30,000')     {'30000'}      {'30000'}       (real grouping still reads)
+```
+
+A comma now only joins digits in genuine thousands grouping (one to three
+digits, then groups of exactly three). All 21 cases that have ever gone wrong
+with this reader — including the three earlier repairs' cases — are locked in
+`engine/tests/test_number_reader.py`, so the fifth repair cannot quietly undo
+the first four.
+
+## 3.4 A chunk never ends on a lone equation, table row or placeholder
+
+W10 measured the danger: an equation ending a chunk was deleted in **14 of 30
+runs**; the identical document with the equation mid-chunk, **1 of 30**. The
+plan now moves a fragile paragraph to the front of the next chunk — off the
+boundary — and consecutive fragile paragraphs travel together, so a table cut
+by the plan is reunited. Proved plan-side with no model: the equation document
+and the split-rows table both come out with the fragile text mid-chunk, once,
+byte-identical (engine/tests/test_chunk_planning.py).
+
+## 3.5 A torn code fence is stitched before anything looks at it
+
+A blank line inside a code block counted as a paragraph break, so the planner
+cut the block in half and each half saw an orphaned fence — the whole job
+failed 3 of 5 runs on mistral-medium in W10. A paragraph that opens a fence
+now absorbs paragraphs until the fence closes, before anything else reads the
+document. Bounded at three chunks' worth of words so one stray fence cannot
+fold a long document into a single oversized model call. The restore step
+stitches the model's output the same way, so the paragraph counts compare like
+for like.
+
+## 3.6 No new retry anywhere
+
+Nothing added in this session retries at all: repair is single-pass, the
+detector (step 4) is passive. The existing retry budget (8 per chunk, measured
+in engine-limits.md as true positives) is unchanged.
+
+## 3.7 The stylometry scanner stops accusing ordinary English (S-5 / E-11)
+
+Lane E's audit found the marker labels and their patterns disagreeing, and a
+label is a product claim. **Only mismatches were fixed** — where a pattern
+fired on something its own label does not describe. What phrases should carry
+weight at all is Jon's decision; nothing else was trimmed.
+
+Run against Lane E's own audit sentences, after the fix:
+
+```
+ORDINARY ENGLISH — must be silent:
+  quiet The tallest mountain in the world is Everest.
+  quiet In the era of steam, Manchester doubled in size.
+  quiet Frogs are sensitive to changes in the environment.
+  quiet Wordsworth wrote about the human place in the landscape.
+  quiet The scar serves as a reminder of the accident.
+  quiet Photosynthesis plays a key role in the carbon cycle.
+  quiet The hippocampus plays a vital role in memory.
+  quiet The appeal ultimately failed.
+THE LABELS THEMSELVES — must still fire:
+  fires In today's fast-paced world, businesses must adapt.
+  fires Trade unions played a pivotal role in the strike.
+  fires The award serves as a beacon of hope.
+  fires Ultimately, the committee agreed.
+```
+
+**What changed, precisely:** the fast-paced-world marker requires its
+adjective; `reminder` left the serves-as pattern; `key` and `vital` left the
+plays-a-role pattern while its own past tense (`played a pivotal role`) now
+fires — it was wrong in both directions; `ultimately,` fires only opening a
+sentence; and the dead `worth noting to note` branch is gone (it could never
+match ordinary text, so behaviour is unchanged). Lane E's A/B — the same
+paragraph with `in the world` vs `on the planet` — now scores identically,
+locked in `test_stylometry_label_accuracy.py`.
+
+## 3.8 E-12, the cost leak — WRITTEN UP, NOT FIXED, and here is exactly why
+
+**The leak is real and I reproduced it live.** A run's payload carries our
+unit economics inside `report.layer_b.usage`:
+
+```
+"usage": { "model_calls": 1, "prompt_tokens": 813, "completion_tokens": 49,
+           "total_tokens": 862, "cost_usd": 9.6e-05, ... }
+```
+
+`strip_server_paths` removes only `path`, and `route.ts` forwards the whole
+report to the browser, so anyone can open the network tab and read what a run
+costs us.
+
+**The fix cannot live in my territory without breaking a live feature.** The
+run-cost writer (`recordRunCost` in `lib/server/credits.ts`, Lane B's M-4,
+verified in production on 24 August — the first `run_costs` row ever written)
+reads exactly these figures from exactly this spot in the engine's reply,
+server-side, before the reply is forwarded. Stripping them in the Python
+function (my territory) would feed the writer nulls and silently break the
+promise the privacy policy makes. The only correct place is
+`app/api/tool/clean/route.ts`, AFTER the `recordRunCost(ledgerId, result)`
+call and before the final `Response.json` — and `app/api/**` route handlers
+are on this brief's DO NOT TOUCH list.
+
+**The one-line fix, for whoever owns route.ts** (after the recordRunCost
+call, around line 447):
+
+```ts
+// Our unit economics stay on the server. recordRunCost above has already
+// read them; the browser gets the operational counts only.
+if (result.report?.layer_b?.usage) {
+  const { chunks, attempts, retries } = result.report.layer_b.usage;
+  result.report.layer_b.usage = { chunks, attempts, retries };
+}
+```
+
+`chunks`, `attempts` and `retries` are operational counts already implied by
+the interface's own behaviour; `model_calls`, the token counts and `cost_usd`
+are the figures that price our margin and they are the ones to keep back.
+Nothing in the browser reads any of them (verified by grep across the
+workbench and lib).
+
+## What needs Jon's ruling, recorded rather than decided (stopping rule)
+
+**The other half of the CJK fix is a pricing question, and it is one question,
+not three.** Today a Chinese, Japanese or Thai document: counts as ~1 word →
+bills 1 credit → passes the 10,000-word gate at any size → and is then
+silently skipped by the 16-word rewrite floor. Wiring the honest counter into
+the floor alone would run rewrites the gate never priced (a 200,000-character
+Chinese document would bill 1 credit and cost us ~170 chunks of model calls);
+wiring it into billing alone would charge people for a rewrite the floor still
+skips. And the browser's own word counter (Lane C's territory) must change in
+the same release or the price shown will not be the price charged — the exact
+two-implementations trap this project has been bitten by three times.
+
+**Recommendation:** wire `uc_wordcount.count_words` into `uc_policy.word_count`
+(billing, gate) and the server floor in ONE change, with the workbench's
+counter updated in the same deploy, and re-measure rewrite quality on CJK
+before advertising it — W10 measured French coming back half-translated 16 of
+20 runs on mistral-small, and CJK has never been rewritten even once. Until
+then the engine's internal safety math is fixed and customer-visible behaviour
+is unchanged.
+
+---
+
+*(Steps 4–6 below are appended as they finish.)*
