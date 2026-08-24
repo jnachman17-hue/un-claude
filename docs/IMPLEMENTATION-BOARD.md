@@ -1,14 +1,80 @@
-# Implementation board — W9 audit + W10 rewrite intelligence
+# THE BOARD — the one live to-do list
 
-**Created 23 August 2026.** Everything the two agent workflows found, turned into
-work. **Sources:** `docs/session-notes/f1-audit.md` (~50 findings, most reproduced
-by hand on the live site) and `docs/session-notes/rewrite-intelligence.md`
-(~30 defects across 12 categories, 3,500+ measured runs).
+**Updated 24 August 2026.** `LAUNCH-CHECKLIST.md` and `POST-AUDIT-PLAN.md` are
+**superseded**; this is the only file to update. **The conductor is its only
+writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
-**Grouped by TERRITORY, not by severity**, so lanes run in parallel without two
-writers in one file — the failure this repo has had every single time it happened.
+---
 
-**THE CONDUCTOR IS THIS FILE'S ONLY WRITER.**
+# ★★ THE ONE THING BLOCKING EVERYTHING
+
+**THREE LANES OF FIXES ARE FINISHED AND NONE OF THEM IS LIVE.**
+
+Lanes B, C and E are complete and committed. **Nothing has been deployed.** So
+every defect they fixed is still happening to customers right now, and the
+verification that matters — does it work in production — cannot be run.
+
+**Two steps, in this order, and everything else waits behind them:**
+
+| # | Action | Whose |
+|---|---|---|
+| **1** | **Apply migration `20260823120400_lock_down_money_tables.sql`** | **Jon** — one paste, changes no data |
+| **2** | **Deploy** | **Jon** — `npx vercel --prod`, tree must be quiet |
+| **3** | **Then verify** — the conductor re-runs the probes each lane could not | conductor |
+
+**Why migration 5 matters.** `refund_shortfalls` and `run_costs` arrived fully
+deletable while the ledger beside them is not. **The trap: `grant` does not
+narrow anything** — Supabase already hands `service_role` everything on every new
+public table, so writing `grant select, insert` adds nothing and removes nothing.
+The ledger is protected because its migration **revokes first.** Lane B's did not.
+**It matters because `refund_shortfalls` exists so losses can be counted, and a
+record of losses that any code holding the service key can quietly erase gets
+smaller without anyone noticing. There are no backups to compare it against.**
+
+---
+
+# ★ LANE STATUS
+
+| Lane | State | What is left |
+|---|---|---|
+| **B — money** | **6 of 6 done.** 4 migrations applied by Jon; a **5th found afterwards and pending** | Migration 5 · a deploy · the privacy sentence, now genuinely owed · watch `CLIENT GONE:` on day one |
+| **C — workbench** | **10 of 10 done** | A deploy · three handoffs, below |
+| **E — security** | **4 of 5 done** | **CSP deliberately not shipped** · **S-5 was mis-briefed by the conductor** · a deploy |
+| **A — engine** | **not started** | The whole lane. Decisions D1–D5 are settled and it is unblocked |
+| **D — copy** | **not started** | Split: wording-only now, the four enforcement promises after Lane A |
+
+## What each lane could NOT prove — carry these forward
+
+- **B:** the webhook was never exercised end to end; `refund_purchase` was called
+  directly. M-2's *site* path, M-4's writer and M-6's fix are all **in code that
+  is not live**, so three fixes are unproven in production.
+- **C:** **no screen reader was run** — W-8 is markup and computed tree only. The
+  wallet was **never opened as a real signed-in customer** (no local Supabase),
+  so the pagination query has not run against real rows. W-1's spend used a
+  **stubbed** reply, so no real credit moved.
+- **E:** the tool could not be exercised locally at all — `UC_ENGINE_URL` points
+  at a Python engine that was not running.
+
+## Handoffs the lanes raised for each other
+
+| To | What |
+|---|---|
+| **Lane E** | `/auth/sign-in` still has no `main` landmark and no skip link — the tenth page in the audit's table, the only one Lane C could not reach |
+| **Lane B** | The "words cleaned" counter can be made real by summing `words_in` on the ledger. Needs a route Lane B owns, and gives the counter back the motion W-7 cost it |
+| **Lane D** | The pricing page says *"One Word document or picture, any size."* The browser now refuses at 3.2 MB **with a message naming the number.** Direct contradiction |
+| **Lane A** | **Our cost per run is sent to every browser.** `api/_shared.py` carefully keeps cost out of `usage`, then the same figures ride along inside `report.layer_b.usage`, which `strip_server_paths` does not touch. Anyone can open the network tab and read what a run costs us |
+| **Lane A or Jon** | **S-5's real home is `engine/score_stylometry.py`, not the workbench.** The conductor's brief named the wrong file. Lane E audited it anyway and **found more than one bad phrase** |
+
+---
+
+# ★ CONDUCTOR'S CORRECTIONS TO ITS OWN WORK
+
+- **Lane E's brief pointed at the wrong file for S-5.** The AI-marker list is in
+  `engine/score_stylometry.py`, which that lane's territory explicitly excluded.
+  The session did the audit half anyway and handed back measurements. **The error
+  cost a fix; the finding survived.**
+- **The analytics finding was wrong** (recorded earlier): a probe that could not
+  have detected what it ruled out.
 
 ---
 
