@@ -8,8 +8,25 @@ import pathsConfig from '~/config/paths.config';
 
 const NEXT_ACTION_HEADER = 'next-action';
 
+/**
+ * `favicon.ico` was added to this list on 23 August 2026, Lane E item S-4.
+ *
+ * The root `/favicon.ico` returned 404 and **97 of every 100 lines in the
+ * production log were that one request**, which is why nothing else in the log
+ * could be read. The file now exists in `public/`, but a file existing is only
+ * half of it: without this exclusion the proxy still runs on every request for
+ * it, so every browser asking for an icon wakes a server function, is logged,
+ * and is charged for. Excluded here, it is served straight off the static
+ * layer and never appears in the function log at all.
+ *
+ * Nothing in the proxy ever wanted to see an icon request: neither URL pattern
+ * below matches it, so this changes no behaviour beyond where it is served
+ * from.
+ */
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|images|locales|assets|api/*).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|images|locales|assets|favicon.ico|api/*).*)',
+  ],
 };
 
 const getUser = (request: NextRequest, response: NextResponse) => {

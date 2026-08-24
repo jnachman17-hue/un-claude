@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 
+import { safeNextPath } from '@kit/auth/safe-next';
 import { createAuthCallbackService } from '@kit/supabase/auth';
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
@@ -14,6 +15,12 @@ import { withWelcome } from '../welcome';
  * see `afterAuth` in config/paths.config.ts. `withWelcome` marks the arrival
  * so the tool can confirm the balance that is now sitting in the account,
  * which is the whole reason for sending them here rather than to a ledger.
+ *
+ * `safeNextPath` is the close on the open redirect (Lane E, S-1): the
+ * destination that comes back out of the service is attacker-controllable
+ * through the `next` query parameter, so it is only allowed to be a path on
+ * this site. See `packages/features/auth/src/safe-next.ts` for what was reproduced
+ * and why.
  */
 export async function GET(request: NextRequest) {
   const service = createAuthCallbackService(getSupabaseServerClient());
@@ -22,5 +29,7 @@ export async function GET(request: NextRequest) {
     redirectPath: pathsConfig.app.afterAuth,
   });
 
-  return redirect(withWelcome(nextPath));
+  const destination = safeNextPath(nextPath, pathsConfig.app.afterAuth);
+
+  return redirect(withWelcome(destination));
 }

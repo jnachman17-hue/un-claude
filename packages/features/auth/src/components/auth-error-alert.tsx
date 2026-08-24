@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -16,7 +18,66 @@ import { Trans } from '@kit/ui/trans';
  * If every lookup above it fails, a person still reads a sentence.
  */
 const LAST_RESORT =
-  'Something went wrong. Please check your internet connection and try again.';
+  'Something went wrong and the sign in did not complete. Please try again.';
+
+/**
+ * THE TWO FAILURES THAT DESERVE THEIR OWN SCREEN. Lane E item S-3,
+ * 23 August 2026.
+ *
+ * Three different things went wrong and all three told the visitor the same
+ * thing: "please ensure you have a working internet connection". A blocked
+ * captcha is not a connection problem. An unconfirmed email address is not a
+ * connection problem, and it is the single most common thing that goes wrong
+ * after somebody signs up: the confirmation mail lands in spam, they close the
+ * tab, they come back a week later and try to sign in.
+ *
+ * These two are named here rather than left in the general bucket, because
+ * each one has a different thing for the visitor to do next, and the general
+ * message could not tell them what it was.
+ *
+ * `emailNotConfirmed` also drives the **Resend it** button. That is why this
+ * is a case rather than only a sentence: the component needs to know which
+ * failure it is looking at, not just what to print.
+ */
+export type AuthErrorCase =
+  | 'emailNotConfirmed'
+  | 'captchaUnavailable'
+  | 'other';
+
+const CASES: ReadonlyArray<readonly [RegExp, AuthErrorCase]> = [
+  [/email not confirmed|email_not_confirmed/i, 'emailNotConfirmed'],
+  [/captcha/i, 'captchaUnavailable'],
+];
+
+/**
+ * @name classifyAuthError
+ * @description Which of the named failures this is, if any. Exported so the
+ * sign-in container can decide whether to offer the resend control without
+ * matching on upstream text a second time.
+ */
+export function classifyAuthError(
+  error: Error | null | undefined | string,
+): AuthErrorCase {
+  if (!error) {
+    return 'other';
+  }
+
+  const errorCode = error instanceof Error ? error.message : error;
+
+  for (const [pattern, name] of CASES) {
+    if (pattern.test(errorCode)) {
+      return name;
+    }
+  }
+
+  return 'other';
+}
+
+const CASE_HEADINGS: Record<AuthErrorCase, string> = {
+  emailNotConfirmed: 'auth.emailNotConfirmedHeading',
+  captchaUnavailable: 'auth.captchaUnavailableHeading',
+  other: 'auth.errorAlertHeading',
+};
 
 /**
  * Supabase error text, matched to one of our own messages.
@@ -64,8 +125,17 @@ const PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
  */
 export function AuthErrorAlert({
   error,
+  action,
 }: {
   error: Error | null | undefined | string;
+  /**
+   * Something for the visitor to do about this particular failure, rendered
+   * under the sentence. The **Resend it** button is the one caller today.
+   * Placed below the text rather than in the alert's own top-right action
+   * slot, because on a phone a control floated beside two lines of wrapped
+   * text sits on top of them.
+   */
+  action?: ReactNode;
 }) {
   // Called before the early return below, because a hook may not run
   // conditionally.
@@ -76,17 +146,20 @@ export function AuthErrorAlert({
   }
 
   const errorCode = error instanceof Error ? error.message : error;
+  const name = classifyAuthError(errorCode);
 
   return (
     <Alert variant={'destructive'}>
       <TriangleAlert className={'w-4'} />
 
       <AlertTitle>
-        <Trans i18nKey={`auth.errorAlertHeading`} />
+        <Trans i18nKey={CASE_HEADINGS[name]} />
       </AlertTitle>
 
       <AlertDescription data-test={'auth-error-message'}>
         {resolveMessage(t, errorCode)}
+
+        {action ? <div className={'mt-3'}>{action}</div> : null}
       </AlertDescription>
     </Alert>
   );
@@ -114,7 +187,20 @@ function resolveMessage(
     }
   };
 
-  // 1. The kit's own behaviour: the whole Supabase sentence as a key. Keeps the
+  // 1. The two failures we name ourselves, checked FIRST so our wording wins
+  //    over whatever sentence the kit happens to have under the upstream text.
+  //    S-3: these are the cases that were being told their internet was down.
+  const named = classifyAuthError(errorCode);
+
+  if (named !== 'other') {
+    const owned = read(`errors.${named}`);
+
+    if (owned) {
+      return owned;
+    }
+  }
+
+  // 2. The kit's own behaviour: the whole Supabase sentence as a key. Keeps the
   //    three messages that already worked, and any a translator adds later.
   const exact = read(`errors.${errorCode}`);
 
@@ -122,7 +208,7 @@ function resolveMessage(
     return exact;
   }
 
-  // 2. Our patterns, for the failures that are common enough to deserve a
+  // 3. Our patterns, for the failures that are common enough to deserve a
   //    sentence of their own.
   for (const [pattern, key] of PATTERNS) {
     if (pattern.test(errorCode)) {
@@ -134,7 +220,7 @@ function resolveMessage(
     }
   }
 
-  // 3. The general message. This is the one that existed all along and was
+  // 4. The general message. This is the one that existed all along and was
   //    never reachable.
   return read('errors.default') ?? LAST_RESORT;
 }

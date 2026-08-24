@@ -14,6 +14,7 @@
     "./sign-up": "./src/sign-up.ts",
     "./password-reset": "./src/password-reset.ts",
     "./shared": "./src/shared.ts",
+    "./safe-next": "./src/safe-next.ts",
     "./mfa": "./src/mfa.ts",
     "./captcha/client": "./src/captcha/client/index.ts",
     "./captcha/server": "./src/captcha/server/index.ts",
