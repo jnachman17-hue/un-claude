@@ -6,6 +6,78 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 12:55 — E-9 VERIFIED BY THE CONDUCTOR
+
+**E-9 is complete and its note is honest.** I re-ran or recomputed every
+headline number from its raw logs rather than reading its summary. **It also
+found and fixed the defect I flagged at 12:10, and credited it.**
+
+## What I verified by running it
+
+| Claim | How I checked | Result |
+|---|---|---|
+| Suite `800 passed, 1 skipped` | `.venv/bin/python -m pytest` | **CONFIRMED — 800 passed, 1 skipped in 16.40s** |
+| Tests cover the DEPLOYED tree | `test_freeze.py:27` → `SCRIPTS = ROOT.parent/"apps"/"web"/"engine"` | **CONFIRMED.** The lab tests import the shipping code, not a copy |
+| "132 of 132 spans byte-exact" | Summed `spans_verbatim` in `results.jsonl` | **CONFIRMED — 6/6×7 + 11/11×6 + 3/3×8 = 132.** Exact |
+| "Zero chunk fallbacks" | 48 rows scanned | **CONFIRMED — 0 rows with fallbacks** |
+| Reinsertion repair: 14/14, 84/84, 0 retries | `reinsert_check_mistral.jsonl` | **CONFIRMED — 14 runs, 0 failures, 0 fallbacks, 84/84 spans, 0 retries** |
+| Five named tests exist | grep | **CONFIRMED**, all five |
+| The repair is committed | `git show HEAD:…uc_chunk.py` | **CONFIRMED** — `_reinsert_lost_masks`, commit `4288e95` |
+
+## The one number I could NOT verify
+
+**"The repair engaged in 3 of 6 runs, reinserting 9 deleted placeholders."**
+`freeze_measure.py:238` writes `masks_reinserted`, but **no saved row on disk
+carries that field** — `reinsert_check_mistral.jsonl` has no such key. Those
+instrumented runs appear to have gone to console only. **The claim it supports
+(14/14 delivered, 84/84 spans) IS verified; the mechanism-was-exercised
+evidence is not on disk.** Not a defect — a gap in the record.
+
+## ★ THE MODEL: I COULD NOT VERIFY IT, AND HERE IS EVERY DOOR I TRIED
+
+Jon changed something in Vercel and asked whether deepseek is live. **Unproven.**
+
+- `vercel env pull --environment=production` → `WATERMARKS_REWRITE_MODEL="[SENSITIVE]"`. Marked sensitive; the CLI will not decrypt it. *(Pulled file deleted immediately.)*
+- Vercel MCP `get_runtime_logs` → **403 Forbidden**, as did `list_deployments`
+- `vercel logs un-claude.com` → last 100 lines are page requests. **No rewrite has run on production recently**, so `layer_b_model` appears nowhere
+- `run_costs` records `cost_usd` and `model_calls` but **not the model name** (migration `20260823120300`), so the ledger cannot answer it either
+
+**The only remaining probe is one real rewrite on production** — `layer_b_model`
+is in `_shared.py`'s `_PUBLIC_FIELDS`, so a run returns it. Costs 1 credit and a
+fraction of a cent. **Not run: it writes to the live database, so it is Jon's
+call.**
+
+**Two facts that matter more than the answer:**
+1. **A Vercel variable changes nothing until the next deployment.** Deploys have been continuous, so a change made this morning is almost certainly in effect — but "almost certainly" is not verified.
+2. **`WATERMARKS_REWRITE_MODEL` and `WATERMARKS_REWRITE_API_KEY` are different variables.** Changing the key does not change the model. The gateway balance moved $5.44 → $15.39, which reads like a top-up, not a model switch.
+
+## ★ D5 SHOULD NOT SWITCH TODAY — E-9's own final campaign says so
+
+Recomputed from `results.jsonl` (48 rows, campaign 2, the post-fix record):
+
+| Model | Frozen-arm failures |
+|---|---|
+| **mistral-small** | **0** |
+| **deepseek-v3.2** | **3** — one `FreezeRestoreFailed` refunding a whole job, two `chunk failed after 8 attempts: TimeoutError` |
+
+Plus `reinsert_check_mistral.jsonl`: **mistral-small, 14 more runs, 0 failures.**
+**So mistral-small is 0 failures in 29 frozen-arm runs; deepseek is 3 in ~24.**
+E-9 section 5.6 adds deepseek's latency today: median 26.1s, max 74.2s on a
+2-chunk run, against the bake-off's 3.1s and the site's 240s abort.
+
+**One day, one region — but the bake-off that recommended deepseek did not
+measure it with the freeze on. This did.**
+
+## ★ MY EARLIER RECOMMENDATION IS WITHDRAWN
+
+At 12:10 I recommended switching the freeze OFF in production. **E-9's fix
+lands the numbers somewhere else, so that is no longer my advice.** The freeze
+should stay on and **the five unpushed commits should be pushed**, because the
+reinsertion repair is the thing that turns the live failure rate into the
+measured one. Production today has the freeze WITHOUT its fix.
+
+---
+
 # ★★★ 24 AUGUST, 12:10 — THE CONDUCTOR WAS WRONG ABOUT THE DEPLOY, AND THE FREEZE IS LIVE
 
 **Everything in this block was RUN, not read. Three of these correct the handoff.**
