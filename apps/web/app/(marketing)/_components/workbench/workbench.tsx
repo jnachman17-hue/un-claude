@@ -1046,7 +1046,12 @@ export function Workbench() {
           ? foundCount === 0
             ? 'There were none in this to begin with.'
             : stillPresent > 0
-              ? `${stillPresent} could not be removed. Read the result before you use it.`
+              ? // JON'S WORDING, 24 August 2026. The old sentence read "N could
+                // not be removed. Read the result before you use it." Those are
+                // the RTL direction marks the clean preserves ON PURPOSE, so
+                // "could not" described a deliberate choice as a failure and then
+                // sent the customer off to inspect their own document over it.
+                `${stillPresent} formatting ${stillPresent === 1 ? 'mark was' : 'marks were'} left in place intentionally. Every other hidden character watermark has been stripped.`
               : stats &&
                   (stats.removed_count ?? 0) + (stats.replaced_count ?? 0) > 0
                 ? // Removed and replaced are separate numbers and both are shown.

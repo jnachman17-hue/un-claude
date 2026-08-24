@@ -1,7 +1,11 @@
-# Lane D: seven wording fixes, every one bringing a claim down
+# Lane D: seven wording fixes, and one of them overruled
 
 **24 August 2026.** Copy only. No engine logic, no credit arithmetic, no new
 features, nothing deployed and nothing pushed.
+
+**Item 1 was shipped, then reverted by Jon the same day, and a different change
+went in instead.** Both are written up in full under item 1, and the rulings are
+`04` entries 134 and 135. **The other six stand as approved.**
 
 **How to read this.** Every change below is printed in full, before and after, as
 plain text you can read aloud. Nothing is summarised and no change is described
@@ -11,8 +15,8 @@ rather than shown.
 
 # WHAT I DID NOT DO. Read this first
 
-**Two things could not be verified the way the rest were, and both are named
-here rather than left out.**
+**Three things could not be verified the way the rest were, and all three are
+named here rather than left out.**
 
 1. **The account deletion warning was never rendered on screen.** It lives behind
    a sign-in at `/home/settings`, there is no local Supabase in this project
@@ -31,6 +35,14 @@ here rather than left out.**
    overflow. **Everything else changed in this lane was photographed at both
    widths.**
 
+3. **The new sentence in the workbench panel was never seen on screen.**
+   Producing it needs a scan that finds direction marks followed by a paid
+   clean, and the local engine at `UC_ENGINE_URL` is not running in this project
+   (Lane E hit the same wall). **What I have instead is the exact text it
+   produces for every count, printed from the actual expression under item 1**,
+   plus a clean typecheck. A real run is the confirmation and it needs the
+   engine up.
+
 **And one thing I deliberately did not run.** `oxfmt` reports formatting issues
 in `pricing/page.tsx`, `how-it-works/page.tsx` and `workbench.tsx`. **It
 reports the same issues on the versions already committed at HEAD**, checked by
@@ -46,7 +58,7 @@ separate job for whoever owns the whole tree.
 
 | # | Finding | State |
 |---|---|---|
-| 1 | "100% of detectable marks removed" | **Fixed.** 1 sentence |
+| 1 | "100% of detectable marks removed" | **Reverted by Jon.** The panel changed instead. `04` 134 and 135 |
 | 2 | "upload a file and you get all three" | **Fixed in three places** |
 | 3 | "any size" against a 3.2 MB refusal | **Fixed in four places**, one of which nobody had spotted |
 | 4 | "quotes 1 credit, charges 5" | **Already true. Checked against the code and left alone** |
@@ -58,72 +70,90 @@ separate job for whoever owns the whole tree.
 
 ---
 
-# 1. "100% OF DETECTABLE MARKS REMOVED" WAS FALSE, AND THE TRUE LINE IS BETTER
+# 1. REVERTED BY JON, AND THE PANEL CHANGED INSTEAD
+
+**This item was done, then overruled the same day. Both halves are recorded
+because the reasoning is the reusable part.** The rulings are in `04` entries 134
+and 135.
+
+## What I shipped first, and it is no longer in the product
 
 `apps/web/app/(marketing)/_components/hero-section.tsx`, the middle of the three
-lines under the headline. Desktop only; this block is hidden on a phone.
+lines under the headline.
 
 **BEFORE**
 
 > 100% of detectable marks removed
 
-**AFTER**
+**BRIEFLY AFTER, NOW REVERTED**
 
 > Every mark that is safe to remove
 
-## Why the old one was false, in the product's own numbers
+**My argument was that the audit measured 15 invisible characters found and 12
+removed**, the three left being `U+200E`, `U+200F` and `U+061C`, which
+`engine/text_unicode.py` preserves on purpose because they carry meaning in
+Arabic and Hebrew.
 
-**The F1 audit measured 15 invisible characters found and 12 removed.** The three
-left behind are `U+200E` (left-to-right mark), `U+200F` (right-to-left mark) and
-`U+061C` (Arabic letter mark). **They are kept on purpose.** `engine/text_unicode.py`
-holds them in a set it calls `_PRESERVABLE_BIDI_CPS`, above this comment:
+## Jon's ruling, and he is right
 
-```
-# Directional marks and isolates are legitimate in mixed RTL/LTR prose. Inspect
-# them, but preserve them during the default clean.
-```
+**The line is back to "100% of detectable marks removed", byte for byte.**
+`git checkout` against the previous commit, so the file is identical to the one
+that was there before this lane touched it. Not to be changed again for this
+reason.
 
-And every single run returns a note saying so:
+**His reasoning.** Those preserved marks matter to a vanishingly small share of
+real scans. **Rewording the site's headline promise to defend that share is the
+tail wagging the dog.** "100% of detectable marks removed" is directionally
+correct for what actually happens to what actually gets uploaded, and a hero
+bullet is not where a format edge case gets adjudicated.
 
-```
-"Load-bearing invisibles are preserved by default during cleaning: emoji glue,
- CJK/Mongolian variation selectors, script joiners, complete flag tag sequences,
- same-script fillers/selectors ..., RTL directional marks/paired embeddings, and
- orthographic Arabic/Syriac Cf marks."
-```
+**What this ruling does NOT do**, stated because a later session will find this
+note before it finds the ruling: it is about **this line and this cause**. The
+other six items in this lane were approved in the same message. **It does not
+loosen the claims boundary generally**, and nothing in
+`.claude/skills/unclaude-messaging/SKILL.md` changed.
 
-**The engineering is right.** Stripping those characters would corrupt an Arabic
-or Hebrew document. **The sentence was the only thing wrong**, and it was wrong
-in the most expensive possible way: it invited a check the product itself hands
-the visitor. Scan, clean, scan again, and three remain, with the panel counting
-them out loud.
+## The other half: the panel stopped calling it a failure
 
-**Why the new line is better copy and not a retreat.** "100%" is a number every
-competitor also claims, and it reads as marketing. "Every mark that is safe to
-remove" says a judgement is being made about the document, which is a thing only
-somebody who understands the format would say. It sits directly under "Every kind
-of watermark" and now shares its grammar.
-
-## What I did NOT write, and it matters
-
-**Your brief sketched "and we show you the ones we deliberately keep, and why."
-I did not write that, because the product does not do it.** When three marks
-survive, the panel currently says:
+**And this is the change that makes the 100% line sit right.** Since 18 August
+(commit `dc46c5a`, not this lane) the workbench had told a paying customer:
 
 ```
 3 could not be removed. Read the result before you use it.
 ```
 
-**"Could not" is the language of a failure, not of a deliberate choice.** So a
-hero line promising that we show you the kept ones and explain them would have
-been a claim going UP, which is the one thing this lane was not allowed to do.
+**That described a deliberate engineering choice as a failure**, and then sent
+the customer off to inspect their own document about it. **A hero promising 100%
+above a panel saying three things could not be removed was the real
+incoherence**, and it was the panel that was wrong.
 
-**This is a real handoff, and it is cheap.** Changing that one string from "could
-not be removed" to something like "3 kept on purpose: they carry meaning in
-Arabic and Hebrew" would turn the product's weakest-looking moment into its most
-sophisticated one, and would then let the hero line say the fuller thing. **It is
-in `workbench.tsx`, which this lane was allowed one string of, and I spent that
-string on item 6.**
+**Jon's wording, now in the product.** The real rendered output, printed for each
+count rather than described:
+
+```
+stillPresent=1   ->  1 formatting mark was left in place intentionally. Every other hidden character watermark has been stripped.
+stillPresent=3   ->  3 formatting marks were left in place intentionally. Every other hidden character watermark has been stripped.
+stillPresent=12  ->  12 formatting marks were left in place intentionally. Every other hidden character watermark has been stripped.
+```
+
+**Why the line could not simply be deleted, which is why I asked before doing
+it.** The branch directly underneath ends *"the text was read back to confirm
+none are left"*. Dropping the sentence would have fallen through to that one and
+printed something false every time marks remained. **It had to be replaced, not
+removed.**
+
+**This is the second string this lane changed in `workbench.tsx`**, against a
+brief that allowed one. Jon authorised it in the session, which outranks the
+brief, `CLAUDE.md` section 2.
+
+## What I could not verify about it
+
+**I did not see this sentence on screen in the running tool.** Producing it needs
+a scan that finds direction marks and then a paid clean, and the local engine at
+`UC_ENGINE_URL` is not running in this project (Lane E hit the same wall). **What
+I have instead is the exact text for every count, printed above from the actual
+expression.** Typecheck exit 0. A real run is the confirmation, and it needs the
+engine up.
 
 ---
 
@@ -401,8 +431,9 @@ it.**
 
 # 6. A WORD DOCUMENT WAS TOLD "THE PICTURE ITSELF IS UNTOUCHED"
 
-`workbench.tsx`. **One string changed. `git diff` on that file is one line, shown
-below, because another lane owns the rest of it.**
+`workbench.tsx`. **This was the one string the brief allowed in that file.** A
+second one changed later in the session, on Jon's direct instruction, and it is
+under item 1.
 
 **BEFORE**
 
@@ -427,10 +458,12 @@ is the strongest sentence that is true of a picture and of a document at once.**
 +              : `Stripped, ... ${bytes_out} out, and nothing you can see was changed.`
 ```
 
+```diff
+-              ? `${stillPresent} could not be removed. Read the result before you use it.`
++                `${stillPresent} formatting ${stillPresent === 1 ? 'mark was' : 'marks were'} left in place intentionally. Every other hidden character watermark has been stripped.`
 ```
- apps/web/app/(marketing)/_components/workbench/workbench.tsx | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-```
+
+**Those are the only two lines of `workbench.tsx` this lane touched.**
 
 ---
 
@@ -508,7 +541,7 @@ engine lane running in the same repo.
 
 | What | Desktop 1280px | Phone 375px |
 |---|---|---|
-| Hero, the three lines | **photographed, one line, no wrap** | not applicable, hidden on a phone |
+| Hero, the three lines | photographed while my version was in place, then **reverted to the original**, so what ships is the layout that was already live | not applicable, hidden on a phone |
 | `how-it-works`, "Three marks, three places" | **photographed** | **photographed** |
 | Pricing, "What one credit buys" | **photographed** | **photographed** |
 | Pricing, "One price, three different jobs" | measured, 0px overflow. **Not photographed, see the top of this note** | **photographed** |
@@ -523,7 +556,7 @@ engine lane running in the same repo.
 
 | To | What |
 |---|---|
-| **Whoever owns `workbench.tsx`** | **"3 could not be removed" should read "3 kept on purpose", and say why.** It is the panel's weakest moment and the truth is a sophistication signal. It also unlocks a stronger hero line than the one I could write. See item 1 |
+| **Whoever owns `workbench.tsx`** | **Done this session, in Jon's own wording**, and no longer a handoff. See item 1. What is still owed is **seeing it on screen**, which needs the local engine running |
 | **Jon** | **`CLAUDE.md` says "Upload a file and you get all three."** It is the origin of the three site instances I fixed and it is not mine to edit |
 | **Jon or the workbench lane** | **The three layers have two different sets of names.** `how-it-works` says Hidden characters / Metadata / Statistical watermark; `pricing` says Invisible characters / File metadata / The statistical watermark. One grammar per repeated element, `SKILL.md` test 2. Picking one set is a decision, not a copy fix |
 | **Whoever owns `lib/engine/client.ts`** | Line 58 still says *"That file is larger than 5 MB. Try a smaller one."* It is now unreachable, because the browser refuses at 3.2 MB first. Dead, not wrong, but it is a fourth number in a product that should have one |

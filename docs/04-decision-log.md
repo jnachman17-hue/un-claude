@@ -5109,3 +5109,60 @@ mistake and wants their free credits back has no other remedy, because the whole
 point of the table is that deleting the account no longer clears it. **A guard
 with no manual override would turn one honest mistake into a permanent
 punishment.**
+
+---
+
+## 24 August 2026. Lane D, copy
+
+### 134. "100% of detectable marks removed" stays. Preserved RTL marks do not get to reshape the site
+
+**Jon's ruling, given in the session and quoted so nobody relitigates it.** Lane
+D changed the hero line to "Every mark that is safe to remove", on the grounds
+that the scan finds 15 invisible characters and the clean removes 12, keeping
+`U+200E`, `U+200F` and `U+061C` because they carry meaning in Arabic and Hebrew.
+
+**He reverted it.** The line is back to "100% of detectable marks removed", byte
+for byte, and it is not to be changed again for this reason.
+
+**His reasoning, and it is the part that generalises.** The preserved marks
+matter to a vanishingly small share of real scans. **Rewording the site's
+headline promise to defend that share is the tail wagging the dog.** "100% of
+detectable marks removed" is **directionally correct** for what actually happens
+to what actually gets uploaded, and a marketing line in a three-item hero list is
+not the place a format edge case gets adjudicated.
+
+**Where the boundary still sits, because this ruling is narrower than it looks.**
+It is a ruling about **this line and this cause**. It does not license overclaiming
+generally, and it did not disturb the other six Lane D fixes, all of which he
+approved in the same message. The claims boundary in
+`.claude/skills/unclaude-messaging/SKILL.md` is otherwise unchanged.
+
+### 135. The panel says marks were left in place intentionally, not that they could not be removed
+
+**Same session, and it is the other half of 134.** The workbench had told a
+customer, since 18 August:
+
+```
+3 could not be removed. Read the result before you use it.
+```
+
+**That sentence described a deliberate engineering choice as a failure**, and
+then sent the customer off to inspect their own document about it. Jon: get that
+out of here.
+
+**His wording, in the product now:**
+
+```
+3 formatting marks were left in place intentionally. Every other hidden
+character watermark has been stripped.
+```
+
+**Why it could not simply be deleted.** The branch underneath it ends "the text
+was read back to confirm none are left", so removing the sentence would have
+printed something false whenever marks remained. It had to be replaced rather
+than dropped.
+
+**The two rulings agree with each other, which is the point.** A hero claiming
+100% above a panel saying three things could not be removed was the real
+incoherence. A hero claiming 100% above a panel saying three formatting marks
+were left in place intentionally is one product with one voice.
