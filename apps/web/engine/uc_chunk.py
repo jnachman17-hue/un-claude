@@ -221,12 +221,26 @@ def _split_blocks(text: str) -> tuple[str, list[str], list[str], str]:
     tail = text[len(text.rstrip("\n")) :] if text.strip("\n") else ""
     parts = _PARA_BREAK.split(body)
     paras, seps = parts[0::2], parts[1::2]
-    # A whitespace-only paragraph would break the one-to-one pairing with its
-    # separator, so drop it and the separator that follows it together.
-    keep = [i for i, para in enumerate(paras) if para.strip()]
-    if len(keep) != len(paras):
-        paras = [paras[i] for i in keep]
-        seps = ["\n\n"] * max(0, len(paras) - 1)
+    # A whitespace-only "paragraph" — a line of spaces at the edge of the
+    # document — is FOLDED into the whitespace either side of it rather than
+    # dropped. This used to drop it and flatten every separator to "\n\n",
+    # which silently deleted the customer's own bytes: test_spans.py caught
+    # "   \n\nA" coming back as "A" with no model anywhere near it.
+    i = 0
+    while i < len(paras):
+        if paras[i].strip():
+            i += 1
+            continue
+        blob = paras.pop(i)
+        if not paras:
+            # It was the only paragraph; the whole body is whitespace.
+            lead = lead + blob
+        elif i == 0:
+            lead = lead + blob + seps.pop(0)
+        elif i == len(paras):
+            tail = seps.pop(i - 1) + blob + tail
+        else:
+            seps[i - 1] = seps[i - 1] + blob + seps.pop(i)
     return lead, paras, seps, tail
 
 
@@ -411,8 +425,9 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # A bare `---` at either edge is the prompt's own separator showing
             # through. Removed rather than rejected: it turned up in 1.7% of
             # perfectly good rewrites, and refunding a customer over a stray
-            # punctuation mark would be worse than the mark.
-            out, _stripped = strip_edge_separator(out)
+            # punctuation mark would be worse than the mark. The chunk's own
+            # text rides along so an edge rule the CUSTOMER typed is kept.
+            out, _stripped = strip_edge_separator(out, src=chunks[i])
             # IS THIS EVEN THE CUSTOMER'S TEXT? Nothing above asks. The length
             # guard catches a rewrite that came back too SHORT and the fact guard
             # catches one that dropped a number, but a response that is our own

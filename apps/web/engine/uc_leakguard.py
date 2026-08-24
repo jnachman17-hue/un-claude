@@ -113,7 +113,7 @@ _META = re.compile(
       )""",
 )
 
-def strip_edge_separator(out: str) -> tuple[str, bool]:
+def strip_edge_separator(out: str, src: str | None = None) -> tuple[str, bool]:
     """Remove a bare `---` line at the very start or end of the output.
 
     The prompt uses a horizontal rule to separate its rules from the text, so a
@@ -124,13 +124,24 @@ def strip_edge_separator(out: str) -> tuple[str, bool]:
     failing the job over it would refund real customers over a cosmetic blemish.
     Only the edges are touched; a rule the customer put INSIDE their document
     stays exactly where they put it.
+
+    WHEN `src` IS GIVEN, AN EDGE THE CUSTOMER'S OWN CHUNK CARRIES A RULE ON IS
+    LEFT ALONE. Before this, a document whose chunk began or ended with the
+    customer's own `---` had it deleted even when the model returned it
+    faithfully — test_spans.py proved it with no model involved. Same principle
+    as `check_leak`: a phrase already present in the customer's own text is
+    never treated as ours.
     """
+    _rule = r"\s*-{3,}\s*"
+    src_lines = (src or "").split("\n") if src else []
+    src_starts = bool(src_lines) and re.fullmatch(_rule, src_lines[0]) is not None
+    src_ends = bool(src_lines) and re.fullmatch(_rule, src_lines[-1]) is not None
     lines = (out or "").split("\n")
     changed = False
-    while lines and re.fullmatch(r"\s*-{3,}\s*", lines[0]):
+    while not src_starts and lines and re.fullmatch(_rule, lines[0]):
         lines.pop(0)
         changed = True
-    while lines and re.fullmatch(r"\s*-{3,}\s*", lines[-1]):
+    while not src_ends and lines and re.fullmatch(_rule, lines[-1]):
         lines.pop()
         changed = True
     return ("\n".join(lines).strip("\n") if changed else out), changed
