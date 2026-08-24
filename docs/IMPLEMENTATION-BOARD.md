@@ -6,6 +6,108 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 13:40 — PUSHED, DEPLOYED, AND VERIFIED LIVE
+
+**Jon authorised the push. Seven commits, `99be2ea..b72b1aa`.** The push itself
+triggered a production build — **confirmed: this repo is git-connected and every
+push deploys.** That is the mechanism that put the freeze live by accident this
+morning, and it is now written down.
+
+## The same paste that failed 20 minutes ago, now on the live site
+
+**Before (13:02, production):** *"The rewrite could not be completed."*
+**After (13:38, production):** delivered. The artefact, not a measurement:
+
+```
+IN   ## Start Times and Attendance
+     The committee met in March to consider the proposal, and delegates from
+     eleven districts attended the session. As Smith puts it, "the change in
+     start time did more for attendance than any intervention we had
+     previously funded" (p. 47). The minutes were circulated the following
+     week and no formal objection was recorded by any member of the review
+     panel.
+
+OUT  ## Start Times and Attendance
+     The panel convened during March to weigh the plan, with representatives
+     from eleven regions present at the gathering. In Smith's words, "the
+     change in start time did more for attendance than any intervention we
+     had previously funded" (p. 47). Those notes went out the next week, and
+     not one person on the oversight board logged a formal complaint.
+```
+
+**The heading is character-for-character. The 17 words inside the quotation
+marks are character-for-character. The attribution verb around it changed
+("As Smith puts it" → "In Smith's words") and everything else is reworded.**
+The receipt reported 69% replaced, 98% length kept, 2/2 figures carried.
+
+**E-9 is closed. The freeze works on production.**
+
+## ★ NEW LANE D ITEM — C-3 JUST GOT WORSE, and the freeze caused it
+
+The live receipt now prints: **"The longest stretch of your original wording
+left is 10 words in a row."** The site claims **a hard three-word ceiling**
+(C-3, which was already wrong at 6). **It is now 10, and structurally so** — the
+freeze deliberately returns whole quotations intact, so a frozen span is by
+design a long unbroken run of the customer's words. **The three-word claim is no
+longer merely inaccurate; the product is now built to violate it.** C-3 cannot
+be fixed by re-measuring — the sentence has to change.
+
+## ★★ THE MODEL: MY RECOMMENDATION IS GO BACK TO `mistral/mistral-small`
+
+**The failure was OURS, not deepseek's, and it is fixed.** But the model
+question is separate, and every axis I can measure now favours mistral —
+**because the freeze did not exist when the bake-off ran.**
+
+**Speed. 85 delivered runs, E-9's campaigns:**
+
+| Model | median | worst |
+|---|---|---|
+| **mistral-small** | **3.9s** | **11.2s** |
+| deepseek-v3.2 | **31.2s** | **191.5s** |
+
+On the 517-word essay alone: mistral 4.7s median, deepseek 37.5s median and
+**191.5s worst — 80% of the site's 240-second abort, on half a page.**
+Production corroborates: 478 words took **64.982s**. This is not one bad hour;
+it held across two independent measurement sets all day.
+
+**Rewrite depth — and this reverses the bake-off's assumption.** Overlap on the
+text that is NOT frozen (lower = more of the customer's wording actually
+replaced = more of the job done), from `results.jsonl`:
+
+| doc · arm | mistral-small | deepseek |
+|---|---|---|
+| essay · both | **0.0372** | 0.0885 |
+| essay · structure | **0.0628** | 0.0846 |
+| story · both | **0.0262** | 0.0838 |
+| story · off | **0.0524** | 0.1518 |
+| mask_heavy · both | **0.0000** | 0.0167 |
+
+**Mistral-small rewrites harder in every single cell** — up to 3x more on the
+story. Deepseek leaves more of the customer's original wording standing, which
+is the opposite of what layer B is for.
+
+**Reliability with the freeze on:** mistral-small **0 failures in 29** frozen-arm
+runs; deepseek **3 in ~24** (one restore failure, two eight-attempt timeouts).
+
+**Why the bake-off said the opposite, and why that is not a contradiction.** The
+bake-off's case was *"deepseek avoids most of the defect list instead of needing
+machinery to mask it — quotations mostly intact where the mistrals destroyed
+every one."* **We then built the machinery. D1 ruled both tiers ship, E-9 shipped
+them, and mistral-small returned 132 of 132 spans byte-exact.** The freeze
+protects headings and quotations on ANY model, so deepseek's headline advantage
+is now largely redundant — while its 8x speed penalty is not.
+
+**What deepseek still uniquely offers post-freeze:** near-zero injected marks
+(E-1's repair already handles this — 359 em dashes → 0) and zero fabricated
+sources observed (partly covered, since reference entries now freeze).
+
+**RECOMMENDATION: set `WATERMARKS_REWRITE_MODEL` back to
+`mistral/mistral-small`, then re-run E-10's bake-off WITH THE FREEZE ON before
+ruling.** The original bake-off answered a question that no longer exists.
+**Also still outstanding: D5's open-weight licence check, never done.**
+
+---
+
 # ★★★ 24 AUGUST, 13:20 — DEEPSEEK IS LIVE, AND PRODUCTION IS FAILING A 64-WORD PASTE
 
 **Jon authorised one real rewrite on production to read the live model. It
