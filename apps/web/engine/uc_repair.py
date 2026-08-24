@@ -189,10 +189,15 @@ _YEAR_DIGITS = re.compile(r"\b(1[0-9]{3}|20[0-9]{2})\b")
 
 
 def _restore_years(src: str, out: str, stats: dict) -> str:
+    # Deliberately NOT conditioned on the digits being absent from the
+    # output: a document can carry the same year twice, keep the digits in
+    # one place (a reference entry) and have it spelled out in another (the
+    # prose). "The value is still in the text somewhere" is exactly the
+    # blindness the fact guard suffers from, and it is not repeated here.
+    # Caught live on 24 August 2026: "written in 1946" came back "in
+    # nineteen forty-six" while the reference list kept "1946".
     restored: list[str] = []
     for year_str in sorted(set(_YEAR_DIGITS.findall(src))):
-        if re.search(r"\b" + year_str + r"\b", out):
-            continue                       # the digits survived; nothing to do
         for fragment in _year_patterns(int(year_str)):
             pattern = re.compile(r"\b" + fragment + r"\b", re.IGNORECASE)
             if pattern.search(src):

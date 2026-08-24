@@ -878,6 +878,22 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                             m for m in layer_b_report["figures_to_check"]
                             if m not in _numbers(out)
                         ]
+                    # REPORT ONLY: which of the document's protected spans —
+                    # quotations, headings, references, addresses, code,
+                    # tables, equations — came back from the rewrite
+                    # unchanged. The freeze is OFF, nothing raises, nothing
+                    # about the output changes; this is the first measurement
+                    # of how often a real customer's quotation is rewritten.
+                    # See uc_spans.py. `structure_kept` rides along so the
+                    # one flag the engine computes and nothing reads is now
+                    # in the block a reader of this report will actually
+                    # open.
+                    from uc_spans import check_protected_spans
+
+                    protection = check_protected_spans(cleaned, out)
+                    protection["structure_kept"] = bool(
+                        layer_b_report.get("structure_kept", True))
+                    layer_b_report["protection"] = protection
                     cleaned = out
                 except TruncatedRewrite as e:
                     raise _layer_b_failure(

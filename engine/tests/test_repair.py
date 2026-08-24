@@ -199,6 +199,25 @@ def test_year_left_alone_when_the_customer_spelled_it_themselves():
     assert fixed == out
 
 
+def test_year_restored_even_when_digits_survive_elsewhere():
+    # Caught on a live run: the prose said "in 1946", the reference list also
+    # said "1946". The model spelled out the prose one and kept the reference
+    # one — and "the digits are still in the text somewhere" must not excuse
+    # the violation, which is the fact guard's own blindness.
+    src = (
+        "The essay was written in 1946 and it reads freshly.\n\n"
+        "Orwell, G. (1946). Politics and the English language."
+    )
+    out = (
+        "In nineteen forty-six the essay was penned, and it reads freshly.\n\n"
+        "Orwell, G. (1946). Politics and the English language."
+    )
+    fixed, stats = repair_rewrite(src, out)
+    assert "nineteen forty-six" not in fixed
+    assert fixed.count("1946") == 2
+    assert stats["years_restored"] == ["1946"]
+
+
 def test_year_left_alone_when_digits_survived():
     src = "It was 1698."
     out = "The year was 1698."
