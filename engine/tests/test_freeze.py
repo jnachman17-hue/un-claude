@@ -442,3 +442,33 @@ def test_billing_estimate_freeze_absent_when_disabled(monkeypatch):
 def test_billing_estimate_flat_kinds_have_no_freeze():
     est = billing_estimate("image", b"\x89PNG\r\n\x1a\n....")
     assert "freeze" not in est
+
+
+def test_freeze_retry_names_the_dropped_placeholders(monkeypatch):
+    # Live measurement found the dominant failure: consecutive heading masks
+    # opening a chunk get deleted as noise, and a BLIND retry fails the same
+    # way about 1 time in 3. The fix rides the fact guard's own channel: the
+    # dropped tokens arrive in the retry's `missing` argument, so the retry
+    # prompt names them. This fake drops every mask until the retry names
+    # them — the shape of a model that obeys the naming.
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+    seen_missing: list[list[str]] = []
+
+    def obeys_when_told(chunk, attempt=0, missing=None, usage_out=None):
+        seen_missing.append(list(missing or []))
+        if not missing:
+            return re.sub(r"\[\[\d+\]\]\n?", "", chunk), {}
+        return chunk, {}
+
+    doc = (
+        "The historian wrote that the settlement was "
+        '"an accident of weather and paperwork rather than of policy" '
+        "and the archive bears him out across every season on record."
+    )
+    out, info = rewrite_long(doc, obeys_when_told)
+    assert info["freeze"]["chunks_fallback"] == []
+    assert '"an accident of weather and paperwork rather than of policy"' in out
+    assert len(seen_missing) == 2                 # one blind call, one retry
+    assert seen_missing[0] == []
+    assert len(seen_missing[1]) == 1              # the dropped mask, by name
+    assert re.fullmatch(r"\[\[\d+\]\]", seen_missing[1][0])
