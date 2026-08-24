@@ -6,30 +6,38 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
-# ★★ THE ONE THING BLOCKING EVERYTHING
+# ★★ WHERE THINGS STAND — 24 AUGUST
 
-**THREE LANES OF FIXES ARE FINISHED AND NONE OF THEM IS LIVE.**
+**Migration 5 applied and DEPLOYED by Jon. Lanes B, C and E are live.**
 
-Lanes B, C and E are complete and committed. **Nothing has been deployed.** So
-every defect they fixed is still happening to customers right now, and the
-verification that matters — does it work in production — cannot be run.
+**Verified in production by the conductor:**
+```
+x-frame-options            DENY
+x-content-type-options     nosniff
+referrer-policy            strict-origin-when-cross-origin
+permissions-policy         camera=(), microphone=(), geolocation=()
+content-security-policy    absent — deliberately, see Lane E
+/favicon.ico               200      (was 404, and was 97% of the log)
+```
+*Migration 5's lockdown was not verified by the conductor — the probe returned a
+malformed-request 400 rather than a permission answer. Applied per Jon.*
 
-**Two steps, in this order, and everything else waits behind them:**
+**So three lanes of fixes are now real.** The refund clamps to the payment and
+writes the shortfall down, free credits are once per inbox, the header count
+tells the truth, the file-size message can fire, the redirect is closed.
 
-| # | Action | Whose |
-|---|---|---|
-| **1** | **Apply migration `20260823120400_lock_down_money_tables.sql`** | **Jon** — one paste, changes no data |
-| **2** | **Deploy** | **Jon** — `npx vercel --prod`, tree must be quiet |
-| **3** | **Then verify** — the conductor re-runs the probes each lane could not | conductor |
+## What is now unproven-in-production rather than unfixed
 
-**Why migration 5 matters.** `refund_shortfalls` and `run_costs` arrived fully
-deletable while the ledger beside them is not. **The trap: `grant` does not
-narrow anything** — Supabase already hands `service_role` everything on every new
-public table, so writing `grant select, insert` adds nothing and removes nothing.
-The ledger is protected because its migration **revokes first.** Lane B's did not.
-**It matters because `refund_shortfalls` exists so losses can be counted, and a
-record of losses that any code holding the service key can quietly erase gets
-smaller without anyone noticing. There are no backups to compare it against.**
+These shipped but were never exercised against the live site. **They are the
+first thing to check, not the last:**
+
+| Check | Why it was never proved |
+|---|---|
+| **Free credits really are once per inbox** *through the site* | Lane B proved the database refuses it. `/api/credits` is a separate path. `scripts/verify-grants-through-the-site.mjs` exists to answer this and needs the deploy that has now happened |
+| **The run-cost writer actually writes** | `run_costs` was empty and correct when Lane B finished. It should be filling now |
+| **A dropped connection refunds** | Lane B's fix is live; `06` row 89 says watch `CLIENT GONE:` on day one |
+| **Wallet pagination against real rows** | Lane C used fabricated rows — no local Supabase |
+| **The webhook end to end** | Lane B called `refund_purchase` directly, not through a real Stripe refund |
 
 ---
 
@@ -37,9 +45,9 @@ smaller without anyone noticing. There are no backups to compare it against.**
 
 | Lane | State | What is left |
 |---|---|---|
-| **B — money** | **6 of 6 done.** 4 migrations applied by Jon; a **5th found afterwards and pending** | Migration 5 · a deploy · the privacy sentence, now genuinely owed · watch `CLIENT GONE:` on day one |
-| **C — workbench** | **10 of 10 done** | A deploy · three handoffs, below |
-| **E — security** | **4 of 5 done** | **CSP deliberately not shipped** · **S-5 was mis-briefed by the conductor** · a deploy |
+| **B — money** | **6 of 6 DONE AND LIVE.** All 5 migrations applied | Verify the five rows above · the privacy sentence, now genuinely owed |
+| **C — workbench** | **10 of 10 DONE AND LIVE** | Verify pagination against real rows · three handoffs, below |
+| **E — security** | **4 of 5 DONE AND LIVE** | **CSP still open** — needs a per-request nonce · **S-5 belongs to Lane A** |
 | **A — engine** | **not started** | The whole lane. Decisions D1–D5 are settled and it is unblocked |
 | **D — copy** | **not started** | Split: wording-only now, the four enforcement promises after Lane A |
 

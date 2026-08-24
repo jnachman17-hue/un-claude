@@ -1,5 +1,117 @@
 # Lane B — the money path, 23 August 2026
 
+
+---
+
+# DEPLOYED, 24 August 2026. Two of the three landed; M‑6 did not
+
+**M‑6 does not work in production, and that is the headline.** Everything else
+verified on the live site.
+
+## M‑6 — the fix is inert on Vercel
+
+Measured against production minutes after the deploy, with the connection
+dropped at 3 seconds on a job that succeeds:
+
+```
+>>> connection dropped by the client at 3000ms
+client saw: AbortError after 3007ms: This operation was aborted
+  +8s   balance 155  spend rows 1  operation_refund rows 0
+  +75s  balance 155  spend rows 1  operation_refund rows 0
+
+     -250  spend                                 250000 words
+    SUM = 155
+
+run_costs for that spend row:
+  [{"ledger_id":2790,"cost_usd":0,"seconds":4.127,"layer_b":false}]
+```
+
+**250 credits taken, nothing delivered, no refund — exactly as before the
+deploy.**
+
+**The `run_costs` row is what makes the diagnosis certain.** It is written a few
+lines ABOVE the refund check, so its existence proves execution reached the
+check. `request.signal.aborted` was simply **false**.
+
+**The cause is a switch, and Vercel's documentation is explicit about it.**
+Request cancellation is **opt-in**: `request.signal` only ever aborts for
+functions that declare `supportsCancellation` in `vercel.json`. This project
+declares nothing, so the signal can never fire. **The code is dead, not wrong.**
+
+**The connected case was measured on the same deploy and behaved correctly:**
+
+```
+client saw: HTTP 200 after 9177ms
+  +75s  balance 155  spend rows 1  operation_refund rows 0
+```
+
+A delivered job is charged and not refunded. **So the dangerous failure — every
+job being refunded — is ruled out on production, not just on a dev server.**
+
+### Why it was not simply switched on
+
+**Three reasons, and none of them is "later".**
+
+1. **`vercel.json` is not this lane's file**, and Lane E is in the deployment
+   configuration today.
+2. **It is not established that the switch can even reach this route.** Vercel's
+   own examples target `api/**` and `pages/api/**`; this is a Next 16 App Router
+   handler at `app/api/tool/clean/route.ts`, and App Router routes normally take
+   their per-function settings from the route file rather than from
+   `vercel.json`.
+3. **Vercel's docs warn that work after a disconnect may not complete without
+   `waitUntil`**, which needs `@vercel/functions` — **a dependency this project
+   does not have, and adding one is Jon's call.**
+
+**It is one deploy and one re-run of a test that already exists and costs
+nothing** — `node scripts/...` against production with a paste the engine
+refuses for free. Enable the switch, drop a connection, look for the refund row.
+**If the row appears, no dependency is needed at all.** If it does not, the
+function is being killed at the disconnect and `waitUntil` is the next question.
+`06` row 89.
+
+## M‑2 — closed end to end, through the real route
+
+This is what the deploy was for, and it worked:
+
+```
+round 1: GET /api/credits -> HTTP 200 {"ok":true,"balance":5,"isAnonymous":false}
+         +3 signup_grant, +2 anon_grant
+round 2: GET /api/credits -> HTTP 200 {"ok":true,"balance":0,"isAnonymous":false}
+round 3: GET /api/credits -> HTTP 200 {"ok":true,"balance":0,"isAnonymous":false}
+
+  credits collected per round: 5, 0, 0
+  total free credits minted from ONE address: 5
+```
+
+**Fifteen credits this morning, five now** — and this run drove the live site
+with a real session rather than calling the database, so it covers the path an
+actual person walks. `scripts/verify-grants-through-the-site.mjs`.
+
+## M‑4 — live, and the privacy policy is now true
+
+The first `run_costs` row this product has ever written:
+
+```
+{"ledger_id":2786,"model_calls":null,"retries":null,"total_tokens":null,
+ "cost_usd":0,"seconds":4.22,"layer_b":false,"created_at":"2026-08-24T04:07:30Z"}
+```
+
+**`cost_usd` is 0 because no model was called** — that run asked for the free
+layers only, and a zero is written rather than a blank so a free run can be told
+from a figure that went missing. `seconds` is the engine's own timer.
+
+**The policy has said we record what a run costs since it was written. As of
+this row, that is true for the first time.**
+
+## Still outstanding
+
+| | |
+|---|---|
+| **M‑6** | Not fixed. One config switch, one deploy, one free re-run. `06` row 89 |
+| **The privacy sentence** | `POLICY-CHANGES-PENDING.md`. Owed since the migration landed |
+| **A push** | Local is ahead of GitHub. The deployed code exists on one laptop |
+
 ---
 
 # APPLIED, 24 August 2026. What the four migrations actually did

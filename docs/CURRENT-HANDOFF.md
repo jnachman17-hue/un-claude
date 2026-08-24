@@ -2,6 +2,29 @@
 
 ---
 
+# 24 AUGUST 2026, LANE B: APPLIED AND DEPLOYED. ONE FIX DID NOT LAND
+
+**M‑6 does not work in production.** The connection-drop refund is real code
+that never runs: Vercel's request cancellation is **opt-in**, and this project
+does not declare `supportsCancellation`, so `request.signal` can never fire.
+Measured on the live site after the deploy — 250 credits taken, nothing
+delivered, no refund. **The safe direction was also measured: a delivered job is
+charged and not refunded, so it will never refund everything.** One config
+switch, one deploy, one free re-run of an existing test. `06` row 89.
+
+**Everything else landed and was verified on the live site:** one address now
+collects 5 free credits instead of 15, through the real `/api/credits` route;
+the first `run_costs` row this product has ever written exists, so the privacy
+policy's claim about recording run costs is true for the first time; and both
+refund directions are closed.
+
+**Still owed: the privacy sentence** (`POLICY-CHANGES-PENDING.md`), and a push —
+local is ahead of GitHub, so the deployed code exists on one laptop.
+
+---
+
+## The pre-deploy version follows
+
 # 24 AUGUST 2026, LANE B: THE FOUR MIGRATIONS ARE APPLIED
 
 **Jon ran all four. Every one succeeded, and the proofs pass.** Direction one of

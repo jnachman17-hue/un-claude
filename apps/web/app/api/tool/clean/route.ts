@@ -468,6 +468,23 @@ export async function POST(request: Request) {
    * Reproduced, same site, same day: a 250,000 word layer A job with the client
    * dropped at 3 seconds took 250 credits and wrote no refund row.
    *
+   * THIS DOES NOT FIRE ON VERCEL YET, AND SAYING SO HERE IS THE POINT. Measured
+   * against production immediately after the 24 August deploy: the client
+   * dropped at 3 seconds, the job ran to completion — the `run_costs` row above
+   * was written, which proves execution reached this line — and
+   * `request.signal.aborted` was FALSE, so no refund happened. Nothing below
+   * changed anything for a real customer.
+   *
+   * THE CAUSE IS A SWITCH, NOT A DESIGN PROBLEM. Vercel's request cancellation
+   * is OPT-IN: `request.signal` only ever aborts for functions that declare
+   * `supportsCancellation` in vercel.json. This project declares nothing, so the
+   * signal is inert by configuration. See 06 row 89 for what turning it on
+   * involves and why it was not turned on blind.
+   *
+   * The connected case was measured too, on the same deploy: a delivered job is
+   * charged and NOT refunded. So this is dead code rather than wrong code, and
+   * it starts working the day cancellation is enabled.
+   *
    * THE COST ROW IS WRITTEN FIRST, DELIBERATELY. If the rewrite ran we really
    * did pay for it, and giving the credit back does not make that spend
    * disappear. Recording it above and refunding here is what makes the loss
