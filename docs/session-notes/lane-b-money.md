@@ -30,6 +30,24 @@ Supabase SQL editor in this order:
 
 **File 3 needs file 2 first.** The others are independent.
 
+### Two of them are only half of the fix, and applying them alone is not enough
+
+| Fix | Migration | Deploy |
+|---|---|---|
+| **M‑1** refunds | **enough on its own.** The whole correction is inside the database function the webhook already calls | not needed |
+| **M‑2** free credits | needed | **also needed** — see below |
+| **M‑3** the wallet reading 0 | **enough on its own.** The grant is minted by the database | not needed |
+| **M‑4** run cost | needed | **also needed.** The code that writes the row is in the site |
+
+**Why M‑2 needs both, spelled out because getting this wrong would leave the
+hole open while looking closed.** The migration makes the *database* refuse a
+second helping — so the grant minted at signup is correctly withheld on a
+re-registration. But the site's own grant code is what runs when somebody uses
+the tool, and **the deployed version of it does not know about `grant_claims`
+yet.** It would mint the credits the trigger had just refused. Until the deploy,
+`verify-grants-survive-deletion.mjs` will still fail its second check, and that
+is the script telling the truth rather than a fault in it.
+
 **Then prove them, one command each:**
 
 ```bash
@@ -329,7 +347,8 @@ it is. Free scan-and-strip runs are written too, with a cost of zero, so a run
 that cost nothing can be told from a figure that went missing.
 
 **NOT DONE UNTIL THE MIGRATION IS APPLIED, and it also needs a deploy** — the
-code that writes the row is in the site, not the database.
+code that writes the row is in the site, not the database. Applying the
+migration alone changes nothing and breaks nothing.
 
 ---
 

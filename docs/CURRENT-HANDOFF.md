@@ -24,7 +24,12 @@ errors, nothing has changed.** Paste into the Supabase SQL editor in this order:
     node scripts/verify-refund-attribution.mjs
     node scripts/verify-grants-survive-deletion.mjs
 
-**Migrations 3 and 4 also need a deploy** — half of each lives in the site.
+**Migrations 2 and 4 also need a deploy, and 2 is the one to be careful about.**
+Applying it makes the database refuse a second helping of free credits, but the
+site's own grant code — the version currently deployed — does not know about the
+new record and would still mint them. Until the deploy, the free-credit hole is
+open and `verify-grants-survive-deletion.mjs` will still fail its second check.
+**Migrations 1 and 3 are complete on their own and need no deploy.**
 
 **One privacy sentence is owed once migration 2 is applied.** Wording is drafted
 in `POLICY-CHANGES-PENDING.md`; the legal pages were not touched.
