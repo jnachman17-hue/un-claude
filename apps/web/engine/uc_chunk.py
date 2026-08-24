@@ -401,6 +401,58 @@ def _weave(paras: list[str], seps: list[str]) -> str:
     return "".join(out)
 
 
+#: A paragraph that is nothing but one mask placeholder.
+_LONE_MASK = re.compile(r"\s*\[\[(\d+)\]\]\s*")
+
+
+def _reinsert_lost_masks(
+    restored: str, masked_chunk: str, mask_map: list[dict],
+    dropped_ids: list[int],
+) -> str | None:
+    """The dominant restore failure, repaired without a model call.
+
+    Measured live (E-9 campaigns): when a restore fails, it is nearly always
+    because the model deleted a placeholder that stood ALONE as a paragraph —
+    a masked heading — while returning every other paragraph faithfully. A
+    lone placeholder's position is known exactly, so the original paragraph
+    can be put back at its recorded slot, deterministically.
+
+    Conservative on purpose: repairs ONLY when every dropped mask was a
+    whole-paragraph placeholder and the output's paragraph count is exactly
+    the masked chunk's minus the deleted placeholders — any other shape
+    (an inline quotation mask gone, paragraphs merged) returns None and the
+    retry/fallback path decides. Without this, one deleted two-word heading
+    cost the customer the whole chunk's rewrite — and on a document under
+    about 1,050 words, the whole job, refunded (the fallback unit is the
+    chunk, and D3's threshold is a share of the document's words).
+    """
+    parts = _PARA_BREAK.split(masked_chunk)
+    masked_paras, _ = _stitch_fences(parts[0::2], parts[1::2])
+    by_id = {row["id"]: row["text"] for row in mask_map}
+    slots: list[int | None] = []
+    for para in masked_paras:
+        m = _LONE_MASK.fullmatch(para)
+        slots.append(int(m.group(1)) if m else None)
+    dropped = set(dropped_ids)
+    dropped_slots = {i for i, mid in enumerate(slots) if mid in dropped}
+    if {slots[i] for i in dropped_slots} != dropped:
+        return None                    # a dropped mask was inline; no position
+    out_parts = _PARA_BREAK.split(restored)
+    out_paras = [p for p in _stitch_fences(out_parts[0::2], out_parts[1::2])[0]
+                 if p.strip()]
+    if len(out_paras) != len(masked_paras) - len(dropped_slots):
+        return None                    # something else moved too; stay out
+    rebuilt: list[str] = []
+    j = 0
+    for i in range(len(masked_paras)):
+        if i in dropped_slots:
+            rebuilt.append(by_id[slots[i]])
+        else:
+            rebuilt.append(out_paras[j])
+            j += 1
+    return "\n\n".join(rebuilt)
+
+
 def _restore(rewritten: str, inner: list[str], wanted: int) -> tuple[str, bool]:
     """Put the chunk's original paragraph spacing back onto the model's output.
 
@@ -572,6 +624,16 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # whose rewrite was perfect. The W8 mistake exactly.
             if mask_map:
                 out, dropped_ids = restore_chunk(out, mask_map)
+                if dropped_ids:
+                    # A deleted lone-paragraph placeholder is put back at its
+                    # recorded slot, free and deterministically, before this
+                    # counts as a failure at all.
+                    repaired = _reinsert_lost_masks(
+                        out, masked_chunks[i], mask_map, dropped_ids)
+                    if repaired is not None:
+                        out = repaired
+                        usage["masks_reinserted"] = (
+                            usage.get("masks_reinserted", 0) + len(dropped_ids))
                 problems = verify_restore(chunks[i], out, mask_map)
                 if problems:
                     freeze_failures += 1
@@ -730,10 +792,15 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     def enforce_refund_threshold(fallbacks: list[dict]) -> None:
         """D3's threshold: a meaningful share failing refunds the whole job.
 
-        One chunk falling back is handed back and explained, no refund — the
-        customer received the work. Past REFUND_SHARE of the document's
-        words, delivery stops being honestly describable as the work, so the
-        job fails, which refunds (04 entry 22 as amended for the freeze).
+        The unit is WORDS, not chunks: past REFUND_SHARE of the document's
+        words coming back unrewritten, delivery stops being honestly
+        describable as the work, so the job fails, which refunds (04 entry
+        137, amending entry 22). Said plainly because the arithmetic bites
+        on short documents: a fallback is a whole chunk, so on anything
+        under about three chunks a single chunk falling back IS past one
+        third and refunds — which is why `_reinsert_lost_masks` exists to
+        stop the dominant failure (a deleted lone-heading placeholder) from
+        costing a chunk at all.
         """
         total = count_words(text)
         fb_words = sum(f["words"] for f in fallbacks)

@@ -235,6 +235,8 @@ def run_one(doc_name: str, arm: str, model: str, run: int) -> int:
             freeze = info.get("freeze", {})
             row["fallbacks"] = len(freeze.get("chunks_fallback", []))
         row["retries"] = (info.get("usage") or {}).get("retries", 0)
+        row["masks_reinserted"] = (info.get("usage") or {}).get(
+            "masks_reinserted", 0)
         if run == 1:
             tag = f"{doc_name}_{arm}_{model.split('/')[-1]}"
             (OUTDIR / f"{tag}_out.txt").write_text(out)

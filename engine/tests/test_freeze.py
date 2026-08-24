@@ -472,3 +472,74 @@ def test_freeze_retry_names_the_dropped_placeholders(monkeypatch):
     assert seen_missing[0] == []
     assert len(seen_missing[1]) == 1              # the dropped mask, by name
     assert re.fullmatch(r"\[\[\d+\]\]", seen_missing[1][0])
+
+
+HEADED_DOC = (
+    "The Rise of the Canal Towns\n\n"
+    "Overview\n\n"
+    "The towns that grew along the northern canals did so for reasons that "
+    "had little to do with the water itself and everything to do with the "
+    "warehouses beside it, where goods waited out the winter closures.\n\n"
+    "The Decline\n\n"
+    "When the railways arrived the warehouses emptied within a decade, and "
+    "the towns that survived were the ones that had built anything else at "
+    "all worth keeping."
+)
+
+
+def test_a_deleted_heading_placeholder_is_reinserted_not_failed(monkeypatch):
+    # THE DOMINANT LIVE FAILURE (E-9 campaigns): the model deletes a lone
+    # placeholder paragraph — a masked heading — and returns everything else
+    # faithfully. A lone placeholder's position is known exactly, so the
+    # paragraph is put back deterministically, with no model call, before
+    # this counts as a failure at all. Before this repair, one deleted
+    # two-word heading cost the whole chunk — and on a short document the
+    # whole job, refunded.
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+    calls: list[str] = []
+
+    def deletes_heading_masks(chunk, attempt=0, missing=None, usage_out=None):
+        calls.append(chunk)
+        return re.sub(r"\[\[\d+\]\]\n*", "", chunk).strip(), {}
+
+    out, info = rewrite_long(HEADED_DOC, deletes_heading_masks)
+    assert len(calls) == 1                        # no retry was even needed
+    assert info["freeze"]["chunks_fallback"] == []
+    assert info["usage"]["masks_reinserted"] == 3
+    # Every heading back, in its right place, with the layout restored.
+    assert out.startswith("The Rise of the Canal Towns\n\n")
+    assert "\n\nOverview\n\n" in out
+    assert "\n\nThe Decline\n\n" in out
+    assert info["structure_kept"] is True
+
+
+def test_reinsertion_stays_out_when_paragraphs_also_merged(monkeypatch):
+    # Conservative on purpose: if the model deleted a placeholder AND merged
+    # prose paragraphs, the arithmetic no longer proves where anything goes,
+    # so the repair declines and the retry/fallback path decides.
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+
+    def deletes_and_merges(chunk, attempt=0, missing=None, usage_out=None):
+        out = re.sub(r"\[\[\d+\]\]\n*", "", chunk).strip()
+        out = out.replace("closures.\n\n", "closures. ", 1)   # merge two paras
+        return out, {}
+
+    # The repair declines, the informed retry fails the same way, the chunk
+    # falls back to the customer's own text — and on a one-chunk document
+    # that is past the threshold, so the job fails, which refunds (D3).
+    with pytest.raises(FreezeRestoreFailed):
+        rewrite_long(HEADED_DOC, deletes_and_merges)
+
+
+def test_reinsertion_never_places_an_inline_mask(monkeypatch):
+    # An inline quotation mask that vanishes has no recoverable position —
+    # its paragraph was rewritten around it. The repair must decline and the
+    # fallback must fire exactly as before.
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+    doc = (
+        "The historian wrote that the settlement was "
+        '"an accident of weather and paperwork rather than of policy" '
+        "and the archive bears him out across every season on record."
+    )
+    with pytest.raises(FreezeRestoreFailed):
+        rewrite_long(doc, _mask_dropper)
