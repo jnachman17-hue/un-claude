@@ -26,6 +26,16 @@ import { rateLimit } from './rate-limit';
  * grant twice is therefore harmless, which is what lets ensureGrants run on
  * every request without bookkeeping.
  *
+ * AND ONCE PER INBOX AS WELL AS ONCE PER ACCOUNT, which is a different
+ * guarantee and needed a different home. Both free grants are claimed through
+ * `claim_grant`, which records the claim in `grant_claims` — a table with no
+ * link to any account, holding a hash of the address rather than the address.
+ * The reason is that the old guard lived on the ledger, and deleting an
+ * account cascades its ledger rows away: the guard was deleted along with the
+ * thing it was guarding against, so one address could delete and re-register
+ * for five more credits without limit. f1-audit.md finding 0c, and
+ * 20260823120100_grant_claims_survive_deletion.sql.
+ *
  * PRICING (04 entry 67, amounts revised by entry 97): one credit buys 1,000
  * words, a file with no prose is one flat credit, every job rounds up.
  */
@@ -203,6 +213,63 @@ async function grantOnce(
 }
 
 /**
+ * Claim a free grant for this account, ONCE PER EMAIL INBOX rather than once
+ * per account.
+ *
+ * WHY THIS IS AN RPC AND NOT TWO STATEMENTS HERE. The claim and the payment
+ * have to be one indivisible step, for the same reason `spend` lives in
+ * `spend_credits`: done from here they are two round trips with a gap in the
+ * middle, and a failure in that gap either pays twice or marks a grant that
+ * was never paid.
+ *
+ * An account with no usable address — an anonymous browser account — has no
+ * inbox to key on, and the database falls back to the per-account guard alone.
+ * That is deliberate: the welcome grant for a signed-out visitor is capped by
+ * the per-IP limit above and by Turnstile, not by an address nobody gave.
+ */
+async function claimGrant(
+  accountId: string,
+  email: string | null,
+  reason: 'anon_grant' | 'signup_grant',
+  credits: number,
+): Promise<void> {
+  const { error } = await admin().rpc('claim_grant', {
+    target_account: accountId,
+    raw_email: email,
+    grant_reason: reason,
+    credits,
+  });
+
+  if (!error) return;
+
+  // The migration has not been run yet. Fall back to the pre-migration shape
+  // rather than denying a real person their credits — but say loudly what is
+  // still open, because the hole this closes spends money with nothing
+  // counting.
+  if (isMissingFunction(error.code)) {
+    console.warn(
+      'claim_grant is missing — run migration ' +
+        '20260823120100_grant_claims_survive_deletion.sql. Granting through the ' +
+        'ledger-only guard for now, WHICH IS DELETED WITH THE ACCOUNT: one ' +
+        'address can delete and re-register for free credits until it lands.',
+    );
+
+    await grantOnce(
+      accountId,
+      credits,
+      reason,
+      reason === 'signup_grant'
+        ? { grant_email: normalizeEmail(email) }
+        : undefined,
+    );
+
+    return;
+  }
+
+  throw new Error(`claim_grant ${reason} failed: ${error.message}`);
+}
+
+/**
  * Make sure this account holds every grant it is entitled to. Safe to call on
  * every request. An anonymous account gets the welcome; a real account gets
  * the welcome AND the signup grant, which keeps the two arrival paths equal:
@@ -281,17 +348,23 @@ export async function ensureGrants(user: {
         );
       }
     } else {
-      await grantOnce(user.id, WELCOME_CREDITS, 'anon_grant');
+      /*
+       * A REAL ACCOUNT'S WELCOME GRANT IS KEYED TO ITS INBOX TOO, and that is
+       * new. The per-IP cap above applies only to anonymous accounts, so
+       * before this the 2-credit welcome could be collected again every time
+       * somebody deleted their account and registered the same address —
+       * f1-audit.md finding 0c named the 3-credit signup grant, but closing
+       * only that one would have left this half open.
+       */
+      await claimGrant(user.id, user.email ?? null, 'anon_grant', WELCOME_CREDITS);
     }
   }
 
   if (!user.isAnonymous) {
-    // grant_email makes the signup grant once-per-inbox, closing the
-    // plus-address vector (finding 1). Null email falls back to the existing
-    // per-account guard alone.
-    await grantOnce(user.id, SIGNUP_CREDITS, 'signup_grant', {
-      grant_email: normalizeEmail(user.email),
-    });
+    // Once per inbox, in a record that survives the account being deleted.
+    // This ALSO closes the plus-address vector (security-audit finding 1),
+    // because the hash is taken of the normalised address.
+    await claimGrant(user.id, user.email ?? null, 'signup_grant', SIGNUP_CREDITS);
   }
 }
 
@@ -305,26 +378,122 @@ export async function spend(
   amount: number,
   job: { endpoint: string; inputKind: string; wordsIn: number },
 ): Promise<
-  | { ok: true; balance: number }
+  | { ok: true; balance: number; ledgerId: number | null }
   | { ok: false; needed: number; have: number }
 > {
-  const { data, error } = await admin().rpc('spend_credits', {
+  const args = {
     target_account: accountId,
     amount,
     job_endpoint: job.endpoint,
     job_input_kind: job.inputKind,
     job_words_in: job.wordsIn,
-  });
+  };
 
-  if (error) {
-    if (error.message.includes('insufficient_credits')) {
-      return { ok: false, needed: amount, have: await getBalance(accountId) };
-    }
+  /*
+   * `spend_credits_for_job` is `spend_credits` plus the id of the row it wrote,
+   * which is the only reliable way to attach the cost of the run to the right
+   * ledger row afterwards. Reading back "the newest spend for this account"
+   * would lose a figure whenever two of one account's jobs finish together, and
+   * six simultaneous jobs at one account is a case the audit ran and passed.
+   */
+  const { data, error } = await admin().rpc('spend_credits_for_job', args);
 
-    throw new Error(`spend_credits failed: ${error.message}`);
+  if (!error) {
+    const row = Array.isArray(data) ? data[0] : data;
+
+    return {
+      ok: true,
+      balance: (row?.new_balance as number) ?? 0,
+      ledgerId: (row?.ledger_id as number) ?? null,
+    };
   }
 
-  return { ok: true, balance: (data as number) ?? 0 };
+  if (error.message.includes('insufficient_credits')) {
+    return { ok: false, needed: amount, have: await getBalance(accountId) };
+  }
+
+  /*
+   * The migration has not been run. Spend through the original function, which
+   * is unchanged and still correct — the only thing lost is the cost record,
+   * and losing a bookkeeping figure must never stop somebody's job.
+   */
+  if (isMissingFunction(error.code)) {
+    const { data: balance, error: fallbackError } = await admin().rpc(
+      'spend_credits',
+      args,
+    );
+
+    if (fallbackError) {
+      if (fallbackError.message.includes('insufficient_credits')) {
+        return { ok: false, needed: amount, have: await getBalance(accountId) };
+      }
+
+      throw new Error(`spend_credits failed: ${fallbackError.message}`);
+    }
+
+    return { ok: true, balance: (balance as number) ?? 0, ledgerId: null };
+  }
+
+  throw new Error(`spend_credits_for_job failed: ${error.message}`);
+}
+
+/**
+ * Write down what a run actually cost us.
+ *
+ * WHY THIS EXISTS AT ALL. The privacy policy tells every customer that their
+ * credit history records "what the run cost us to perform", and until this
+ * landed nothing wrote it — the column was on the ledger, the ledger refuses
+ * every UPDATE, and the cost is not known until after the credit has been
+ * spent. So the figure had nowhere it could go. See
+ * 20260823120300_record_run_cost.sql.
+ *
+ * NEVER THROWS. A missing cost figure is a missing cost figure. It must not
+ * turn a finished piece of work the customer is waiting on into a failure.
+ */
+export async function recordRunCost(
+  ledgerId: number,
+  result: {
+    report?: {
+      layer_b?: {
+        usage?: {
+          model_calls?: number;
+          retries?: number;
+          total_tokens?: number;
+          cost_usd?: number;
+        };
+      };
+    };
+    usage?: { seconds?: number };
+  },
+): Promise<void> {
+  try {
+    const layerB = result.report?.layer_b;
+    const usage = layerB?.usage;
+
+    const { error } = await admin().from('run_costs').insert({
+      ledger_id: ledgerId,
+      model_calls: usage?.model_calls ?? null,
+      retries: usage?.retries ?? null,
+      total_tokens: usage?.total_tokens ?? null,
+      // A run with no rewrite makes no model call and costs nothing. Zero is
+      // written rather than left null, so a free run can be told from a figure
+      // that went missing.
+      cost_usd: usage?.cost_usd ?? (layerB ? null : 0),
+      seconds: result.usage?.seconds ?? null,
+      layer_b: !!layerB,
+    });
+
+    if (error && error.code !== UNIQUE_VIOLATION) {
+      console.warn(
+        `run cost not recorded for ledger row ${ledgerId}: ${error.message}`,
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `run cost not recorded for ledger row ${ledgerId}: ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 /**

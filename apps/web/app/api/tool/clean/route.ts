@@ -40,6 +40,7 @@ import {
   devBypass,
   ensureGrants,
   hasConverted,
+  recordRunCost,
   refund,
   spend,
 } from '~/lib/server/credits';
@@ -172,6 +173,8 @@ export async function POST(request: Request) {
 
   let charged = 0;
   let balance: number | null = null;
+  /** The ledger row this job's credit came off, so its cost can be attached. */
+  let ledgerId: number | null = null;
 
   if (!bypass) {
     if (!user) {
@@ -306,6 +309,7 @@ export async function POST(request: Request) {
 
     charged = cost;
     balance = spent.balance;
+    ledgerId = spent.ledgerId;
   }
 
   const result = await clean(
@@ -321,6 +325,20 @@ export async function POST(request: Request) {
     }
 
     return Response.json(result, { status: 400 });
+  }
+
+  /*
+   * WHAT THIS RUN COST US, written down beside the credit it charged.
+   *
+   * The privacy policy tells every customer their credit history records "what
+   * the run cost us to perform", and until 23 August 2026 nothing wrote it: the
+   * column was on the ledger, the ledger refuses every UPDATE, and the cost is
+   * not known until after the credit has been spent. f1-audit.md finding Q.
+   *
+   * It never throws and it never fails the request — see recordRunCost.
+   */
+  if (ledgerId !== null) {
+    await recordRunCost(ledgerId, result);
   }
 
   /**

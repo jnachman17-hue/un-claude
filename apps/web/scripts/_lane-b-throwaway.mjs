@@ -51,8 +51,8 @@ export const RUN = `${Date.now().toString(36)}`;
  * Create a confirmed throwaway account. `tag` becomes part of the address so
  * the ledger reads legibly while the test is running.
  */
-export async function throwaway(tag) {
-  const email = `${THROWAWAY_PREFIX}${tag}-${RUN}@un-claude.com`;
+export async function throwaway(tag, fixedEmail) {
+  const email = fixedEmail ?? `${THROWAWAY_PREFIX}${tag}-${RUN}@un-claude.com`;
 
   const { data, error } = await db.auth.admin.createUser({
     email,
@@ -83,6 +83,42 @@ export async function destroy(account) {
   const { error } = await db.auth.admin.deleteUser(account.id);
 
   if (error) throw new Error(`could not delete ${account.email}: ${error.message}`);
+}
+
+/**
+ * Remove the grant-claim rows a throwaway address left behind.
+ *
+ * `grant_claims` is DELIBERATELY not cascaded by account deletion — that is the
+ * whole point of it, and the fix for f1-audit.md finding 0c. So a test that
+ * creates throwaway addresses has to clear its own, or it leaves litter in a
+ * table nothing else ever cleans. Refuses any address outside the lane prefix,
+ * and does nothing at all before the migration that creates the table.
+ */
+export async function forgetGrantClaims(email) {
+  if (!email?.startsWith(THROWAWAY_PREFIX)) {
+    throw new Error(`forgetGrantClaims() refused: "${email}" is not a lane-B throwaway address.`);
+  }
+
+  const { data: hash, error: hashError } = await db.rpc('email_grant_hash', { raw: email });
+
+  if (hashError) return null; // the migration has not been applied yet
+
+  const { error } = await db.from('grant_claims').delete().eq('email_hash', hash);
+
+  return error ? null : hash;
+}
+
+/** Insert a ledger row, treating "already there" as success. */
+export async function ledgerRowIfMissing(accountId, row) {
+  const { error } = await db
+    .from('credit_ledger')
+    .insert({ account_id: accountId, ...row });
+
+  if (error && error.code !== '23505') {
+    throw new Error(`ledger insert failed: ${error.message}`);
+  }
+
+  return !error;
 }
 
 /** Put a ledger row on a throwaway account, in the shape the real path uses. */
