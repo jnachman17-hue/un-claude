@@ -5254,3 +5254,147 @@ holds 862 tokens and $0.000096.
 
 **`chunks`, `attempts` and `retries` stay on purpose.** They count work rather
 than money and the interface's own behaviour already implies them.
+
+---
+
+## 24 August 2026. Lane A, session E-9: the freeze
+
+### 136. When the freeze fails, the chunk is handed back unrewritten — and the refund has a threshold. Changes entry 22.
+
+**Jon's ruling (D3, 23 August), now implemented, with the one number the
+ruling left to the implementer.** Entry 22 says a failed rewrite refunds.
+The freeze adds a failure mode entry 22 never met: the masking that protects
+a quotation can fail to restore in ONE chunk while every other chunk's
+rewrite is perfect. Refunding the whole job over that would hand a customer
+nine tenths of a rewritten document and their money back — and anyone who
+can trip the freeze on purpose gets the work free, the same shape as the
+mintable-credits hole Lane B closed.
+
+**What happens now, in order:**
+
+- A chunk whose restored output cannot be verified — every protected span
+  back, character for character — retries **once** (Lane A's rule: every new
+  retry is bounded at one), then **falls back to that chunk's own original
+  text**. The customer gets their own words, never a mask token, never a
+  corrupted span. The report says so plainly (`layer_b.freeze`).
+- **At or below the threshold: no refund.** The customer received the bulk
+  of the rewrite plus the two provable layers, and the report explains
+  exactly which part came back untouched and why.
+- **Past the threshold: the job fails, which refunds** — entry 22's rule
+  takes back over, because past that point "delivered" stops being honest.
+
+**The threshold is one third of the document's words** (`UC_FREEZE_REFUND_SHARE`,
+default 1/3), measured over the chunks that fell back. Why a third:
+
+- Below it, the customer demonstrably got most of a rewrite — at worst two
+  thirds rewritten — plus layers A and metadata, which are the layers this
+  product can prove.
+- Above it, calling the result a delivered rewrite stretches honesty past
+  what section 4 permits.
+- And it is the abuse-resistant direction: a customer engineering a refund
+  must sabotage **more than a third of their own document**, and what they
+  keep free is a document at most two-thirds rewritten — the least
+  attractive free good this product can offer.
+
+A single-chunk document whose only chunk falls back is 100% failed, past any
+threshold, so it refunds — correct, because that customer received no
+rewrite at all.
+
+---
+
+## 24 August 2026. Email and analytics session
+
+### 139. The customer-facing address is `support@un-claude.com`. Supersedes entries 104 and 118's `unclaudeapp@gmail.com`.
+
+**The address forwards to Jon's inbox and was confirmed working end to end
+before this change was made** — MX propagated, SPF live, a real message
+delivered. That confirmation is the whole reason the change is safe: an
+address on a refund promise that bounces is worse than a Gmail address on a
+refund promise that works.
+
+**Why it was worth changing at all.** Every place the old address appeared is
+a place where a customer is already unsure: a payment whose credits have not
+arrived, a refund request, a privacy question, a contact form. A gmail.com
+address on those pages reads as a person's side project, and
+`docs/session-notes/legal-research.md` had already flagged it as "serviceable
+but not a" business address. The domain address costs nothing and answers the
+doubt.
+
+**Changed in five places, all four of them customer-facing:**
+
+| File | What it is |
+|---|---|
+| `app/home/_components/purchase-banner.tsx` | The "your credits have not arrived" fallback, after a paid checkout |
+| `app/(marketing)/_components/contact-form.tsx` | `CONTACT_EMAIL` — the mailto target and the visible address beside the button |
+| `app/(marketing)/pricing/page.tsx` | The refund FAQ, entry 115's second home for the refund |
+| `app/(marketing)/(legal)/_components/legal.tsx` | The `Mail` component: one mailto and one visible label, used by every legal page |
+
+**Stripe still shows the old address on receipts and is deliberately not
+touched here.** It is a dashboard setting under Settings → Business →
+Public details, not code, and changing it is Jon's to do. Until he does, a
+receipt says `unclaudeapp@gmail.com` and the site says `support@un-claude.com`.
+Both reach him, so nothing is broken, but they should match.
+
+**The old address is left standing in `docs/`.** Those are records of what was
+decided when, and rewriting them would make the history lie. This entry is the
+change; the older entries stay as they were written.
+
+### 140. The funnel is instrumented to the money, and it stops at counts rather than buying a consent banner
+
+**The gap this closes.** `events.ts` instrumented fifteen events on 19 August
+and followed a visitor all the way to the paywall. Stripe went live on the
+22nd and nothing was added, so **the button that takes money sent no analytics
+at all.** The one question this product exists to answer — of the people who
+run out of credits, how many actually buy — could not be answered.
+
+**Five events, not the three the brief named.** `checkout_started`,
+`checkout_failed` and `purchase_completed` were asked for. Two more were added
+because the answer is wrong without them:
+
+- **`checkout_account_required`.** 401 and 402 are the ordinary outcome for
+  anyone who reaches /pricing before making an account, which is most people.
+  Recorded as a failure it would bury real breakage under normal traffic. Not
+  recorded at all, `checkout_started` would look like it leaks customers who
+  were in fact handed to the sign-up form on purpose.
+- **`purchase_cancelled`.** Without it every non-buyer looks alike, and the two
+  populations need opposite fixes: never reached Stripe is a broken button,
+  reached it and backed out is a price.
+
+**THE PRICE IS NEVER A PROPERTY.** `pricing-data.ts` decides what a pack costs
+and Stripe charges it. A browser sending a number about money is the boundary
+this product refuses to cross, and an analytics event is still a browser
+talking. The pack id goes; the price stays server-side. `pack_id` is also run
+through a fixed list of three before it is sent, the same guard as `fileType`,
+so a call site cannot push a free string out of that module by mistake.
+
+**NOTHING IDENTIFIES A PERSON, and the funnel is deliberately left broken
+rather than fixed by identifying one.** Four property names across the five
+events — `pack_id`, `reason`, `state`, `credits_ready` — eleven possible
+values, every one a fixed word or a boolean. No email, no name, no account id,
+no Stripe id, no amount, nothing from any document.
+
+The cost is real and is accepted: the buyer leaves for stripe.com and comes back
+through a fresh page load, so with `persistence: 'memory'` the visitor id is
+gone and **`checkout_started` and `purchase_completed` cannot be joined into one
+funnel.** They are read as counts beside each other instead. `posthog.identify()`
+would not close it — the anonymous id was already gone — and would add a person
+to the analytics record, which means a privacy policy change, a cookie policy
+change and a consent banner. **That trade is Jon's to make and it was not made
+here.** 06 has the row.
+
+**`analytics-provider.tsx` was not touched**, so the cookieless configuration is
+unchanged and the two policies do not move with this commit. That was the
+condition on this work and it holds.
+
+**`purchase_completed` fires on arrival, not on the credits landing**, because
+Stripe only redirects to the success return once the card has cleared. Waiting
+for the credits would turn a purchase count into a measurement of webhook
+latency and would drop every purchase whose webhook was slow — precisely the
+population worth knowing about. The race rides along as `credits_ready`
+instead, which is an operational alarm: false means a paying customer looked at
+their old balance.
+
+**A pack id is not sent with either purchase event**, because the wallet does
+not know it — the return URL carries `?purchase=success` and nothing else.
+Which pack sold is a Stripe question and Stripe answers it with the money
+attached, so the gap is not worth a schema change.

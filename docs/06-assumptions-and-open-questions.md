@@ -676,3 +676,119 @@ not reach this route, and the next step is `waitUntil` from `@vercel/functions`,
 **a new dependency and therefore Jon's call.**
 
 **Trigger for revisiting.** The next deploy.
+
+---
+
+## The freeze's interface half is owed, and the wording is already fixed
+
+**Raised 24 August 2026, E-9 session.**
+
+The engine now returns everything D4 needs, before payment, on the free scan:
+`billing.freeze = {fraction, frozen_words, words, spans}`. **Nothing shows it
+yet.** The interface half is Lane C's (board W-10): the Continue/Cancel
+prompt, **whose wording is FIXED on the board** — it must not say
+"quotations" (the machine knows what it froze, not that it found a
+quotation) and must not say removal is reduced (unprovable in both
+directions, and by D2's reasoning the frozen spans carry little watermark).
+**Above 60% frozen, the prompt gets louder.** The rewrite's own report
+carries `layer_b.freeze`, including `chunks_fallback` with a plain-English
+`note` when the D3 hand-back fires — also unshown. Trigger: **Lane C's next
+session.** Wording through the messaging skill; the fixed D4 text is the
+floor, not a draft.
+
+---
+
+## Spans the freeze deliberately does not protect
+
+**Raised 24 August 2026, E-9 session.** D1 ships two tiers — structure
+(headings) and quotes (attributed quotations, block quotes, references) —
+and the freeze stops there on purpose. Left free, with the working position:
+
+- **`[sic]` markers** (W10: left on a substituted word 6–7 of 10). A claim
+  about somebody else's document, so discretion-free like a quote — but it
+  was not in the ruled tiers and every extra mask adds restore-failure
+  surface. Trigger: the report-only protection block showing `sic` damage
+  on real customers' documents.
+- **URLs, code, tables, equations** — E-3's chunk fixes removed their worst
+  failure modes (boundary deletion, torn fences), and addresses already
+  survive 858 of 860.
+- **Unattributed quotations** — D2, settled, not an open question; listed
+  only so nobody reads this row as an oversight.
+- **The narrowed attribution cue's residuals, accepted:** a journalist's
+  *«the minister said "…"»* stays free (narrative verb); epistolary
+  fiction's *«she wrote: "…"»* freezes wrongly. Both err the way D2 chose.
+  Trigger: real-customer protection reports contradicting the trade.
+
+---
+
+## Freeze behaviour past ~520 words is unmeasured
+
+**Raised 24 August 2026, E-9 session.** Live measurement ran to ~520 words
+and 2 chunks. W10's warning stands: a 10,464-word document is 34 chunks, and
+mask loss looks like a function of how many masks sit alone as whole
+paragraphs, not of document size — **do not assume the measured restore
+rate scales.** The D3 fallback bounds the damage (a lost mask costs one
+chunk, not the document), but the fallback RATE at scale is unknown.
+Trigger: E-8's ceiling re-measurement, which runs long documents anyway —
+add the freeze columns there.
+
+---
+
+## The post-purchase banner never reaches its give-up message
+
+**Raised 24 August 2026, email and analytics session. Measured, not
+inferred.** `purchase-banner.tsx` is meant to re-ask the server ten times over
+about fifteen seconds and then tell a buyer whose credits have not appeared to
+refresh and, failing that, to email support. **It asks once and then stops
+forever.** The buyer sits on *"Payment received. Adding your credits now…"*
+indefinitely.
+
+The retry is scheduled inside an effect whose dependency list is
+`[status, purchaseLanded, gaveUp, router]`. `router.refresh()` changes none of
+them, so the effect never re-runs and no second timer is ever scheduled. The
+file's own comment claims otherwise and is wrong about React.
+
+**Evidence:** driving `/dev/purchase?purchase=success&landed=0`, the network log
+shows the page load, exactly one `_rsc` refresh, and then nothing for over a
+minute, with the banner text unchanged.
+
+**Working position: leave it, and it is Jon's call.** The fix is small — the
+counter needs to be state rather than a ref, so React can see it change — but it
+alters behaviour on the live payment return path, this session was told not to
+deploy, and it cannot be rehearsed against a real Stripe webhook from here.
+
+**Why it is worth doing soon anyway:** it hides the support address at the exact
+moment a customer most needs it, and it now hides the only signal that
+`purchase_completed`'s `credits_ready: false` is firing for real people.
+
+**Trigger: the next session that owns `app/home/**` with permission to deploy.**
+
+---
+
+## The checkout funnel is cut in half by the cookieless setting, and no event can rejoin it
+
+**Raised 24 August 2026, email and analytics session.** `checkout_started`
+fires on /pricing. The buyer then leaves for stripe.com and returns through a
+fresh page load, and because persistence is `memory` the visitor id that fired
+it no longer exists. **`purchase_completed` therefore belongs to a stranger.**
+Both are trustworthy counts; neither is a funnel step the other can follow.
+
+Same wall as `signup_completed`, same reason, recorded in `07` under
+"Cookieless has an identity boundary".
+
+**Working position: read them as two numbers side by side, and build the funnel
+five steps deep rather than six.** A six-step funnel would show near-total
+abandonment at the last step, which is false and is exactly the kind of number
+somebody acts on. The walkthrough in `docs/session-notes/email-and-analytics.md`
+builds it the honest way.
+
+**`posthog.identify()` is NOT the fix and must not be reached for.** It would
+not work — the anonymous id was gone before the account was known — and it puts
+a real person into the analytics record, which changes the privacy policy, the
+cookie policy, and requires a consent banner. **That is a policy decision and it
+is Jon's.** It is written into the header of `lib/analytics/events.ts` so a
+future session does not adopt it as a quick fix.
+
+**Trigger: Jon deciding whether joined purchase attribution is worth a consent
+banner.** Until then, Stripe answers "how many purchases" with the money
+attached, which is the better source anyway.
