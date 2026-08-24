@@ -42,14 +42,28 @@ AI_PHRASE_PATTERNS: tuple[tuple[str, str, float], ...] = (
     (r"\bdelve(?:s|d)?\s+into\b", "delve into", 1.2),
     (r"\ba\s+testament\s+to\b", "a testament to", 1.1),
     (r"\brich\s+tapestry(?:\s+of)?\b", "rich tapestry", 1.3),
-    (r"\bplays?\s+a\s+(?:pivotal|crucial|vital|key)\s+role\b", "plays a pivotal/crucial role", 1.0),
+    # "key" and "vital" removed: both are standard academic writing and
+    # neither is in the label shown to the customer ("plays a key role" fired;
+    # "played a pivotal role" — the label's own past tense — did not). Wrong
+    # in both directions; now the tenses of the label's own words, only.
+    (r"\bplay(?:s|ed|ing)?\s+a\s+(?:pivotal|crucial)\s+role\b", "plays a pivotal/crucial role", 1.0),
+    # THE ADJECTIVE IS COMPULSORY. It used to be optional ((...)\s+)* — so the
+    # marker labelled "in today's fast-paced world/landscape" fired on the
+    # ordinary words "in the world", "in the era", "in the environment" and
+    # "in the landscape", moving a human paragraph from CLEAN to LOW on three
+    # ordinary words. Measured by Lane E, 23 August 2026. The label a customer
+    # is shown is a product claim; the pattern now matches only what the
+    # label describes.
     (
-        r"\bin\s+(?:today'?s|the)\s+(?:(?:fast-paced|ever-evolving|digital|rapidly\s+changing)\s+)*(?:world|landscape|era|environment)\b",
+        r"\bin\s+(?:today'?s|the)\s+(?:(?:fast-paced|ever-evolving|digital|rapidly\s+changing)\s+)+(?:world|landscape|era|environment)\b",
         "in today's fast-paced world/landscape",
         1.4,
     ),
+    # The "worth noting" branch was dead: it could only ever build "it is
+    # worth noting to note", which nobody writes. Removed — it never matched
+    # anything, so behaviour is unchanged.
     (
-        r"\bit\s+is\s+(?:important|essential|crucial|worth\s+noting)\s+to\s+(?:note|remember|consider|highlight)\b",
+        r"\bit\s+is\s+(?:important|essential|crucial)\s+to\s+(?:note|remember|consider|highlight)\b",
         "it is important/crucial to note",
         0.9,
     ),
@@ -58,8 +72,10 @@ AI_PHRASE_PATTERNS: tuple[tuple[str, str, float], ...] = (
         "not only ... but also serves to",
         0.8,
     ),
+    # "reminder" removed: "serves as a reminder" is ordinary English ("the
+    # scar serves as a reminder of the accident") and was never in the label.
     (
-        r"\bserve(?:s|d)?\s+as\s+a\s+(?:beacon|reminder|catalyst|cornerstone)\b",
+        r"\bserve(?:s|d)?\s+as\s+a\s+(?:beacon|catalyst|cornerstone)\b",
         "serves as a beacon/catalyst/cornerstone",
         1.1,
     ),
@@ -90,7 +106,10 @@ AI_PHRASE_PATTERNS: tuple[tuple[str, str, float], ...] = (
     (r"\bholistic\s+(?:approach|view|perspective)\b", "holistic approach/perspective", 0.9),
     (r"\bin\s+conclusion\b[,\s]", "in conclusion", 0.8),
     (r"\bto\s+summarize\b[,\s]", "to summarize", 0.8),
-    (r"\bultimately\b[,\s]", "ultimately,", 0.6),
+    # The label's comma means what it says: the word OPENING a sentence.
+    # It used to fire on the word anywhere ("The appeal ultimately failed"),
+    # which is ordinary English, not AI cadence.
+    (r"(?m)(?:^[^\S\n]*|(?<=[.!?] )|(?<=[.!?]\n))ultimately\s*,", "ultimately,", 0.6),
     (r"\bfurthermore\b[,\s]", "furthermore,", 0.6),
     (r"\bmoreover\b[,\s]", "moreover,", 0.6),
     (r"\bas\s+an\s+ai\b", "as an AI", 1.5),
