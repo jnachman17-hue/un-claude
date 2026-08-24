@@ -1927,3 +1927,77 @@ parameter — some return 400 on an unknown value, which burns the retry budget
 — so measure with it and without before concluding anything; and a bake-off
 that tests a reasoning-tagged model without this setting is testing the
 model's thinking budget, not its rewriting.
+
+---
+
+## The M-6 connection-drop test was never a file, and now it is
+
+**Learned the hard way, 24 August 2026, route session.** The board and
+`session-notes/lane-b-money.md` both say M-6 needs "one re-run of a script that
+already exists and costs nothing". **It did not exist.** There is no abort test
+in `apps/web/scripts/` and git has no record of one being deleted; it was a
+throwaway that died with the session that wrote it.
+
+**It is `scripts/verify-connection-drop-refund.mjs` now.** If a session note says
+"re-run the existing script", check that the file is actually in the tree before
+promising anyone it is one command away.
+
+## Exercising the paid route locally, with no gateway key and no model call
+
+**Route session, 24 August 2026.** Three lanes recorded that they could not
+exercise the tool locally at all. This is the setup that works. **Three
+processes, in this order:**
+
+```bash
+cd apps/web
+
+# 1. the stand-in for the AI Gateway. There is no WATERMARKS_REWRITE_API_KEY on
+#    this machine, and this answers in the gateway's own shape with the token
+#    counts and cost from a real production run.
+node scripts/_stand-in-gateway.mjs &
+
+# 2. the REAL Python engine, pointed at it
+WATERMARKS_REWRITE_BACKEND=openai-compatible \
+WATERMARKS_REWRITE_BASE_URL=http://127.0.0.1:8799 \
+WATERMARKS_REWRITE_API_KEY=stand-in-key \
+WATERMARKS_REWRITE_MODEL=stand-in/echo \
+WATERMARKS_REWRITE_ALLOW_REMOTE=1 \
+python3 engine/server.py --port 8765 &
+
+# 3. the site. .env.local already points UC_ENGINE_URL at 127.0.0.1:8765
+npx dotenv -e ./.env.local -- npx next dev -p 3200 &
+```
+
+**Then drive it with a real signed-in session**, not with the dev bypass — the
+bypass skips the credit path entirely, so no ledger row and no `run_costs` row
+are written and any test of the money path proves nothing:
+
+```bash
+node scripts/verify-cost-leak-closed.mjs
+node scripts/verify-cjk-refusal.mjs
+```
+
+**`scripts/_route-session-harness.mjs` holds the session plumbing.** It reuses
+lane B's throwaway machinery deliberately rather than re-writing it, because
+`destroy()` there refuses any address outside the `lane-b-money-` prefix and that
+guard is what stops a mistake reaching a customer. **`.env.local` points at the
+LIVE Supabase**, so the prefix is not decoration.
+
+**Two things that will confuse you if nobody says them:**
+
+- **`seconds` is null in every locally-written `run_costs` row.** It comes from
+  the top-level `usage` block that `api/clean.py` adds, and `engine/server.py`,
+  the dev server, does not add it. In production it is a real number.
+- **A dropped connection refunds correctly on a local dev server whether or not
+  `supportsCancellation` is set.** Node propagates the disconnect on its own.
+  **A local pass on the M-6 test therefore says nothing about Vercel.**
+
+## `oxfmt --check` already fails on `app/api/tool/clean/route.ts` at HEAD
+
+**Route session, 24 August 2026.** Do not "fix" it while editing that file. Every
+complaint is on pre-existing lines — `fail('bad_json', ...)` and two siblings
+that oxfmt wants split across three lines — so running the formatter produces a
+large diff that has nothing to do with the change being made. Checked by stashing
+the change and re-running: it fails at HEAD too. `oxlint` is clean on that file;
+the one lint error in `apps/web/scripts/` is a pre-existing unused variable in
+lane B's `verify-refund-attribution.mjs`.

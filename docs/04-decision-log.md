@@ -5166,3 +5166,91 @@ than dropped.
 100% above a panel saying three things could not be removed was the real
 incoherence. A hero claiming 100% above a panel saying three formatting marks
 were left in place intentionally is one product with one voice.
+
+---
+
+## 24 August 2026. Route session
+
+### 136. Chinese, Japanese and Thai are refused, not priced
+
+**Jon's ruling, given in the route session brief, and the reasoning is his.**
+
+**The fact underneath it.** Every price in this product comes from a word count
+that counts spaces, and these three scripts do not put spaces between words.
+Measured:
+
+```
+200k-character Chinese document    chars  201400  words      1  credits billed    1
+comparable English document        chars  102700  words  20800  credits billed   21
+```
+
+**The options were price it or refuse it, and Jon chose refuse.** His reasoning:
+refusing **closes the hole completely** with no pricing arithmetic, no change to
+the 10,000-word ceiling, and **no counter in the browser that then has to be kept
+in step with the server.** Two implementations of one number is the trap this
+project has been bitten by three times, and pricing CJK would have needed exactly
+that — the workbench's own counter changed in the same deploy or the price shown
+would not be the price charged.
+
+**This ANSWERS the open question Lane A raised in `06` the same day** ("the
+honest word count is built, and wiring it to the customer is one coupled pricing
+decision"). Lane A's recommendation was to wire `uc_wordcount.count_words` into
+billing, the gate and the floor in one change. **Jon's ruling supersedes it for
+now:** the engine-internal counter stays, and the customer-facing answer is a
+refusal rather than a price.
+
+**One fact that arrived after the ruling and does not change it.** The rewrite is
+*not* currently running on these documents at all — one space-counted word is
+under the engine's 16-word floor, so it is silently skipped. So today the defect
+is **the customer paying a credit for a rewrite that never runs**, and our
+model-call exposure is latent rather than live. It becomes real the moment anyone
+wires the honest counter into that floor. **Refusing fixes the live defect and
+pre-closes the latent one, so the ruling holds either way.**
+
+**What it cost, said plainly.** The workbench asks for the rewrite automatically
+on anything carrying prose, so a Chinese document can no longer be sanitised
+through the site at all, not even for its layer A characters. The free scan still
+shows the visitor what is hidden. Changing that would be a different ruling and
+would need the browser to ask for the layers separately.
+
+### 137. The threshold is a share of letters, not "contains any"
+
+**Decided in the route session, because a ruling to refuse a script still has to
+say what counts as that script.**
+
+**"Contains any" would refuse an English essay that quotes Chinese**, which is a
+real customer with a real document and no billing problem at all. So the test is:
+**at least 20 characters from a spaceless script, AND at least 20% of all the
+letters in the document.**
+
+**Why a fifth.** Below it, the document is English with something quoted inside
+it and the English around the quotation is still being counted and charged for
+honestly. Above it, it is not an English document and there is no honest price.
+Measured: an essay carrying **forty separate Chinese quotations, 360 characters,
+still goes through** at 14.8%.
+
+**Korean is deliberately excluded and is the control.** It is an Asian script
+that does put spaces between its words, so it counts and prices correctly.
+Refusing it would turn away a paying customer for nothing. Verified: 0.0% share,
+accepted, charged 1 credit for 71 words.
+
+### 138. Our unit economics are stripped in the route, after the cost writer and before the response
+
+**Lane A's E-12. The four lines are trivial and the position is the entire
+decision, so it is recorded rather than left in a comment.**
+
+**`recordRunCost` reads the token counts and `cost_usd` out of
+`report.layer_b.usage`, server side, and its row is what makes the privacy
+policy's promise to record "what the run cost us" a true sentence.** Stripping
+those figures anywhere earlier — higher in the route, or in the Python engine
+where Lane A first wanted to put it — feeds the writer nulls and the promise
+quietly becomes a lie again.
+
+**So there is exactly one correct place: after that call, before
+`Response.json`.** Proved in both directions in
+`session-notes/route-session.md`: the browser's copy now carries `chunks`,
+`attempts` and `retries` only, and the `run_costs` row for the same run still
+holds 862 tokens and $0.000096.
+
+**`chunks`, `attempts` and `retries` stay on purpose.** They count work rather
+than money and the interface's own behaviour already implies them.

@@ -572,7 +572,12 @@ whichever is first.
 
 ## Chinese, Japanese and Thai: the honest word count is built, and wiring it to the customer is one coupled pricing decision
 
-**Raised 24 August 2026, Lane A. Open, and it is Jon's.**
+**Raised 24 August 2026, Lane A. CLOSED THE SAME DAY BY JON — see `04` entry
+136. He ruled REFUSE these scripts rather than price them**, because refusing
+closes the hole with no pricing arithmetic, no change to the word ceiling, and
+no browser counter to keep in step. Shipped and verified in the route session.
+**Everything below is the analysis that led to the ruling, kept because it is
+still the right description of the mechanism.**
 
 **The fact.** Every word count in the product is `len(text.split())`, which
 counts spaces, and these three scripts do not put spaces between words. So a
@@ -603,3 +608,71 @@ receipt would mislead in both directions until it is script-aware.
 
 **Trigger for revisiting.** Jon ruling on it, or the first CJK support request
 from a real customer, whichever is first.
+
+---
+
+## Lao, Khmer, Burmese and Tibetan have exactly the CJK billing hole and are not closed
+
+**Raised 24 August 2026, route session. Open, and it is small.**
+
+**The fact.** Jon's ruling (`04` entry 136) refuses Chinese, Japanese and Thai
+because they are written without spaces between words and every price here comes
+from a word count that counts spaces. **Lao, Khmer, Burmese and Tibetan are
+written the same way and have the identical hole.** A document in any of them
+counts as roughly one word, bills one credit, and passes the 10,000-word ceiling
+at any size.
+
+**Why they were not included.** The ruling named three scripts. The reasoning
+behind it — refuse what cannot be priced — plainly extends to these four, but
+extending a ruling is not the same as following one, and refusing a script turns
+away a real customer. `CLAUDE.md` section 5.
+
+**Working position.** Leave them accepted. The exposure is small: these languages
+are a very small share of the traffic this product expects, and the same 16-word
+engine floor that currently skips the rewrite on Chinese skips it on these too,
+so no model call is made today either way.
+
+**The fix is one line.** `SPACELESS_LETTERS` in `app/api/tool/clean/route.ts`
+already reads as a list of script names; adding `\p{Script=Lao}`,
+`\p{Script=Khmer}`, `\p{Script=Myanmar}` and `\p{Script=Tibetan}` closes them on
+the same terms, with the same threshold and the same message — though the
+message names three languages and would need a fourth clause.
+
+**Trigger for revisiting.** Jon ruling on it, or anyone wiring an honest word
+counter into the engine's 16-word rewrite floor — **that change is what turns
+this from a latent hole into a live one**, for these scripts and for CJK alike.
+
+---
+
+## Does Vercel's cancellation switch reach an App Router route? Unanswered, and only a deploy answers it
+
+**Raised 24 August 2026, route session. This replaces the earlier M-6 row as the
+live version of the question.**
+
+**What changed.** `"app/api/tool/clean/route.ts": { "supportsCancellation": true }`
+is now in `apps/web/vercel.json`. **It is unproven and untestable from a
+laptop.**
+
+**What is now known that was not.** Lane B's second reason for not switching it
+on blind was "Vercel's own examples target `api/**` and `pages/api/**`". **Vercel
+documents App Router paths in a `functions` block** — the advanced-configuration
+page gives `"app/api/hello/route.ts": { "memory": 3009, "maxDuration": 60 }`
+verbatim. So the glob form reaches App Router routes for the two settings the
+docs demonstrate. **Whether `supportsCancellation` is honoured there is the open
+part.** The key itself is valid: Vercel's published schema lists it as a boolean,
+default false, and our `functions` block uses only allowed keys.
+
+**The risk to name before deploying.** If the Next builder does not recognise
+that path as a function, the **build fails** with "the pattern defined in
+`functions` doesn't match any Serverless Functions". This could not be ruled out
+locally: `.vercel` is not linked in this repo and linking authenticates against
+the live project.
+
+**Working position.** Deploy from a quiet tree, watch the build, then run
+`UC_SITE=https://un-claude.com node scripts/verify-connection-drop-refund.mjs` —
+a 250,000-word layer-A-only job, so no model call and no cost. **A refund row
+means M-6 is closed with no new dependency.** No refund row means the switch does
+not reach this route, and the next step is `waitUntil` from `@vercel/functions`,
+**a new dependency and therefore Jon's call.**
+
+**Trigger for revisiting.** The next deploy.

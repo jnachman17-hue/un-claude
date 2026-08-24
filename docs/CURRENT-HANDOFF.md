@@ -1,5 +1,70 @@
 # Un-Claude: Current Handoff
 
+**NOT REWRITTEN, PREPENDED — and that is deliberate.** `CLAUDE.md` section 6 says
+this file is rewritten at session end. **Three peer sessions were running while
+the route session worked and one of them was mid-edit in the engine**, so a
+wholesale rewrite would have thrown away resumption context that is not mine.
+The route session's block is below; everything under it is the state the other
+lanes left.
+
+---
+
+# 24 AUGUST 2026, ROUTE SESSION: three items done, one waiting on Jon's deploy
+
+**Full evidence in `session-notes/route-session.md`.** One commit, local, nothing
+pushed and nothing deployed.
+
+| Item | State |
+|---|---|
+| **The cost leak (E-12)** | **DONE AND PROVED BOTH WAYS.** The browser no longer receives `cost_usd` or any token count; the `run_costs` row for the same run still holds 862 tokens and $0.000096. The strip sits after `recordRunCost` and before the response, which is the whole fix |
+| **CJK refused** | **DONE AND PROVED.** Chinese, Japanese and Thai refused above every line that touches credits, so nothing is charged. An English essay quoting Chinese goes through at 2%. Korean is the control and is not refused. `04` entries 136 and 137 |
+| **The borrowed note** | **DONE.** One string in `engine/text_unicode.py`, in our voice, verified out of the real engine |
+| **M-6, cancellation** | **WRITTEN, UNPROVEN. NEEDS JON.** See below |
+
+## ★ WHAT JON DOES NEXT, IN THIS ORDER
+
+1. **DO NOT DEPLOY FROM THIS TREE YET.** Another session was mid-flight in
+   `apps/web/engine/uc_spans.py` (E-9 freeze work) as the route session
+   finished. **A deploy now ships someone else's half-finished work.** This is
+   the same "waits for a quiet tree" block the board records for M-6; the tree
+   was clean at the start of the route session and stopped being quiet during it.
+2. **Then deploy, and watch the build.** `vercel.json` now carries
+   `"app/api/tool/clean/route.ts": { "supportsCancellation": true }`. If the
+   build fails with *"the pattern defined in `functions` doesn't match any
+   Serverless Functions"*, **the switch does not reach an App Router route — take
+   the two lines out, and that is the answer.** It could not be checked locally:
+   `.vercel` is not linked and linking authenticates against the live project.
+3. **Then run one free test:**
+   `UC_SITE=https://un-claude.com node scripts/verify-connection-drop-refund.mjs`
+   — a 250,000-word layer-A-only job, so no model call and no cost. **A refund
+   row means M-6 is closed with no new dependency.**
+4. **If no refund row, stop.** The next step is `waitUntil` from
+   `@vercel/functions`, a new dependency, and that is yours.
+
+## Two things the route session found that were not in its brief
+
+- **The M-6 test never existed as a file.** The board and lane B both describe
+  re-running "a script that already exists"; there was none. It is written now:
+  `scripts/verify-connection-drop-refund.mjs`. `07`.
+- **The CJK hole currently costs the CUSTOMER, not us.** A Chinese document
+  counts as one space-counted word, which is under the engine's 16-word rewrite
+  floor, so the rewrite is *silently skipped* and the customer pays a credit for
+  nothing. Our model-call exposure is latent and **becomes real the moment
+  anyone wires an honest word counter into that floor.** `04` entry 136.
+
+## Still open from this session
+
+- **Lao, Khmer, Burmese and Tibetan have the identical billing hole** and are one
+  line from being closed. Jon's ruling named three scripts, so three is what
+  shipped. `06`.
+- **A Chinese document can no longer be sanitised through the site at all**, not
+  even for its layer A characters, because the workbench asks for the rewrite
+  automatically on anything carrying prose. That follows from the ruling rather
+  than from a bug. The free scan still works and still finds hidden characters in
+  Chinese text, proved. Changing it needs a different ruling and Lane C's file.
+
+---
+
 ---
 
 # 24 AUGUST 2026, LANE A: ALL SIX STEPS DONE. NOT DEPLOYED.
