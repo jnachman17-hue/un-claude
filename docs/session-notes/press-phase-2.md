@@ -148,6 +148,11 @@ two and the rest of the education names are not.
 
 ## 3. The upstream disclosure. Options, and my recommendation
 
+> **OVERRULED 24 AUGUST. Jon ruled: NO public attribution.** The reasoning in this
+> section is kept because it is sound and the facts in it are correct, but **the
+> recommendation is not what shipped.** `COWORK-3` carries the ruling and what it
+> means for the drafts. Do not act on this section.
+
 **This is Jon's decision. The brief says so and I am not making it.**
 
 **One fact reframes it.** `PROVENANCE.md` already says, in the repository:
@@ -187,6 +192,20 @@ anything" is both untrue and unhelpful. The `uc_` files are real work.
 ---
 
 ## 4. Send timing. Draft now, send later, and here is the specific gate
+
+> **GATE STATUS, 24 AUGUST — checked by the conductor, not assumed:**
+> **CLOSED:** Finding 0, the old free copies — **all six deployment URLs now
+> return 401**, Deployment Protection is on. · **C-2** "upload a file and get all
+> three" — Lane D fixed it in three places. · **E-1** the repair pass — shipped by
+> Lane A at median +0.0000 trigram cost. · **The upstream credit** — removed from
+> the gate by the ruling above.
+> **STILL OPEN:** **C-1**, the three failing "enforced rather than promised"
+> promises. · **C-3**, the three-word ceiling whose receipt printed 6. Both were
+> deliberately held back from Lane D because they cannot be written honestly until
+> the engine enforces them, and **E-9 is running now.**
+> **ALSO NOTE:** Jon ruled the hero keeps "100% of detectable marks removed" (`04`
+> entries 134–135) — the *panel* beneath it was the incoherent half and it changed
+> instead. **That line is settled and is not a gate item.**
 
 **I agree with the conductor's recommendation and Jon should accept it.** Drafting
 costs nothing to hold. Sending into the current state costs the news window and the

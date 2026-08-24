@@ -70,13 +70,39 @@ Guillaume Meyer. The licence is satisfied. **Ax Sharma named that project in pri
 on 13 August and quoted Meyer being candid about its limits**, so the reporter most
 likely to cover this already has the lineage in his notes.
 
-**JON'S DECISION, PASTE IT HERE BEFORE STARTING:**
+**JON'S DECISION — RULED 24 AUGUST. DO NOT REOPEN.**
 
-> ______________________________________________________________________
+> **NO PUBLIC ATTRIBUTION.** The MIT licence permits commercial use and requires
+> only that the copyright notice be kept, and `UPSTREAM-LICENSE` keeps it. A
+> visible website credit is not required and Jon has ruled against volunteering
+> one. `04` and `IMPLEMENTATION-BOARD.md` record it.
 
-**If the decision is to disclose** (the Phase 2 recommendation): the Ax Sharma email
-leads with it, in Jon's own words, before the pitch. The other eight do not need to
-raise it, but **no email may imply the engine was built from nothing.**
+**WHAT THAT MEANS FOR THE DRAFTS — read all four:**
+
+1. **No email raises the upstream.** Not as a disclosure, not as a hedge, not in
+   passing. Phase 2's section 3 recommended disclosing; **that recommendation is
+   overruled and this brief governs.**
+2. **No email may imply the engine was built from nothing.** That is not a
+   disclosure requirement, it is an accuracy one. **Never write "we built",
+   "our engine from scratch", "I wrote", or anything that would be a false
+   statement to a reporter's face.** Write about what the product *does*, and
+   about the production work — chunking, guards, the repair pass, the size
+   ceiling — which is genuinely Jon's and is what makes it survive real
+   documents. **All of that is true and none of it needs a comparison.**
+3. **If a journalist asks, Jon answers honestly.** He is not hiding it — the
+   licence is satisfied and the notice is intact. **The drafts simply do not
+   volunteer it.** Do not write a prepared denial or a deflection; if a reply
+   comes back asking, that is Jon's to answer in his own words.
+4. **THE SHARMA SEQUENCING NOW CUTS THE OTHER WAY — flag this to Jon rather
+   than resolving it.** Phase 2 gave Sharma the exclusive partly *because* the
+   disclosure would land best with him first. **With no disclosure, he is the
+   one reporter who already has the lineage in his notes and no reason not to
+   use it.** So the exclusive going to him is now arguably the highest-risk
+   placement rather than the safest. **Put both readings to Jon with a
+   recommendation and let him choose. Do not silently re-rank the list.**
+
+*(The "if the decision is to disclose" branch that stood here is void — the
+decision is above.)*
 
 **If the decision is not to disclose:** no email mentions it, and Jon needs a
 prepared answer for the interview, because it will be asked.
