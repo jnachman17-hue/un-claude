@@ -2,6 +2,27 @@
 
 ---
 
+# 24 AUGUST 2026, LANE B: THE FOUR MIGRATIONS ARE APPLIED
+
+**Jon ran all four. Every one succeeded, and the proofs pass.** Direction one of
+the refund bug now removes nothing and records a $4.99 loss instead of
+confiscating a second purchase; one address collects 5 free credits instead of
+15; a new wallet reads 3 instead of 0. Output in `session-notes/lane-b-money.md`.
+
+**Three things are still outstanding:**
+
+| | |
+|---|---|
+| **1. A deploy** | Half of M‑2, all of M‑4's writer, and all of M‑6 live in code that is not on un-claude.com. **Until then one address can still mint free credits through the site**, because the deployed grant code does not know about the new record |
+| **2. One more migration** | `20260823120400_lock_down_money_tables.sql`. The two new tables arrived deletable — `grant` does not narrow Supabase's default privileges, only `revoke` does. Changes no data |
+| **3. The privacy sentence** | Now actually owed. `POLICY-CHANGES-PENDING.md` has the wording |
+
+**After the deploy, watch the logs for `CLIENT GONE:` for a day.** `06` row 89.
+
+---
+
+## What follows is the pre-run version, kept as the record of what was wrong
+
 # 23 AUGUST 2026, LANE B: FOUR MIGRATIONS ARE WRITTEN AND NOT APPLIED
 
 **Jon has to run these. Nothing behind them is fixed until he does.** Full

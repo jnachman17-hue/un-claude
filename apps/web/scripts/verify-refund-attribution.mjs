@@ -33,8 +33,10 @@ import {
   balanceOf,
   db,
   destroy,
+  forgetGrantClaims,
   ledgerOf,
   ledgerRow,
+  ledgerRowIfMissing,
   printLedger,
   RUN,
   throwaway,
@@ -48,10 +50,25 @@ function report(name, ok, detail) {
   if (detail) console.log(`        ${detail}`);
 }
 
-/** The five credits every real account starts with, written the same way. */
+/**
+ * The five credits every real account starts with, written the same way.
+ *
+ * IF ONE IS ALREADY THERE, LEAVE IT. Since
+ * 20260823120200_mint_signup_grant_at_signup.sql the database pays the signup
+ * grant itself the moment an account is confirmed, so by the time this runs the
+ * +3 row already exists. Inserting it again hits the once-per-account index and
+ * throws — which is exactly how this script broke the first time it was run
+ * after that migration landed. The account still ends on 5 either way.
+ */
 async function freeGrants(id) {
-  await ledgerRow(id, { delta: 2, reason: 'anon_grant' });
-  await ledgerRow(id, { delta: 3, reason: 'signup_grant' });
+  await ledgerRowIfMissing(id, { delta: 2, reason: 'anon_grant' });
+  await ledgerRowIfMissing(id, { delta: 3, reason: 'signup_grant' });
+
+  const balance = await balanceOf(id);
+
+  if (balance !== 5) {
+    throw new Error(`expected the usual 5 free credits before buying, got ${balance}`);
+  }
 }
 
 async function purchase(id, tag, credits, cents) {
@@ -179,6 +196,7 @@ let migrationApplied = null;
     }
   } finally {
     await destroy(acct);
+    await forgetGrantClaims(acct.email);
     console.log(`\n  throwaway account deleted.`);
   }
 }
@@ -239,6 +257,7 @@ let migrationApplied = null;
     }
   } finally {
     await destroy(acct);
+    await forgetGrantClaims(acct.email);
     console.log(`\n  throwaway account deleted.`);
   }
 }
@@ -258,4 +277,7 @@ if (failures) {
 }
 
 console.log('\nBoth directions are closed: a refund takes back only what that payment');
-console.log('still has left, and what it could not recover is written down.\n');
+console.log('still has left, and what it could not recover is written down.');
+console.log('\nTwo rows are left in refund_shortfalls, one per direction, against the');
+console.log('throwaway payments above. That table is insert-only on purpose, so they');
+console.log('cannot be tidied away — read-refund-shortfalls.mjs skips them by name.\n');

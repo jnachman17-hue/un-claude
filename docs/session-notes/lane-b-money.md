@@ -1,5 +1,147 @@
 # Lane B — the money path, 23 August 2026
 
+---
+
+# APPLIED, 24 August 2026. What the four migrations actually did
+
+**Jon ran all four in order. Every one succeeded.** This section replaces the
+"not applied" reading of everything below it — the reproductions further down
+are the *before*, and these are the *after*, on the same live database.
+
+## M‑1 — closed, both directions
+
+```
+DIRECTION ONE — refunding pack A must not touch pack B
+  before the refund: balance 10
+       +3  signup_grant
+       +2  anon_grant
+      +10  purchase          pi_LANEB_A_mt6phmtx        499
+      -15  spend                                              15000
+      +10  purchase          pi_LANEB_B_mt6phmtx        499
+    SUM = 10
+
+  Stripe refunds pack A in full ($4.99).
+  credits removed by that refund: 0
+  balance after: 10                       <- pack B untouched
+
+  PASS  pack B's 10 credits are still there
+  PASS  the refund of pack A removes nothing, because pack A was already spent
+  PASS  the shortfall is written down: $4.99 given back, 10 credits not recovered
+        {"target_credits":10,"removed_credits":0,"shortfall_credits":10,
+         "shortfall_cents":499,"refund_cents":499}
+
+DIRECTION TWO — a full refund of credits already spent
+  credits removed by that refund: 1
+  PASS  only the 1 credit that was left can come back
+  PASS  the 9-credit shortfall is written down, with what it was worth
+        {"target_credits":10,"removed_credits":1,"shortfall_credits":9,
+         "shortfall_cents":449,"refund_cents":499}
+```
+
+**Before this, direction one wrote `-10 money_refund` and left the balance at
+zero.** The same refund now writes no ledger row at all and records a $4.99 loss
+instead — which is the true statement about what happened.
+
+## M‑2 — closed in the database, still open in the site until a deploy
+
+```
+round 1: balance 5   [+3 signup_grant, +2 anon_grant]
+round 2: balance 0
+round 3: balance 0
+
+  the grant path in use: claim_grant (migration applied)
+  credits collected per round: 5, 0, 0
+  total free credits minted from ONE address: 5
+```
+
+**It was 5, 5, 5 — fifteen credits from one address — this morning.**
+
+**The deploy still matters and this output does not prove it.** The script asks
+the database directly. The *site's* grant code is a separate path, and the
+version currently running on un-claude.com does not know about `grant_claims`
+yet — it would mint the credits the database had just refused. Until the deploy,
+the hole is narrowed, not closed.
+
+## M‑3 — closed, and visible in the output above
+
+**Look at round 1's ledger: `+3 signup_grant` comes FIRST, before
+`+2 anon_grant`.** That is the database paying the signup grant at the moment
+the account was confirmed, which is the whole fix. The wallet now reads 3 the
+first time it is opened instead of "0 credits · Get credits", and reaches 5 on
+first use of the tool.
+
+**It also proves itself in a way I did not plan.** The first run of
+`verify-refund-attribution.mjs` after the migrations **crashed**:
+
+```
+Error: ledger insert failed: duplicate key value violates unique constraint
+"credit_ledger_one_signup_grant"
+```
+
+**That was my bug, not the migration's.** The script wrote its own `+3
+signup_grant` row for a fresh account, and the database had already written one.
+It is the loudest possible confirmation that the trigger fires. The script now
+uses the row if it is already there; nothing about the migration changed.
+
+## M‑4 — the table exists and is empty, which is correct
+
+`run_costs` holds zero rows and will until the site is deployed: the code that
+writes them is in `lib/server/credits.ts` and `app/api/tool/clean/route.ts`, not
+in the database.
+
+## The ledger is untouched
+
+```
+lane-b throwaway accounts: 0
+ledger rows: 93          <- the same 93 as before any of this
+grant_claims rows: 9     <- the nine real accounts, backfilled by the migration
+refund_shortfalls rows: 0
+run_costs rows: 0
+```
+
+**The backfill worked**, and it is the part that would have been easy to miss:
+without it every account that already exists would have got one free pass at the
+delete-and-re-register loop. Nine accounts, recorded with the dates their grants
+were actually paid.
+
+## A fifth migration, found by probing after the other four landed
+
+**`refund_shortfalls` and `run_costs` arrived fully deletable**, and the credit
+ledger beside them is not:
+
+```
+credit_ledger      DELETE -> REFUSED: permission denied for table credit_ledger
+refund_shortfalls  DELETE -> ALLOWED
+run_costs          DELETE -> ALLOWED
+```
+
+**The cause is a trap worth remembering: `grant` does not narrow anything.**
+Supabase's default privileges already hand `service_role` everything on every new
+table in the public schema, so writing `grant select, insert` adds nothing and
+takes nothing away. The ledger is protected because its migration **revokes
+first**. Mine did not.
+
+**It matters because `refund_shortfalls` exists so losses can be COUNTED**, and a
+record of losses that any code holding the service key can quietly erase gets
+smaller without anyone noticing. There are no backups to compare it against.
+
+**[`20260823120400_lock_down_money_tables.sql`](../../apps/web/supabase/migrations/20260823120400_lock_down_money_tables.sql)
+— one more paste, changes no data.**
+
+**`grant_claims` is deliberately left writable.** `claim_grant` counts repeat
+attempts by updating a row, and removing a claim is a legitimate support action:
+somebody who deleted their account by mistake has no other way to get their free
+credits back.
+
+## Still outstanding after all five
+
+| | |
+|---|---|
+| **A deploy** | M‑2's site path, M‑4's writer, and M‑6's fix are all in code that is not live |
+| **The privacy sentence** | `POLICY-CHANGES-PENDING.md`. Now actually owed, because migration 2 is applied |
+| **Watch `CLIENT GONE:`** | First day after the deploy. `06` row 89 |
+
+
 **Six findings from `f1-audit.md`, all of them about money. Every one was
 reproduced on the live database before anything was changed, and the actual
 ledger rows are pasted below.**

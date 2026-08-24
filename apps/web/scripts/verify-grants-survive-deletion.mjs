@@ -140,14 +140,20 @@ console.log('');
 report(
   'the first signup earns the full 5 free credits',
   collected[0] === WELCOME_CREDITS + SIGNUP_CREDITS,
-  `round 1 gave ${collected[0]}, expected ${WELCOME_CREDITS + SIGNUP_CREDITS}`,
+  collected[0] === WELCOME_CREDITS + SIGNUP_CREDITS
+    ? undefined
+    : `round 1 gave ${collected[0]}, expected ${WELCOME_CREDITS + SIGNUP_CREDITS}`,
 );
+
+const closed = collected[1] === 0 && collected[2] === 0;
 
 report(
   'deleting the account and signing up again earns NOTHING',
-  collected[1] === 0 && collected[2] === 0,
-  `rounds 2 and 3 gave ${collected[1]} and ${collected[2]} credits — the same ` +
-    `address can mint free credits without limit`,
+  closed,
+  closed
+    ? undefined
+    : `rounds 2 and 3 gave ${collected[1]} and ${collected[2]} credits — the ` +
+      `same address can mint free credits without limit`,
 );
 
 const cleared = await forgetGrantClaims(EMAIL);

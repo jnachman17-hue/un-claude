@@ -5087,3 +5087,25 @@ clock-derived total; the rhythm only chooses when the display catches up.
 only rise as fast as the rate it claims. Getting the motion back means making the
 figure real, which entry 71 already described: sum `words_in` on the ledger and
 add it to the seed. That is a route the money lane owns.
+
+### 133. `grant_claims` stays writable; the two accounting tables do not
+
+**Found by probing the live database after the migrations landed**, not by
+reading them: `refund_shortfalls` and `run_costs` arrived fully deletable,
+because Supabase's default privileges already give `service_role` everything and
+`grant select, insert` adds rather than narrows. The credit ledger beside them is
+protected only because its migration revokes first. `07` carries the trap.
+
+**Both are now insert-only, and the reason is the same one that justifies the
+ledger's own rule.** `refund_shortfalls` exists so that money given back and
+never recovered can be **counted**. A record of losses that any code holding the
+service key can quietly erase simply gets smaller, and with no backups there is
+nothing to compare it against.
+
+**`grant_claims` is deliberately left writable, and that is not an oversight.**
+`claim_grant` counts repeat attempts by updating a row. And removing a claim is a
+legitimate thing a person may need to do: somebody who deleted their account by
+mistake and wants their free credits back has no other remedy, because the whole
+point of the table is that deleting the account no longer clears it. **A guard
+with no manual override would turn one honest mistake into a permanent
+punishment.**

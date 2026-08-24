@@ -1845,3 +1845,36 @@ Next refuses a second dev server regardless of the port — they share `.next`. 
 refusal names the running PID and its log path. **When two sessions are live,
 whoever starts first owns the dev server**, and it is better to use theirs than
 to kill it.
+
+## `grant` does not narrow a privilege in Supabase — only `revoke` does
+
+**24 August 2026, lane B.** Two new tables were created with
+
+    grant select, insert on table ... to service_role;
+
+on the belief that this made them insert-only. It does not. **Supabase sets
+default privileges on the public schema that already hand `service_role`
+everything on every new table**, and `grant` only ever ADDS. Both tables arrived
+fully updatable and fully deletable. Measured, with the credit ledger as the
+control:
+
+```
+credit_ledger      DELETE -> REFUSED: permission denied for table credit_ledger
+refund_shortfalls  DELETE -> ALLOWED
+run_costs          DELETE -> ALLOWED
+```
+
+The ledger is protected because `20260819180000_credit_ledger.sql` **revokes
+first and grants afterwards**. Copy that order:
+
+    revoke all on table public.X from authenticated, anon, service_role;
+    grant select, insert on table public.X to service_role;
+
+**And check it by trying**, rather than by reading the migration back:
+
+    await db.from('X').delete().eq('<a real column>', <a value that matches nothing>)
+
+**Use a column that actually exists.** The first version of this probe used the
+same column name against three different tables, two of which did not have it,
+and the resulting "permission denied"-shaped errors were column errors wearing a
+convincing disguise.
