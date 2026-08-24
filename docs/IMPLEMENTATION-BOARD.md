@@ -6,6 +6,91 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★★ 24 AUGUST, 17:20 — JON'S RULING: EVERY QUOTATION FREEZES
+
+**D2's attribution test is abolished. Do not reopen it.** Jon: *"any quotation
+is frozen and kept across the board. There's no delineation between novel
+dialogue and real quotation. We preserve the text and quotations, and citations
+around it on either side."*
+
+**Supersedes `04` 137's D2 implementation and 142.** The new brief tells the
+session to write the superseding entry.
+
+## The conductor measured it before writing the brief, and Jon is right
+
+| document | words | frozen NOW | if ALL quotes | change |
+|---|---|---|---|---|
+| ladder_500 | 463 | 27.4% | 27.4% | **−0.0%** |
+| ladder_1000 | 919 | 27.8% | 28.8% | +1.1% |
+| ladder_2000 | 1942 | 23.6% | 25.1% | +1.5% |
+| ladder_3000 | 2971 | 23.5% | 25.2% | +1.7% |
+| ladder_5000 | 4958 | 22.3% | 24.1% | +1.8% |
+| ladder_10000 | 9946 | 21.4% | 23.2% | +1.8% |
+| **dialogue-heavy story** | 99 | 0.0% | **59.6%** | **+59.6%** |
+
+**Under two points on every academic document.** Dramatic only for
+dialogue-heavy fiction — the case Jon has decided this product does not serve,
+and the case **D4's pre-flight already warns about before money changes hands.**
+
+**Two sessions have now failed to separate quotation from dialogue, and the
+reason is structural:** *«"Power tends to corrupt," Acton observed»* and
+*«"Mind the second stair," Aldous observed»* are grammatically identical. The
+difference is that Acton published. **That is world knowledge, not syntax.**
+
+**The second prize is deletion.** This removes the reportive-verb list, the
+position test, the subject test and the attributed/unattributed split. **Three
+silent freeze bugs have surfaced in two days; a deleted path cannot hold a
+fourth.**
+
+## ★ JON FOUND A LIVE HOLE — inline citations are NOT frozen
+
+Proved against the shipping masker. **This is what the model is handed today:**
+
+```
+As Smith puts it, [[11]] (p. 47). The minutes were circulated the following week.
+The review found that [[11]] (Jones, 2019, p. 12). No objection was recorded.
+Weber called it [[11]] (Weber, 1922) in his final chapter on bureaucratic life.
+```
+
+**The quotation is masked; the citation beside it is plain text.** The model may
+renumber a page, shift a year, change an author. W10 measured invented authors
+in **23 of 41 runs** on this family. Reference-list entries freeze; **inline
+citations do not.** A rewritten citation under a perfectly preserved quotation
+is worse than either error alone — it reads as authoritative and is false.
+
+## Also confirmed while measuring
+
+- **The 12-character floor in `_QUOTE` already excludes scare quotes.** «the
+  so-called "gig economy"» is not detected at all. **Correct — keep it.**
+- **`_CITATION` only matches years starting 19 or 20**, so `(1887)` is invisible.
+  Reported, not widened.
+
+## Brief issued: `docs/briefs/freeze-every-quotation.md` — Opus, high effort
+
+Five jobs, order load-bearing. **Withdrew `freeze-final-then-measure.md`** and
+carried its surviving jobs across; that file now carries a superseded banner.
+
+1. Every quotation freezes; the attribution machinery is deleted
+2. **The citation beside a quotation freezes with it**
+3. **Hard-wrap — CONDITIONAL, Jon has not ruled.** The brief tells the session
+   to ask first, and names the runaway-quote risk as the Sources-latch shape
+4. The second silent span shortfall (`ladder_3000`, 87 of 90, every run)
+5. The ladder, once, at the end, **all three models — deepseek has never been
+   measured past 2 chunks**
+
+## ★ ONE RULING STILL OWED BY JON — the hard-wrap gap
+
+```
+UNWRAPPED (pasted from Word)      FROZEN 61.6%
+HARD-WRAPPED at 72 cols (.txt)    FROZEN  5.8%   — both quotations vanish
+```
+
+**The conductor's reading is that Jon's ruling implies fixing this** — a wrapped
+quotation is still a quotation, and un-claude accepts `.txt`. **Put to him;
+job 3 is gated on his answer.**
+
+---
+
 # ★★★ 24 AUGUST, 16:50 — PUSHED AND LIVE. NEXT BRIEF ISSUED.
 
 **15 commits pushed, `b72b1aa..dee5092`, deploy Ready.** Live now: the
