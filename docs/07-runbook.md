@@ -1713,3 +1713,87 @@ this was checked, so whatever triggers it here is not a missing hostname.
 **Do not chase it.** The one time it is worth a second look is if sign-in or
 sanitising actually starts failing in production — that is the first place to
 check, not the first thing to fix on sight.
+
+## The credit ledger refuses UPDATE, so nothing learned after the fact can live on it
+
+**23 August 2026, lane B.** `credit_ledger` has six columns — `cost_usd`,
+`model_calls`, `retries`, `total_tokens`, `seconds`, `layer_b` — that describe
+what a run cost. Every one of them is empty on every row that has ever existed,
+and **they could never have been filled in.**
+
+The credit is spent *before* the engine runs, which is what stops two racing
+requests both spending the last credit. The cost is only known *after*. Filling
+the columns in would mean updating the spend row. Tested against the live
+database rather than assumed:
+
+```
+row 2735 cost_usd before: null
+UPDATE result: REFUSED -> permission denied for table credit_ledger
+direct DELETE result: REFUSED -> permission denied for table credit_ledger
+rows left after deleting the account: 0
+```
+
+**Do not relax that refusal to make bookkeeping easier.** Supabase's free plan
+takes no backups, so an append-only ledger is the only protection the credit
+history has.
+
+**The rule: a ledger row can only ever record what was already true when it was
+written.** Anything learned afterwards goes in its own table, keyed to the ledger
+row. `run_costs` is the first of those.
+
+## Two `next dev` servers cannot run in one folder, and killing the other one is not yours to do
+
+**23 August 2026, lane B.** Starting a second development server in
+`apps/web` — even on a different port — refuses:
+
+```
+⨯ Another next dev server is already running.
+- Local:        http://localhost:3003
+- PID:          94673
+- Dir:          /Users/jonathannachman/un-claude/apps/web
+```
+
+The lock is on the **folder**, not the port, and in a session where several
+lanes are working at once that server belongs to somebody else. **`kill` is
+not the answer.** Either use the server that is already up — it hot-reloads
+your edits like any other — or do the test against production with an input
+that cannot cost money.
+
+## Testing the money path without spending any money
+
+**23 August 2026, lane B.** The two things that make this safe are the same two
+every time:
+
+**Fund throwaway accounts by writing ledger rows, never by buying anything.** A
+grant, a purchase and a refund are all just rows; the append-only shape is the
+same whether a webhook wrote it or a script did. Deleting the account cascades
+every row away, verified again this session — the ledger held 93 rows before and
+93 after.
+
+**Label every account and refuse to touch anything else.**
+`scripts/_lane-b-throwaway.mjs` creates only addresses beginning
+`lane-b-money-`, and its `destroy()` **throws rather than deleting** anything
+whose address is outside that prefix. That guard is what makes it impossible for
+a mistake in a test to reach a customer, and every money script in the lane goes
+through it.
+
+**To exercise the real charge-and-refund path on production at zero model
+cost, send a paste far over the 10,000 word limit with the rewrite requested.**
+The engine refuses those in milliseconds "before it spends a penny" — its own
+words — but the site has already charged by then, so the whole spend-and-refund
+sequence runs for free. A 250,000 word paste takes about four seconds end to end,
+which is a wide enough window to drop the connection deliberately.
+
+**A session on the live site is obtainable without the sign-in form.** Turnstile
+correctly refuses an automated browser. `auth.admin.generateLink({type:
+'magiclink'})` gives a one-time token, and
+`GET /auth/confirm?token_hash=…&type=magiclink` returns real session cookies.
+That is the captcha working, not a gap in it.
+
+## The dev credit bypass must be OFF when testing the money path
+
+**23 August 2026, lane B.** `devBypass` is the `x-uc-dev: 1` header, development
+builds only. With it on, **nothing is charged and none of the real path runs** —
+no grant, no spend, no refund, no ledger row. A test that sends it proves the
+interface and nothing else. Every run recorded in `session-notes/lane-b-money.md`
+was made without it.

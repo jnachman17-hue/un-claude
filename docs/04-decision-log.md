@@ -4924,3 +4924,101 @@ which keeps them for a limited period set by its platform rather than by us."*
 real window turned out to be short. **Jon does not want it chased. Nobody should
 reopen it as a defect**, and `legal-applied.md` section 6's entry on it is
 superseded by this.
+
+---
+
+## 23 August 2026. The money path, lane B
+
+### 128. Credits are spent oldest first, and that one rule decides every refund
+
+**The problem it settles.** Credits are not labelled. When somebody buys a pack,
+spends some of their balance and then asks for a refund, there is no fact
+anywhere saying which credits were which — and without an answer, `refund_purchase`
+was clamping against the whole account balance, which cost money in both
+directions at once. It confiscated a second, un-refunded purchase when the first
+was spent, and it recovered almost nothing when the credits had gone. Both
+reproduced on the live database; the rows are in `session-notes/lane-b-money.md`.
+
+**The ruling: OLDEST FIRST.** The free grants arrive first and are used up first.
+A purchase is only eaten into once everything granted before it has gone. What is
+left of a payment is what it sold, less what has already been refunded against
+it, less whatever spending reached past everything ahead of it.
+
+**Why oldest first rather than newest first.** It is the customer-favourable
+reading — their free credits are consumed before anything they paid for, so a
+refund recovers as much as it honestly can. It is also the reading the F1 audit
+itself used without noticing, when it wrote "4 of those were free grants". Newest
+first would make refunds recover more and would mean a customer's most recent
+purchase is always the one being eaten, which is the harder thing to explain to
+somebody asking why their new pack disappeared.
+
+**And a refund that cannot recover what it gave back is now written down**, in
+`refund_shortfalls`, with its cash value. Jon asked repeatedly for the numbers
+this business does not have; this is one of them, and it had no home at all
+before today.
+
+### 129. Both free grants are keyed to the email inbox, not just the signup grant
+
+**The audit (0c) named the 3-credit signup grant: delete your account, register
+the same address, collect it again, without limit.** Closing only that one would
+have left the 2-credit welcome grant open to exactly the same loop, because the
+per-network cap on the welcome grant applies **only to anonymous browser
+accounts** and a real account skips it.
+
+**So both are now claimed once per inbox**, in `grant_claims` — a table with no
+link to any account, which is what makes it survive the deletion cascade that
+removed the old guard.
+
+**Accepted cost: somebody who deletes their account by mistake and registers
+again gets no free credits the second time.** That is the intended behaviour.
+
+**Accepted change to what is retained after a deletion:** a hash of the address,
+which grant it was, the date, and a count of repeat attempts. The address itself
+is not stored. **This makes a sentence on the privacy page necessary and that
+copy is Jon's**, not a migration's — see `POLICY-CHANGES-PENDING.md`.
+
+### 130. The signup grant is minted at signup; the welcome grant deliberately is not
+
+**A new customer's first look at their wallet said "0 credits · Get credits"**,
+after a sign-up page that promised three (audit 0d). The grants were minted by
+the tool, and the wallet page never calls the tool.
+
+**The signup grant now lands when the email is confirmed.** The welcome grant
+does not, and that is a decision rather than an omission: whether a new account
+is a guest conversion is **not knowable at the moment it is created**, because the
+browser's cookie is what says so. Paying the welcome grant in the database would
+pay it to converting accounts too — the 7-credits-against-a-ratified-5 defect in
+`guest-merge-double-runs.md`.
+
+**So the wallet reads 3 at signup, which is exactly what the sign-up page
+promises, and 5 once the tool is used.** The number still moves once; `06` holds
+that as open.
+
+### 131. What a run costs is recorded beside the ledger, never on it
+
+**The privacy policy says the credit history records what a run cost us. It never
+has, and it never could have.** The credit is spent before the engine runs, the
+cost is known after, and the ledger refuses every UPDATE — confirmed against the
+live database rather than assumed. The columns were put somewhere they could not
+be written.
+
+**The append-only rule is not being relaxed for bookkeeping.** Supabase's free
+plan takes no backups, so refusing updates is the only protection the credit
+history has. The cost goes in `run_costs`, keyed to the ledger row it describes.
+
+### 132. A job nobody received is a failed job, and gives the credit back
+
+**The pricing page says a failed run costs nothing. A customer whose connection
+drops mid-job was charged and never refunded** — watched for eight minutes
+against a known three-minute window.
+
+**The refund path never depended on the connection**, which is the part everyone
+had wrong: measured on the live site, a job whose client dropped at three seconds
+still wrote its refund row a second later. What depended on the client was **the
+definition of failure** — the only trigger was the engine saying no, and nothing
+ever asked whether the answer reached anybody.
+
+**Ruled: delivery failure is failure.** The credit goes back. **The cost of the
+run is recorded first**, because if the rewrite ran we really did pay for it and
+refunding does not undo that — recording it and then refunding is what keeps the
+loss countable.

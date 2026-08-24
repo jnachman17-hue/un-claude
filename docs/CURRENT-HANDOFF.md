@@ -1,5 +1,54 @@
 # Un-Claude: Current Handoff
 
+---
+
+# 23 AUGUST 2026, LANE B: FOUR MIGRATIONS ARE WRITTEN AND NOT APPLIED
+
+**Jon has to run these. Nothing behind them is fixed until he does.** Full
+detail, with the live ledger rows behind every one, is in
+`session-notes/lane-b-money.md`.
+
+**Each file is wrapped in a transaction: it applies whole or does nothing. If it
+errors, nothing has changed.** Paste into the Supabase SQL editor in this order:
+
+| # | File | Fixes |
+|---|---|---|
+| 1 | `20260823120000_refund_attribution.sql` | A refund takes credits out of a **different purchase** the customer paid for — and, the other way round, gives back $4.99 and recovers one credit with nothing recording the rest |
+| 2 | `20260823120100_grant_claims_survive_deletion.sql` | Free credits can be minted from one address **without limit**: delete, re-register, collect five more |
+| 3 | `20260823120200_mint_signup_grant_at_signup.sql` | A new customer's wallet says **"0 credits · Get credits"**. Needs 2 applied first |
+| 4 | `20260823120300_record_run_cost.sql` | The privacy policy says we record what a run cost. Nothing ever has, and on the ledger nothing ever could |
+
+**Then prove 1 and 2, one command each. Both fail today.**
+
+    cd apps/web
+    node scripts/verify-refund-attribution.mjs
+    node scripts/verify-grants-survive-deletion.mjs
+
+**Migrations 3 and 4 also need a deploy** — half of each lives in the site.
+
+**One privacy sentence is owed once migration 2 is applied.** Wording is drafted
+in `POLICY-CHANGES-PENDING.md`; the legal pages were not touched.
+
+**Two of the six findings are finished and need nothing:** the refund tool no
+longer tells Jon to pay out on an already-refunded payment (it was worse than the
+audit said — on a spent pack it advised *"fully unspent, a full refund matches
+the policy exactly"*), and a job whose customer disconnects now gives the credit
+back.
+
+**Watch the first deploy for one thing:** the connection-drop refund logs
+`CLIENT GONE:` every time it fires. A run of those against jobs that plainly
+succeeded would mean it is firing wrongly — and that would refund everything.
+`06` row 89.
+
+## The section below this one is from 21 August and has gone stale
+
+**It says production carries no Stripe variables and "the live site physically
+cannot charge anyone".** That is no longer true — the site is live and taking
+real money. Lane B did not verify production's environment and has not edited
+that section; **read it as history, not as the current state.**
+
+---
+
 **Rewritten 21 August 2026, end of session 11 — the Stripe session.**
 
 ---

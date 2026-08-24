@@ -165,3 +165,69 @@ between the deploy that carries the events and the deploy that carries this text
 the published privacy policy describes less measurement than actually happens. It
 does not describe anything false — no new company, no device storage, no content —
 but it is incomplete. **The gap closes when this file is applied.**
+
+---
+
+# 23 August 2026, lane B: the privacy page needs one new sentence
+
+**Status: PENDING. Nothing on the legal pages has been edited.** Same instruction
+as the first half of this file: note the change, hand over the wording, do not
+touch the pages.
+
+**It is only needed once
+`20260823120100_grant_claims_survive_deletion.sql` is applied.** Until then
+nothing has changed and the page is still true.
+
+## What changed in the product
+
+**Free credits could be minted from one email address without limit.** Delete the
+account, sign up again on the same address, collect another five. Three rounds on
+the live database collected fifteen. The record that was supposed to stop it
+lived on the credit ledger, and deleting an account deletes the ledger — so the
+guard was deleted along with the thing it guarded against. `f1-audit.md` finding
+0c; the rows are in `session-notes/lane-b-money.md`.
+
+**The fix keeps one small record that deletion no longer removes.**
+
+## What is retained after an account is deleted, and only this
+
+- a **64-character fingerprint** of the email address (a SHA-256 hash of the
+  normalised address, salted with a fixed application prefix),
+- **which** free grant it was — the welcome credits or the signup credits,
+- the **date** it was first given,
+- a **count** of how many times that inbox has asked for it again since.
+
+**The address itself is not stored and cannot be read back out of the
+fingerprint.** But a fingerprint **can be checked against a guess**, so it is not
+the same as keeping nothing, and the page must not imply that it is. It carries
+no name, no account, no balance, no history, and nothing about anything the
+person ever cleaned.
+
+**Everything else the privacy policy promises to delete is still deleted**, and
+that was re-verified this session: the account row, the sign-in, and every credit
+ledger row all go, exactly as before.
+
+## Suggested wording, for Jon to rewrite in his own voice
+
+Under whichever heading covers deleting your account:
+
+> **One thing survives, and here is what it is.** If you delete your account we
+> keep a scrambled fingerprint of your email address — not the address itself.
+> It is there for one reason: the free credits you get for signing up are meant
+> to be once per person, and without it anyone could delete their account and
+> collect them again and again. The fingerprint cannot be turned back into your
+> address, and it is not attached to your name, your credit history, or anything
+> you cleaned here. We keep it, the date, and which free credits it was.
+
+**Two things the wording must not do**, because both would be false:
+
+- **Do not say the fingerprint is anonymous.** It is a one-way hash of a real
+  address. Somebody holding both it and a guess at the address can confirm the
+  match.
+- **Do not imply we can read the address back.** We cannot, and the sentence
+  should be plain that we cannot.
+
+## Where it goes
+
+The same privacy page section that already says what deleting an account
+removes. **One paragraph. Nothing else on the page becomes wrong.**
