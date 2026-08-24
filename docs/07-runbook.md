@@ -2071,3 +2071,53 @@ earlier and compensated for it.
 **Diagnosing this needs no gateway money.** Monkeypatching `verify_restore`
 and `_reinsert_lost_masks` to print, then reproducing the whole thing with a
 hand-written fake model output, cost nothing and was faster than live runs.
+
+## The gateway key has its OWN spend cap, and `balance` does not show it
+
+**24 August 2026, E-16. It stopped a measurement campaign dead and, if the
+records are right, took layer B down on the live site with it.**
+
+Every model on the key started returning HTTP 402:
+
+```
+{"error":{"message":"API key budget exceeded. Current spend: $10.00,
+limit: $10.00. Please contact your administrator to increase the budget.",
+"type":"quota_for_entity_exceeded"}}
+```
+
+**At that moment the credits endpoint said this:**
+
+```
+{"balance":"14.9946587732","total_used":"10.0053412268"}
+```
+
+**$14.99 of balance, and not a cent of it spendable.** The cap is on the API
+KEY, the credits endpoint does not report it, and every note in this project
+so far has read `balance` as headroom. It is not. **`total_used` against the
+key's limit is the number that matters**, and the limit is only visible in the
+Vercel AI Gateway dashboard under the key itself.
+
+**Before spending on a campaign, read `total_used`, not `balance`:**
+
+```bash
+cd ~/un-claude && KEY=$(grep '^AI_GATEWAY_API_KEY=' .env.engine.local | cut -d= -f2) \
+  && curl -s https://ai-gateway.vercel.sh/v1/credits -H "Authorization: Bearer $KEY"
+```
+
+E-16 began with `total_used` at $9.6515923588 against a $10.00 key cap —
+**$0.348 of headroom — while its brief carried a $3.00 stop-and-report rule.**
+The rule could not have fired. **A budget rule stated in dollars is worthless
+unless the remaining headroom is read first.**
+
+**Two things this also teaches about reading failures:**
+
+- **Eight consecutive 402s look exactly like a bad model.** Two runs in the
+  campaign were recorded as `chunk N failed after 8 attempts: HTTPError` and
+  the obvious reading — deepseek is unreliable today — was wrong. **When a
+  run fails on HTTPError, make one bare `curl` to the gateway before drawing
+  any conclusion about the model.** It takes five seconds and it is the
+  difference between a finding and a fiction.
+- **A campaign spends far more per run on a bigger model.** `mistral-medium`
+  cost about 7x `mistral-small` per run here — $0.0362 against $0.0048 for one
+  9,946-word document — so a ladder that is affordable on small is not
+  automatically affordable on medium.

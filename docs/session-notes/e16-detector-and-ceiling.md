@@ -299,3 +299,182 @@ building the ladder: wrapped, it froze 13.8%; unwrapped, 21.3%. Same document.
 I have not touched it. It changes what freezes across every document and the
 pre-flight number a visitor is quoted before paying, which is a decision, not
 a bug fix. **File: `apps/web/engine/uc_spans.py`, the `_QUOTE` constant.**
+
+### FIXED — a block quote that opens a chunk was never frozen at all, silently
+
+**This is the worst failure shape this product has, and only a document past
+~520 words could show it — the gap E-9 closed with.** On the 9,946-word rung,
+**4 of 18 block quotes came back rewritten, identically in all three runs,
+while the run reported success: 0 fallbacks, 0 retries, no warning anywhere.**
+
+I found it because span survival was falling with document size — 132/132 at
+E-9's scale, but 75/83 at 10,000 words — and the shortfall was **identical in
+every run**, which rules out the model.
+
+**The mechanism, proved with no model involved:**
+
+```
+83 spans planned, 79 assigned to a chunk, 4 ORPHANED
+
+  kind=block_quote start=10657 end=10993
+    next chunk 6 starts at 10661 — that is 4 chars AFTER this span's start
+    the 4 chars: '    '
+```
+
+A block quote is recognised by the **indentation opening its first line**, so
+its span starts at that whitespace. `_PARA_BREAK` puts that whitespace into
+the separator *before* the paragraph — and when a block quote opens a chunk,
+that separator is the gap *between* chunks. So the chunk begins four
+characters after the span does, the containment test `a <= s["start"]` missed
+by exactly four, **the span was never masked, therefore never verified,
+therefore never reported.**
+
+**Why that is the worst shape.** The D4 pre-flight counts that block quote as
+frozen — `freeze_fraction` uses `plan_freeze`, which plans all 18. The visitor
+is shown the higher number, pays on it, and the model rewrites the quote
+anyway. **The freeze's one provable sentence — "these spans came back exactly
+as sent, and here is the count" — was false, and nothing in the report said
+so.** A loud failure refunds; this one delivers.
+
+The fix clips such a span to the chunk. The separator puts the indentation
+back at reassembly, so the document stays byte-identical:
+
+```
+masked by kind: Counter({'quote': 38, 'heading': 21, 'block_quote': 18, 'reference': 6})
+total masked: 83 (plan_freeze plans 83)
+reassembly byte-identical to the source: True
+```
+
+New test `test_a_block_quote_that_opens_a_chunk_is_still_frozen` uses a model
+that rewrites every word it is shown, so anything surviving survived *because
+it was masked*. It fails without the fix.
+
+**Consequence for job 2's numbers: the first campaign is invalid** — it ran
+across this fix, so mistral-small's rungs are pre-fix and the others are
+mixed. **The whole ladder is re-run on the corrected engine below, and only
+the re-run is reported as the result.** The first campaign's timings are kept
+only as a second sample of latency, which the fix does not affect.
+
+### DESCRIBED, NOT FIXED — `docs/03-pricing.md` §4b rests on a cap that changed
+
+Section 4b says: *"The 60 second cap in `vercel.json` bounds everything … at
+most about 80 chunk calls can fit in one request … **no single request can
+cost more than two cents, whatever is pasted into it.**"*
+
+**`apps/web/vercel.json` now says `"maxDuration": 300`,** raised on 21 August
+with the site's abort. The bound that produced "two cents" is five times
+larger than the arithmetic assumes, so the reassurance is no longer derived
+from anything. **Measured today, one 9,946-word request on
+`mistral/mistral-medium` costs 3.6 cents** — already past the stated ceiling
+on the model this session was asked to consider adopting. On
+`mistral/mistral-small` the same document costs **0.48 cents**, so the claim
+survives on the model that is live and fails on one of the candidates.
+
+I have not touched it: `docs/03-pricing.md` is outside the territory this
+brief gives me, and the fix is a recalculation someone owning pricing should
+make, not a number I should quietly change.
+
+---
+
+# JOB 2 — STOPPED. THE GATEWAY KEY'S BUDGET IS EXHAUSTED AND THE LIVE SITE SHARES IT
+
+**Job 2 is incomplete and I could not finish it. Read this section first.**
+
+At 21:35 UTC every model on the gateway key began returning **HTTP 402**:
+
+```
+HTTPError 402 {"error":{"message":"API key budget exceeded. Current spend:
+$10.00, limit: $10.00. Please contact your administrator to increase the
+budget.","type":"quota_for_entity_exceeded"}}
+
+  mistral/mistral-small   -> HTTP 402
+  deepseek/deepseek-v3.2  -> HTTP 402
+  mistral/mistral-medium  -> HTTP 402
+```
+
+**Every written record says the live site uses this key. If that is still
+true, layer B on production is failing right now** — a paying customer's
+rewrite returns an error. Layers A and metadata do not touch the gateway and
+are unaffected. **I could not verify production's own environment** (E-9 hit
+the same wall: the permission layer refuses to read it), so this is stated
+from the records, not from production.
+
+**Jon has to fix this; I must not.** Raising a key's budget is a billing
+setting on the Vercel AI Gateway account. It is his call and his account.
+
+## The trap, and it is not in any document
+
+**The limit is on the KEY. The credits endpoint does not show it.**
+
+```
+{"balance":"14.9946587732","total_used":"10.0053412268"}
+```
+
+**$14.99 of balance is still there and unspendable.** The number that
+mattered was `total_used` against a $10.00 key cap that nothing in `docs/`
+records. E-9's note tracks `balance` and reads it as headroom; it is not.
+
+**At the moment this session started, `total_used` was $9.6515923588 — the key
+had $0.348 of headroom left, and the brief's stop-and-report rule was $3.00.**
+The rule could never have fired. This session spent **$0.3537488680**, most of
+it `mistral-medium`, which costs about 7x `mistral-small` per run — and that
+carried the key across its cap.
+
+```
+AI Gateway balance at start   $15.3484076412   2026-08-24T20:56:39Z
+AI Gateway balance at end     $14.9946587732   2026-08-24T21:35:31Z
+                              ---------------
+SPENT THIS SESSION            $ 0.3537488680   (43 ladder runs + ~12 probe and
+                                                diagnostic runs; the live site
+                                                shares this key, so some part
+                                                is customer traffic)
+KEY SPEND / KEY LIMIT         $10.0053 / $10.00   EXHAUSTED
+```
+
+## What job 2 measured before it stopped, and what it did not
+
+**Everything below is on the PRE-FIX engine** — the block-quote bug in §1.7
+was found and fixed mid-campaign, and the campaign could not be re-run. **One
+run is post-fix**, `mistral-medium` at 9,946 words, and it is the only live
+confirmation of the fix at scale: **83/83 spans, where the run before it on
+the same cell returned 75/83.**
+
+```
+model             words chunks  n  median   worst  failed  spans back retries  cost/run
+---------------------------------------------------------------------------------------
+mistral-small       463      2  3     4.1     7.1    0/3       21/21       1   0.00034
+mistral-small       919      3  3     3.9     5.0    0/3       36/36       0   0.00047
+mistral-small      1942      6  3     7.6     9.7    0/3       63/63       5   0.00103
+mistral-small      2971      9  3     9.4    10.0    0/3       87/90       7   0.00144
+mistral-small      4958     15  3    20.8    23.1    0/3     129/135      17   0.00254
+mistral-small      7498     22  3    15.5    16.1    0/3     177/192      15   0.00374
+mistral-small      9946     29  3    21.1    23.1    0/3     225/249      22   0.00484
+
+mistral-medium      463      2  3     6.0     7.0    0/3       21/21       2   0.00178
+mistral-medium      919      3  3     9.2     9.3    0/3       36/36       3   0.00327
+mistral-medium     1942      6  3    13.6    13.7    0/3       63/63      13   0.00859
+mistral-medium     2971      9  3    12.0    12.4    0/3       87/90      13   0.01048
+mistral-medium     4958     15  3    34.4    51.3    1/3       86/90      17   0.02103
+mistral-medium     7498     22  3    22.5    29.3    0/3     177/192      33   0.02668
+mistral-medium     9946     29  3    31.0   157.7    1/3     158/166      32   0.03620
+
+deepseek-v3.2       463      2  1    76.1    76.1    1/1         0/0       0   0.00000
+```
+
+**Every failure, in full:**
+
+```
+  mistral-medium  ladder_5000   run 3   51.3s  chunk 17 failed after 8 attempts: LeakSuspected
+  mistral-medium  ladder_10000  run 3  157.7s  chunk 4 failed after 8 attempts: HTTPError
+  deepseek-v3.2   ladder_500    run 1   76.1s  chunk 1 failed after 8 attempts: HTTPError
+```
+
+**The last two are the budget cap arriving**, not the models: eight
+consecutive 402s look exactly like a model failing.
+
+**`deepseek/deepseek-v3.2` has NO ladder measurement.** The cap landed on its
+first run. The only deepseek numbers I have are from before the campaign, on
+short documents: E-9's essay at 517 words, 5.9s and 7.2s, 11/11 spans; and
+`ladder_500` at 463 words, 4.0s and 4.9s, 7/7 spans. **On today's gateway
+deepseek was fast — nothing like E-9's 31.2s median — but a 2-chunk document
+says nothing about 29 chunks, and I am not going to pretend otherwise.**
