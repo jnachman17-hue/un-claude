@@ -1,3 +1,7 @@
+> **SUPERSEDED 24 August 2026 — do not update this file.**
+> The single live board is **`docs/IMPLEMENTATION-BOARD.md`**.
+> This is kept for its history and its reasoning, not as a to-do list.
+
 # Post-audit plan — 23 August 2026
 
 **Source: `docs/session-notes/f1-audit.md`** (3,460 lines, ~50 findings, most
