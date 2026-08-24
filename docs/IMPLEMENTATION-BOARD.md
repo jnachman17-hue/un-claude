@@ -6,6 +6,118 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 16:20 — E-16 VERIFIED. JOB 1 SUCCEEDED, JOB 2 DID NOT FINISH.
+
+**Gateway unblocked by Jon — verified: a live `mistral/mistral-small` call now
+returns HTTP 200.** *(The credits endpoint still reads `balance 14.99 /
+total_used 10.005`, which confirms E-16's finding that it does not reflect the
+key cap at all. Do not use it to judge headroom.)*
+
+**Every claim below I re-ran on my own harnesses, several written BEFORE E-16's
+fix, which is stronger than re-running theirs.**
+
+## VERIFIED — job 1 succeeded
+
+| Claim | My check | Result |
+|---|---|---|
+| Suite `809 passed, 1 skipped` | ran pytest | **CONFIRMED — 809 passed, 1 skipped** |
+| Novel dialogue stops freezing | **my own pre-fix harness**, 20 lines | **17 wrongly frozen → 0** |
+| Two stories, same content, different tags | **my own pre-fix harness** | **0.0% / 14.6% → 0.0% / 0.0%** |
+| Real attribution still freezes | 4 leading shapes | **4 of 4 still freeze** |
+
+## ★★ VERIFIED THE HARD WAY — both freeze repairs are real bugs, really fixed
+
+**A test that passes on old code proves nothing.** I built a byte-for-byte copy
+of the engine at `origin/main` (what production runs) and ran E-16's two new
+tests against it:
+
+```
+AGAINST PRE-FIX CODE:
+  FAILED  test_a_block_quote_that_opens_a_chunk_is_still_frozen
+  FAILED  test_reinsertion_keeps_the_indentation_of_a_neighbouring_block_quote
+  uc_freeze.FreezeRestoreFailed: 81 of 81 words came back unrewritten (100%)
+
+AGAINST E-16's CODE:  2 passed
+```
+
+**Both bugs were real, both fixes work, and both are sitting undeployed.**
+
+## ★ A REAL TRADE THE FIX MADE — measured, and Jon should rule on it
+
+E-16 chose rule R2, which **deletes the trailing-attribution path entirely**.
+It disclosed this as 2 of 30 shapes lost. **On realistic academic sentences the
+loss is larger than that ratio suggests:**
+
+```
+LEADING attribution  ("Acton observed that '...'")          FROZEN  4/4
+TRAILING with a cite ("'...,' Hartley wrote (p. 1)")        FROZEN  1/2
+TRAILING, no cite    ("'Power tends to corrupt,' Acton observed")  FROZEN  0/5
+```
+
+All five trailing cases are real, famous quotations a student essay would
+plausibly contain. **`«"…," Orwell wrote»` no longer freezes.**
+
+**E-16 offers R3 as the measured alternative — but R3 restores only INVERTED
+tags (`«"…," wrote Orwell»`), and four of my five cases are normal order
+(`«"…," Orwell wrote»`). So R3 probably does NOT recover them.** Anyone taking
+this on must measure, not assume. **This is a D2 judgment call and it is Jon's.**
+
+## ★ VERIFIED — the hard-wrap gap is as bad as described
+
+`uc_spans._QUOTE` is `"([^"\n]{12,600})"`, so a quotation containing a newline
+is invisible. Same document, same 86 words:
+
+```
+UNWRAPPED (pasted from Word)      FROZEN 61.6%   spans {heading:1, quote:2}
+HARD-WRAPPED at 72 cols (.txt)    FROZEN  5.8%   spans {heading:1}
+```
+
+**Both quotations vanish.** un-claude accepts `.txt`, and `.txt` is routinely
+hard-wrapped. **One mercy: the pre-flight and the rewrite share the plan, so the
+customer is quoted the lower number and is not lied to** — they simply get a
+silently worse product for pasting from the wrong application. **Undecided.
+E-16 was right not to fix it unilaterally.**
+
+## NOT SUCCESSFUL — job 2 is incomplete and its table is largely invalid
+
+- **`deepseek` has NO ladder measurement.** The budget cap landed on its first
+  run. **The model recommendation compares two candidates, not three.**
+- **The block-quote fix landed mid-campaign, so nearly every row of the ladder
+  table is on the PRE-FIX engine.** Exactly one run is post-fix (medium at
+  9,946 words: **83/83 spans against 75/83 the run before**). Timings survive
+  the invalidation; **span counts do not.**
+- **The 8,000-word recommendation is an argument, not a measured crossing** — no
+  model ever crossed 240 seconds. It is sized so the worst per-wave time ever
+  recorded in production (~65s) still fits in 3 waves. **That reasoning is sound
+  and it is not a measurement.**
+
+## VERIFIED — E-16's self-reported commit contamination is accurate
+
+`974e371` contains **entry 141 (TikTok)** alongside its own **entry 142**.
+E-16 reported this itself and did not rewrite shared history — correct call.
+**Its lesson is now in `07`: check `git diff --cached`, not the file list.
+Staging by path does not stop another session's edits riding along inside a
+file you legitimately staged.**
+
+**A TikTok/marketing session has been running that this board was not
+tracking.** Its work is still uncommitted: `docs/04-decision-log.md`,
+`docs/06-...`, plus untracked `tiktok-script-01.md` and
+`press-emails-phase-2.md`. **Not touched by me.**
+
+## WHAT IS LEFT, WORST FIRST
+
+| # | Item | Owner |
+|---|---|---|
+| **1** | **PUSH.** Two customer-affecting freeze repairs and the attribution fix are all undeployed. **Production still silently fails to freeze a block quote that opens a chunk, having already charged for it** | **Jon** |
+| **2** | **Re-run the ladder on the corrected engine, INCLUDING deepseek.** Written and ready; the budget now exists | a session |
+| **3** | **Chase the 87/90 shortfall on `ladder_3000`** — deterministic, identical every run, same silent shape as the bug already fixed. Costs nothing | a session |
+| **4** | **Rule on the hard-wrap question** | **Jon** |
+| **5** | **Rule on R2 vs R3** for trailing attribution, with real numbers first | **Jon** |
+| **6** | Recalculate `docs/03-pricing.md` §4b — "no request over two cents" rests on a 60s cap that is now 300 | a session |
+| **7** | Lane D writes **8,000**, plus C-3 and C-14 | a copy session |
+
+---
+
 # ★★★★ 24 AUGUST, 15:45 — LIVE OUTAGE: LAYER B IS DOWN. IT IS NOT THE MODEL.
 
 **Jon reported rewrites "taking forever" and believed deepseek was still live.
