@@ -661,6 +661,42 @@ original wording came back. **Layer B is best effort and the site says so.**
 
 ---
 
+# A MISTAKE I MADE, AND IT IS THE ONE THE BRIEF WARNED ABOUT
+
+**My commit `974e371` contains another session's work as well as mine.**
+
+The brief says sessions share one git index and to run
+`git diff --cached --name-only` as its own separate step before every commit.
+**I did run it, every time. It was not enough, and here is why:** that command
+lists FILE NAMES. Staging by explicit path controls which files go in — it
+says nothing about whether a file already contains somebody else's uncommitted
+edits. `docs/04-decision-log.md` was clean when this session started; a
+concurrent session added entry 141 to it while I worked; I appended entry 142
+and staged the file, and the commit took both.
+
+**What went in that is not mine:**
+
+- `docs/04-decision-log.md` — **entry 141**, "TikTok is a channel and the
+  claims boundary follows the product onto it"
+- `docs/06-assumptions-and-open-questions.md` — **rows 94 and 95**, the C2PA
+  variation-selector watermark and the `ENGINE.md` section 2 tell
+
+**Nothing was lost or overwritten.** That work is committed and intact; it is
+under the wrong commit message and the wrong author's reasoning. **I have not
+tried to rewrite history to undo it** — with another session live in this
+working tree, rewriting a shared branch is how work actually gets destroyed,
+and the failure here is cosmetic.
+
+**That session's later edits are still uncommitted and I left them alone:**
+the amendment to entry 141, rows 96, 97 and 98 in `06`, and the untracked
+`docs/session-notes/tiktok-script-01.md` and `press-emails-phase-2.md`.
+
+**The rule that would have caught it, now in `07`: check the DIFF, not the
+file list** — `git diff --cached` before committing a shared document, and
+look for content you did not write.
+
+---
+
 # WHERE THE NEXT SESSION PICKS UP
 
 **Blocking, and Jon's alone: raise the AI Gateway key's budget past $10.00**,

@@ -2121,3 +2121,29 @@ unless the remaining headroom is read first.**
   cost about 7x `mistral-small` per run here — $0.0362 against $0.0048 for one
   9,946-word document — so a ladder that is affordable on small is not
   automatically affordable on medium.
+
+## Staging by explicit path does not protect a shared document. Read the diff
+
+**24 August 2026, E-16.** The staging rule — never `git add -A`, stage by
+explicit path, and run `git diff --cached --name-only` as its own step — was
+followed exactly, and a commit still swallowed another session's work:
+`docs/04-decision-log.md` entry 141 and `06` rows 94 and 95 went into a commit
+about the quotation detector.
+
+**Why the rule was not enough.** `git diff --cached --name-only` lists FILE
+NAMES. Staging by path controls which files go in; it says nothing about
+whether a file already holds edits somebody else made while you worked. The
+long-lived documents — `04`, `06`, `07`, `CURRENT-HANDOFF.md` — are exactly
+the files two sessions append to at once, so they are exactly where this bites.
+
+**Do this instead, before committing any shared document:**
+
+```bash
+git diff --cached          # the CONTENT, not the file list
+```
+
+**and look for anything you did not write.** If there is, either commit it
+separately with an honest message, or leave the file out of your commit and
+say so in your session note. **Do not rewrite history to tidy it up** — with
+another session live in the same working tree, that is how work gets destroyed
+rather than recovered.
