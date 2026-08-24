@@ -390,7 +390,7 @@ missing from the reply.
 | Field | Meaning |
 |---|---|
 | `layer_b.repair` | What the REPAIR pass took back out of the rewrite: markdown the input never had, curly punctuation the customer never typed, em dashes past the input's own count, years the model spelled out. Every rule conditions on the customer's own input. See `uc_repair.py` |
-| `layer_b.protection` | The protected-span report: which quotations, headings, references, addresses, code blocks, tables and equations were found in the input, and how many came back verbatim. **`mode` is always `"report_only"`** — the freeze is off, nothing raises, and these counts change nothing about the output. `structure_kept` rides in this block too. "Returned verbatim" is presence-and-count, not position; the block's own `note` says so |
+| `layer_b.protection` | The protected-span report: which quotations, headings, references, addresses, code blocks, tables and equations were found in the input, and how many came back verbatim. **`mode` is always `"report_only"`** — this block counts, it never acts. `structure_kept` rides in this block too. "Returned verbatim" is presence-and-count, not position; the block's own `note` says so. *(The freeze itself shipped later the same day — see the E-9 section below; this block remains the measuring instrument either way)* |
 | `stats.after_rewrite` | Present only when the model itself emitted invisible characters and a quiet second pass removed them. Kept separate so the customer's own layer A evidence (`stats.removed` / `stats.replaced`) is never mixed with the model's mess |
 
 ### The ordering fix behind the layer A stats
@@ -405,3 +405,43 @@ reported `removed_count: 0`. Verified both ways on 24 August 2026.
 | Variable | Meaning |
 |---|---|
 | `WATERMARKS_REWRITE_REASONING_EFFORT` | Unset (default): the parameter is omitted, exactly as before. `"none"` asks a reasoning model to skip its chain of thought — without it such a model thinks for minutes on a rewrite. Only relevant if the model is ever switched to a reasoning-tagged one |
+
+---
+
+## Added 24 August 2026 — E-9, the freeze
+
+### The freeze is ON
+
+Protected spans — headings (structure tier), attributed quotations, block
+quotes and reference entries (quote tier) — are replaced with placeholders
+before the model sees a chunk and put back afterwards, so the model cannot
+change them. Detection is `uc_spans.detect_protected_spans` and nothing else;
+policy and masking live in `uc_freeze.py`; the wiring is in `uc_chunk.py`.
+
+### New block on a layer B response
+
+| Field | Meaning |
+|---|---|
+| `layer_b.freeze` | `{enabled, tiers, spans_frozen, frozen_words, frozen_fraction, chunks_fallback, fallback_words, fallback_share, refund_threshold_share}`. `chunks_fallback` lists any chunk handed back as the customer's own original text because a restore could not be verified — each entry carries `chunk`, `words` and `reason`, and a plain-English `note` rides on the block when the list is not empty (D3: explain in every case). When the freeze is off: `{"enabled": false}` |
+
+### New field on a scan's `billing` block
+
+| Field | Meaning |
+|---|---|
+| `freeze` | The D4 pre-flight: `{fraction, frozen_words, words, spans}` — the share of THIS document that will come back exactly as sent, computed by the same plan the rewrite runs, on the free scan, before anyone pays. Absent when the freeze is disabled or the input is not text. **The interface half is Lane C's (board W-10) and D4's wording is fixed on the board — including the louder prompt above 60%** |
+
+### New failure behaviour (D3, 04 entry 136)
+
+A chunk whose restore fails retries once, then falls back to that chunk's own
+original text — the job still succeeds and the report explains. When MORE than
+one third of the document's words fall back this way, the job fails with
+`FreezeRestoreFailed`, which refunds.
+
+### New environment variables
+
+| Variable | Meaning |
+|---|---|
+| `UC_LAYER_B_FREEZE` | `0` switches the freeze off entirely (default on) |
+| `UC_FREEZE_TIERS` | Comma list of `structure,quotes` (default both, per D1) |
+| `UC_FREEZE_RETRIES` | Extra attempts on a failed restore (default 1) |
+| `UC_FREEZE_REFUND_SHARE` | D3's refund threshold (default one third) |

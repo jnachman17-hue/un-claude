@@ -1,305 +1,134 @@
-# Un-Claude: Current Handoff
+# Conductor handoff — 24 August 2026
 
-**NOT REWRITTEN, PREPENDED — and that is deliberate.** `CLAUDE.md` section 6 says
-this file is rewritten at session end. **Three peer sessions were running while
-the route session worked and one of them was mid-edit in the engine**, so a
-wholesale rewrite would have thrown away resumption context that is not mine.
-The route session's block is below; everything under it is the state the other
-lanes left.
+**You are the conductor for un-claude.com. This file is how you pick up.**
+
+**Read in this order:** `CLAUDE.md` (all of it — sections 1, 4 and 5 bite) →
+this file → **`docs/IMPLEMENTATION-BOARD.md`, which is the live to-do list and
+the only file you update.** Everything else is history.
 
 ---
 
-# 24 AUGUST 2026, ROUTE SESSION: three items done, one waiting on Jon's deploy
+## THE ROLE, IN ONE PARAGRAPH
 
-**Full evidence in `session-notes/route-session.md`.** One commit, local, nothing
-pushed and nothing deployed.
+You do not build. You decide what gets built, in what order, by which model, and
+you write the brief that Jon pastes into a fresh chat. When he reports back you
+**read the session note, VERIFY its claims by probing rather than reading, and
+update the board.** Verification is the job. **Five confident findings have been
+wrong in this project — including two of the conductor's own** — and every one
+was caught by running something rather than reading something.
 
-| Item | State |
+**Jon is not a programmer.** Explain in plain English, define terms once, show
+the artefact rather than a summary of it. He wants pushback, not agreement.
+**Recommend, do not enumerate.**
+
+---
+
+## WHERE THE PRODUCT IS
+
+**un-claude.com is live and takes real money.** The full money loop is proven on
+real money: a purchase credited, a refund debited exactly, all four ledger
+invariants holding. Stripe is live, card-only, US customers only.
+
+**Done and verified since launch:** the refund clamped to the payment with the
+shortfall recorded · free credits once per inbox · the prompt leak closed · layer
+A now runs *before* the rewrite · the engine's own AI tells stripped · nine of
+nine canonicals · Deployment Protection closed the free-access URLs · the cost
+leak closed · CJK refused at the door · the support address moved to the domain ·
+the analytics funnel extended past the paywall.
+
+---
+
+## WHAT IS RUNNING RIGHT NOW
+
+| Session | State |
 |---|---|
-| **The cost leak (E-12)** | **DONE AND PROVED BOTH WAYS.** The browser no longer receives `cost_usd` or any token count; the `run_costs` row for the same run still holds 862 tokens and $0.000096. The strip sits after `recordRunCost` and before the response, which is the whole fix |
-| **CJK refused** | **DONE AND PROVED.** Chinese, Japanese and Thai refused above every line that touches credits, so nothing is charged. An English essay quoting Chinese goes through at 2%. Korean is the control and is not refused. `04` entries 136 and 137 |
-| **The borrowed note** | **DONE.** One string in `engine/text_unicode.py`, in our voice, verified out of the real engine |
-| **M-6, cancellation** | **WRITTEN, UNPROVEN. NEEDS JON.** See below |
-
-## ★ WHAT JON DOES NEXT, IN THIS ORDER
-
-1. **DO NOT DEPLOY FROM THIS TREE YET.** Another session was mid-flight in
-   `apps/web/engine/uc_spans.py` (E-9 freeze work) as the route session
-   finished. **A deploy now ships someone else's half-finished work.** This is
-   the same "waits for a quiet tree" block the board records for M-6; the tree
-   was clean at the start of the route session and stopped being quiet during it.
-2. **Then deploy, and watch the build.** `vercel.json` now carries
-   `"app/api/tool/clean/route.ts": { "supportsCancellation": true }`. If the
-   build fails with *"the pattern defined in `functions` doesn't match any
-   Serverless Functions"*, **the switch does not reach an App Router route — take
-   the two lines out, and that is the answer.** It could not be checked locally:
-   `.vercel` is not linked and linking authenticates against the live project.
-3. **Then run one free test:**
-   `UC_SITE=https://un-claude.com node scripts/verify-connection-drop-refund.mjs`
-   — a 250,000-word layer-A-only job, so no model call and no cost. **A refund
-   row means M-6 is closed with no new dependency.**
-4. **If no refund row, stop.** The next step is `waitUntil` from
-   `@vercel/functions`, a new dependency, and that is yours.
-
-## Two things the route session found that were not in its brief
-
-- **The M-6 test never existed as a file.** The board and lane B both describe
-  re-running "a script that already exists"; there was none. It is written now:
-  `scripts/verify-connection-drop-refund.mjs`. `07`.
-- **The CJK hole currently costs the CUSTOMER, not us.** A Chinese document
-  counts as one space-counted word, which is under the engine's 16-word rewrite
-  floor, so the rewrite is *silently skipped* and the customer pays a credit for
-  nothing. Our model-call exposure is latent and **becomes real the moment
-  anyone wires an honest word counter into that floor.** `04` entry 136.
-
-## Still open from this session
-
-- **Lao, Khmer, Burmese and Tibetan have the identical billing hole** and are one
-  line from being closed. Jon's ruling named three scripts, so three is what
-  shipped. `06`.
-- **A Chinese document can no longer be sanitised through the site at all**, not
-  even for its layer A characters, because the workbench asks for the rewrite
-  automatically on anything carrying prose. That follows from the ruling rather
-  than from a bug. The free scan still works and still finds hidden characters in
-  Chinese text, proved. Changing it needs a different ruling and Lane C's file.
+| **E-9, the freeze** | **IN FLIGHT.** `apps/web/engine/**`. Its note will be `docs/session-notes/e9-freeze.md` |
+| **Cowork press drafting** | **DONE.** Nine drafts in `docs/session-notes/press-emails-phase-2.md`. **Jon is unhappy with them — see the critique on the board** |
 
 ---
 
+## THE THREE RULES THAT KEEP PARALLEL WORK SAFE
+
+1. **One lane per territory. Never two writers in one file.** Every collision
+   this project has had came from ignoring this.
+2. **Sessions share one git index.** Every brief must say: run
+   `git diff --cached --name-only` before every commit. Never `git add -A`.
+3. **Only Jon applies migrations, and only Jon deploys.** Deploys ship the
+   **working tree, not git**, so never deploy while a session has edits on disk.
+
 ---
 
-# 24 AUGUST 2026, LANE A: ALL SIX STEPS DONE. NOT DEPLOYED.
+## THE IMMEDIATE SEQUENCE
 
-**The engine lane ran overnight and finished.** Full evidence in
-`session-notes/lane-a-engine.md`; 13 commits, all local. **The tree now holds
-Lane A's engine changes and nothing is deployed** — the board already notes
-M-6's config experiment is waiting on a quiet tree, and this is that tree.
+**1. E-9 lands → verify it → deploy.** The deploy is the unlock: E-9, the route
+session's cost-leak and CJK work, the email address, and the analytics funnel are
+all committed and **none of them is live.**
 
-**What changed in the engine (all tested, 762 passed / 1 skipped):**
-the chunk plumbing no longer loses whitespace-edge lines or a customer's own
-`---` (caught by the new byte-identity safety net); a REPAIR pass strips the
-markdown/curly-punctuation/em-dash tells the model injects, at median +0.0000
-trigram cost; **layer A now runs before the rewrite**, so its report describes
-the customer's own document (verified live both ways); the number reader,
-CJK-aware internal word counts, code-fence stitching and fragile chunk
-boundaries are fixed; the stylometry scanner no longer fires on "in the
-world" and seven other ordinary phrases; and every rewrite now carries a
-report-only `protection` block that counts which quotations, headings and
-references came back verbatim — the freeze stays OFF and unbuilt.
+**2. Then M-6, four steps, in `docs/IMPLEMENTATION-BOARD.md`.** Step 2 may be the
+answer on its own — if the build fails naming the `functions` pattern, the switch
+does not reach an App Router route and the two lines come out.
 
-**Three things for Jon:**
+**3. Then the Lane D remainder**, which E-9's measurements unblock: the four
+"enforced rather than promised" claims, the three-word ceiling, "nine classes",
+and the honest size ceiling.
 
-| | |
+**4. Then press**, once the gate closes.
+
+---
+
+## WHAT JON OWES, AND NOBODY ELSE CAN DO
+
+- **Deploy** (blocked on E-9) and then M-6's four steps
+- **Top up the AI Gateway** — $5.44, the live site shares that key, and
+  **timed-out reasoning calls bill invisibly** (own-accounting said $0.13; the
+  gateway said $1.91)
+- **Change the Stripe receipt address** to `support@un-claude.com` — dashboard,
+  not code
+- **Decide:** extend the CJK refusal to Lao, Khmer, Burmese and Tibetan?
+- **Decide:** `@vercel/functions` if M-6 fails · Sentry's dependency ·
+  Supabase Pro backups
+- **Decide:** the Sharma sequencing (board)
+- **PostHog:** build the one funnel the analytics session left a walkthrough for
+
+---
+
+## RULINGS THAT ARE SETTLED. Do not reopen these.
+
+| Ruling | Where |
 |---|---|
-| **1. The model (D5)** | Bake-off done: 160 runs, 17 configs, a 5,047-word scale test. **Recommendation: `deepseek/deepseek-v3.2`** — quotations mostly intact where the mistrals destroyed every one, same speed as medium at scale, 1/6 the cost, fewest retries. One Vercel env var; confirm the checkpoint is open-weight first. kimi-k3 investigated as asked: completes only with the new reasoning knob, loses nothing, but rewrites weakly and blows the time ceiling |
-| **2. E-12, the cost leak** | Fix is one guarded line in `app/api/tool/clean/route.ts` AFTER `recordRunCost` — written out verbatim in the session note. Out of Lane A's territory; stripping engine-side would break the live run-cost writer |
-| **3. CJK pricing** | The honest word counter exists and runs engine-internally; wiring it to billing/floor/gate + the browser counter is ONE coupled decision, recorded in `06` |
-
-**Deploy note:** deploying now ships all of Lane A's engine fixes plus the
-`protection`/`repair` report blocks. Nothing in them changes a price or a
-claim; the workbench ignores unknown report fields.
-
----
-
-## Previous handoff follows
-
-# 24 AUGUST 2026, LANE B: APPLIED AND DEPLOYED. ONE FIX DID NOT LAND
-
-**M‑6 does not work in production.** The connection-drop refund is real code
-that never runs: Vercel's request cancellation is **opt-in**, and this project
-does not declare `supportsCancellation`, so `request.signal` can never fire.
-Measured on the live site after the deploy — 250 credits taken, nothing
-delivered, no refund. **The safe direction was also measured: a delivered job is
-charged and not refunded, so it will never refund everything.** One config
-switch, one deploy, one free re-run of an existing test. `06` row 89.
-
-**Everything else landed and was verified on the live site:** one address now
-collects 5 free credits instead of 15, through the real `/api/credits` route;
-the first `run_costs` row this product has ever written exists, so the privacy
-policy's claim about recording run costs is true for the first time; and both
-refund directions are closed.
-
-**Still owed: the privacy sentence** (`POLICY-CHANGES-PENDING.md`), and a push —
-local is ahead of GitHub, so the deployed code exists on one laptop.
+| **No public attribution of the upstream.** Licence satisfied, notice kept | `04`, board |
+| **The hero keeps "100% of detectable marks removed."** The *panel* was the incoherent half and it changed instead | `04` 134–135 |
+| **The news logos have no links. Intentional** | Jon, 23 Aug |
+| **CJK is refused, not priced** | Jon, 24 Aug |
+| **Both freeze tiers ship** (structure and quotations) | D1 |
+| **Freeze attributed quotations, leave unattributed free** — a watermark lives where the model had a choice; inside a real quotation it had none | D2 |
+| **A failed freeze hands back the chunk, explains, and refunds above a threshold** | D3, changes `04` entry 22 |
+| **Open weights only.** `deepseek/deepseek-v3.2` recommended and live | D5 |
+| **Guest credits carry over once, ever** | ratified |
 
 ---
 
-## The pre-deploy version follows
+## THINGS THAT CANNOT BE FIXED. Never let them be promised.
 
-# 24 AUGUST 2026, LANE B: THE FOUR MIGRATIONS ARE APPLIED
-
-**Jon ran all four. Every one succeeded, and the proofs pass.** Direction one of
-the refund bug now removes nothing and records a $4.99 loss instead of
-confiscating a second purchase; one address collects 5 free credits instead of
-15; a new wallet reads 3 instead of 0. Output in `session-notes/lane-b-money.md`.
-
-**Three things are still outstanding:**
-
-| | |
-|---|---|
-| **1. A deploy** | Half of M‑2, all of M‑4's writer, and all of M‑6 live in code that is not on un-claude.com. **Until then one address can still mint free credits through the site**, because the deployed grant code does not know about the new record |
-| **2. One more migration** | `20260823120400_lock_down_money_tables.sql`. The two new tables arrived deletable — `grant` does not narrow Supabase's default privileges, only `revoke` does. Changes no data |
-| **3. The privacy sentence** | Now actually owed. `POLICY-CHANGES-PENDING.md` has the wording |
-
-**After the deploy, watch the logs for `CLIENT GONE:` for a day.** `06` row 89.
+- **Whether a statistical watermark was removed is not measurable — by anyone.**
+  Layer B stays best effort and the site says so.
+- **A term of art restated wrongly is not findable by a program.** "Beyond a
+  reasonable doubt" came back as "with absolute certainty" and survived 1 of 40.
+- **Invented facts and sources.** Not findable.
+- **Nothing has been tested past 8 chunks** while a 10,000-word document is 34.
 
 ---
 
-## What follows is the pre-run version, kept as the record of what was wrong
+## THE HABITS THAT HAVE ACTUALLY WORKED
 
-# 23 AUGUST 2026, LANE B: FOUR MIGRATIONS ARE WRITTEN AND NOT APPLIED
-
-**Jon has to run these. Nothing behind them is fixed until he does.** Full
-detail, with the live ledger rows behind every one, is in
-`session-notes/lane-b-money.md`.
-
-**Each file is wrapped in a transaction: it applies whole or does nothing. If it
-errors, nothing has changed.** Paste into the Supabase SQL editor in this order:
-
-| # | File | Fixes |
-|---|---|---|
-| 1 | `20260823120000_refund_attribution.sql` | A refund takes credits out of a **different purchase** the customer paid for — and, the other way round, gives back $4.99 and recovers one credit with nothing recording the rest |
-| 2 | `20260823120100_grant_claims_survive_deletion.sql` | Free credits can be minted from one address **without limit**: delete, re-register, collect five more |
-| 3 | `20260823120200_mint_signup_grant_at_signup.sql` | A new customer's wallet says **"0 credits · Get credits"**. Needs 2 applied first |
-| 4 | `20260823120300_record_run_cost.sql` | The privacy policy says we record what a run cost. Nothing ever has, and on the ledger nothing ever could |
-
-**Then prove 1 and 2, one command each. Both fail today.**
-
-    cd apps/web
-    node scripts/verify-refund-attribution.mjs
-    node scripts/verify-grants-survive-deletion.mjs
-
-**Migrations 2 and 4 also need a deploy, and 2 is the one to be careful about.**
-Applying it makes the database refuse a second helping of free credits, but the
-site's own grant code — the version currently deployed — does not know about the
-new record and would still mint them. Until the deploy, the free-credit hole is
-open and `verify-grants-survive-deletion.mjs` will still fail its second check.
-**Migrations 1 and 3 are complete on their own and need no deploy.**
-
-**One privacy sentence is owed once migration 2 is applied.** Wording is drafted
-in `POLICY-CHANGES-PENDING.md`; the legal pages were not touched.
-
-**Two of the six findings are finished and need nothing:** the refund tool no
-longer tells Jon to pay out on an already-refunded payment (it was worse than the
-audit said — on a spent pack it advised *"fully unspent, a full refund matches
-the policy exactly"*), and a job whose customer disconnects now gives the credit
-back.
-
-**Watch the first deploy for one thing:** the connection-drop refund logs
-`CLIENT GONE:` every time it fires. A run of those against jobs that plainly
-succeeded would mean it is firing wrongly — and that would refund everything.
-`06` row 89.
-
-## The section below this one is from 21 August and has gone stale
-
-**It says production carries no Stripe variables and "the live site physically
-cannot charge anyone".** That is no longer true — the site is live and taking
-real money. Lane B did not verify production's environment and has not edited
-that section; **read it as history, not as the current state.**
-
----
-
-**Rewritten 21 August 2026, end of session 11 — the Stripe session.**
-
----
-
-## THE HEADLINE: STRIPE IS BUILT, TESTED END TO END, AND NOT DEPLOYED
-
-**Three things stand between here and taking real money, and only one of them is
-work.** Everything else on the payment path has a run behind it.
-
-| # | Remaining | Whose |
-|---|---|---|
-| **1** | **Terms and privacy reconciliation.** The live terms still say *"The service is currently free to use and no payment method is collected."* **That becomes a false statement in a binding legal document on the first charge.** | Drafted by a session, **approved by Jon** |
-| **2** | **Vercel Pro.** Hobby forbids commercial use, and Vercel's own definition includes *"advertising the sale of a product or service"* — /pricing already qualifies. Enforcement is a **paused deployment**, whole site offline | **Jon** |
-| **3** | **Production wiring.** ~10 min plus ~20 min verifying. Last step, depends on nothing | Jon runs it, procedure written |
-
-**Procedure for 3 is `session-notes/stripe-setup.md` section 16. Do not improvise
-it** — the trap is that production needs its OWN webhook signing secret, and
-reusing the local one makes every real payment fail silently.
-
----
-
-## What is true right now
-
-| | |
-|---|---|
-| **Stripe account** | **ACTIVATED.** `charges_enabled`, `payouts_enabled`, `details_submitted` all true, nothing outstanding |
-| **Production** | **NO `STRIPE_*` env vars at all.** The live site physically cannot charge anyone. This is the correct safe state |
-| **Deployed** | Nothing from this session. un-claude.com serves an older build |
-| **Pushed** | Nothing. Local is ahead of `origin/main` |
-| **Migrations** | `20260821150000_stripe_purchases` and `20260821160000_refund_cumulative` are **both applied** |
-
----
-
-## What was proven, and how to re-prove it
-
-**Twelve suites, all passing.** `session-notes/payments-tested.md` has the
-output. All read-only unless noted.
-
-    cd apps/web
-    node scripts/verify-stripe-migration.mjs        # 10 checks
-    node scripts/verify-stripe-webhook.mjs          # 6 forgery cases, no server needed
-    node scripts/verify-payment-edges.mjs           # 12 refusals
-    node scripts/verify-pricing-matches-engine.mjs  # price vs engine drift
-    node scripts/stripe-refund-check.mjs <pi|email> # BEFORE refunding anyone
-
-    cd apps/e2e
-    node stripe-purchase.mjs starter                # a real browser purchase
-
-**The two that write:** `verify-refund-flow.mjs` issues test refunds and
-`verify-dispute-flow.mjs` closes a test dispute. Both refuse to run on a live
-key.
-
-**The headline result: the same webhook delivered three times produces exactly
-one ledger row.** Stripe guarantees at-least-once delivery, so this will happen
-in production.
-
----
-
-## READ THIS BEFORE TOUCHING CREDITS OR THE ENGINE
-
-**An adversarial audit found two CRITICAL bugs in code that predates Stripe.**
-Both are fixed. Both are the kind that come back.
-
-1. **`/api/tool/clean` read the guest cookie to decide "is this a conversion?"**
-   — and `/api/credits` deletes that cookie on merge, so every converting user
-   was paid the +2 welcome grant they had just been correctly denied. **The same
-   defect was fixed in one route and missed in the other.** It now reads
-   `hasConverted()`. Regression test: `apps/e2e/conversion-regression.mjs`.
-
-2. **The clean route's "text file" list did not match the engine's.**
-   `essay.csv` bought an unlimited rewrite for 1 credit; `.md` was charged
-   per-word for a rewrite the engine never runs. **`verify-pricing-matches-engine.mjs`
-   now guards this. Run it if you edit either list.**
-
----
-
-## Standing cautions, carried forward
-
-- **Turnstile refuses automated browsers, and that is correct.** The E2E scripts
-  sign in with an admin-issued one-time token through `/auth/confirm`, the
-  product's own arrival path. **Do not disable the captcha to make a test pass** —
-  the anonymous-grant cap is sized on the assumption it is enforced.
-- **The Browser preview pane cannot do mobile on this site.** Use
-  `apps/e2e/mobile-probe.mjs` / `mobile-shots.mjs`, which drive the installed
-  Chrome. **Do NOT run `npx playwright install`.**
-- **Next.js 16 refuses a second dev server from the same directory**, whatever
-  port. `.claude/launch.json`'s `web-b`/`web-c` entries append the port AFTER a
-  pipe, so it reaches `pino-pretty` rather than `next` — they do not work.
-- **Never write a `/` immediately followed by `*` inside a SQL comment.**
-  Postgres nests block comments and it swallows the rest of the file.
-- **Stage commits by explicit path.** Other sessions are live in this folder.
-
----
-
-## Open, recorded, deliberately not fixed
-
-**A forged `uc-guest` cookie can name another user's anonymous account** and move
-up to 2 credits across. It needs an account UUID that is never published
-anywhere. Rated LOW by the audit. **In `06` with a revisit trigger** — the guest
-merge has been broken three separate ways already, and changing it again to
-close a hole requiring a secret is a bad trade this week.
-
-**The virtual mailbox is NOT a blocker.** A real receipt was fetched and checked:
-Jon's name and both addresses are absent. Stripe requires the support address as
-a setting, not on the receipt. Worth finishing; not gating.
+- **Probe, do not read.** The phantom `noindex` (twice), a payment path asserted
+  as wired that was never deployed, an `sk_live` grep that matched a comment, a
+  Radar tier that only exists in test mode, an analytics finding from a probe
+  that could not have detected it, a CJK exploit that was latent rather than
+  live. **All caught by running something.**
+- **Name the territory AND the no-go list in every brief.**
+- **Make sessions say what they could not prove.** The best notes in this project
+  lead with it.
+- **Sessions leave work uncommitted.** Three did. Check the tree yourself.
+- **A guard that fires on good work is worse than the defect it prevents.** This
+  has nearly shipped twice.

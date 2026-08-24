@@ -2001,3 +2001,31 @@ large diff that has nothing to do with the change being made. Checked by stashin
 the change and re-running: it fails at HEAD too. `oxlint` is clean on that file;
 the one lint error in `apps/web/scripts/` is a pre-existing unused variable in
 lane B's `verify-refund-attribution.mjs`.
+
+---
+
+## A gateway call can hang far past its 45-second timeout. Lab scripts need a wall clock around the whole run
+
+**Learned 24 August 2026, E-9 session, the hard way.**
+
+**What happened.** A measurement campaign froze for 15+ minutes inside a
+single run. The process sat blocked in `PySSL_select` on two ESTABLISHED
+connections to the gateway, with the 45-second call timeout never firing.
+
+**Why the timeout does not save you.** urllib's `timeout` is applied **per
+socket operation**, not per request. A connection on which the server keeps
+dripping bytes — or an SSL read that keeps being woken — resets the clock
+every time, so a call can stay "in flight" indefinitely. The engine's own
+production comment ("a model call already in flight has its own 45 second
+timeout on top") assumes the timeout fires; on Vercel the function's own
+300-second kill is the real backstop, and the site aborts at 240. **A lab
+script on a laptop has neither**, so it hangs forever.
+
+**What to do instead.** Run each measured job in a **subprocess with a hard
+wall clock** (`subprocess.run(..., timeout=240)` — the site's own ceiling)
+and append results to disk as they finish, so a hang costs one run, not the
+campaign. `engine/lab/freeze_measure.py` is the pattern.
+
+**Do not diagnose with `lsof ... | grep -c`.** The first check this session
+piped lsof through `grep -c TCP`, got `0`, and briefly concluded there were
+no connections; running lsof plainly showed two. Read the raw output.
