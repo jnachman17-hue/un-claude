@@ -15,6 +15,17 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from uc_freeze import (
+    REFUND_SHARE,
+    FreezeRestoreFailed,
+    choose_mask_ids,
+    enabled_tiers,
+    freeze_enabled,
+    mask_chunk,
+    plan_freeze,
+    restore_chunk,
+    verify_restore,
+)
 from uc_leakguard import LeakSuspected, check_leak, strip_edge_separator
 from uc_wordcount import count_words
 
@@ -32,6 +43,12 @@ MIN_RATIO = 0.70         # Jon's ruling: we are a watermark remover, not a
 # limited, and paid credits are now in place.
 MAX_WORKERS = int(os.environ.get("UC_LAYER_B_WORKERS", "8"))
 RETRIES = int(os.environ.get("UC_LAYER_B_RETRIES", "8"))  # per chunk
+# Extra attempts a chunk may spend on a failed mask RESTORE — the model came
+# back without a recognisable placeholder, so the protected span cannot be
+# put back verifiably. Bounded at ONE (Lane A's rule: every new retry is
+# bounded at one). After that the chunk falls back to its own original text
+# per Jon's ruling D3, and never fails the document on its own.
+FREEZE_RETRIES = int(os.environ.get("UC_FREEZE_RETRIES", "1"))
 # Extra attempts a chunk may spend PURELY on getting its paragraphs back, when
 # the facts already survived. Deliberately tiny and deliberately separate from
 # RETRIES: a re-roll for structure costs a model call and seconds against the
@@ -449,8 +466,41 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         # lose, so hand it straight back rather than sending blanks to a model.
         return text, {"chunks": 0, "parallel": False, "words_in": 0, "words_out": 0,
                       "usage": {"chunks": 0, "retries": 0}, "figures_to_check": [],
-                      "paragraphs_in": 0, "paragraphs_out": 0, "structure_kept": True}
+                      "paragraphs_in": 0, "paragraphs_out": 0, "structure_kept": True,
+                      "freeze": {"enabled": False}}
     chunks = [_weave(c["paras"], c["inner"]) for c in plan]
+
+    # THE FREEZE (board E-9). Plan ONCE on the whole document — the same call
+    # the D4 pre-flight makes, so the fraction the visitor was shown is the
+    # fraction delivered — then mask PER CHUNK, so a restore failure in one
+    # chunk falls back to that chunk alone (D3) instead of failing the
+    # document. Chunks are contiguous substrings of the document (the safety
+    # net asserts reassembly is byte-identical), so each document-level span
+    # maps to exact chunk-local offsets; a span that would straddle a chunk
+    # boundary is left free (the frozen kinds are all single paragraphs or
+    # smaller, so this is defensive only). Everything here happens BEFORE the
+    # thread pool: the workers only read.
+    freeze_on = freeze_enabled()
+    tiers = enabled_tiers() if freeze_on else ()
+    masked_chunks: list[str] = list(chunks)
+    mask_maps: list[list[dict]] = [[] for _ in chunks]
+    if freeze_on and tiers:
+        doc_spans = plan_freeze(text, tiers)
+        offset = len(lead)
+        for i, chunk in enumerate(chunks):
+            a, b = offset, offset + len(chunk)
+            offset = b + len(plan[i]["after"])
+            if text[a:b] != chunk:             # defensive; the net says never
+                continue
+            local = [
+                {**s, "start": s["start"] - a, "end": s["end"] - a}
+                for s in doc_spans
+                if a <= s["start"] and s["end"] <= b
+            ]
+            if not local:
+                continue
+            ids = choose_mask_ids(chunk, len(local), _numbers(chunk))
+            masked_chunks[i], mask_maps[i] = mask_chunk(chunk, local, ids)
 
     results: list[str | None] = [None] * len(chunks)
     infos: list[dict] = [{} for _ in chunks]
@@ -480,10 +530,12 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         best_missing: list[str] = []
         best_kept = False
         structure_rerolls = 0
+        freeze_failures = 0
         last_err = None
         usage = usages[i]
         wanted = len(plan[i]["paras"])
         inner = plan[i]["inner"]
+        mask_map = mask_maps[i]
         for attempt in range(RETRIES):
             # Counted before the call, so an attempt that raises is still an
             # attempt. `attempts` is the retry story and `model_calls`, filled in
@@ -491,13 +543,39 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # per attempt and are recorded separately rather than assumed equal.
             usage["attempts"] = attempt + 1
             try:
-                out, info = rewrite_fn(chunks[i], attempt, best_missing, usage)
+                # THE MODEL SEES THE MASKED CHUNK. The protected spans are
+                # placeholders, so it cannot change them however it rewrites.
+                out, info = rewrite_fn(masked_chunks[i], attempt, best_missing, usage)
             except Exception as e:
                 last_err = e
                 if attempt < RETRIES - 1 and time.monotonic() < deadline:
                     time.sleep(BACKOFF * (attempt + 1) + random.uniform(0, 1.0))
                     continue
                 break
+            # THE RESTORE RUNS FIRST — BEFORE ANY GUARD (E-9 rule 2). Every
+            # guard below compares customer text to customer text: the
+            # original unmasked chunk against the unmasked output. Both
+            # earlier designs ran the guards on the masked pair, so the fact
+            # guard complained about a mask number itself and the leak guard
+            # read a normal-length rewrite of a short masked input as a 4.3x
+            # expansion — retried, failed the job, and refunded a customer
+            # whose rewrite was perfect. The W8 mistake exactly.
+            if mask_map:
+                out, _dropped = restore_chunk(out, mask_map)
+                problems = verify_restore(chunks[i], out, mask_map)
+                if problems:
+                    freeze_failures += 1
+                    last_err = FreezeRestoreFailed(
+                        f"chunk {i + 1}: " + "; ".join(problems[:3]))
+                    if (freeze_failures <= FREEZE_RETRIES
+                            and attempt < RETRIES - 1
+                            and time.monotonic() < deadline):
+                        time.sleep(0.4)
+                        continue
+                    # Retry spent. The fallback to the chunk's ORIGINAL text
+                    # happens after the loop, where a clean earlier attempt
+                    # still wins if one exists.
+                    break
             try:
                 _guard(chunks[i], out, i)           # length: still a hard failure
             except TruncatedRewrite as e:
@@ -518,7 +596,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                 # was recorded. The only change is that a good rewrite already
                 # in hand is no longer discarded because a later roll was bad.
                 if best_out is not None:
-                    return i, best_out, best_info, best_missing, usage, best_kept
+                    return i, best_out, best_info, best_missing, usage, best_kept, None
                 raise
             # The chunk's own paragraph spacing goes back on here, before any
             # guard reads it, so every path below returns the restored text.
@@ -551,7 +629,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             try:
                 _guard_facts(chunks[i], out, i)     # facts: advisory, keep the best
                 if kept or structure_rerolls >= STRUCTURE_RETRIES or attempt >= RETRIES - 1:
-                    return i, out, info, [], usage, kept
+                    return i, out, info, [], usage, kept, None
                 # Facts survived but paragraphs did not. The model merged or split
                 # something, and because the rewrite is non-deterministic another
                 # roll usually lands it. One roll, then take whichever is better
@@ -561,7 +639,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                 if best_out is None or (best_missing == [] and not best_kept):
                     best_out, best_info, best_missing, best_kept = out, info, [], kept
                 if time.monotonic() >= deadline:
-                    return i, out, info, [], usage, kept
+                    return i, out, info, [], usage, kept, None
                 time.sleep(0.4)
                 continue
             except FactsLost as e:
@@ -584,7 +662,14 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                     continue
                 break
         if best_out is not None:
-            return i, best_out, best_info, best_missing, usage, best_kept
+            return i, best_out, best_info, best_missing, usage, best_kept, None
+        if isinstance(last_err, FreezeRestoreFailed):
+            # D3: THE FREEZE FAILED, SO THIS CHUNK IS HANDED BACK UNREWRITTEN.
+            # The customer gets their own original words for this chunk —
+            # never a mask token, never a corrupted span — and the report
+            # says so plainly. This alone never fails the document; the
+            # refund threshold is applied across the whole document below.
+            return i, chunks[i], {"freeze_fallback": True}, [], usage, True, str(last_err)
         raise RuntimeError(
             f"chunk {i + 1} failed after {RETRIES} attempts: "
             f"{type(last_err).__name__}") from last_err
@@ -595,6 +680,57 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
     # chunk raised UnboundLocalError and layer B failed outright. Under roughly
     # 350 words is one chunk, which is very nearly every paste a visitor makes
     # into the box on the landing page.
+    def freeze_report(fallbacks: list[dict]) -> dict:
+        """What the freeze did, for the report. Lane C shows it (D4/W-10)."""
+        if not (freeze_on and tiers):
+            return {"enabled": False}
+        by_kind: dict[str, int] = {}
+        frozen_words = 0
+        for mmap in mask_maps:
+            for row in mmap:
+                by_kind[row["kind"]] = by_kind.get(row["kind"], 0) + 1
+                frozen_words += count_words(row["text"])
+        total = count_words(text)
+        fb_words = sum(f["words"] for f in fallbacks)
+        out: dict = {
+            "enabled": True,
+            "tiers": list(tiers),
+            "spans_frozen": by_kind,
+            "frozen_words": frozen_words,
+            "frozen_fraction": round(min(1.0, frozen_words / total), 4) if total else 0.0,
+            "chunks_fallback": fallbacks,
+            "fallback_words": fb_words,
+            "fallback_share": round(fb_words / total, 4) if total else 0.0,
+            "refund_threshold_share": round(REFUND_SHARE, 4),
+        }
+        if fallbacks:
+            # D3: explain in every case. The engine states the fact; the
+            # words a visitor sees are the interface's (messaging skill).
+            out["note"] = (
+                "Part of this document was returned exactly as sent: the "
+                "rewrite could not verifiably put a protected span back, so "
+                "the original text of that part was kept rather than risk "
+                "corrupting it.")
+        return out
+
+    def enforce_refund_threshold(fallbacks: list[dict]) -> None:
+        """D3's threshold: a meaningful share failing refunds the whole job.
+
+        One chunk falling back is handed back and explained, no refund — the
+        customer received the work. Past REFUND_SHARE of the document's
+        words, delivery stops being honestly describable as the work, so the
+        job fails, which refunds (04 entry 22 as amended for the freeze).
+        """
+        total = count_words(text)
+        fb_words = sum(f["words"] for f in fallbacks)
+        if total and fb_words / total > REFUND_SHARE:
+            raise FreezeRestoreFailed(
+                f"{fb_words} of {total} words came back unrewritten because "
+                f"protected spans could not be restored verifiably "
+                f"({fb_words / total:.0%}, past the {REFUND_SHARE:.0%} "
+                f"threshold); the job fails rather than deliver this as a "
+                f"rewrite")
+
     def totals() -> dict:
         """Every chunk's usage added together, plus the two derived counts.
 
@@ -613,7 +749,11 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
 
     try:
         if len(chunks) == 1:
-            _, out, info, missing, _usage, kept = one(0)
+            _, out, info, missing, _usage, kept, fell_back = one(0)
+            fallbacks = ([] if not fell_back else [{
+                "chunk": 1, "words": count_words(chunks[0]),
+                "reason": fell_back}])
+            enforce_refund_threshold(fallbacks)
             out = lead + out + tail
             info = dict(info or {})
             # words_in and words_out used to be set on the multi-chunk path only,
@@ -626,16 +766,24 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                         figures_to_check=[m for m in missing if m not in _numbers(out)],
                         paragraphs_in=len(paragraphs),
                         paragraphs_out=len(_split_blocks(out)[1]),
-                        structure_kept=bool(kept))
+                        structure_kept=bool(kept),
+                        freeze=freeze_report(fallbacks))
             return out, info
 
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(chunks))) as pool:
             at_risk: list[str] = []
             all_kept = True
-            for i, out, info, missing, _usage, kept in pool.map(one, range(len(chunks))):
+            fallbacks: list[dict] = []
+            for i, out, info, missing, _usage, kept, fell_back in pool.map(
+                    one, range(len(chunks))):
                 results[i], infos[i] = out, (info or {})
                 at_risk.extend(missing)
                 all_kept = all_kept and kept
+                if fell_back:
+                    fallbacks.append({
+                        "chunk": i + 1, "words": count_words(chunks[i]),
+                        "reason": fell_back})
+        enforce_refund_threshold(fallbacks)
 
         # Chunks are rejoined with the separator that ACTUALLY sat between them,
         # not a flat blank line. The chunk boundary is always a paragraph
@@ -661,7 +809,8 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                       figures_to_check=still_missing,
                       paragraphs_in=len(paragraphs),
                       paragraphs_out=len(_split_blocks(joined)[1]),
-                      structure_kept=bool(all_kept))
+                      structure_kept=bool(all_kept),
+                      freeze=freeze_report(fallbacks))
         return joined, merged
     except Exception as failure:
         # A failed layer B run is the most expensive thing this engine can do:

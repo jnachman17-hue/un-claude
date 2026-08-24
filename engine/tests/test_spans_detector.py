@@ -105,10 +105,61 @@ def test_unattributed_quote_is_detected_as_unattributed():
 
 
 def test_curly_quotes_detected_too():
-    text = "She said “the committee will not meet again this year” and left."
+    text = "She noted “the committee will not meet again this year” and left."
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
     assert quotes[0]["attributed"] is True
+
+
+def test_narrative_dialogue_tags_are_not_attribution():
+    # D2 (board, settled 23 Aug): the cue is a proxy for "these words came
+    # from outside". A short story's invented dialogue reads «"...," she
+    # said» — the model chose every word of it, so it is the MOST watermarked
+    # text in the document and must never freeze. The narrative tags — said,
+    # asked, replied, told — were deliberately removed from the cue list when
+    # the freeze shipped (E-9).
+    for text in (
+        '"We can\'t stay here another night," she said, and nobody argued '
+        "with her about the weather.",
+        '"Where were you when the lights went out?" he asked from the '
+        "doorway of the empty barn.",
+        '"That was never part of the plan at all," Marcus replied, folding '
+        "the map away from the rain.",
+    ):
+        quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
+        assert len(quotes) == 1
+        assert quotes[0]["attributed"] is False
+
+
+def test_citation_shape_is_attribution_without_a_verb():
+    text = (
+        'The change "did more for attendance than any intervention we had '
+        'previously funded" (Smith, 2019, p. 47).'
+    )
+    quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
+    assert len(quotes) == 1
+    assert quotes[0]["attributed"] is True
+
+
+def test_block_quote_attribution_follows_the_lead_in():
+    introduced = (
+        "The report concluded:\n\n"
+        "    The market did not fail. The market did exactly what an\n"
+        "    unregulated market does.\n\n"
+        "Nobody challenged it."
+    )
+    bare = (
+        "The rain kept falling on the ruined field.\n\n"
+        "    The market did not fail. The market did exactly what an\n"
+        "    unregulated market does.\n\n"
+        "Nobody challenged it."
+    )
+    intro_bq = [s for s in detect_protected_spans(introduced)
+                if s["kind"] == "block_quote"]
+    bare_bq = [s for s in detect_protected_spans(bare)
+               if s["kind"] == "block_quote"]
+    assert len(intro_bq) == 1 and intro_bq[0]["attributed"] is True
+    assert len(bare_bq) == 1 and bare_bq[0]["attributed"] is False
 
 
 # ---------------------------------------------------------------------------

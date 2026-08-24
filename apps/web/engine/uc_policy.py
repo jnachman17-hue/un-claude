@@ -154,7 +154,23 @@ def billing_estimate(kind: str | None, raw: bytes | None) -> dict:
         # Ceiling division without importing math, and 0 words still costs 1:
         # an empty job is refused earlier, so reaching here means real input.
         credits = max(1, -(-words // CREDIT_WORDS))
-        return {"credits": credits, "words": words, "basis": "words",
-                "limit": MAX_WORDS, "over_limit": words > MAX_WORDS}
+        estimate = {"credits": credits, "words": words, "basis": "words",
+                    "limit": MAX_WORDS, "over_limit": words > MAX_WORDS}
+        # THE D4 PRE-FLIGHT: what fraction of this document the freeze will
+        # return exactly as sent, computed BEFORE anyone pays, by the same
+        # plan the rewrite itself runs — one implementation, so the number
+        # shown is the number delivered. Free: no model call, regex only.
+        # Fail-soft: a pre-flight that cannot be computed must never block a
+        # price estimate. The interface half (the Continue/Cancel prompt,
+        # louder above 60%) is Lane C's — D4's wording is fixed on the board.
+        try:
+            from uc_freeze import freeze_enabled, freeze_fraction
+
+            if freeze_enabled():
+                estimate["freeze"] = freeze_fraction(
+                    raw.decode("utf-8", errors="surrogateescape"))
+        except Exception:  # noqa: S110 — the estimate must survive
+            pass
+        return estimate
     return {"credits": 1, "words": None, "basis": "flat",
             "limit": None, "over_limit": False}

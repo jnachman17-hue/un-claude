@@ -115,13 +115,30 @@ def _bound_em_dashes(src: str, out: str, stats: dict) -> str:
     # Convert from the end of the document backwards, so the document keeps
     # its earliest dashes — and so the offsets of the untouched matches stay
     # valid while later ones are replaced.
-    converted = 0
+    #
+    # A DASH SITTING IN TEXT COPIED VERBATIM FROM THE INPUT IS NEVER
+    # CONVERTED. The freeze (E-9) returns protected spans character for
+    # character, and this pass runs after that promise is checked — so a
+    # customer's own dash inside a frozen quotation must not become the one
+    # this rule sacrifices to the budget. The test is the module's own
+    # principle: if the dash's surrounding context appears in the input, the
+    # input proves the mark is the customer's, and the model's genuinely new
+    # dashes are the ones converted. If every candidate looks copied, excess
+    # dashes are LEFT rather than customer text edited — the safe direction
+    # (Jon: "some are okay").
+    converted = kept_verbatim = 0
     for m in reversed(matches):
         if converted >= excess:
             break
+        context = out[max(0, m.start() - 12): m.end() + 12]
+        if context in src:
+            kept_verbatim += 1
+            continue
         out = out[: m.start()] + " - " + out[m.end() :]
         converted += 1
     stats["em_dashes_converted"] = converted
+    if kept_verbatim:
+        stats["em_dashes_kept_verbatim_context"] = kept_verbatim
     return out
 
 

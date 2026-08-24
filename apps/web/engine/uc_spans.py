@@ -7,11 +7,11 @@ counts how many actually did. It is the first instrument that can measure, on
 a real customer's document, what W10 could only measure on documents the
 agents wrote themselves.
 
-**THE FREEZE IS OFF AND NOTHING HERE RAISES.** Nothing in this module changes
-one character of any output, fails any job, or costs any model call. It
-counts, and the counts ride in the report. The masking machinery (W10 phase 4
-/ board E-9) is a separate session and must not ship yet — see the board,
-PART 3.
+**NOTHING IN THIS MODULE RAISES OR CHANGES OUTPUT.** It detects and it
+counts, and the counts ride in the report. The masking machinery (board E-9)
+lives in `uc_freeze.py` and `uc_chunk.py`; it CONSUMES this detector — by
+rule 1 of the E-9 brief the freeze must never grow detection of its own,
+because a second detector is how the Sources latch comes back.
 
 **THE "SOURCES" LATCH IS FIXED BY CONSTRUCTION.** W10's adversarial verifier
 broke the previous design with a heading that says "Sources" over ordinary
@@ -46,16 +46,59 @@ _QUOTE = re.compile(r'"([^"\n]{12,600})"|“([^”\n]{12,600})”')
 
 #: The attribution cue near a quotation — D2's machine-readable proxy for
 #: "these words came from outside", which is the thing that matters.
+#:
+#: NARROWED FOR THE FREEZE (board E-9, D2). The first version of this list
+#: included the narrative dialogue tags — said, asked, replied, told — and
+#: they are exactly the verbs a short story is full of: every line of invented
+#: dialogue reads «"...," she said». D2's own reasoning rules the case: the
+#: model chose every word of that dialogue, so it is the MOST watermarked part
+#: of the document, and freezing it would hand it back untouched after
+#: charging for a rewrite. So the cue is now the REPORTIVE verbs — the ones
+#: essays use to put words in a named source's mouth — plus "according to"
+#: and a citation shape like (2019) or p. 47. A journalist's «the minister
+#: said "..."» is deliberately NOT attributed under this rule: being wrong
+#: toward free costs a few reworded phrases; being wrong toward frozen hands
+#: back a paid-for rewrite undone. Those are not the same size (Jon, D2).
 _ATTRIBUTION = re.compile(
-    r"\b(?:said|says|say|wrote|writes|writing|puts?\s+it|according\s+to|"
+    r"\b(?:wrote|writes|writing|puts?\s+it|according\s+to|"
     r"argued?|argues|warn(?:ed|s)?|not(?:es|ed)|described?|describes|"
     r"cautioned|observed?|observes|claim(?:ed|s)?|stated?|states|declared?|"
-    r"asked|replied|told|calls?|called|termed|adds?|added|concluded?|"
-    r"reported?|reports)\b",
+    r"termed|concluded?|reported?|reports|asserted?|asserts|"
+    r"maintained?|maintains|contend(?:ed|s)?|remark(?:ed|s)?|"
+    r"emphasi[sz]e[sd]?|acknowledged?|acknowledges|insist(?:ed|s)?)\b",
     re.IGNORECASE,
 )
+#: A citation shape near the quote is attribution even with no verb:
+#: "(2019)", "(Smith, 2019, p. 47)", "p. 47".
+_CITATION = re.compile(r"\([^()\n]{0,60}(?:19|20)\d\d[^()\n]{0,25}\)|\bpp?\.\s*\d+")
 #: How far around the quote to look for the cue, in characters.
 _CUE_WINDOW = 120
+#: How close after the closing mark a trailing verb must sit ("..., wrote
+#: Orwell"). Kept short so a reportive verb later in the sentence — ordinary
+#: narration like «"...," she said, and nobody argued» — does not read as
+#: attribution.
+_POST_WINDOW = 20
+_SENTENCE_END = re.compile(r"[.!?]")
+
+
+def _quote_attributed(pre: str, post: str) -> bool:
+    """Is a reportive cue in the ATTRIBUTIVE position around this quote?
+
+    The verb must do the attributing, not merely be nearby: before the quote
+    with no sentence boundary in between («Orwell warned that "..."»), or
+    hard against the closing mark («"...," wrote Orwell»). A window-only test
+    was tried first and froze fiction whenever the narration within a hundred
+    characters used a verb like "argued" or "observed" in its plain sense.
+    A citation shape anywhere near the quote attributes on its own.
+    """
+    for vm in _ATTRIBUTION.finditer(pre):
+        if not _SENTENCE_END.search(pre[vm.end():]):
+            return True
+    near = post[:_POST_WINDOW]
+    vm = _ATTRIBUTION.search(near)
+    if vm and not _SENTENCE_END.search(near[: vm.start()]):
+        return True
+    return bool(_CITATION.search(pre) or _CITATION.search(post))
 
 _URL = re.compile(r"https?://[^\s<>\"\)\]]+|\bwww\.[^\s<>\"\)\]]+")
 _EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
@@ -162,12 +205,14 @@ def detect_protected_spans(text: str) -> list[dict]:
 
     for m in _QUOTE.finditer(text):
         inner = m.group(1) or m.group(2)
-        window = text[max(0, m.start() - _CUE_WINDOW): m.end() + _CUE_WINDOW]
         spans.append({
             "kind": "quote",
             "text": inner,
             "start": m.start(),
-            "attributed": bool(_ATTRIBUTION.search(window)),
+            "attributed": _quote_attributed(
+                text[max(0, m.start() - _CUE_WINDOW): m.start()],
+                text[m.end(): m.end() + _CUE_WINDOW],
+            ),
         })
 
     for m in _URL.finditer(text):
@@ -197,7 +242,22 @@ def detect_protected_spans(text: str) -> list[dict]:
             in_reference_section = False
             continue
         if _is_block_quote(para):
-            spans.append({"kind": "block_quote", "text": para, "start": start})
+            # D2's cue for a block quote lives in the text INTRODUCING it —
+            # "As the report concluded:" — so the window looks backward. A
+            # preceding line ending in a colon is the standard typographic
+            # signal that an indented block is quoted source material, and it
+            # counts as a cue here; fiction almost never introduces invented
+            # text that way.
+            lead_in = text[max(0, start - _CUE_WINDOW): start]
+            spans.append({
+                "kind": "block_quote",
+                "text": para,
+                "start": start,
+                "attributed": bool(
+                    _quote_attributed(lead_in, "")
+                    or lead_in.rstrip().endswith(":")
+                ),
+            })
             in_reference_section = False
             continue
         if _is_equation(para):

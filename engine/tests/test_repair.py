@@ -263,3 +263,22 @@ def test_the_w10_shape_all_four_defects_in_one_output():
     assert "“" not in fixed and "’" not in fixed
     assert "**" not in fixed and "##" not in fixed
     assert stats["changed"] is True
+
+
+def test_em_dash_inside_text_copied_from_the_input_is_never_converted():
+    # The freeze (E-9) returns protected spans character for character, and
+    # this pass runs AFTER that promise is checked — so the dash the budget
+    # sacrifices must be the model's new one, never the customer's own dash
+    # riding inside a frozen quotation. The rule: a dash whose surrounding
+    # context appears verbatim in the input is the customer's.
+    quote = "the bridge held—as it always had—through the flood"
+    src = f'Early prose here. The historian wrote "{quote}" at the end.'
+    out = (
+        f'Early prose — freshly reworded. The historian wrote "{quote}" '
+        "at the end."
+    )
+    fixed, stats = repair_rewrite(src, out)
+    assert quote in fixed                       # the customer's dashes survive
+    assert " - " in fixed.split('"')[0]         # the model's new dash converted
+    assert stats["em_dashes_converted"] == 1
+    assert stats["em_dashes_kept_verbatim_context"] >= 1
