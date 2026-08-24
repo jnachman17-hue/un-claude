@@ -102,7 +102,7 @@
   "dangerZoneDescription": "Some actions cannot be undone. Please be careful.",
   "deleteAccount": "Delete your Account",
   "deletingAccount": "Deleting account. Please wait...",
-  "deleteAccountDescription": "This will delete your account and the accounts you own. Furthermore, we will immediately cancel any active subscriptions. This action cannot be undone.",
+  "deleteAccountDescription": "This deletes your account, your sign-in and your entire credit history. Any credits still on your balance go with it, including ones you paid for. This cannot be undone.",
   "deleteProfileConfirmationInputLabel": "Type DELETE to confirm",
   "deleteAccountErrorHeading": "Sorry, we couldn't delete your account",
   "needsReauthentication": "Reauthentication Required",

@@ -170,9 +170,28 @@ but it is incomplete. **The gap closes when this file is applied.**
 
 # 23 August 2026, lane B: the privacy page needs one new sentence
 
-**Status: PENDING. Nothing on the legal pages has been edited.** Same instruction
-as the first half of this file: note the change, hand over the wording, do not
-touch the pages.
+**STATUS: SHIPPED 24 AUGUST 2026 BY LANE D, committed, NOT deployed.** Everything
+below is kept as the record of what was decided and why; the wording that
+actually went on the page, and what changed around it, is in
+`docs/session-notes/lane-d-copy.md` item 7.
+
+**What shipped, in one line.** The paragraph under "Your rights" that used to end
+*"there is nothing else to delete"* now ends *"there is nothing of yours left
+beyond one small record, and here is exactly what that is"*, and a new paragraph
+follows it describing the fingerprint, the date and which grant it was. The
+page's "Last updated" moved from 21 August to 24 August. **Both prohibitions
+below were honoured: it is never called anonymous, and the page never implies the
+address can be read back.**
+
+**One thing deliberately NOT done, and it is Jon's to rule on.** The wording
+below scopes this to the deletion section only, so the section called "What we
+store about your account" still does not mention the fingerprint, even though it
+is written when the free credits are claimed rather than when the account is
+deleted. **Lane D followed this file rather than its own judgement,** `CLAUDE.md`
+section 2. A second mention up there would be accurate and is one sentence.
+
+**The original instruction, for the record:** note the change, hand over the
+wording, do not touch the pages.
 
 **It is only needed once
 `20260823120100_grant_claims_survive_deletion.sql` is applied.** Until then

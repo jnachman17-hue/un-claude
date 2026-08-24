@@ -179,6 +179,15 @@ export function HeroSection() {
                 />
                 Every kind of watermark
               </li>
+              {/* "100% of detectable marks removed" was false and any visitor
+                  could disprove it in ten seconds. F1 audit, last row: a scan
+                  found 15 invisible characters and the clean removed 12. The
+                  other three are RTL direction marks (U+200E, U+200F, U+061C)
+                  and text_unicode.py preserves them ON PURPOSE, because they
+                  carry meaning in Arabic and Hebrew and stripping them would
+                  corrupt a real document. The engineering is right; the
+                  sentence was not. This one is true and it is the better
+                  line: it says there is a judgement being made. */}
               <li
                 className={
                   'text-foreground flex items-center gap-2 text-[13px] font-semibold tracking-[-0.005em]'
@@ -189,7 +198,7 @@ export function HeroSection() {
                   strokeWidth={2}
                   aria-hidden
                 />
-                100% of detectable marks removed
+                Every mark that is safe to remove
               </li>
               <li
                 className={

@@ -106,7 +106,7 @@ import { shareTags } from '~/lib/share-tags';
  * not be able to drift apart.
  */
 const DESCRIPTION =
-  'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size. Credits never expire.';
+  'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, up to 3.2 MB. Credits never expire.';
 
 export const metadata = {
   title: 'Pricing',
@@ -138,10 +138,19 @@ export const metadata = {
  * is priced by the word; a Word document or a picture has its metadata and
  * hidden characters removed, which is the same small job at any size.
  * 04 entry 71 still governs the flat file credit.
+ *
+ * "ANY SIZE" CAME OFF ON 24 August 2026, AND THE MEANING IT CARRIED STAYED.
+ * The board's Lane D handoff: the browser now refuses an upload over
+ * MAX_UPLOAD_BYTES (3,200,000, encode.ts) with a message that names the
+ * number, so the page promised no upload limit while the product enforced
+ * one. "Any size" was always about PRICE — the credit does not change with
+ * size — and "up to 3.2 MB" keeps that and stops promising acceptance. The
+ * FAQ's own example was worse than the label: it offered "a 4 MB
+ * photograph", which this product refuses. It now reads 3 MB.
  */
 const UNIT = [
   { icon: TypeIcon, label: '1,000 words of text, pasted or uploaded' },
-  { icon: FileIcon, label: 'One Word document or picture, any size' },
+  { icon: FileIcon, label: 'One Word document or picture, up to 3.2 MB' },
 ];
 
 /** The four reassurances that sit under the buy buttons. All four are ruled. */
@@ -224,7 +233,7 @@ const LAYERS = [
 const FAQ = [
   {
     q: 'What exactly is a credit?',
-    a: 'One credit sanitises 1,000 words of text, whether you paste it in or upload it as a .txt file. Both get the full rewrite, and a rewrite is priced by the word because the words are the work. A Word document, a PNG or a JPG is one flat credit whatever its size: those have their metadata and hidden characters removed rather than their wording rewritten, and stripping a 4 MB photograph and a 40 KB one is the same piece of work. Every job rounds up to a whole credit.',
+    a: 'One credit sanitises 1,000 words of text, whether you paste it in or upload it as a .txt file. Both get the full rewrite, and a rewrite is priced by the word because the words are the work. A Word document, a PNG or a JPG is one flat credit at any size we accept, which is up to 3.2 MB: those have their metadata and hidden characters removed rather than their wording rewritten, and stripping a 3 MB photograph and a 40 KB one is the same piece of work. Every job rounds up to a whole credit.',
   },
   {
     q: 'Do my credits expire?',
@@ -236,7 +245,7 @@ const FAQ = [
   },
   {
     q: 'What can I put through it?',
-    a: 'Pasted text, Word documents, PNG and JPG. Paste text and you get the invisible characters and the rewrite. Upload a file and you get the metadata as well.',
+    a: 'Pasted text, Word documents, PNG and JPG. Paste text, or upload a .txt file, and you get the invisible characters and the rewrite. A Word document gets the invisible characters and the metadata, and its wording is not rewritten. A PNG or a JPG has no text in it, so it gets the metadata alone.',
   },
   {
     q: 'Is the free allowance a trial that runs out?',
@@ -359,9 +368,12 @@ function Pricing() {
                       strokeWidth={1.9}
                       aria-hidden
                     />
+                    {/* text-balance because "up to 3.2 MB" is longer than the
+                        "any size" it replaced and was wrapping with "MB"
+                        orphaned on its own line at desktop width. */}
                     <span
                       className={
-                        'text-foreground text-[14.5px] leading-snug font-medium'
+                        'text-foreground text-[14.5px] leading-snug font-medium text-balance'
                       }
                     >
                       {unit.label}
@@ -808,8 +820,10 @@ function Pricing() {
           >
             You never choose a layer and you are never charged differently for
             one. The tool reads what you gave it and runs whatever applies.
-            Paste text and you get the first and the third. Upload a file and
-            you get all three.
+            Paste text, or upload a text file, and you get the invisible
+            characters and the statistical watermark. A Word document gets the
+            invisible characters and its file metadata. A picture gets its file
+            metadata alone.
           </p>
 
           <ul className={'mt-8 grid gap-4 md:grid-cols-3 lg:gap-5'}>

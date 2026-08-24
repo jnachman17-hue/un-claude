@@ -103,6 +103,31 @@ export async function generateMetadata() {
  * NOTHING on the visitor's device. If that configuration ever changes, this page
  * and the cookie policy change with it, and the site needs a consent banner.
  *
+ * ONE THING NOW SURVIVES A DELETION, ADDED 24 AUGUST 2026, LANE D. The
+ * paragraph under "Your rights" that used to end "there is nothing else to
+ * delete" is no longer true, and the second paragraph after it is the new one.
+ *
+ * `20260823120100_grant_claims_survive_deletion.sql` moved the free-credit
+ * guard OFF the credit ledger, because the ledger cascades away with the
+ * account and the guard was being deleted along with the thing it guarded
+ * against: three rounds of delete-and-re-register on one address collected
+ * fifteen free credits. f1-audit.md finding 0c. What is retained now, and only
+ * this: a SHA-256 fingerprint of the normalised address, which of the two free
+ * grants it was, the date, and a count of repeat asks. No address, no account
+ * id, no name, no balance, no history.
+ *
+ * THE WORDING WAS DRAFTED BEFORE THIS SESSION and was not improvised here. It
+ * comes from `docs/POLICY-CHANGES-PENDING.md`, the section beginning "23 August
+ * 2026, lane B: the privacy page needs one new sentence", rewritten into this
+ * page's voice and NOT widened. Two things that draft forbids, both honoured
+ * above: the fingerprint is never called anonymous, and the page never implies
+ * the address can be read back out of it.
+ *
+ * THE MIGRATION IS ALREADY APPLIED AND DEPLOYED (the board, 24 August: free
+ * credits verified once per inbox on production, 5/0/0 across three rounds).
+ * So unlike the 21 August change above, this page is currently BEHIND the
+ * database rather than ahead of it, and shipping it closes the gap.
+ *
  * STILL OUTSTANDING, deliberately absent rather than forgotten: there is no
  * named data controller on this page, because there is no legal entity and
  * naming a person is not this session's call. 04 entry 54, decision D1.
@@ -118,7 +143,7 @@ async function PrivacyPolicyPage() {
       />
 
       <Prose>
-        <Updated date={'21 August 2026'} />
+        <Updated date={'24 August 2026'} />
 
         <H2>The short version</H2>
         <Lead>
@@ -368,8 +393,20 @@ async function PrivacyPolicyPage() {
           entire credit history with it. Your email address, your name and every
           line of your history are removed from our database in that moment, not
           marked for removal later, and your sign-in is destroyed with them.
-          Because we do not retain submitted content, there is nothing else to
-          delete.
+          Because we do not retain submitted content, there is nothing of yours
+          left beyond one small record, and here is exactly what that is.
+        </P>
+        <P>
+          We keep a scrambled fingerprint of your email address, and not the
+          address itself. It is there for one reason: the free credits you get
+          for signing up are meant to be once per person, and without it anyone
+          could delete their account and collect them again and again. What we
+          keep is the fingerprint, the date it was first given, and which free
+          credits it was. The fingerprint cannot be turned back into your
+          address, although somebody who already holds it and a guess at your
+          address can check whether the two match. It carries no name, no
+          balance, no credit history, and nothing about anything you cleaned
+          here.
         </P>
         <P>
           Deleting your account also ends any credits still on it, and unused

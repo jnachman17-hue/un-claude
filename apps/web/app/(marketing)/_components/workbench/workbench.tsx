@@ -1104,7 +1104,7 @@ export function Workbench() {
           : done
             ? stillMarked
               ? 'Some metadata could not be removed from this file. It is still marked.'
-              : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and the picture itself is untouched.`
+              : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and nothing you can see was changed.`
             : provenanceFound
               ? producer
                 ? `This file names ${producer} as its maker, in a signed record anyone can read with a free tool.`

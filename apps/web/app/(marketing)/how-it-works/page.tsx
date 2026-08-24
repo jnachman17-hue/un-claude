@@ -123,9 +123,16 @@ function HowItWorks() {
               >
                 Three marks, three places.
               </h2>
+              {/* WHICH INPUT GETS WHICH MARK, said by type. "Upload a file
+                  and all three do" was false of every file type we accept:
+                  a Word document gets hidden characters and metadata and is
+                  never rewritten, and a picture has no text at all. The
+                  matrix on /capabilities has been right about this all
+                  along; this sentence was not. F1 audit, finding M. */}
               <p className={'text-muted-foreground mt-3 max-w-[40ch] text-[15px] leading-[1.6]'}>
-                Paste text and the first and third apply to you. Upload a file
-                and all three do.
+                Paste text, or upload a text file, and you get hidden
+                characters and the statistical watermark. A Word document gets
+                hidden characters and metadata. A picture gets metadata alone.
               </p>
             </div>
 

@@ -22,6 +22,21 @@ import { Trans } from '@kit/ui/trans';
 import { DeletePersonalAccountSchema } from '../schema/delete-personal-account.schema';
 import { deletePersonalAccountAction } from '../server/server-actions';
 
+/**
+ * THE WARNING TEXT IS NOT IN THIS FILE. It is
+ * `account.deleteAccountDescription` in apps/web/i18n/messages/en/account.json,
+ * rendered twice below, and that key is used nowhere else in the repo.
+ *
+ * REWRITTEN 24 August 2026, lane D. The starter kit's sentence described a
+ * different product: it named "the accounts you own" and "any active
+ * subscriptions", and this product has neither teams nor subscriptions. Worse
+ * than the wrong nouns, it never mentioned CREDITS, which are the one thing a
+ * customer actually loses — including credits they paid for, since the balance
+ * is derived from credit_ledger rows and those cascade away with the account
+ * (20260821130000_account_deletion_cascade.sql). F1 audit finding B, and the
+ * skeptic's reframing of it: the danger is not the wrong nouns, it is somebody
+ * deleting an account without realising paid credits go too.
+ */
 export function AccountDangerZone() {
   return (
     <div className={'flex flex-col space-y-4'}>
