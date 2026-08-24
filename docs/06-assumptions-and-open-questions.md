@@ -105,6 +105,8 @@ the Closed section with the reason, rather than deleted.
 | 91 | **A short paste carrying hidden characters can no longer be cleaned at all** | rule | **Jon's ruling stands and is shipped as given: below 16 words the Sanitise button is disabled.** Working position is that this is right, because the overwhelming majority of short pastes carry nothing to remove and the alternative was charging for a rewrite that does not run | Layers A and metadata are the two PROVABLE layers and they work perfectly on six words. Before 23 August a six-word paste holding three zero-width characters cost a credit and came back genuinely clean of those three. It is now refused, because the third layer would not have run. **The visitor is told why and can add words, which is a real way out, but they cannot clean the thing they pasted.** The narrower rule that keeps both properties is one line: refuse only when the scan ALSO found nothing to remove | **The first time somebody asks why a short paste cannot be cleaned**, or the first support message about it. It is a one-line change in `workbench.tsx` where `tooShortToRewrite` is computed |
 | 92 | **Two tab stops in the workbench are both called "Upload a file"** | cosmetic | **Accepted for now.** Both are named, which is strictly better than the invisible one being nameless as it was until 23 August | The 1px `sr-only` file input is focusable and now carries `aria-label="Upload a file"`; the visible button that clicks it says the same thing. Removing either stop costs something real: hiding the input from the keyboard leaves the visible button as the only route, and hiding the button leaves a sighted keyboard user with no visible focus ring | **When a screen reader is actually run against this page (G1).** Whoever does that will hear it immediately and can judge whether it is worth restructuring |
 | 93 | **The finished result is wrapped in a control whose name replaces it** | technical | **No change made, deliberately: the brief asked for a check.** Measured 23 August — the customer's text IS present in the accessibility tree, so the strongest version of the agent's claim is refuted, **but the wrapper's `aria-label="Edit this text"` replaces the contents when the accessible name is computed, so a screen-reader user who reaches the result hears "Edit this text, button" and not their document** | Whether the text can be reached another way depends on the screen reader: under the ARIA presentational-children rule a button's descendants may be flattened, and browse-mode behaviour differs between VoiceOver, NVDA and JAWS. **The proposed fix is narrow: once a job is finished the result does not need a click-to-edit affordance at all** — there is a "Start over" button beside it, and clicking the result currently discards the finished work — so the wrapper can be a plain block in the `done` state only | **Ten minutes with VoiceOver**, which nobody has done. Or sooner: the `done`-state half of the fix stands on its own as a bug fix and needs no screen reader to justify it |
+| 94 | **C2PA now specifies an invisible-character text watermark, in layer A's exact territory** | technical | **Unresolved and nobody has checked.** Working position: our detector probably does not catch it, because it was built for spaces and zero-width marks rather than variation selectors | **C2PA specification 2.4, appendix A.8**, encodes a full manifest into plain text using **Unicode variation selectors, U+FE00 to U+FE0F and U+E0100 to U+E01EF**, prefixed by U+FEFF with magic bytes `C2PATXT\0`. That is deterministic, detectable and strippable, which makes it **the first text watermark layer A could genuinely defeat and prove.** The spec labels A.8 "under review", so it is a moving target. The steering committee that publishes it includes OpenAI, Google, Meta, Microsoft, Adobe and **TikTok** | **Test it: run a variation-selector sequence through the scanner and see whether it is found.** One afternoon. If the answer is no, it is a small change to a character class and a real capability nobody else in the category has |
+| 95 | **`ENGINE.md` section 2 may be describing a tell that no longer exists** | risk | **Surfaced, not resolved. The documents govern under `CLAUDE.md` section 2 and this session did not override them** | `ENGINE.md` says layer A "defends against a real, present, observable tell that catches people today", citing Rumi's 2025 finding of ChatGPT emitting narrow no-break spaces. **Three things now cut against the word "today":** OpenAI denied it was deliberate and called it a reinforcement learning artifact; **Rumi reported on 23 April 2025 that the characters had disappeared**; and an independent scan of 1,815 characters of current Claude output found zero invisible characters, matching Originality.AI's published test. **Row 63 already records the commercial consequence in Jon's own words: "for pasted Claude text it finds nothing."** | **A measurement session, and it is cheap.** Scan twenty real ChatGPT and Claude outputs, of varying length, and count. **It decides whether the free scan has a hook at all**, which is upstream of the free-tier arithmetic in row 63 |
 
 
 ---
@@ -714,10 +716,17 @@ and the freeze stops there on purpose. Left free, with the working position:
   survive 858 of 860.
 - **Unattributed quotations** — D2, settled, not an open question; listed
   only so nobody reads this row as an oversight.
-- **The narrowed attribution cue's residuals, accepted:** a journalist's
-  *«the minister said "…"»* stays free (narrative verb); epistolary
-  fiction's *«she wrote: "…"»* freezes wrongly. Both err the way D2 chose.
-  Trigger: real-customer protection reports contradicting the trade.
+- **The attribution cue's residuals, accepted. REWRITTEN 24 August 2026,
+  E-16 — the old list is obsolete and entry 142 replaces it.** Epistolary
+  fiction's *«she wrote: "…"»* no longer freezes wrongly; it goes free, and
+  so does all real attribution carried by a pronoun (*«The auditor … She
+  wrote that "…"»*), which is the same rule seen from the other side. An
+  UNCITED trailing attribution — *«"…," wrote Orwell in 1946»* — also goes
+  free, because a bare year is not a citation shape. What still freezes
+  wrongly: a pre-quote tag on a named character, *«Marcus concluded, "…"»*,
+  textually identical to *«The committee concluded, "…"»*. Measured residual
+  2 of 45 fiction lines, 2 of 30 attribution shapes. Trigger: real-customer
+  protection reports contradicting the trade.
 
 ---
 
@@ -792,3 +801,34 @@ future session does not adopt it as a quick fix.
 **Trigger: Jon deciding whether joined purchase attribution is worth a consent
 banner.** Until then, Stripe answers "how many purchases" with the money
 attached, which is the better source anyway.
+
+
+---
+
+## A hard-wrapped document gets no quote protection at all, silently
+
+**Raised 24 August 2026, E-16 session, found while building the document-size
+ladder. Not fixed — this is a decision, not a bug fix.**
+
+`uc_spans._QUOTE` is `"([^"\n]{12,600})"`. **A quotation containing a newline
+is not detected**, so a document hard-wrapped at 80 columns — a plain-text
+email, a `.txt` export, anything out of a terminal editor — gets no quote
+protection whatsoever. Nothing warns anybody. Measured on the same ladder
+document: **wrapped it freezes 13.8%, unwrapped 21.3%.**
+
+**Working position: leave it.** The common paste — out of Word, Docs, a
+browser — is one long line per paragraph, so the common case is already
+right, and widening the pattern changes what freezes across every document
+AND the D4 pre-flight percentage a visitor is quoted before they pay. That is
+a pricing-visible change and it needs a ruling, not a patch.
+
+**Why it is not free to leave:** the customer most likely to paste
+hard-wrapped text is the one working in plain files, and they are quoted a
+lower frozen percentage than the identical document would get unwrapped —
+which is the *cheap* direction (more gets rewritten, nothing is handed back
+frozen), so no customer is overcharged by it.
+
+**Trigger for revisiting:** the first support case about a quotation coming
+back reworded where the customer's source was a `.txt` or an email; or any
+work on file upload, where wrapped text is the norm rather than the
+exception. **File: `apps/web/engine/uc_spans.py`, the `_QUOTE` constant.**

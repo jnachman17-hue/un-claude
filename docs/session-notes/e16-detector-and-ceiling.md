@@ -219,3 +219,83 @@ detection was weakened; the old sentence is still in the suite.
 ```
 engine suite   807 passed, 1 skipped     (E-9 baseline 800 + 1 skipped; +7 tests)
 ```
+
+## 1.7 Two defects found in shipped code while building job 2's ladder
+
+**Both are in `apps/web/engine/`, which the brief puts in my territory. I
+fixed one because it was corrupting the job 2 measurement; I have not touched
+the other and am describing it instead.**
+
+### FIXED — the mask repair un-indented the block quote beside it
+
+**deepseek and mistral-medium failed an ordinary 463-word essay outright and
+refunded the job, where mistral-small delivered it. The cause was not the
+model.** I found it because the very first ladder run failed, and E-9's own
+demo document was the control that ruled the model out.
+
+What happens: the model deletes the document's title — a lone `[[11]]`
+placeholder — on the blind attempt and again on the informed retry.
+`_reinsert_lost_masks`, the repair E-9 built for exactly this, puts the title
+back correctly. **Then the job fails anyway,** and the verifier's complaint
+names something else entirely:
+
+```
+>>> REPAIR dropped=[11] -> REINSERTED
+>>> VERIFY PROBLEMS (1): ['span [[17]] (block_quote) missing: 0 of 1 copies present']
+FAILED: FreezeRestoreFailed: 298 of 463 words came back unrewritten ... (64%,
+        past the 33% threshold); the job fails rather than deliver this
+```
+
+**The repair rebuilt the chunk with a bare `"\n\n"` between paragraphs.**
+`_PARA_BREAK`'s trailing `[^\S\n]*` swallows the horizontal whitespace that
+*opens* the next paragraph — and for an indented block quote that whitespace
+is part of the frozen span's own text. So the repair silently un-indented the
+block quote sitting next to the mask it was repairing, and the verifier then
+**correctly** reported the block quote missing. A fully recoverable chunk
+failed. On a two-chunk document that is past D3's one-third threshold, so the
+whole job refunds.
+
+Reproduced with **no model involved at all**:
+
+```
+dropped: [11]  repair: REINSERTED
+heading back?               True
+block quote byte-for-byte?  False
+--- the block quote as the repair left it ---
+'We do not dispute the attendance figure. We dispute that it was\n    purchased...'
+--- as it must be ---
+'    We do not dispute the attendance figure. We dispute that it was\n    purchased...'
+```
+
+**`uc_spans._paragraphs` documents this exact trap and compensates for it.**
+The fix applies the same compensation in `uc_chunk` and rejoins with the
+masked chunk's own separators instead of an invented `"\n\n"`. New test
+`test_reinsertion_keeps_the_indentation_of_a_neighbouring_block_quote`
+fails without the fix with production's own message.
+
+**Live, the four runs that had failed now all deliver:**
+
+```
+deepseek   ladder_500 run 1  4.9s  7/7 spans  0 fallbacks  masks_reinserted 0
+deepseek   ladder_500 run 2  4.0s  7/7 spans  0 fallbacks  masks_reinserted 1
+medium     ladder_500 run 1  6.0s  7/7 spans  0 fallbacks  masks_reinserted 1
+medium     ladder_500 run 2  5.5s  7/7 spans  0 fallbacks  masks_reinserted 1
+```
+
+**This is live-affecting and not deployed.** Pushes track main and deploy
+continuously (E-9 5.5b), so this reaches production on the next push, which is
+Jon's call. Until then a customer whose essay has a heading dropped in the
+same chunk as an indented block quote loses the whole job.
+
+### DESCRIBED, NOT FIXED — a hard-wrapped quotation is invisible to the detector
+
+`uc_spans._QUOTE` is `"([^"\n]{12,600})"`. **A quotation containing a newline
+is not detected at all**, so a document that is hard-wrapped at 80 columns —
+plain-text email, a `.txt` export, anything out of a terminal editor — gets
+**no quote protection whatsoever**, silently, and the D4 pre-flight shows the
+visitor a lower frozen percentage than the same document unwrapped. I hit this
+building the ladder: wrapped, it froze 13.8%; unwrapped, 21.3%. Same document.
+
+I have not touched it. It changes what freezes across every document and the
+pre-flight number a visitor is quoted before paying, which is a decision, not
+a bug fix. **File: `apps/web/engine/uc_spans.py`, the `_QUOTE` constant.**

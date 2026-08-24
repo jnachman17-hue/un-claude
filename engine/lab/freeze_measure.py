@@ -134,6 +134,20 @@ Nobody resigned over it, which told the village everything it needed to know abo
 
 DOCS = {"essay": ESSAY, "story": STORY, "mask_heavy": MASK_HEAVY}
 
+#: E-16 job 2: the document-size ladder, built by make_ladder_docs.py. Essay
+#: shaped at every rung — headings, attributed quotations with citations,
+#: introduced block quotes, a reference list — so "freeze ON" means something
+#: at 29 chunks. The existing docs/doc_*.txt corpus freezes 0% and would have
+#: measured latency with no mask in play at all.
+LADDER = ("ladder_500", "ladder_1000", "ladder_2000", "ladder_3000",
+          "ladder_5000", "ladder_7500", "ladder_10000")
+
+
+def _doc(name: str) -> str:
+    if name in DOCS:
+        return DOCS[name]
+    return (Path(__file__).parent / "docs" / f"{name}.txt").read_text()
+
 PLAN = [
     ("essay", "off", 4),
     ("essay", "structure", 4),
@@ -186,7 +200,7 @@ def run_one(doc_name: str, arm: str, model: str, run: int) -> int:
     from uc_freeze import plan_freeze
     from uc_repair import repair_rewrite
 
-    doc = DOCS[doc_name]
+    doc = _doc(doc_name)
     base_temp = 1.0
 
     def _one(chunk: str, attempt: int = 0, missing=None, usage_out=None):
@@ -332,7 +346,127 @@ def main() -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# E-16 JOB 2 — the ladder: which model, and how big a document
+# ---------------------------------------------------------------------------
+
+LADDER_MODELS = ("mistral/mistral-small", "mistral/mistral-medium",
+                 "deepseek/deepseek-v3.2")
+LADDER_ROWS = OUTDIR / "ladder.jsonl"
+LADDER_RUNS = 3
+
+
+def ladder(models=LADDER_MODELS, docs=LADDER, runs=LADDER_RUNS) -> int:
+    """Every model up the ladder, freeze ON, until it crosses the site's wall.
+
+    A model's ladder STOPS at the first rung whose median crosses 240 seconds
+    — the site aborts there, so the rungs above it are unreachable for that
+    model and paying to measure them proves nothing. The stop is printed, not
+    silent: a bounded campaign that does not say what it skipped reads as
+    coverage it does not have.
+    """
+    OUTDIR.mkdir(exist_ok=True)
+    from uc_freeze import freeze_fraction
+    from uc_wordcount import count_words
+
+    print("THE LADDER (freeze ON, both tiers)", flush=True)
+    for name in docs:
+        text = _doc(name)
+        ff = freeze_fraction(text, ("structure", "quotes"))
+        print(f"  {name:<16}{ff['words']:>6} words  "
+              f"{-(-ff['words'] // 350):>3} chunks  "
+              f"frozen {ff['fraction'] * 100:>5.1f}%  spans={ff['spans']}",
+              flush=True)
+    print(flush=True)
+
+    rows: list[dict] = []
+    with LADDER_ROWS.open("a") as sink:
+        for model in models:
+            for name in docs:
+                cell: list[dict] = []
+                for run in range(1, runs + 1):
+                    env = {**os.environ, **ARMS["both"]}
+                    t0 = time.time()
+                    try:
+                        proc = subprocess.run(
+                            [sys.executable, __file__, "one",
+                             name, "both", model, str(run)],
+                            env=env, capture_output=True, text=True,
+                            timeout=WALL_CLOCK,
+                        )
+                        line = (proc.stdout.strip().splitlines() or [""])[-1]
+                        row = json.loads(line) if line.startswith("{") else {
+                            "doc": name, "arm": "both", "model": model,
+                            "run": run, "seconds": round(time.time() - t0, 1),
+                            "failure": f"subprocess: {proc.stderr.strip()[-300:]}"}
+                    except subprocess.TimeoutExpired:
+                        row = {"doc": name, "arm": "both", "model": model,
+                               "run": run, "seconds": WALL_CLOCK,
+                               "failure": f"wallclock_timeout_{WALL_CLOCK}s"}
+                    row["words"] = count_words(_doc(name))
+                    cell.append(row)
+                    rows.append(row)
+                    sink.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    sink.flush()
+                    print(json.dumps(row, ensure_ascii=False), flush=True)
+
+                secs = [r["seconds"] for r in cell if r.get("seconds")]
+                med = statistics.median(secs) if secs else WALL_CLOCK
+                timeouts = sum(1 for r in cell
+                               if "wallclock_timeout" in (r.get("failure") or ""))
+                if med >= WALL_CLOCK or timeouts >= 2:
+                    print(f"\nSTOP — {model} crossed the site's 240s wall at "
+                          f"{name} (median {med}s, {timeouts}/{len(cell)} "
+                          f"timed out). NOT MEASURED for this model: "
+                          f"{[d for d in docs[docs.index(name) + 1:]]}",
+                          flush=True)
+                    break
+
+    print("\n" + "=" * 78, flush=True)
+    print("SECONDS BY MODEL BY DOCUMENT SIZE (freeze ON, both tiers)", flush=True)
+    print("=" * 78, flush=True)
+    hdr = f"{'model':<18}{'doc':<15}{'words':>6}{'n':>3}{'median':>9}{'worst':>8}{'fail':>6}{'spans':>10}{'depth':>8}"
+    print(hdr, flush=True)
+    for model in models:
+        for name in docs:
+            cell = [r for r in rows if r["model"] == model and r["doc"] == name]
+            if not cell:
+                continue
+            secs = [r["seconds"] for r in cell if r.get("seconds")]
+            ok = [r for r in cell if not r.get("failure")]
+            oks = sum(int(r["spans_verbatim"].split("/")[0]) for r in ok
+                      if "spans_verbatim" in r)
+            tot = sum(int(r["spans_verbatim"].split("/")[1]) for r in ok
+                      if "spans_verbatim" in r)
+            depth = [r["overlap_unfrozen"] for r in ok if "overlap_unfrozen" in r]
+            print(f"{model.split('/')[-1]:<18}{name:<15}"
+                  f"{cell[0].get('words', 0):>6}{len(cell):>3}"
+                  f"{statistics.median(secs) if secs else 0:>9.1f}"
+                  f"{max(secs) if secs else 0:>8.1f}"
+                  f"{len(cell) - len(ok):>4}/{len(cell)}"
+                  f"{f'{oks}/{tot}':>10}"
+                  f"{statistics.mean(depth) if depth else float('nan'):>8.3f}",
+                  flush=True)
+
+    cost = sum(r.get("cost_usd") or 0.0 for r in rows)
+    print(f"\nown-accounting cost across {len(rows)} runs  ${cost:.6f}  "
+          "(the gateway balance is the number that counts)", flush=True)
+    fails = [r for r in rows if r.get("failure")]
+    print(f"FAILED RUNS: {len(fails)} of {len(rows)}", flush=True)
+    for r in fails:
+        print(f"  {r['model']} {r['doc']} run {r['run']}: {r['failure'][:160]}",
+              flush=True)
+    return 0
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "ladder":
+        rest = sys.argv[2:]
+        raise SystemExit(ladder(
+            models=tuple(rest[0].split(",")) if len(rest) > 0 and rest[0] else LADDER_MODELS,
+            docs=tuple(rest[1].split(",")) if len(rest) > 1 and rest[1] else LADDER,
+            runs=int(rest[2]) if len(rest) > 2 else LADDER_RUNS,
+        ))
     if len(sys.argv) > 1 and sys.argv[1] == "one":
         raise SystemExit(run_one(sys.argv[2], sys.argv[3],
                                  sys.argv[4], int(sys.argv[5])))

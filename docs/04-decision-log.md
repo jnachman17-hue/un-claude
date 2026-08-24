@@ -5398,3 +5398,116 @@ their old balance.
 not know it — the return URL carries `?purchase=success` and nothing else.
 Which pack sold is a Stripe question and Stripe answers it with the money
 attached, so the gap is not worth a schema change.
+
+---
+
+### 141. TikTok is a channel and the claims boundary follows the product onto it
+
+**24 August 2026.** Jon commissioned the first short-form video for un-claude.com,
+targeting US university students, and gave a working framework. Research was run
+on hook mechanics, on the factual state of AI watermarking, and on platform
+policy. `docs/session-notes/tiktok-script-01.md` holds the script and the full
+reasoning.
+
+**The ruling that matters: what the site may not say, a video may not say
+either.** The framework's central claim was "universities can now see it".
+`.agents/product-marketing.md` section 13 lists that under **what must never be
+said**, and the live FAQ answers the same question with "For files, yes. For
+text, not yet." **A video making the claim would be contradicted by the landing
+page at the moment of conversion**, which is a conversion defect before it is an
+honesty one.
+
+**Independent verification agreed, and went further.** No detector exists that a
+university can run against any provider's text watermark. Anthropic's is
+committed and not callable. Google's portal is waitlisted and covers image, video
+and audio only. **Turnitin, GPTZero and Copyleaks are statistical classifiers and
+do not read watermarks**; "watermark" appears zero times in Turnitin's AI
+detection FAQ.
+
+**What replaced it, and it is stronger.** "Your school already scans everything
+you hand in for AI. That was a guess. This isn't." True, sourced, and it escalates
+rather than deflates. **Detection is imminent and that is the argument rather than
+the caveat**, which is what section 13 already required.
+
+**Jon asked for the literal claim a second time and this session did not write
+it.** The alternative was delivered instead, with the reasoning, and the decision
+was left with him. **Recorded because the next session will meet the same
+pressure**: short form rewards a harder claim than the page makes, and the answer
+is a truer claim rather than a looser one.
+
+**Three secondary rulings.**
+
+1. **No layer breakdown in short form.** Jon's call and it is right. Thirty
+   seconds cannot teach three layers. The video says the watermark is the words
+   themselves and moves.
+2. **The strongest line in the script is Anthropic's own**: "a complete rewrite
+   where every word is replaced will" remove the mark. **The company that built
+   the watermark describing the method that removes it.** It also kills the "just
+   ask another AI to reword it" objection in six words. It belongs in every video.
+3. **Post from a personal account.** The video trips all three of TikTok's
+   commercial content triggers, disclosure is itself a reach cost, and that is the
+   documented reason every competitor in the category runs creator accounts.
+
+## 24 August 2026. E-16 session, the quotation detector
+
+### 142. A dialogue tag is not an attribution: position and subject decide, not the verb. Corrects entry 137's D2 implementation.
+
+**Not a change to D2, a correction of how D2 was implemented.** D2 rules that
+only ATTRIBUTED quotations freeze, because invented dialogue is the most
+watermarked text in a document and freezing it hands the customer back the
+worst part untouched after charging for a rewrite. E-9 implemented that by
+narrowing the cue to reportive verbs. **Seventeen of the verbs it kept —
+argued, warned, observed, concluded, insisted … — are also standard fiction
+dialogue tags, so the rule failed exactly where D2 says the cost is highest.**
+Measured on 45 realistic novel dialogue lines, the shipped rule froze **35**.
+
+**E-9's own D2 demo could not have caught it.** That short story tags its
+dialogue only with `said`, `asked` and `replied` — the three verbs already off
+the list — so its 0-of-193-words result tested the story's word choices, not
+the rule. **A demo that cannot fail is not evidence.**
+
+**The rule now, and it is two tests, neither of them the verb:**
+
+- **Position.** Attribution INTRODUCES its quotation — «Orwell wrote that
+  "…"», «As Smith puts it, "…"». A dialogue tag FOLLOWS it — «"…," she
+  argued». Every one of the 35 false positives came through the trailing
+  path, and that path is deleted rather than narrowed.
+- **Subject.** Attribution names a source — Smith, The committee, the 2019
+  review. Fiction uses a bare pronoun. A reportive verb whose subject is a
+  bare pronoun does not attribute.
+- **A citation shape stays an independent trigger** — `(Smith, 2019, p. 47)`,
+  `p. 47` — subject and position irrelevant. Unchanged from E-9, and it is
+  the strongest evidence a real source exists.
+
+**Why this rule and not the one the brief proposed.** The brief recommended
+the subject test alone. Measured, it fixes about two thirds: it cannot see
+«"There were four men on that quay," Ruth argued», and half a novel's
+dialogue is tagged with a character's name. **The product-level test settles
+it — two identical stories differing only in their four dialogue tags: the
+shipped rule froze 0.0% and 33.6%, the brief's rule 0.0% and 10.0%, this rule
+0.0% and 0.0%.**
+
+**What this gives up, deliberately, in the direction D2 chose** (being wrong
+toward free costs a few reworded phrases; being wrong toward frozen hands back
+a paid-for rewrite undone — those are not the same size):
+
+- an **uncited trailing attribution**, «"…," wrote Orwell in 1946» — a bare
+  year is not a citation shape, so it no longer freezes;
+- **attribution carried by a pronoun**, «The auditor … She wrote that "…"»,
+  which is common in real academic prose. This also frees epistolary fiction,
+  which E-9 listed as a known wrong freeze. **One rule, both sides.**
+  It drops E-9's mask-heavy demo document from 71.9% frozen to 34.2%.
+- a pre-quote tag on a **named character**, «Marcus concluded, "…"», which is
+  textually identical to «The committee concluded, "…"».
+
+**Residual after the change: 2 of 45 fiction lines, 2 of 30 attribution
+shapes.** A stricter variant that keeps the inverted academic case («"…,"
+wrote Orwell») was built and measured — 0 of 30 attribution lost, but 4 of 45
+fiction frozen — and rejected on D2's asymmetry. It is four lines of code if
+Jon wants the other trade. **The E-9 essay is unaffected: 23.6% before and
+after, same spans.**
+
+**Locked by `test_every_attribution_verb_has_a_fiction_line`,** which reads
+the live cue pattern and fails if any verb on it has no dialogue line proving
+it does not freeze a novel. Adding a cue verb without that proof now fails the
+suite.

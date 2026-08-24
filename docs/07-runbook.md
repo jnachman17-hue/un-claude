@@ -2029,3 +2029,45 @@ campaign. `engine/lab/freeze_measure.py` is the pattern.
 **Do not diagnose with `lsof ... | grep -c`.** The first check this session
 piped lsof through `grep -c TCP`, got `0`, and briefly concluded there were
 no connections; running lsof plainly showed two. Read the raw output.
+
+## The freeze's own repair can un-indent a block quote, and the model gets the blame
+
+**24 August 2026, E-16. Cost about forty minutes, and the first suspect was
+the wrong one.** The first run of a new 463-word essay failed outright on
+`deepseek` and on `mistral-medium` while `mistral-small` delivered the same
+document. **It looked exactly like a model-quality difference, and it was
+not.**
+
+**What it actually was.** The model deletes the document's title — a lone
+`[[11]]` placeholder — which is E-9's known dominant failure, and
+`_reinsert_lost_masks` repairs it correctly. Then the job fails anyway, and
+the verifier names a completely different span:
+
+```
+>>> REPAIR dropped=[11] -> REINSERTED
+>>> VERIFY PROBLEMS (1): ['span [[17]] (block_quote) missing: 0 of 1 copies present']
+```
+
+The repair rejoined the chunk's paragraphs with a bare `"\n\n"`.
+`_PARA_BREAK`'s trailing `[^\S\n]*` swallows the horizontal whitespace that
+OPENS the next paragraph, and that whitespace is exactly what an indented
+block quote is recognised by and part of the frozen text that must come back
+character-for-character. **So the repair silently un-indented the block quote
+beside the mask it was fixing, and the verifier was right to fail.**
+Fixed; `uc_spans._paragraphs` had documented the same trap years of sessions
+earlier and compensated for it.
+
+**Two operating lessons, and the second is the general one:**
+
+- **When a freeze failure names a span, read WHICH span.** The dropped
+  placeholder in the retry prompt and the span the verifier rejects can be
+  different objects, and the loud one is not always the cause.
+- **Before blaming a model, run the same document through a model you trust
+  and run a document you have measured before through the suspect model.**
+  Two runs of E-9's own essay on both suspects came back 11/11 spans clean,
+  which ruled the models out in ninety seconds and pointed at the document
+  shape — a block quote next to a heading — instead.
+
+**Diagnosing this needs no gateway money.** Monkeypatching `verify_restore`
+and `_reinsert_lost_masks` to print, then reproducing the whole thing with a
+hand-written fake model output, cost nothing and was faster than live runs.
