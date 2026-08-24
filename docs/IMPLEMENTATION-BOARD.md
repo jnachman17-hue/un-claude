@@ -283,3 +283,76 @@ guard-ordering defect fixed first and re-verified.
 product inserts the very marks it exists to remove. E-2 costs nothing and tells
 us for the first time how often this happens to real customers. Both land before
 anything spends a point of rewrite aggressiveness.
+
+---
+
+# ★ EVERYTHING STILL OUTSTANDING — 24 August
+
+**Roughly 36 items. Two lanes untouched, plus stragglers.** Lanes B, C and E
+between them closed 20; none of what follows was touched by them.
+
+## LANE A — ENGINE. Untouched, largest, and it owns the worst defects.
+**One session at a time, in order.** D1–D5 are settled, so it is unblocked.
+
+| ID | Item | From |
+|---|---|---|
+| **E-0** | The reassembly safety net, before any other code | W10 |
+| **E-1** | **REPAIR — strip the AI tells the tool itself adds.** 359 em dashes → 0 across 228 real outputs, at median **+0.0000** cost | W10 + W9 |
+| **E-2** | **REPORT — detector on, freeze off.** First measurement of how often a *real customer's* quotation is rewritten | W10 |
+| **E-3** | **FIX — six things provably wrong**, including running layer A **before** the rewrite. Today the rewrite destroys zero-width characters first, so layer A reports finding nothing in a document that arrived carrying two | W10 |
+| **E-4** | **The output guard.** The prompt leak is **not closed** — 3 runs in 7 return the model discussing its own rules | W9 |
+| **E-6** | Honest length and loss reporting — "114% kept" while 22–29% is silently deleted | W9 |
+| **E-7** | **Surface `structure_kept`.** The engine computes it and **no file anywhere reads it** | W10 |
+| **E-8** | Re-measure the ceiling and publish an honest number (D6) | W9 |
+| **E-10** | The wider open-weight bake-off (D5) | W10 |
+| **E-11** | **S-5 — the AI-marker list flags "in the world".** Lane E found the real file is `engine/score_stylometry.py` and **found more than one bad phrase** | W9 + Lane E |
+| **E-12** | **Our cost per run rides to every browser** inside `report.layer_b.usage`, which `strip_server_paths` does not touch | Lane B |
+| **E-13** | A failed attempt burns 6–21 cents of model spend and the error invites a retry | W9 |
+| **E-14** | A date vanished and the field designed to flag it came back empty | W9 |
+| **E-9** | **FREEZE — LAST, and not on the published numbers.** See PART 3 | W10 |
+
+## LANE D — COPY AND CLAIMS. Untouched. Split in two.
+
+**D-NOW — wording only, ship any time:**
+
+| ID | Item |
+|---|---|
+| **C-4** | "100% of detectable marks removed" — 15 found, 12 removed, **3 kept on purpose** because stripping Arabic/Hebrew direction marks would corrupt real documents. **The engineering is right; the sentence is wrong.** The honest version is a better line |
+| **C-2** | "Upload a file and you get all three" — no accepted type gets all three |
+| **C-7** | The delete-account warning names teams and subscriptions that do not exist, and never mentions credits |
+| **C-10** | The pricing page says *"One Word document or picture, any size"* — **the browser now refuses at 3.2 MB with a message naming the number.** Direct contradiction, created by Lane C |
+| **C-11** | The pricing page quotes 1 credit for a file and charges 5 |
+| **C-12** | A Word document is told "the picture itself is untouched" |
+| **C-13** | **The privacy sentence, now genuinely owed** — `POLICY-CHANGES-PENDING.md`. Migration 2 changed what is retained |
+
+**D-AFTER-ENGINE — cannot be written honestly until Lane A lands:**
+
+| ID | Item |
+|---|---|
+| **C-1** | The four "enforced rather than promised" FAQ claims — **three fail against the product's own receipt.** Most of this is not fixable by rewording; *"it will not change your facts"* cannot be softened into something both true and worth saying |
+| **C-3** | "A hard three-word ceiling" — the receipt printed 6 |
+| **C-5** | "Nine classes checked" — one of the nine finds nothing |
+| **C-9** | The advertised size ceiling (D6) |
+
+## STRAGGLERS — no lane owns these yet
+
+| ID | Item | Note |
+|---|---|---|
+| **X-1** | **CSP** | Needs a per-request nonce and a deploy to test. Lane E was right to defer it |
+| **X-2** | `/auth/sign-in` has no `main` landmark or skip link | The one page Lane C could not reach |
+| **X-3** | **VoiceOver** | The one accessibility finding nobody has resolved. Ten minutes with a real screen reader |
+| **X-4** | 483 KB of script draws the page; the served HTML is a menu and a footer | Performance |
+| **X-5** | The confirmation email link shows a raw Supabase domain | **Not a misconfiguration** — a custom auth domain is a paid Supabase add-on. Jon's call |
+| **X-6** | **Sentry** | Still nothing watching production. `cd apps/web && npx @sentry/wizard@latest -i nextjs` |
+| **X-7** | The `support@un-claude.com` forwarder | Waiting on the test email arriving |
+| **X-8** | Test-data cleanup | Backup first, delete auth users not ledger rows, explicit ID list |
+| **X-9** | **Restore the backup once** | A backup nobody has restored from is a hope |
+
+## JON ONLY
+
+| Item |
+|---|
+| Verify the five unproven-in-production rows above |
+| The upstream-lineage decision — press phase 2 is blocked on it |
+| Approve the Sentry dependency |
+
