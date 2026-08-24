@@ -1,0 +1,34 @@
+School Hours and the Issue with Being There
+
+Prologue
+
+Hardly any schooling changes look simpler on paper than pushing back the opening bell by sixty minutes, yet almost none show such a hard gap between what data shows and what local boards choose to enact. Here we look at the middle-sized district named Fairmont, which adjusted its secondary school opening from 07:25 to 08:30 in the term starting autumn 2019, then wasted thirty-six months debating what followed. That debate carries weight beyond its own limits, since the price tag became real and instant while gains filtered in piece by piece - a pattern that nudges school boards to second-guess themselves.
+
+The Data Set
+
+The sharpest single outcome in the research corpus is the impact on attendance patterns. According to Smith, "the alteration in clock time did more for who showed up than any initiative we had funded to that point, even the two-year drive on automated parent alerts" (p. 47). That line has been read aloud at a dozen board hearings since, often by people who never glanced beyond that quote, yet it withstands scrutiny: Fairmont's participation rose in every one of the three academic years that followed, and climbed fastest among pupils who had recorded the weakest presence before.
+
+Experts studying sleep land on a matching verdict. Harrison's poll of four schools delivered this result:
+
+    The students did not stretch their evening longer because of the shift.
+    Median lights-out moved forward eleven minutes; median rise time
+    moved forward fifty-one. The extra hour ended up asleep, not on
+    devices.
+
+The travel accounts round out the narrative. Fairmont operates its buses in two waves, and the later high-school bell pulled the later wave into the same belt as the elementary fleet. The board added four buses and seven drivers, lifting transport outgoings by roughly eleven percent in year one. None of that sum appears in attendance tables, yet all of it lands in finance committee briefings.
+
+Where Opponents Hit the Mark
+
+The criticism isn't that the adjustment doesn't meet its goals, but rather that the gains aren't evenly spread. Those who push themselves hardest reaped the biggest increase in rest; those dependent on the first buses saw the smallest gains, with some now coming back in the dark during cold months. A plan presented as inclusive proved to be regressive in one particular, solvable way, and districts that imitated Fairmont's approach without adopting its route changes brought the flaw with them.
+
+Outcome
+
+The uptick in presence is real, the rise in rest is real, and the transport expense is real. The dishonest stance is the one that acknowledges only two of these three. Districts evaluating the shift should first tally the bus costs, as the buses remain morning fixtures that never disappear.
+
+Sources
+
+Smith, J. A., & Jones, R. B. (2019). Later start times and adolescent attendance. Journal of School Health, 89(4), 331-339.
+
+Harrison, M. (2020). The sleeping campus: Start times and adolescent rest. Princeton University Press.
+
+Okonkwo, A. (2021). Sleep debt in rural districts. Sleep Research Quarterly, 12(2), 88-104.

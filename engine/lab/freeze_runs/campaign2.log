@@ -1,0 +1,71 @@
+PRE-FLIGHT (D4) — the fraction each document would freeze:
+  essay       both=0.236 structure=0.033 spans={'heading': 6, 'quote': 1, 'block_quote': 1, 'reference': 3}
+  story       both=0.000 structure=0.000 spans={}
+  mask_heavy  both=0.719 structure=0.044 spans={'quote': 1, 'heading': 1, 'block_quote': 1}
+{"doc": "essay", "arm": "off", "model": "mistral/mistral-small", "run": 1, "seconds": 4.6, "cost_usd": 0.0004257, "failure": null, "overlap": 0.1559, "retries": 0}
+{"doc": "essay", "arm": "off", "model": "mistral/mistral-small", "run": 2, "seconds": 9.0, "cost_usd": 0.0006635, "failure": null, "overlap": 0.1774, "retries": 1}
+{"doc": "essay", "arm": "off", "model": "mistral/mistral-small", "run": 3, "seconds": 9.7, "cost_usd": 0.0005773, "failure": null, "overlap": 0.1189, "retries": 1}
+{"doc": "essay", "arm": "off", "model": "mistral/mistral-small", "run": 4, "seconds": 4.7, "cost_usd": 0.0002163, "failure": null, "overlap": 0.1131, "retries": 0}
+{"doc": "essay", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 25.7, "cost_usd": 0.0003948, "failure": null, "overlap": 0.3509, "retries": 0}
+{"doc": "essay", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 30.4, "cost_usd": 0.0003885, "failure": null, "overlap": 0.3587, "retries": 0}
+{"doc": "essay", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 28.3, "cost_usd": 0.000651588, "failure": null, "overlap": 0.2164, "overlap_unfrozen": 0.0564, "retries": 0}
+{"doc": "essay", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 4, "seconds": 25.6, "cost_usd": 0.00038178, "failure": null, "overlap": 0.2846, "overlap_unfrozen": 0.0821, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "mistral/mistral-small", "run": 1, "seconds": 8.2, "cost_usd": 0.0006024, "failure": null, "overlap": 0.1696, "overlap_unfrozen": 0.0615, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 1}
+{"doc": "essay", "arm": "structure", "model": "mistral/mistral-small", "run": 2, "seconds": 4.1, "cost_usd": 0.0004307, "failure": null, "overlap": 0.1852, "overlap_unfrozen": 0.0821, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "mistral/mistral-small", "run": 3, "seconds": 4.4, "cost_usd": 0.0002584, "failure": null, "overlap": 0.1774, "overlap_unfrozen": 0.0641, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "mistral/mistral-small", "run": 4, "seconds": 4.2, "cost_usd": 0.0004199, "failure": null, "overlap": 0.154, "overlap_unfrozen": 0.0436, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 41.0, "cost_usd": 0.0003794, "failure": null, "overlap": 0.2437, "overlap_unfrozen": 0.0846, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 27.5, "cost_usd": 0.0003815, "failure": null, "overlap": 0.3431, "overlap_unfrozen": 0.1513, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 6.7, "cost_usd": 0.00039284, "failure": null, "overlap": 0.1501, "overlap_unfrozen": 0.0308, "spans_verbatim": "6/6", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "structure", "model": "deepseek/deepseek-v3.2", "run": 4, "seconds": 78.7, "cost_usd": 0.0, "failure": "FreezeRestoreFailed: 339 of 517 words came back unrewritten because protected spans could not be restored verifiably (66%, past the 33% threshold); the job fails rather than deliver this as a rewrite"}
+{"doc": "essay", "arm": "both", "model": "mistral/mistral-small", "run": 1, "seconds": 3.7, "cost_usd": 0.0003618, "failure": null, "overlap": 0.271, "overlap_unfrozen": 0.0615, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "both", "model": "mistral/mistral-small", "run": 2, "seconds": 8.2, "cost_usd": 0.0004671, "failure": null, "overlap": 0.2495, "overlap_unfrozen": 0.0308, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 1}
+{"doc": "essay", "arm": "both", "model": "mistral/mistral-small", "run": 3, "seconds": 11.2, "cost_usd": 0.0006759, "failure": null, "overlap": 0.2495, "overlap_unfrozen": 0.0333, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 2}
+{"doc": "essay", "arm": "both", "model": "mistral/mistral-small", "run": 4, "seconds": 4.3, "cost_usd": 0.0003528, "failure": null, "overlap": 0.2515, "overlap_unfrozen": 0.041, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 197.6, "cost_usd": 0.0, "failure": "RuntimeError: chunk 1 failed after 8 attempts: TimeoutError"}
+{"doc": "essay", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 197.2, "cost_usd": 0.0, "failure": "RuntimeError: chunk 1 failed after 8 attempts: TimeoutError"}
+{"doc": "essay", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 44.5, "cost_usd": 0.000314076, "failure": null, "overlap": 0.2904, "overlap_unfrozen": 0.0872, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 0}
+{"doc": "essay", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 4, "seconds": 74.2, "cost_usd": 0.000631316, "failure": null, "overlap": 0.2963, "overlap_unfrozen": 0.0897, "spans_verbatim": "11/11", "fallbacks": 0, "retries": 1}
+{"doc": "story", "arm": "off", "model": "mistral/mistral-small", "run": 1, "seconds": 3.4, "cost_usd": 0.0001746, "failure": null, "overlap": 0.0105, "overlap_unfrozen": 0.0105, "retries": 0}
+{"doc": "story", "arm": "off", "model": "mistral/mistral-small", "run": 2, "seconds": 2.9, "cost_usd": 0.000177, "failure": null, "overlap": 0.0576, "overlap_unfrozen": 0.0576, "retries": 0}
+{"doc": "story", "arm": "off", "model": "mistral/mistral-small", "run": 3, "seconds": 2.9, "cost_usd": 0.0001737, "failure": null, "overlap": 0.0524, "overlap_unfrozen": 0.0524, "retries": 0}
+{"doc": "story", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 24.7, "cost_usd": 0.000147728, "failure": null, "overlap": 0.1518, "overlap_unfrozen": 0.1518, "retries": 0}
+{"doc": "story", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 23.8, "cost_usd": 0.000143948, "failure": null, "overlap": 0.2565, "overlap_unfrozen": 0.2565, "retries": 0}
+{"doc": "story", "arm": "off", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 29.3, "cost_usd": 0.000148148, "failure": null, "overlap": 0.1257, "overlap_unfrozen": 0.1257, "retries": 0}
+{"doc": "story", "arm": "both", "model": "mistral/mistral-small", "run": 1, "seconds": 3.1, "cost_usd": 0.0001686, "failure": null, "overlap": 0.0419, "overlap_unfrozen": 0.0419, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "story", "arm": "both", "model": "mistral/mistral-small", "run": 2, "seconds": 3.5, "cost_usd": 0.0001767, "failure": null, "overlap": 0.0262, "overlap_unfrozen": 0.0262, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "story", "arm": "both", "model": "mistral/mistral-small", "run": 3, "seconds": 2.8, "cost_usd": 0.0001629, "failure": null, "overlap": 0.0105, "overlap_unfrozen": 0.0105, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "story", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 26.2, "cost_usd": 0.000145208, "failure": null, "overlap": 0.0838, "overlap_unfrozen": 0.0838, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "story", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 26.1, "cost_usd": 0.000149408, "failure": null, "overlap": 0.0576, "overlap_unfrozen": 0.0576, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "story", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 31.2, "cost_usd": 0.000141008, "failure": null, "overlap": 0.3717, "overlap_unfrozen": 0.3717, "spans_verbatim": "0/0", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "mistral/mistral-small", "run": 1, "seconds": 1.2, "cost_usd": 9.36e-05, "failure": null, "overlap": 0.7117, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "mistral/mistral-small", "run": 2, "seconds": 1.6, "cost_usd": 9.66e-05, "failure": null, "overlap": 0.7117, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "mistral/mistral-small", "run": 3, "seconds": 1.3, "cost_usd": 9.72e-05, "failure": null, "overlap": 0.7207, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "mistral/mistral-small", "run": 4, "seconds": 2.9, "cost_usd": 0.0001506, "failure": null, "overlap": 0.7207, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 1}
+{"doc": "mask_heavy", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 1.9, "cost_usd": 4.5444e-05, "failure": null, "overlap": 0.7117, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 19.9, "cost_usd": 4.6704e-05, "failure": null, "overlap": 0.7387, "overlap_unfrozen": 0.0333, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 25.1, "cost_usd": 4.4184e-05, "failure": null, "overlap": 0.7207, "overlap_unfrozen": 0.0333, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+{"doc": "mask_heavy", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 4, "seconds": 19.9, "cost_usd": 4.5444e-05, "failure": null, "overlap": 0.7117, "overlap_unfrozen": 0.0, "spans_verbatim": "3/3", "fallbacks": 0, "retries": 0}
+
+SUMMARY — mean trigram overlap per cell (lower = more rewritten)
+  essay       mistral-small   off=0.1413 (n=4)  structure=0.1716 (n=4)  both=0.2554 (n=4)
+  essay       deepseek-v3.2   off=0.3027 (n=4)  structure=0.2456 (n=3)  both=0.2933 (n=2)
+  story       mistral-small   off=0.0402 (n=3)  both=0.0262 (n=3)
+  story       deepseek-v3.2   off=0.1780 (n=3)  both=0.1710 (n=3)
+  mask_heavy  mistral-small   both=0.7162 (n=4)
+  mask_heavy  deepseek-v3.2   both=0.7207 (n=4)
+
+SPANS RETURNED CHARACTER-FOR-CHARACTER (frozen arms)
+  essay       mistral-small  structure 24/24 spans, 0 chunk fallbacks, 4 runs
+  essay       mistral-small  both      44/44 spans, 0 chunk fallbacks, 4 runs
+  essay       deepseek-v3.2  structure 18/18 spans, 0 chunk fallbacks, 3 runs
+  essay       deepseek-v3.2  both      22/22 spans, 0 chunk fallbacks, 2 runs
+  mask_heavy  mistral-small  both      12/12 spans, 0 chunk fallbacks, 4 runs
+  mask_heavy  deepseek-v3.2  both      12/12 spans, 0 chunk fallbacks, 4 runs
+
+FAILED RUNS: 3 of 44
+  essay structure deepseek/deepseek-v3.2 run 4: FreezeRestoreFailed: 339 of 517 words came back unrewritten because protected spans could not be restored verifiably (66%, past the 33% threshold); the job fails rather than deliver this as a rewrite
+  essay both deepseek/deepseek-v3.2 run 1: RuntimeError: chunk 1 failed after 8 attempts: TimeoutError
+  essay both deepseek/deepseek-v3.2 run 2: RuntimeError: chunk 1 failed after 8 attempts: TimeoutError
+
+gateway cost total (successful-run accounting)  $0.011896

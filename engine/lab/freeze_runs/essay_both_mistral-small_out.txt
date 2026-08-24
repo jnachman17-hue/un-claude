@@ -1,0 +1,33 @@
+School Start Times and the Attendance Problem
+
+Introduction
+
+Among educational changes, delaying the first bell by one hour stands out for its low upfront expense. Yet, few modifications create such a persistent mismatch between research findings and practical implementation by school districts. The following analysis focuses on Fairmont, a mid-sized district that adjusted its high school start time from 7:25 to 8:30 in the fall of 2019, followed by three years of contentious debate over the change's impact. Beyond Fairmont's borders, the situation highlights a broader challenge: while switching start times carries immediate financial and logistical burdens, tangible benefits emerge gradually and selectively - exactly the kind of scenario that erodes confidence in school boards.
+
+The Evidence
+
+Research consistently underscores attendance improvements as the most compelling outcome. As Smith observes, "the change in start time did more for attendance than any intervention we had previously funded, including the two years we spent on automated parent messaging" (p. 47). This conclusion has been cited repeatedly in board discussions, often by individuals unfamiliar with the rest of the study, yet the finding withstands scrutiny: Fairmont's attendance figures improved for three consecutive years post-change, with the steepest gains among chronically absent students.
+
+Sleep science reinforces these findings. Harrison's survey of four schools concluded:
+
+    The students did not use the later start to stay up later. Median
+    bedtime moved by eleven minutes; median waking time moved by
+    fifty-one. The hour went to sleep, not to screens.
+
+Transportation costs, however, reveal the decision's less favorable side. Fairmont operates its bus routes in two waves, and the high school's later start time forced the second wave to overlap with elementary runs. To address the conflict, the district purchased four additional buses and hired seven new drivers, resulting in an approximate 11 percent increase in transport expenses during the first year. While none of these costs appear in attendance reports, they dominate discussions in budget meetings.
+
+What the Critics Get Right
+
+The criticism, when fair, does not question the reform's failure but points instead to its uneven gains. Those who push their own limits saw the biggest gains in rest; those on the earliest routes saw the smallest, and in winter some now return after sunset. Promised as a fix for all, it exposed a clear regressive flaw, one that could be adjusted, and districts that replicated Fairmont without its revised path inherited the same flaw in full.
+
+Conclusion
+
+The uptick in attendance is real, the extra rest is real, and the transport expense is real. The dishonest stance is the one that omits one of these three. Districts mulling this shift would be wise to weigh bus costs first, as the buses are the factor that greet them every dawn without fail.
+
+Sources
+
+Smith, J. A., & Jones, R. B. (2019). Later start times and adolescent attendance. Journal of School Health, 89(4), 331-339.
+
+Harrison, M. (2020). The sleeping campus: Start times and adolescent rest. Princeton University Press.
+
+Okonkwo, A. (2021). Sleep debt in rural districts. Sleep Research Quarterly, 12(2), 88-104.

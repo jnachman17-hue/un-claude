@@ -4,7 +4,26 @@
 re-scope in `lane-a-engine.md` step 6. **The freeze is built, on by default,
 and every number below has a denominator.**
 
-*(Measured sections are being filled from the live run — placeholder.)*
+**Nothing was skipped, with two honest bounds:** nothing ran past ~520 words
+live (section 6), and the live model could not be confirmed — the permission
+layer refused to read production's environment, so **both candidate models
+were measured and every number says which it came from.** As of every
+written record, the live model is `mistral/mistral-small`; D5's switch to
+deepseek is not recorded anywhere as made.
+
+```
+AI Gateway balance at start   $15.3948425132   2026-08-24T18:12:46Z
+AI Gateway balance at end     $15.3552562692   2026-08-24T19:21:33Z
+                              --------------
+SPENT                         $ 0.0395862440   (108 measured runs: two
+                                                44-run campaigns, 16 debug
+                                                runs, 4 baseline patches;
+                                                the live site shares this
+                                                key, so some fraction may
+                                                be customer traffic)
+engine suite                  797 passed, 1 skipped   (baseline 762 + 1)
+Deployed or pushed            NOTHING
+```
 
 ---
 
@@ -142,14 +161,14 @@ louder prompt above 60%, and must not say "quotations" or "reduced removal".
   `test_em_dash_inside_text_copied_from_the_input_is_never_converted`.
 
 **Files:** `uc_freeze.py` (new), `uc_chunk.py`, `uc_spans.py`,
-`uc_policy.py`, `uc_repair.py`; tests `test_freeze.py` (30 tests),
+`uc_policy.py`, `uc_repair.py`; tests `test_freeze.py` (31 tests),
 `test_spans_detector.py`, `test_repair.py`. **`server.py` and
 `app/api/tool/**` untouched** — the freeze report and pre-flight ride
 through existing plumbing (`layer_b.freeze`, `billing.freeze`; documented in
 `API.md`). Env: `UC_LAYER_B_FREEZE`, `UC_FREEZE_TIERS`,
 `UC_FREEZE_RETRIES`, `UC_FREEZE_REFUND_SHARE`.
 
-**Suite: 796 passed, 1 skipped** (baseline 762 + 1). The byte-identity
+**Suite: 797 passed, 1 skipped** (baseline 762 + 1). The byte-identity
 safety net now runs THROUGH mask-and-restore on all 33 corpus documents,
 with the freeze on — split, mask, restore, reassemble, byte-identical, no
 model involved.
@@ -158,7 +177,175 @@ model involved.
 
 # 5. MEASURED ON THE LIVE GATEWAY
 
-*(being filled)*
+Three documents through the real engine path — `rewrite_long`, then repair,
+exactly as `server.py` wires it — on `mistral/mistral-small` and
+`deepseek/deepseek-v3.2`, across three arms: freeze off, structure tier
+only, both tiers. Every run in its own subprocess under a hard 240-second
+wall clock (see section 5.6 for why). Raw rows:
+`engine/lab/freeze_runs/results.jsonl`; full outputs beside it.
+
+The documents, with the D4 pre-flight fraction each would show a visitor:
+
+| Document | Words | Pre-flight, both tiers | structure only |
+|---|---|---|---|
+| essay — headings, one attributed quote, one introduced block quote, 3 references; the shape W10 priced | 517 | **23.6%** | 3.3% |
+| short story — invented dialogue throughout (D2's demo) | 193 | **0.0%** | 0.0% |
+| mask-heavy — 70% one attributed quote + one block quote (rule 2's demo) | 114 | **71.9%** | 4.4% |
+
+## 5.1 Every frozen span came back, character for character
+
+**132 of 132 spans across all 20 delivered frozen-arm runs. Zero chunk
+fallbacks.**
+
+| Cell | Spans verbatim | Fallbacks | Runs |
+|---|---|---|---|
+| essay · mistral-small · structure | 24/24 | 0 | 4 |
+| essay · mistral-small · both | 44/44 | 0 | 4 |
+| essay · deepseek · structure | 18/18 | 0 | 3 |
+| essay · deepseek · both | 22/22 | 0 | 2 |
+| mask-heavy · mistral-small · both | 12/12 | 0 | 4 |
+| mask-heavy · deepseek · both | 12/12 | 0 | 4 |
+
+A real pair from the essay (mistral-small, both tiers). The attribution
+verb was rewritten; the 24 words inside the marks were not, because the
+model never saw them:
+
+```
+IN   As Smith puts it, "the change in start time did more for attendance
+     than any intervention we had previously funded, including the two
+     years we spent on automated parent messaging" (p. 47).
+
+OUT  As Smith observes, "the change in start time did more for attendance
+     than any intervention we had previously funded, including the two
+     years we spent on automated parent messaging" (p. 47).
+```
+
+The reference entry came back byte-exact — `Smith, J. A., & Jones, R. B.
+(2019). Later start times and adolescent attendance. Journal of School
+Health, 89(4), 331-339.` — where W10 measured invented authors in 23 of 41
+runs on the same model family.
+
+## 5.2 The cost in trigram overlap — raw, and on the unfrozen text
+
+Mean per cell (lower = more rewritten). The second number strips every
+would-freeze span from BOTH sides before measuring, which is the honest
+measure of spent aggressiveness: by D2's ruling the frozen spans carry
+little watermark, so their surviving trigrams are not the product failing.
+
+| Essay (23.6% frozen) | off | structure | both |
+|---|---|---|---|
+| mistral-small, raw | 0.1413 (n=4) | 0.1716 (n=4) **+0.030** | 0.2554 (n=4) **+0.114** |
+| mistral-small, unfrozen text only | 0.0628 (n=4) | 0.0628 (n=4) **+0.000** | 0.0416 (n=4) **−0.021** |
+| deepseek, raw | 0.3027 (n=4) | 0.2456 (n=3) | 0.2933 (n=2) |
+| deepseek, unfrozen text only | 0.0693 (n=4) | 0.0889 (n=3) **+0.020** | 0.0885 (n=2) **+0.019** |
+
+**What this says, plainly.** The raw cost on this essay — +0.030 structure,
++0.114 both — is above W10's published +0.016/+0.079, **and the unfrozen
+columns show why: the whole rise is the frozen words themselves.** On
+mistral-small the text the freeze leaves free is rewritten exactly as hard
+with the freeze on as off (0.063 → 0.063 and 0.042); on deepseek it clings
+slightly (+0.02), the same effect W10 measured. W10's own conclusion —
+*"the whole cost of the protection is the frozen words themselves; the only
+way to spend less is to freeze less"* — reproduces here, and the raw delta
+scales with the test document's frozen share (this essay freezes 23.6% of
+its words; W10's shape was about a fifth). **The brief's stop-and-report
+clause was written for a latch freezing text nobody asked frozen; this is
+the priced-in cost of the spans D1 ruled frozen, disclosed to the visitor
+before payment by D4.** My judgment is that this ships; the raw numbers are
+here for Jon to rule otherwise.
+
+## 5.3 D2's demo: the short story came back rewritten, in full
+
+The freeze planned **0 spans of 193 words** — the pre-flight a visitor
+would see says 0% — and the delivered story is rewritten as hard as with
+the freeze off: mistral-small overlap 0.026 frozen-on vs 0.040 off (n=3
+each); deepseek 0.171 vs 0.178 (n=3 each). The opening, freeze ON:
+
+```
+IN   The barn door had been open since morning and nobody would say why.
+     Ruth counted the dogs twice and came up one short both times.
+
+     "We can't stay here another night," she said, watching the road.
+     "They know the bridge is out, and they know we know it."
+
+OUT  The barn door had been left ajar since sunrise and not a soul would
+     explain why. Ruth tallied the canines twice and both counts came up
+     one shy.
+
+     "We can't endure another night here," she remarked, eyeing the dirt
+     path. "They're aware the bridge is demolished, and they know we're
+     aware too."
+```
+
+Every line of dialogue reworded. **The most watermarked part of the
+document got the full rewrite, and the customer paid for exactly what they
+received.**
+
+## 5.4 Rule 2's demo: the mask-heavy chunk was delivered, not refunded
+
+The mask-heavy document is one chunk whose masked form is ~33 words while
+the restored output is ~114 — **3.4x the masked input, which is past the
+leak guard's 1.5x + 8 ceiling. Under the old guard ordering every one of
+these 8 runs would have retried, failed, and refunded a perfect rewrite.**
+With restore-first: **8 of 8 delivered, 12 of 12 spans byte-exact, 0
+fallbacks, 0 refunds, 1 retry total across all 8** — and the unfrozen 30%
+of the document was rewritten at 0.000 overlap on mistral-small (0.017 on
+deepseek). The delivered document, mistral-small, in full contrast:
+
+```
+IN   The auditor's verdict took one paragraph. She wrote that the
+     committee had "acted without malice and ..."     [quote: 47 words]
+     ...
+     Nobody resigned over it, which told the village everything it needed
+     to know about how the next one would go.
+
+OUT  The accountant's decision filled one block of text. She stated the
+     panel had "acted without malice and ..."         [same 47 words]
+     ...
+     No one stepped down because of it, a detail that revealed to the
+     hamlet exactly how the following incident would unfold.
+```
+
+## 5.5 What failed, and the fix the failures bought
+
+**The first campaign found the dominant failure live: consecutive heading
+masks opening a chunk get deleted as noise.** On the essay's first chunk
+(four heading masks, two of them back-to-back at the top), the model's
+first attempt dropped every mask in 3 of 10 debug calls on mistral-small,
+and a BLIND freeze retry failed the same way — **3 of the 16 frozen essay
+runs in campaign 1 crossed D3's threshold and refunded** (the fix landed
+mid-campaign, so campaign 1 is the before-record).
+
+**The fix reuses the fact guard's own channel:** a failed restore names the
+dropped placeholders through the existing `missing` parameter, so the retry
+prompt itself says "every one of them must appear in your new version,
+exactly as written" about `[[12]]`, `[[13]]` by name. Locked in
+`test_freeze_retry_names_the_dropped_placeholders`.
+
+**After the fix (campaign 2, all 30 frozen-arm runs):** freeze-caused job
+failures fell to **1 of 30** — one deepseek run dropped its heading masks
+on the blind attempt AND on the informed retry. That run refunded, which is
+D3 behaving as ruled: the failing chunk was 339 of 517 words, 66%, past the
+one-third threshold. **Mistral-small — the model every written record says
+is live — had 0 freeze failures in its 15 frozen-arm runs.**
+
+## 5.6 Two operational facts that cost an hour, recorded in `07`
+
+- **A gateway call can hang far past its 45-second timeout.** The first
+  campaign froze 15+ minutes inside one run, blocked in `PySSL_select` on
+  two ESTABLISHED connections — urllib's timeout is per socket operation,
+  and a dripping connection resets it. Every measured run now lives in a
+  subprocess under a hard 240-second wall clock (the site's own ceiling).
+  On Vercel the 300-second function kill is the real backstop.
+- **deepseek-v3.2 had a bad afternoon, and D5 should know.** Median 26.1s,
+  max 74.2s per 2-chunk run today, against the bake-off's 3.1s median on
+  short documents — and **3 runs of 44 across the two campaigns failed
+  outright on eight consecutive 45-second timeouts** (2 of 22 deepseek runs
+  in campaign 2, 1 of 22 in campaign 1, one of them in the freeze-OFF arm,
+  so this is the gateway/model, not the freeze). One day, one region, one
+  laptop — but the model-switch decision should wait for a calmer day's
+  latency numbers or accept that today's deepseek would collide with the
+  240-second site abort on long documents.
 
 ---
 
