@@ -6,6 +6,57 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 16:50 — PUSHED AND LIVE. NEXT BRIEF ISSUED.
+
+**15 commits pushed, `b72b1aa..dee5092`, deploy Ready.** Live now: the
+attribution fix and **both freeze repairs** — including the block quote that
+opened a chunk and was silently never frozen while the customer had already
+paid for it.
+
+**Verified on production, free scan, no model call.** A short story with
+varied dialogue tags — the exact document that froze a third of itself before
+the push:
+
+```
+"freeze": { "fraction": 0, "frozen_words": 0, "words": 93, "spans": {} }
+```
+
+**Novels are no longer being frozen on the live site.**
+
+## Next brief issued: `docs/briefs/freeze-final-then-measure.md`
+
+**Opus, high effort.** Three jobs, and the order is load-bearing — **E-16 fixed
+a freeze bug mid-campaign and had to discard its span counts**, so every change
+to freeze behaviour now lands before the measurement runs.
+
+1. **Restore trailing attribution** (Jon's ruling). The brief opens with proof
+   that the sentence alone cannot decide it — *«"Power tends to corrupt," Acton
+   observed»* and *«"Mind the second stair," Aldous observed»* are
+   grammatically identical — and proposes a **document-level** test (does the
+   document cite anything at all), **with an explicit warning that this is the
+   same shape as the Sources latch that killed the first freeze design.** It
+   also tells the session that concluding "no safe rule exists" is a legitimate
+   finding, not a failure.
+2. **Chase the second silent span shortfall** — `ladder_3000`, 87 of 90 spans,
+   identical every run.
+3. **The ladder, once, on the final engine, all three models.** Deepseek is the
+   point: **it has never been measured past 2 chunks.**
+
+**Budget rule rewritten around E-16's trap:** read `total_used`, never
+`balance`; **stop on the first 402 and do not retry it**; stop at $2.00.
+
+**Nothing else may run in the engine lane while it is out.**
+
+## Still Jon's to rule
+
+- **The hard-wrap gap** — 61.6% frozen unwrapped against 5.8% hard-wrapped.
+  Deliberately excluded from the brief
+- **`docs/03-pricing.md` §4b** — "no request over two cents" rests on a 60s cap
+  now set to 300; measured 3.6 cents on medium
+- **The marketing session's uncommitted work** in `04` and `06`
+
+---
+
 # ★★★ 24 AUGUST, 16:20 — E-16 VERIFIED. JOB 1 SUCCEEDED, JOB 2 DID NOT FINISH.
 
 **Gateway unblocked by Jon — verified: a live `mistral/mistral-small` call now
