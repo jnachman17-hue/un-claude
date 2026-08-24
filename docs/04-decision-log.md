@@ -5259,7 +5259,7 @@ than money and the interface's own behaviour already implies them.
 
 ## 24 August 2026. Lane A, session E-9: the freeze
 
-### 136. When the freeze fails, the chunk is handed back unrewritten — and the refund has a threshold. Changes entry 22.
+### 137. When the freeze fails, the chunk is handed back unrewritten — and the refund has a threshold. Changes entry 22.
 
 **Jon's ruling (D3, 23 August), now implemented, with the one number the
 ruling left to the implementer.** Entry 22 says a failed rewrite refunds.

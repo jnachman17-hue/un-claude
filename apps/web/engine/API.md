@@ -430,7 +430,7 @@ policy and masking live in `uc_freeze.py`; the wiring is in `uc_chunk.py`.
 |---|---|
 | `freeze` | The D4 pre-flight: `{fraction, frozen_words, words, spans}` — the share of THIS document that will come back exactly as sent, computed by the same plan the rewrite runs, on the free scan, before anyone pays. Absent when the freeze is disabled or the input is not text. **The interface half is Lane C's (board W-10) and D4's wording is fixed on the board — including the louder prompt above 60%** |
 
-### New failure behaviour (D3, 04 entry 136)
+### New failure behaviour (D3, 04 entry 137)
 
 A chunk whose restore fails retries once, then falls back to that chunk's own
 original text — the job still succeeds and the report explains. When MORE than
