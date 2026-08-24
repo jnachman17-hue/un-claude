@@ -6,6 +6,97 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 14:30 — JON'S QUESTION BROKE THE QUOTATION DETECTOR
+
+**Jon asked how the tool can possibly tell a sourced quotation from invented
+dialogue when both sit inside quotation marks. It largely cannot, and the
+measurement below is the proof. This is E-16, and it outranks everything else
+in Lane A.**
+
+## Jon's two rulings this session
+
+| # | Ruling |
+|---|---|
+| **D5 — CLOSED** | **Revert to `mistral/mistral-small`.** Deepseek is 8x slower, rewrites less hard in every measured cell, and failed 3 of 24 against mistral's 0 of 29. The freeze made deepseek's advantage redundant |
+| **D6/E-8 — ORDERED** | **Measure the real word maximum and publish it.** The 10,000 on the pricing page is a config value nobody has verified. Nothing has ever run past ~520 words |
+
+## ★★ E-16 — THE ATTRIBUTION CUE FIRES ON ORDINARY NOVEL DIALOGUE
+
+**Run against the shipping detector, no model involved.**
+
+**Test 1 — fourteen adversarial sentences.** 13 of 14 behaved as `uc_spans`
+documents. The fourteenth is the tell:
+
+```
+"You always do this to me," she argued, slamming the door behind her.
+    -> FROZEN
+```
+
+**Test 2 — one realistic novel sentence per verb in `_ATTRIBUTION`:**
+
+```
+FICTION DIALOGUE LINES TESTED: 20   (none should ever freeze)
+WRONGLY FROZEN: 17
+```
+
+argued · warned · noted · observed · claimed · stated · declared · remarked ·
+insisted · acknowledged · concluded · reported · asserted · maintained ·
+contended · cautioned · emphasised — **every one of these is both a citation
+verb and a standard fiction dialogue tag.** Only `said`, `asked` and `replied`
+stayed free.
+
+**Test 3 — the product-level number. Two stories, same length, same content,
+differing ONLY in which dialogue tags the author chose:**
+
+| Story | Words | Frozen |
+|---|---|---|
+| A — `said` / `asked` / `replied` | 124 | **0.0%** |
+| B — `insisted` / `observed` / `argued` / `concluded` | 123 | **14.6%** (18 words, 4 quote spans) |
+
+**Both are 100% invented dialogue. Neither should freeze one word.**
+
+## ★ THIS ALSO UNDERMINES E-9's D2 DEMO — and nobody was being dishonest
+
+E-9 section 5.3 reports the short story freezing **0 spans of 193 words** and
+presents it as D2 working. **That result is real but not general: their test
+story uses only `said`, `asked` and `replied`** — three of the four verbs the
+detector excludes. **The demo passed because of the story's word choices, not
+because the rule works.** Story B above is the same demo with different tags.
+
+**Consequence, in D2's own terms:** invented dialogue is the MOST watermarked
+text in a document — the model chose every word inside those marks. Freezing it
+hands the customer back the most marked part untouched and charges for a
+rewrite. **That is precisely the catastrophe D2's reasoning was written to
+prevent, and the shipped cue walks into it whenever a novelist writes "she
+insisted" instead of "she said".**
+
+## ★ THE FIX I RECOMMEND — the subject of the verb, not the verb
+
+**Academic attribution names a source. Fiction uses a pronoun.** Checked
+against the samples above:
+
+| | Subject | Sample |
+|---|---|---|
+| **All 17 false positives** | `she` / `he` | "she argued", "he concluded" |
+| **All 5 true positives** | a named source | "Smith puts it", "Orwell wrote", "the 2019 review", "The committee concluded", "Acton observed" |
+
+**17 of 17 fixed, 0 of 5 broken, on this sample.** So: **a reportive verb whose
+subject is a bare pronoun is not attribution.** The citation-shape path stays as
+an independent trigger, so `(Smith, 2019)` and `p. 47` keep freezing regardless.
+
+**It also fixes the known epistolary false positive** — *«she wrote: "…"»* has a
+pronoun subject and becomes free.
+
+**Residual it accepts, and D2 says this is the cheap direction:** *«As she wrote
+in her 1987 essay, "…"»* stops freezing, because a bare year is not a citation
+shape. Being wrong toward free costs a few reworded phrases.
+
+**NOT YET BUILT. The numbers above are the conductor's measurement, not a
+session's. A session must build it, re-run all three tests, and add a fiction
+corpus to the freeze suite.**
+
+---
+
 # ★★★ 24 AUGUST, 13:40 — PUSHED, DEPLOYED, AND VERIFIED LIVE
 
 **Jon authorised the push. Seven commits, `99be2ea..b72b1aa`.** The push itself
