@@ -405,6 +405,28 @@ def _weave(paras: list[str], seps: list[str]) -> str:
 _LONE_MASK = re.compile(r"\s*\[\[(\d+)\]\]\s*")
 
 
+def _paras_keeping_indent(text: str) -> tuple[list[str], list[str]]:
+    """Paragraphs with their first line's indentation intact, and separators.
+
+    `_PARA_BREAK`'s trailing `[^\\S\\n]*` swallows the horizontal whitespace
+    that OPENS the next paragraph — and that whitespace is exactly the byte a
+    block quote is recognised by, and part of the text a frozen span must
+    match character-for-character. `uc_spans._paragraphs` documents the same
+    trap and compensates for it; this is the same compensation, for the same
+    reason. Found in E-16: without it the reinsertion repair below un-indented
+    the block quote sitting next to the mask it was repairing, and the
+    verifier then correctly reported the block quote missing.
+    """
+    parts = _PARA_BREAK.split(text)
+    paras, seps = parts[0::2], parts[1::2]
+    for i, sep in enumerate(seps):
+        m = re.search(r"[^\S\n]+$", sep)
+        if m:
+            seps[i] = sep[: m.start()]
+            paras[i + 1] = m.group(0) + paras[i + 1]
+    return paras, seps
+
+
 def _reinsert_lost_masks(
     restored: str, masked_chunk: str, mask_map: list[dict],
     dropped_ids: list[int],
@@ -426,8 +448,8 @@ def _reinsert_lost_masks(
     about 1,050 words, the whole job, refunded (the fallback unit is the
     chunk, and D3's threshold is a share of the document's words).
     """
-    parts = _PARA_BREAK.split(masked_chunk)
-    masked_paras, _ = _stitch_fences(parts[0::2], parts[1::2])
+    masked_paras, masked_seps = _stitch_fences(
+        *_paras_keeping_indent(masked_chunk))
     by_id = {row["id"]: row["text"] for row in mask_map}
     slots: list[int | None] = []
     for para in masked_paras:
@@ -437,8 +459,7 @@ def _reinsert_lost_masks(
     dropped_slots = {i for i, mid in enumerate(slots) if mid in dropped}
     if {slots[i] for i in dropped_slots} != dropped:
         return None                    # a dropped mask was inline; no position
-    out_parts = _PARA_BREAK.split(restored)
-    out_paras = [p for p in _stitch_fences(out_parts[0::2], out_parts[1::2])[0]
+    out_paras = [p for p in _stitch_fences(*_paras_keeping_indent(restored))[0]
                  if p.strip()]
     if len(out_paras) != len(masked_paras) - len(dropped_slots):
         return None                    # something else moved too; stay out
@@ -450,7 +471,10 @@ def _reinsert_lost_masks(
         else:
             rebuilt.append(out_paras[j])
             j += 1
-    return "\n\n".join(rebuilt)
+    # The masked chunk's OWN separators, not a bare "\n\n": the customer's
+    # paragraph spacing is theirs, and a frozen span has to come back byte for
+    # byte or the verifier — rightly — calls it missing.
+    return _weave(rebuilt, masked_seps)
 
 
 def _restore(rewritten: str, inner: list[str], wanted: int) -> tuple[str, bool]:

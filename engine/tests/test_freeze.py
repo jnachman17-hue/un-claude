@@ -513,6 +513,55 @@ def test_a_deleted_heading_placeholder_is_reinserted_not_failed(monkeypatch):
     assert info["structure_kept"] is True
 
 
+def test_reinsertion_keeps_the_indentation_of_a_neighbouring_block_quote(
+        monkeypatch):
+    # E-16, found while measuring the document ladder, and it is the reason
+    # deepseek and mistral-medium failed an ordinary 463-word essay outright
+    # while mistral-small delivered it.
+    #
+    # The repair rebuilt the chunk with a bare "\n\n" between paragraphs.
+    # _PARA_BREAK's trailing [^\S\n]* swallows the horizontal whitespace that
+    # OPENS the next paragraph, and for an indented block quote that
+    # whitespace is part of the frozen span's own text. So the repair put the
+    # heading back and silently un-indented the block quote beside it, the
+    # verifier correctly reported the block quote missing, and a chunk that
+    # was fully recoverable failed instead — on a two-chunk document, past
+    # D3's one-third threshold, refunding the whole job.
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+    doc = (
+        "Fairmont: School start times\n\n"
+        "Fairmont changed its school start times in September 2016 and the "
+        "effect on attendance was larger than anything the authority had "
+        "funded in the preceding decade.\n\n"
+        "The minority report recorded:\n\n"
+        "    We do not dispute the attendance figure. We dispute\n"
+        "    that it was purchased at the price stated, and no\n"
+        "    business case here has carried that number forward.\n\n"
+        "Nobody resigned over it, which told the district everything it "
+        "needed to know about how the next one would go."
+    )
+    block_quote = (
+        "    We do not dispute the attendance figure. We dispute\n"
+        "    that it was purchased at the price stated, and no\n"
+        "    business case here has carried that number forward."
+    )
+    assert block_quote in doc
+
+    def deletes_the_heading_mask(chunk, attempt=0, missing=None,
+                                 usage_out=None):
+        # The lone heading placeholder goes; everything else comes back.
+        return re.sub(r"^\[\[\d+\]\]\n*", "", chunk).strip(), {}
+
+    out, info = rewrite_long(doc, deletes_the_heading_mask)
+
+    assert info["usage"]["masks_reinserted"] == 1
+    assert info["freeze"]["chunks_fallback"] == []
+    assert out.startswith("Fairmont: School start times\n\n")
+    # THE ASSERTION THAT WAS FAILING: the block quote comes back with its
+    # indentation, character for character, which is the whole promise.
+    assert block_quote in out
+
+
 def test_reinsertion_stays_out_when_paragraphs_also_merged(monkeypatch):
     # Conservative on purpose: if the model deleted a placeholder AND merged
     # prose paragraphs, the arithmetic no longer proves where anything goes,
