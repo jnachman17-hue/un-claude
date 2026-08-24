@@ -567,3 +567,39 @@ starts until it is.
 
 **Trigger for revisiting.** Answered by Jon, or any journalist contact being made,
 whichever is first.
+
+---
+
+## Chinese, Japanese and Thai: the honest word count is built, and wiring it to the customer is one coupled pricing decision
+
+**Raised 24 August 2026, Lane A. Open, and it is Jon's.**
+
+**The fact.** Every word count in the product is `len(text.split())`, which
+counts spaces, and these three scripts do not put spaces between words. So a
+Chinese, Japanese or Thai document today: counts as roughly one word → bills
+one credit → passes the 10,000-word ceiling at any size → and is then silently
+skipped by the 16-word rewrite floor. The customer pays one credit, gets layer
+A and metadata, and no rewrite runs.
+
+**What Lane A shipped.** A script-aware counter (`engine/uc_wordcount.py`,
+tested) now drives the ENGINE-INTERNAL numbers — chunk sizes, the truncation
+guard, the leak guard — where it cannot change a price. Customer-visible
+behaviour is unchanged.
+
+**Why the rest is ONE decision, not three.** Fixing the floor alone runs
+rewrites the gate never priced (a 200,000-character Chinese document would
+bill 1 credit and cost ~170 chunks of model calls). Fixing billing alone
+charges for a rewrite the floor still skips. And the browser's own counter
+(Lane C's file) must change in the same deploy or the price shown will not be
+the price charged — the two-implementations trap, again.
+
+**Working position.** Wire `count_words` into `uc_policy.word_count` (billing
+and the gate) and the server floor in one change, with the workbench counter
+updated in the same deploy — and re-measure rewrite quality on these scripts
+before advertising support, because W10 measured French coming back
+half-translated in 16 of 20 runs and CJK has never been rewritten even once.
+Also note `trigram_overlap` is invalid on non-Latin script (W10 §4.9), so the
+receipt would mislead in both directions until it is script-aware.
+
+**Trigger for revisiting.** Jon ruling on it, or the first CJK support request
+from a real customer, whichever is first.
