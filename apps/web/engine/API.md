@@ -380,3 +380,28 @@ its own sentences and falls back to "Something went wrong" for anything it does
 not recognise. An over-length document was once refused correctly and refunded
 correctly while telling the person nothing useful, purely because the code was
 missing from the reply.
+
+---
+
+## Added 24 August 2026 — Lane A
+
+### Three new blocks on a layer B response, all report-only
+
+| Field | Meaning |
+|---|---|
+| `layer_b.repair` | What the REPAIR pass took back out of the rewrite: markdown the input never had, curly punctuation the customer never typed, em dashes past the input's own count, years the model spelled out. Every rule conditions on the customer's own input. See `uc_repair.py` |
+| `layer_b.protection` | The protected-span report: which quotations, headings, references, addresses, code blocks, tables and equations were found in the input, and how many came back verbatim. **`mode` is always `"report_only"`** — the freeze is off, nothing raises, and these counts change nothing about the output. `structure_kept` rides in this block too. "Returned verbatim" is presence-and-count, not position; the block's own `note` says so |
+| `stats.after_rewrite` | Present only when the model itself emitted invisible characters and a quiet second pass removed them. Kept separate so the customer's own layer A evidence (`stats.removed` / `stats.replaced`) is never mixed with the model's mess |
+
+### The ordering fix behind the layer A stats
+
+`stats` now describes **the document the customer sent**. Layer A runs before
+the rewrite; it used to run after, when the rewrite had already destroyed the
+zero-width characters it was supposed to count — a document carrying two
+reported `removed_count: 0`. Verified both ways on 24 August 2026.
+
+### One new environment variable
+
+| Variable | Meaning |
+|---|---|
+| `WATERMARKS_REWRITE_REASONING_EFFORT` | Unset (default): the parameter is omitted, exactly as before. `"none"` asks a reasoning model to skip its chain of thought — without it such a model thinks for minutes on a rewrite. Only relevant if the model is ever switched to a reasoning-tagged one |

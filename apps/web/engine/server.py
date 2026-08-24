@@ -830,7 +830,15 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                         temperature=temp,
                         candidates=1,
                         allow_remote=True,
-                        reasoning_effort=None,
+                        # Unset (the default) omits the parameter, exactly as
+                        # before. "none" asks a reasoning model to skip its
+                        # chain of thought — without it such a model thinks
+                        # for minutes on a rewrite, which is the likeliest
+                        # reason two models "timed out" in the last bake-off.
+                        # One env var, so trying a reasoning model is a
+                        # Vercel setting and not a code change.
+                        reasoning_effort=os.environ.get(
+                            "WATERMARKS_REWRITE_REASONING_EFFORT") or None,
                         usage_out=usage_out,
                     )
 
