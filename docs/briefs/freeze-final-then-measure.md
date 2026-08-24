@@ -1,3 +1,14 @@
+# ⚠️ WITHDRAWN — SUPERSEDED 24 August 2026
+
+**Do not run this brief.** Jon ruled that the real-quotation-versus-novel-
+dialogue distinction is a guessing game and abolished it: **every quotation
+freezes.** Its job 1 asked for the opposite. Jobs 2 and 3 survive and are
+carried into **`docs/briefs/freeze-every-quotation.md`**, which replaces this.
+
+Kept for its reasoning, not as a to-do list.
+
+---
+
 # BRIEF — finish the freeze, THEN measure it once
 
 **Written by the conductor, 24 August 2026, after verifying E-16. Paste this
