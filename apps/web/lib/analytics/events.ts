@@ -35,6 +35,20 @@
  *   signed-in half, because the anonymous id was already gone. A real cost for no
  *   gain.
  *
+ *   THE SAME BOUNDARY CUTS THE CHECKOUT IN HALF, added 24 August 2026 with the
+ *   purchase events. `checkout_started` fires on /pricing. The browser then leaves
+ *   for stripe.com and comes back through a fresh page load, so the visitor id
+ *   that fired it no longer exists and `purchase_completed` belongs to a stranger.
+ *   The two are trustworthy COUNTS and they do not join into one funnel. Nobody
+ *   should reach for `identify()` to close that gap: it would not close it — the
+ *   id was gone before the account was known — and it would put a person into the
+ *   analytics record to achieve nothing. How many purchases happened is a Stripe
+ *   question, and Stripe answers it with the money attached.
+ *
+ *   NO PRICE IS EVER SENT. Not because it is personal, but because a browser
+ *   saying a number about money is the boundary this product refuses to cross.
+ *   The pack id goes; the price stays on the server. See `checkoutStarted`.
+ *
  * IF AN EVENT OR A PROPERTY IS ADDED HERE, the privacy policy and the cookie
  * policy are checked against this file in the same change. 06 rows 46 and 54.
  */
@@ -360,4 +374,130 @@ export function signUpStarted(properties: { method: 'password' | 'google' }): vo
 
 export function signInStarted(properties: { method: 'password' | 'google' }): void {
   send('signin_started', { method: properties.method });
+}
+
+// ---------------------------------------------------------------------------
+// Checkout, which is where the money starts
+// ---------------------------------------------------------------------------
+
+/**
+ * A fixed vocabulary of packs, for the same reason `KNOWN_TYPES` exists: a pack
+ * id arrives here as a string, and a string is the one thing this module does
+ * not let out. Anything outside the list reduces to `other`.
+ *
+ * These three match `PACKS` in `pricing/_components/pricing-data.ts`. A fourth
+ * pack added there and not here shows up in PostHog as `other` rather than as a
+ * wrong number, which is the failure worth having.
+ */
+const KNOWN_PACKS = ['starter', 'plus', 'pro'] as const;
+
+function packSlug(id: string): string {
+  return (KNOWN_PACKS as readonly string[]).includes(id) ? id : 'other';
+}
+
+/**
+ * THE PRICE IS NEVER SENT, and this is not a style preference.
+ *
+ * What a pack costs is decided by `pricing-data.ts` on the server and charged by
+ * Stripe. A price travelling up from a browser is the exact shape of the bug
+ * this product refuses to have, and an analytics event is still a browser saying
+ * a number about money. The pack id is enough: it maps to a price in one place,
+ * and that place is the one allowed to know.
+ */
+export type CheckoutFailure =
+  /** 429. Too many checkouts too quickly. */
+  | 'rate_limited'
+  /** 503. Stripe is configured but not answering. Nothing was charged. */
+  | 'unavailable'
+  /** Any other non-ok reply from the route. */
+  | 'error'
+  /** The request never landed. A dropped connection, a blocked request, no network. */
+  | 'unreachable';
+
+/** They pressed a pack button and the browser is asking the route for a session. */
+export function checkoutStarted(properties: { packId: string }): void {
+  send('checkout_started', { pack_id: packSlug(properties.packId) });
+}
+
+/**
+ * The click did not reach Stripe, and it was not the visitor's doing.
+ *
+ * The route's own message is NOT sent, for the same reason `sanitise_failed`
+ * does not send the engine's: a fixed set of causes cannot later grow a
+ * filename in it.
+ */
+export function checkoutFailed(properties: {
+  packId: string;
+  reason: CheckoutFailure;
+}): void {
+  send('checkout_failed', {
+    pack_id: packSlug(properties.packId),
+    reason: properties.reason,
+  });
+}
+
+/**
+ * The click did not reach Stripe because there is nobody to bill yet: 401 means
+ * no session at all, 402 means the anonymous guest identity the tool hands out
+ * on arrival. Both send the visitor to sign-up.
+ *
+ * IT IS NOT A `checkout_failed`, and putting it there would have been the easy
+ * mistake. Nothing is broken in this branch — it is the ordinary path for
+ * everyone who finds /pricing before making an account, which is most people.
+ * Filed as a failure it would have buried real breakage under normal traffic;
+ * left unrecorded it would have made `checkout_started` look like it leaks
+ * customers, when in fact they were handed to the sign-up form on purpose.
+ *
+ * `state` is a session class and not an identity. It says which of two doors
+ * the visitor was standing at, and it is the same two values for everybody.
+ */
+export function checkoutAccountRequired(properties: {
+  packId: string;
+  state: 'signed_out' | 'guest';
+}): void {
+  send('checkout_account_required', {
+    pack_id: packSlug(properties.packId),
+    state: properties.state,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Coming back from Stripe
+// ---------------------------------------------------------------------------
+
+/**
+ * The card cleared. Stripe only sends a buyer to the success return once the
+ * payment is done, so this fires on arrival rather than on the credits landing.
+ *
+ * READ THE IDENTITY WARNING BELOW BEFORE BUILDING A FUNNEL ON THIS. The buyer
+ * left this site for stripe.com and came back through a fresh page load, and
+ * persistence is `memory`, so the visitor id that fired `checkout_started` is
+ * gone. This event is a reliable COUNT and an unreliable funnel step — the same
+ * boundary that killed `signup_completed`, for the same reason.
+ *
+ * THE PACK IS NOT SENT, because this page does not know it. The return URL
+ * carries `?purchase=success` and nothing else, and the pack is only recoverable
+ * from the ledger row, which is a change in a file this session does not own.
+ * Which pack sold is a Stripe question anyway, and Stripe answers it with the
+ * money attached.
+ *
+ * `credits_ready` is the one thing worth measuring here and it is an operational
+ * number, not a marketing one: it says whether the webhook that grants the
+ * credits beat the redirect that brings the buyer home. False means a paying
+ * customer looked at their old balance. See the header of `purchase-banner.tsx`.
+ */
+export function purchaseCompleted(properties: { creditsReady: boolean }): void {
+  send('purchase_completed', { credits_ready: properties.creditsReady });
+}
+
+/**
+ * They reached Stripe's payment page and came back without paying.
+ *
+ * The other half of the answer. Without it, everybody who did not buy looks
+ * alike, and the two populations need completely different fixes: somebody who
+ * never reached Stripe is a broken button, and somebody who reached it and
+ * backed out is a price or a moment of doubt.
+ */
+export function purchaseCancelled(): void {
+  send('purchase_cancelled');
 }

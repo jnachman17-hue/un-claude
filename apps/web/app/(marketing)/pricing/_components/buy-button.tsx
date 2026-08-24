@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 
 import { toast } from '@kit/ui/sonner';
 
+import * as track from '~/lib/analytics/events';
+
 /**
  * The pack button on /pricing. 04 entry 112.
  *
@@ -49,6 +51,13 @@ import { toast } from '@kit/ui/sonner';
  * signed off (entry 109: 315, 319 and 319px, tier three at y=1393), and a
  * button that restyles itself would quietly undo that work.
  *
+ * WHAT IT MEASURES, added 24 August 2026. Until that date this button sent no
+ * analytics at all, so the funnel followed a visitor to the paywall and then
+ * went dark exactly where the money is. It now records the press itself
+ * (`checkout_started`) and every way the press can end without reaching Stripe:
+ * needing an account, which is normal, and the three real failures, which are
+ * not. The pack id travels; the price never does.
+ *
  * IT ALWAYS POSTS, EVEN WHEN SIGNED OUT, and that is deliberate. The
  * alternative is asking the browser who the visitor is before deciding what the
  * button does, which means either shipping the answer into the static page — it
@@ -79,6 +88,14 @@ export function BuyButton({
     if (busy) return;
 
     setWorking(true);
+
+    /*
+     * THE PACK ONLY. Never the price. `pricing-data.ts` decides what a pack
+     * costs and Stripe charges it, and a price travelling up from a browser is
+     * the one shape this product refuses — an analytics event is still a
+     * browser saying a number about money. See the header of `events.ts`.
+     */
+    track.checkoutStarted({ packId });
 
     try {
       const response = await fetch('/api/checkout', {
@@ -120,21 +137,33 @@ export function BuyButton({
        * click wider than it should.
        */
       if (response.status === 401 || response.status === 402) {
+        // Not a failure. 401 is nobody signed in, 402 is the anonymous guest
+        // identity, and both are the ordinary path for a visitor who found
+        // /pricing before making an account.
+        track.checkoutAccountRequired({
+          packId,
+          state: response.status === 401 ? 'signed_out' : 'guest',
+        });
+
         router.push('/auth/sign-up');
 
         return;
       }
 
       if (response.status === 429) {
+        track.checkoutFailed({ packId, reason: 'rate_limited' });
         toast.error('That is a lot of checkouts. Give it a minute and try again.');
       } else if (response.status === 503) {
+        track.checkoutFailed({ packId, reason: 'unavailable' });
         toast.error('Card payments are briefly unavailable. Nothing was charged.');
       } else {
+        track.checkoutFailed({ packId, reason: 'error' });
         toast.error('Something went wrong opening checkout. Nothing was charged.');
       }
     } catch {
       // A network failure before the request landed. Say the reassuring true
       // thing: no money moved.
+      track.checkoutFailed({ packId, reason: 'unreachable' });
       toast.error('Could not reach checkout. Nothing was charged.');
     } finally {
       startTransition(() => setWorking(false));

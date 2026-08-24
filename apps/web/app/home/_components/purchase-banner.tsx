@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import * as track from '~/lib/analytics/events';
+
 /**
  * "Your payment went through", shown on the wallet after Stripe sends the buyer
  * back. 04 entry 112.
@@ -61,6 +63,57 @@ export function PurchaseBanner({ purchaseLanded }: { purchaseLanded: boolean }) 
   const [gaveUp, setGaveUp] = useState(false);
   const attempts = useRef(0);
 
+  /*
+   * THE OUTCOME OF THE CHECKOUT, RECORDED ONCE. 24 August 2026.
+   *
+   * This component is the only place on the site that knows how a checkout
+   * ended, because it is where Stripe sends the buyer back. Before this the
+   * funnel stopped at the paywall: the product could not answer how many of the
+   * people who ran out of credits actually bought.
+   *
+   * IT FIRES ON ARRIVAL, NOT ON THE CREDITS LANDING. Stripe only redirects to
+   * `?purchase=success` once the card has cleared, so the payment is a fact by
+   * the time this renders. Waiting for `purchaseLanded` would turn a purchase
+   * count into a measurement of webhook latency, and would lose every purchase
+   * whose webhook was slow — which is precisely the population that matters.
+   * The race itself rides along as `credits_ready` instead.
+   *
+   * ONCE, AND THE REF IS WHY. A purchase counted twice is worse than one not
+   * counted at all, and there are two ways this could fire again: React runs
+   * every effect twice on mount in development, and this component re-renders
+   * repeatedly while the banner below polls. The ref costs nothing and closes
+   * both. Verified by sitting through five poll cycles: one event, not five.
+   *
+   * DO NOT COPY THE POLLING EFFECT BELOW AS A MODEL. Its comment claims it
+   * re-runs when `router.refresh()` produces a new render. It does not — none
+   * of its four dependencies change on a refresh, so it schedules one retry and
+   * stops, and its give-up message can never appear. Measured 24 August 2026;
+   * left alone because it changes behaviour on the live payment path. 06 has
+   * the row.
+   *
+   * NOTHING ABOUT THE BUYER GOES WITH IT. No account id, no email, no pack, no
+   * amount. Two booleans' worth of fact: a purchase happened, and whether the
+   * credits were already there. See the header of `lib/analytics/events.ts`.
+   */
+  const reported = useRef(false);
+
+  useEffect(() => {
+    if (reported.current) return;
+    if (status !== 'success' && status !== 'cancelled') return;
+
+    reported.current = true;
+
+    if (status === 'cancelled') {
+      track.purchaseCancelled();
+    } else {
+      track.purchaseCompleted({ creditsReady: purchaseLanded });
+    }
+    // `purchaseLanded` is deliberately not a dependency: this reads it once, at
+    // the moment the buyer arrives, and the ref stops any later render firing
+    // a second event.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   useEffect(() => {
     // Nothing to wait for: either not a purchase return, or it already landed.
     if (status !== 'success' || purchaseLanded || gaveUp) return;
@@ -107,7 +160,7 @@ export function PurchaseBanner({ purchaseLanded }: { purchaseLanded: boolean }) 
       <Banner tone={'neutral'}>
         <strong>Your payment went through.</strong> The credits are taking longer
         than usual to appear. Refresh this page in a moment, and if they are
-        still missing, email unclaudeapp@gmail.com and we will sort it out.
+        still missing, email support@un-claude.com and we will sort it out.
       </Banner>
     );
   }
