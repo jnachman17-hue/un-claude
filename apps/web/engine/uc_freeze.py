@@ -1,8 +1,8 @@
 """THE FREEZE (board E-9): hide the spans that must survive, then put them back.
 
 When the rewrite runs, the spans of a customer's document that must come back
-character-for-character — an attributed quotation, a heading, a reference
-entry — are swapped for short numeric placeholders like ``[[17]]`` before the
+character-for-character — a quotation, a heading, a reference entry, and the
+citation printed beside a quotation — are swapped for short numeric placeholders like ``[[17]]`` before the
 model sees the chunk, and swapped back afterwards. **The model never sees the
 protected words, so it cannot change them.** That is the whole idea: masking
 is deterministic where a prompt instruction is best effort, and W10 measured
@@ -26,14 +26,16 @@ do not reopen):
 
   * **structure tier** — headings. Even the best model in the bake-off
     renames about 1 in 6.
-  * **quote tier** — ATTRIBUTED quotations (inline and block) and reference
-    entries. D2's test is discretion: a statistical watermark can only exist
-    where the model had a choice of words, and inside a genuinely quoted span
-    it had none. The attribution cue is the machine-readable proxy for "these
-    words came from outside". Unattributed quotes stay FREE on purpose — a
-    short story's invented dialogue is the most watermarked text in the
-    document, and freezing it would hand it back untouched after charging
-    for a rewrite.
+  * **quote tier** — EVERY quotation, inline and block, plus reference
+    entries and the citation printed beside a quotation. Jon's ruling, 24
+    August 2026: "any quotation is frozen and kept across the board. There's
+    no delineation between novel dialogue and real quotation." Two sessions
+    tried to draw that line from syntax and both failed on ordinary text,
+    because «"Power tends to corrupt," Acton observed» and «"Mind the second
+    stair," Aldous observed» are the same sentence to a program. Measured
+    cost of dropping the distinction: under two points of extra frozen text
+    on every academic document in the corpus. It is large only for
+    dialogue-heavy fiction, which D4's pre-flight discloses before payment.
 
 WHEN THE FREEZE FAILS (Jon's ruling D3): a chunk whose restore cannot be
 verified falls back to that chunk's ORIGINAL text — the customer gets their
@@ -119,11 +121,10 @@ def plan_freeze(text: str, tiers: tuple[str, ...] | None = None) -> list[dict]:
         kind = span["kind"]
         if kind not in frozen_kinds:
             continue
-        # D2: a quoted run freezes only when the cue says the words came from
-        # outside. References have no cue to check — a reference entry is
-        # outside material by definition.
-        if kind in ("quote", "block_quote") and not span.get("attributed"):
-            continue
+        # EVERY quotation freezes. There is no attribution test any more
+        # (Jon, 24 August 2026) — see the long note in uc_spans for why two
+        # attempts at one failed. A quotation is frozen because it is a
+        # quotation, whoever said it.
         if kind == "quote":
             # The detector records the inner text; the mask covers the marks
             # too, so a model that drops quotation marks cannot cost the

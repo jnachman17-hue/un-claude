@@ -17,7 +17,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
+from uc_freeze import plan_freeze  # noqa: E402
 from uc_spans import check_protected_spans, detect_protected_spans  # noqa: E402
+
+#: Both shipping tiers, which is what the site runs.
+TIERS = ("structure", "quotes")
 
 
 def _kinds(text: str) -> dict[str, int]:
@@ -83,7 +87,16 @@ def test_reference_entry_outside_a_section_is_caught_by_shape():
 # ---------------------------------------------------------------------------
 
 
-def test_attributed_quote_is_detected_as_attributed():
+# ---------------------------------------------------------------------------
+# EVERY quotation is a quotation. Inverted 24 August 2026 on Jon's ruling:
+# these six tests all asserted the attributed/unattributed split, which the
+# engine no longer makes. Each keeps its original subject — is the quotation
+# DETECTED, in this shape — and its attribution assertion becomes the ruling's
+# assertion: it freezes.
+# ---------------------------------------------------------------------------
+
+
+def test_a_quotation_with_a_named_source_is_detected_and_freezes():
     text = (
         'Orwell warned that political language is designed "to make lies '
         'sound truthful and murder respectable," and the warning applies '
@@ -91,46 +104,39 @@ def test_attributed_quote_is_detected_as_attributed():
     )
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
-    assert quotes[0]["attributed"] is True
+    assert plan_freeze(text, TIERS)
 
 
-def test_unattributed_quote_is_detected_as_unattributed():
+def test_a_quotation_with_no_source_at_all_is_detected_and_freezes():
+    # Was `test_unattributed_quote_is_detected_as_unattributed`, asserting
+    # this one stayed FREE. A sign on a door is quoted material and the
+    # engine no longer asks who is responsible for it.
     text = (
         'The sign on the door read "no entry after dark on weekdays" in '
         "faded letters."
     )
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
-    assert quotes[0]["attributed"] is False
+    assert plan_freeze(text, TIERS)
 
 
 def test_curly_quotes_detected_too():
-    # E-16 changed the SUBJECT of this sentence, not what it tests. It was
-    # "She noted ...", and a bare pronoun subject is a dialogue tag rather
-    # than an attribution now, so the attributed assertion below would have
-    # been asserting the defect. The test's own subject — that curly marks
-    # are detected as a quote at all — is untouched.
-    text = "The registrar noted “the committee will not meet again this year” and left."
-    quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
-    assert len(quotes) == 1
-    assert quotes[0]["attributed"] is True
-
-
-def test_curly_quotes_detected_with_a_pronoun_subject_too():
-    # The same marks, the same detection, the D2 answer the other way.
+    # The subject of this test is the curly marks and always was. E-16 had to
+    # change its SUBJECT to keep the attribution assertion true; the original
+    # sentence is restored here, because there is no longer an attribution
+    # assertion to satisfy.
     text = "She noted “the committee will not meet again this year” and left."
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
-    assert quotes[0]["attributed"] is False
+    assert plan_freeze(text, TIERS)
 
 
-def test_narrative_dialogue_tags_are_not_attribution():
-    # D2 (board, settled 23 Aug): the cue is a proxy for "these words came
-    # from outside". A short story's invented dialogue reads «"...," she
-    # said» — the model chose every word of it, so it is the MOST watermarked
-    # text in the document and must never freeze. The narrative tags — said,
-    # asked, replied, told — were deliberately removed from the cue list when
-    # the freeze shipped (E-9).
+def test_narrative_dialogue_tags_freeze_like_everything_else():
+    # THE HEADLINE INVERSION. This test asserted the exact opposite until
+    # today: said/asked/replied marked a line as invented dialogue and it was
+    # deliberately left free. Jon: "any quotation is frozen and kept across
+    # the board. There's no delineation between novel dialogue and real
+    # quotation."
     for text in (
         '"We can\'t stay here another night," she said, and nobody argued '
         "with her about the weather.",
@@ -141,20 +147,25 @@ def test_narrative_dialogue_tags_are_not_attribution():
     ):
         quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
         assert len(quotes) == 1
-        assert quotes[0]["attributed"] is False
+        frozen = [s for s in plan_freeze(text, TIERS) if s["kind"] == "quote"]
+        assert len(frozen) == 1, text
 
 
-def test_citation_shape_is_attribution_without_a_verb():
+def test_a_quotation_with_a_citation_beside_it_is_detected_and_freezes():
     text = (
         'The change "did more for attendance than any intervention we had '
         'previously funded" (Smith, 2019, p. 47).'
     )
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
-    assert quotes[0]["attributed"] is True
+    assert plan_freeze(text, TIERS)
 
 
-def test_block_quote_attribution_follows_the_lead_in():
+def test_every_block_quote_freezes_introduced_or_not():
+    # Was `test_block_quote_attribution_follows_the_lead_in`, which required
+    # the introducing line to end in a colon. That test was the same species
+    # of guess as the one Jon abolished: it decided from the introduction
+    # whether indented text was quoted material. Indenting IS the statement.
     introduced = (
         "The report concluded:\n\n"
         "    The market did not fail. The market did exactly what an\n"
@@ -167,12 +178,13 @@ def test_block_quote_attribution_follows_the_lead_in():
         "    unregulated market does.\n\n"
         "Nobody challenged it."
     )
-    intro_bq = [s for s in detect_protected_spans(introduced)
-                if s["kind"] == "block_quote"]
-    bare_bq = [s for s in detect_protected_spans(bare)
+    for text in (introduced, bare):
+        bqs = [s for s in detect_protected_spans(text)
                if s["kind"] == "block_quote"]
-    assert len(intro_bq) == 1 and intro_bq[0]["attributed"] is True
-    assert len(bare_bq) == 1 and bare_bq[0]["attributed"] is False
+        assert len(bqs) == 1, text
+        frozen = [s for s in plan_freeze(text, TIERS)
+                  if s["kind"] == "block_quote"]
+        assert len(frozen) == 1, text
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +251,11 @@ def test_identity_output_returns_everything_verbatim():
     assert report["mode"] == "report_only"
     assert report["changed"] == {}
     assert report["spans_found"] == report["returned_verbatim"]
-    assert report["quotes_attributed"] == 1
+    # Was `report["quotes_attributed"] == 1`. That field is gone: its name
+    # claimed a distinction the engine no longer makes, and nothing outside
+    # the engine ever read it. The quotation count lives in `spans_found`,
+    # which is where every other kind's count already was.
+    assert report["spans_found"]["quote"] == 1
 
 
 def test_a_rewritten_quotation_is_counted_as_changed():

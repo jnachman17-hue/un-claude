@@ -44,120 +44,48 @@ from uc_wordcount import count_words
 #: words. Single quotes are NOT detected — apostrophes make them unreliable.
 _QUOTE = re.compile(r'"([^"\n]{12,600})"|“([^”\n]{12,600})”')
 
-#: The attribution cue near a quotation — D2's machine-readable proxy for
-#: "these words came from outside", which is the thing that matters.
+#: A CITATION SHAPE: "(2019)", "(Smith, 2019, p. 47)", "p. 47".
 #:
-#: NARROWED FOR THE FREEZE (board E-9, D2). The first version of this list
-#: included the narrative dialogue tags — said, asked, replied, told — and
-#: they are exactly the verbs a short story is full of: every line of invented
-#: dialogue reads «"...," she said». D2's own reasoning rules the case: the
-#: model chose every word of that dialogue, so it is the MOST watermarked part
-#: of the document, and freezing it would hand it back untouched after
-#: charging for a rewrite. So the cue is now the REPORTIVE verbs — the ones
-#: essays use to put words in a named source's mouth — plus "according to"
-#: and a citation shape like (2019) or p. 47. A journalist's «the minister
-#: said "..."» is deliberately NOT attributed under this rule: being wrong
-#: toward free costs a few reworded phrases; being wrong toward frozen hands
-#: back a paid-for rewrite undone. Those are not the same size (Jon, D2).
-_ATTRIBUTION = re.compile(
-    r"\b(?:wrote|writes|writing|puts?\s+it|according\s+to|"
-    r"argued?|argues|warn(?:ed|s)?|not(?:es|ed)|described?|describes|"
-    r"cautioned|observed?|observes|claim(?:ed|s)?|stated?|states|declared?|"
-    r"termed|concluded?|reported?|reports|asserted?|asserts|"
-    r"maintained?|maintains|contend(?:ed|s)?|remark(?:ed|s)?|"
-    r"emphasi[sz]e[sd]?|acknowledged?|acknowledges|insist(?:ed|s)?)\b",
-    re.IGNORECASE,
-)
-#: A citation shape near the quote is attribution even with no verb:
-#: "(2019)", "(Smith, 2019, p. 47)", "p. 47".
+#: This used to be one of two ways a quotation could earn protection. It is
+#: now something else entirely — see `_citation_run` below, which extends a
+#: quotation's frozen span to cover the citation printed beside it (Jon's
+#: ruling, 24 August 2026: "we preserve the text and quotations, and citations
+#: around it on either side").
+#:
+#: KNOWN BOUND, reported rather than widened: the year must begin 19 or 20, so
+#: `(1887)` is not recognised. Widening it to any four digits would also catch
+#: page ranges, sums of money, years in ordinary prose and equation numbers,
+#: every one of which would then drag the text beside it into the freeze.
+#: See docs/session-notes/freeze-every-quotation.md.
 _CITATION = re.compile(r"\([^()\n]{0,60}(?:19|20)\d\d[^()\n]{0,25}\)|\bpp?\.\s*\d+")
-#: How far around the quote to look for the cue, in characters.
-_CUE_WINDOW = 120
-_SENTENCE_END = re.compile(r"[.!?]")
 
-#: CORRECTED FOR E-16. Narrowing the verb list (E-9) was not enough: seventeen
-#: of the surviving verbs are also standard fiction dialogue tags, so «"You
-#: never once asked me," she argued» froze — invented dialogue, the most
-#: watermarked text in the document, handed back untouched after the customer
-#: paid for a rewrite. That is precisely the catastrophe D2 exists to prevent.
-#: Measured on 45 fiction lines: the shipped rule froze 35 of them.
+#: THE ATTRIBUTION CUE IS GONE. Deleted 24 August 2026 on Jon's ruling, and
+#: the deletion is the point rather than a side effect.
 #:
-#: Two things separate real attribution from a dialogue tag, and neither is
-#: the verb:
+#: For two sessions this module tried to tell a sourced quotation from a
+#: novel's invented dialogue, so that only the first would freeze. E-9 keyed
+#: on reportive verbs; E-16 replaced that with a position-and-subject test
+#: after measuring that 35 of 45 ordinary novel dialogue lines were being
+#: frozen. Both rules failed on ordinary text, and not through carelessness —
+#: the two things are grammatically identical:
 #:
-#:   * POSITION. Attribution INTRODUCES its quotation — «Orwell wrote that
-#:     "..."», «As Smith puts it, "..."». A dialogue tag FOLLOWS it — «"...,"
-#:     she argued». The trailing-tag path is therefore gone entirely; it was
-#:     the source of every one of the 35.
-#:   * SUBJECT. Attribution names a source ("Smith", "The committee", "the
-#:     2019 review"). Fiction takes a bare pronoun ("she argued"). A reportive
-#:     verb whose subject is a bare pronoun does not attribute.
+#:     "Power tends to corrupt," Acton observed.      <- real
+#:     "Mind the second stair," Aldous observed.      <- fiction
 #:
-#: A citation shape stays an INDEPENDENT trigger, subject and position
-#: irrelevant, because it is the strongest evidence a real source exists.
+#: Quote, comma, capitalised name, reportive verb, in both. The difference is
+#: that Acton published and Aldous is a character, which is world knowledge
+#: and not syntax. Jon's ruling: "any quotation is frozen and kept across the
+#: board. There's no delineation between novel dialogue and real quotation."
 #:
-#: What this deliberately lets through, in the cheap direction (D2: being
-#: wrong toward free costs a few reworded phrases; being wrong toward frozen
-#: hands back a paid-for rewrite undone — those are not the same size):
-#:   * an UNCITED trailing attribution — «"...," wrote Orwell in 1946» — a
-#:     bare year is not a citation shape, so it no longer freezes;
-#:   * attribution carried by a pronoun — «The auditor... She wrote that
-#:     "..."» — which also, on purpose, frees epistolary fiction;
-#:   * a pre-quote tag on a NAMED character — «Marcus concluded, "..."» —
-#:     textually identical to «The committee concluded, "..."».
-#: Measured residual after this change: 2 of 45 fiction lines, 2 of 30
-#: attribution shapes. See docs/session-notes/e16-detector-and-ceiling.md.
-
-#: A bare pronoun subject is a dialogue tag, not an attribution.
-_PRONOUN_SUBJECTS = frozenset({
-    "i", "you", "he", "she", "it", "we", "they",
-    "me", "him", "her", "us", "them",
-})
-#: Words that stand between a subject and its verb without being the subject:
-#: auxiliaries, negation, and the connectives that open a clause. Adverbs are
-#: handled separately — a LOWERCASE word ending in -ly is skipped, a
-#: capitalised one is not, because Kelly and Molly are subjects.
-_SUBJECT_SKIP = frozenset({
-    "had", "has", "have", "having", "was", "were", "is", "are", "am", "be",
-    "been", "being", "would", "will", "could", "should", "may", "might",
-    "must", "did", "does", "do", "not", "never", "also", "then", "once",
-    "again", "later", "already", "still", "even", "only", "just", "so",
-    "and", "but", "who", "which", "that", "however", "further",
-})
-_SUBJECT_WORD = re.compile(r"[A-Za-z][\w'’-]*")
-
-
-def _subject_before(text: str, verb_start: int) -> str:
-    """The word doing the reporting, auxiliaries and adverbs stepped over."""
-    for m in reversed(list(_SUBJECT_WORD.finditer(text[:verb_start]))):
-        word = re.split(r"['’]", m.group(0))[0]      # she'd -> she
-        low = word.lower()
-        if not low or low in _SUBJECT_SKIP:
-            continue
-        if word.islower() and low.endswith("ly"):
-            continue
-        return word
-    return ""
-
-
-def _quote_attributed(pre: str, post: str) -> bool:
-    """Does a real source put these words in this document? (D2, E-16.)
-
-    True when a reportive verb INTRODUCES the quote — before it, no sentence
-    boundary in between — and the subject of that verb is a named source
-    rather than a bare pronoun. A citation shape near the quote attributes on
-    its own, whatever the wording around it. Nothing that FOLLOWS a quotation
-    attributes it: that position is where fiction puts its dialogue tags, and
-    reading it as attribution froze 35 of 45 fiction lines.
-    """
-    for vm in _ATTRIBUTION.finditer(pre):
-        if _SENTENCE_END.search(pre[vm.end():]):
-            continue                       # the verb belongs to an earlier
-                                           # sentence, not to this quote
-        if _subject_before(pre, vm.start()).lower() in _PRONOUN_SUBJECTS:
-            continue                       # a dialogue tag, not attribution
-        return True
-    return bool(_CITATION.search(pre) or _CITATION.search(post))
+#: The cost was measured before the change and it is small on the documents
+#: this product is for: under two points of extra frozen text on every
+#: academic document in the corpus, and large only for dialogue-heavy fiction,
+#: which D4's pre-flight already discloses before any money changes hands.
+#:
+#: What is gone with it: the reportive-verb list, the attributive-position
+#: test, the pronoun-subject test, and the attributed/unattributed split on
+#: every span. This project found three silent freeze defects in two days; a
+#: deleted code path cannot harbour a fourth.
 
 _URL = re.compile(r"https?://[^\s<>\"\)\]]+|\bwww\.[^\s<>\"\)\]]+")
 _EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
@@ -256,23 +184,18 @@ def _is_equation(para: str) -> bool:
 def detect_protected_spans(text: str) -> list[dict]:
     """Every span of `text` that must come back from a rewrite unchanged.
 
-    Returns dicts of {kind, text, start, attributed?}. Kinds: quote,
-    block_quote, heading, reference, url, email, code, table, equation, sic.
+    Returns dicts of {kind, text, start}. Kinds: quote, block_quote, heading,
+    reference, url, email, code, table, equation, sic.
     Detection only — nothing here decides what happens to a span.
+
+    There is no `attributed` field any more. Every quotation is a quotation
+    (Jon, 24 August 2026); the engine no longer guesses whose words they are.
     """
     spans: list[dict] = []
 
     for m in _QUOTE.finditer(text):
         inner = m.group(1) or m.group(2)
-        spans.append({
-            "kind": "quote",
-            "text": inner,
-            "start": m.start(),
-            "attributed": _quote_attributed(
-                text[max(0, m.start() - _CUE_WINDOW): m.start()],
-                text[m.end(): m.end() + _CUE_WINDOW],
-            ),
-        })
+        spans.append({"kind": "quote", "text": inner, "start": m.start()})
 
     for m in _URL.finditer(text):
         spans.append({"kind": "url", "text": m.group(0), "start": m.start()})
@@ -301,22 +224,19 @@ def detect_protected_spans(text: str) -> list[dict]:
             in_reference_section = False
             continue
         if _is_block_quote(para):
-            # D2's cue for a block quote lives in the text INTRODUCING it —
-            # "As the report concluded:" — so the window looks backward. A
-            # preceding line ending in a colon is the standard typographic
-            # signal that an indented block is quoted source material, and it
-            # counts as a cue here; fiction almost never introduces invented
-            # text that way.
-            lead_in = text[max(0, start - _CUE_WINDOW): start]
-            spans.append({
-                "kind": "block_quote",
-                "text": para,
-                "start": start,
-                "attributed": bool(
-                    _quote_attributed(lead_in, "")
-                    or lead_in.rstrip().endswith(":")
-                ),
-            })
+            # EVERY block quote, not only an introduced one. The old test
+            # asked whether the preceding line ended in a colon, which is the
+            # same species of guess Jon's ruling abolishes: it decided from
+            # the introduction whether indented text was quoted material.
+            # Indenting a paragraph IS the typographic statement that it is
+            # quoted, and the engine now takes it at its word.
+            #
+            # The price, measured and accepted: indented text that is not a
+            # quotation — an address block, a poem, unfenced code — freezes
+            # too. On a 45-word document with an indented address that is
+            # 2.2% frozen becoming 24.4%. D4's pre-flight shows the customer
+            # that number before they pay.
+            spans.append({"kind": "block_quote", "text": para, "start": start})
             in_reference_section = False
             continue
         if _is_equation(para):
@@ -360,16 +280,10 @@ def check_protected_spans(src: str, out: str) -> dict:
     verbatim: dict[str, int] = {}
     changed: dict[str, int] = {}
     examples: list[dict] = []
-    attributed = unattributed = 0
 
     for span in spans:
         kind = span["kind"]
         found[kind] = found.get(kind, 0) + 1
-        if kind == "quote":
-            if span.get("attributed"):
-                attributed += 1
-            else:
-                unattributed += 1
         intact = out.count(span["text"]) >= max(1, src.count(span["text"]))
         if intact:
             verbatim[kind] = verbatim.get(kind, 0) + 1
@@ -386,8 +300,6 @@ def check_protected_spans(src: str, out: str) -> dict:
         "spans_found": found,
         "returned_verbatim": verbatim,
         "changed": changed,
-        "quotes_attributed": attributed,
-        "quotes_unattributed": unattributed,
         "examples_changed": examples,
         "note": (
             "Report only: these counts change nothing about the rewrite. "

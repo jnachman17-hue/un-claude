@@ -38,6 +38,7 @@ from uc_freeze import (  # noqa: E402
     verify_restore,
 )
 from uc_policy import billing_estimate  # noqa: E402
+from uc_spans import detect_protected_spans  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Documents
@@ -81,12 +82,29 @@ def test_plan_freezes_attributed_quote_heading_and_reference():
     assert quote["text"].startswith('"') and quote["text"].endswith('"')
 
 
-def test_short_story_dialogue_is_never_frozen():
-    # D2, Jon's reasoning verbatim: the model chose every word of invented
-    # dialogue, so it is watermarked like the narration around it, and
-    # freezing it would hand back the most watermarked part of the document
-    # untouched — and charge for a rewrite.
-    assert plan_freeze(STORY, ("structure", "quotes")) == []
+def test_short_story_dialogue_freezes_like_any_other_quotation():
+    # INVERTED 24 August 2026 on Jon's ruling. This was
+    # `test_short_story_dialogue_is_never_frozen` and asserted
+    # `plan_freeze(STORY, ...) == []` — E-9's D2 demo, and the single test
+    # this project leaned on hardest for the claim that invented dialogue
+    # stays free.
+    #
+    # It could never have failed. E-16 measured why: this story tags its
+    # dialogue only with said/asked/replied, the three verbs that were
+    # already off E-9's cue list, so it passed on its own word choices rather
+    # than on the rule. Swapping them for `observed`/`argued`/`concluded`
+    # froze 33.6% of an identical story.
+    #
+    # Jon: "any quotation is frozen and kept across the board." So the demo
+    # now asserts the opposite, and asserts it precisely: every line of
+    # dialogue in the story, not merely something.
+    spans = plan_freeze(STORY, ("structure", "quotes"))
+    quotes = [s for s in spans if s["kind"] == "quote"]
+    detected = [s for s in detect_protected_spans(STORY) if s["kind"] == "quote"]
+    assert len(detected) == 4, detected
+    assert len(quotes) == 4, quotes
+    # Every quotation the detector found, frozen. Not "some".
+    assert {q["text"] for q in detected} <= {q["text"][1:-1] for q in quotes}
 
 
 def test_structure_tier_alone_freezes_only_headings():

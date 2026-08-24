@@ -1,20 +1,24 @@
-"""E-16: the freeze must never take a novel's dialogue.
+"""Every quotation freezes, and nothing about its surroundings changes that.
 
-D2 rules that only ATTRIBUTED quotations freeze, for one reason: the model
-chose every word of invented dialogue, so it is the MOST watermarked text in
-the document. Freezing it hands the customer back the worst part untouched
-after charging them for a rewrite.
+**Inverted 24 August 2026 on Jon's ruling.** This file was built by E-16 to
+assert the opposite — that none of these fiction dialogue lines freezes —
+because the freeze then tried to protect only quotations it judged to be
+sourced. Two sessions built such a judgement and both failed on ordinary text,
+for a reason no amount of care fixes:
 
-The rule shipped in E-9 got this wrong on 35 of the 45 fiction lines below,
-because seventeen of the reportive verbs it keyed on — argued, warned,
-observed, concluded … — are also standard dialogue tags. E-9's own D2 demo
-missed it: that short story happened to use only `said`, `asked` and
-`replied`, the three tags already off the list, so the demo passed on the
-story's word choices rather than on the rule.
+    "Power tends to corrupt," Acton observed.      <- real
+    "Mind the second stair," Aldous observed.      <- fiction
 
-`test_every_attribution_verb_has_a_fiction_line` is the lock: adding a verb
-to `uc_spans._ATTRIBUTION` without adding a dialogue line for it here fails
-the suite. The regression cannot come back quietly.
+Quote, comma, capitalised name, reportive verb, in both. The difference is
+world knowledge, not syntax. Jon: "any quotation is frozen and kept across the
+board. There's no delineation between novel dialogue and real quotation."
+
+**The corpus is kept and its assertion turned over**, because it is the same
+49 lines that proved the old rule broken and they now prove the new rule
+whole. `test_the_surrounding_words_never_decide` is the lock that replaces
+E-16's cue-list lock: it puts ONE quotation into fourteen different
+surroundings and requires the identical answer from all of them, so any future
+attempt to read the context and decide fails the suite.
 """
 
 import re
@@ -25,16 +29,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent / "apps" / "web" / "engine"))
 
 from uc_freeze import freeze_fraction, plan_freeze          # noqa: E402
-from uc_spans import _ATTRIBUTION, detect_protected_spans   # noqa: E402
+from uc_spans import detect_protected_spans                 # noqa: E402
 
 TIERS = ("structure", "quotes")
 
 
 # --------------------------------------------------------------------------
-# Fiction. Not one word of any of these may freeze.
+# Fiction. EVERY quotation in these lines must freeze — that is the ruling.
+# The first element used to be the reportive verb that wrongly triggered the
+# old cue; it is kept only as a label, because the verb no longer decides
+# anything and that is the whole point.
 # --------------------------------------------------------------------------
-
-#: (the verb, a realistic line of novel dialogue using it)
 FICTION_LINES = [
     ("argued", '"You never once asked me," she argued, and turned to the window.'),
     ("argues", '"He argues with the weather," she said. "It has never once given way."'),
@@ -135,21 +140,28 @@ def _frozen_spans(text):
 # --------------------------------------------------------------------------
 
 
-def test_no_fiction_dialogue_line_freezes_a_single_word():
-    frozen = []
-    for verb, line in FICTION_LINES:
-        spans = _frozen_spans(line)
-        if spans:
-            frozen.append((verb, line, [s["text"] for s in spans]))
-    assert frozen == [], (
-        f"{len(frozen)} of {len(FICTION_LINES)} fiction dialogue lines froze. "
-        "D2: invented dialogue is the most watermarked text in the document "
-        "and must never be handed back untouched.\n"
-        + "\n".join(f"  {v}: {ln}\n    froze {sp}" for v, ln, sp in frozen)
+def test_every_fiction_dialogue_line_freezes_its_quotation():
+    """THE INVERSION. Every one of these froze nothing before the ruling."""
+    missed = []
+    for label, line in FICTION_LINES:
+        quotes = [s for s in detect_protected_spans(line) if s["kind"] == "quote"]
+        if not quotes:
+            missed.append((label, line, "no quotation detected at all"))
+            continue
+        frozen = [s for s in _frozen_spans(line) if s["kind"] == "quote"]
+        if len(frozen) < len(quotes):
+            missed.append((label, line,
+                           f"{len(quotes)} quotations, {len(frozen)} frozen"))
+    assert missed == [], (
+        f"{len(missed)} of {len(FICTION_LINES)} lines did not freeze every "
+        "quotation in them. Jon, 24 August 2026: any quotation is frozen and "
+        "kept across the board.\n"
+        + "\n".join(f"  {a}: {b}\n    {c}" for a, b, c in missed)
     )
 
 
 def test_every_real_attribution_shape_still_freezes():
+    """Unchanged by the ruling: these froze before and they freeze now."""
     missed = []
     for name, line in ATTRIBUTION_SHAPES:
         if not _frozen_spans(line):
@@ -160,49 +172,83 @@ def test_every_real_attribution_shape_still_freezes():
     )
 
 
-def _top_level_branches(pattern: str) -> list[str]:
-    """The alternatives of `\\b(?: a | b | c )\\b`, nested groups intact."""
-    inner = pattern
-    inner = inner[inner.index("(?:") + 3: inner.rindex(")")]
-    out, depth, start = [], 0, 0
-    for i, ch in enumerate(inner):
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-        elif ch == "|" and depth == 0:
-            out.append(inner[start:i])
-            start = i + 1
-    out.append(inner[start:])
-    return [b for b in (b.strip() for b in out) if b]
+#: ONE quotation, fourteen surroundings. Every context that either of the two
+#: deleted rules keyed on is here: reportive verb before and after, pronoun
+#: and named and common-noun subjects, inversion, a colon lead-in, a citation,
+#: and no cue whatsoever.
+SAME_QUOTE = "the bridge is out and the ford is over the stones"
+SURROUNDINGS = [
+    ("no cue at all",        'The sign read "{q}" in faded letters.'),
+    ("pronoun, trailing",    '"{q}," she argued, and turned to the window.'),
+    ("pronoun, leading",     'She argued, "{q}," and turned to the window.'),
+    ("named, trailing",      '"{q}," Aldous observed, closing the shutter.'),
+    ("named, leading",       'Aldous observed, "{q}," and closed the shutter.'),
+    ("common noun",          '"{q}," the boy reported, still holding the reins.'),
+    ("inverted",             '"{q}," cautioned Aldous, holding the lamp low.'),
+    ("narrative tag",        '"{q}," she said, watching the empty road.'),
+    ("published source",     'Orwell wrote that "{q}" and the line outlived him.'),
+    ("institution",          'The committee concluded that "{q}" in its report.'),
+    ("citation after",       'The review found "{q}" (Smith, 2019, p. 47).'),
+    ("citation before",      'Smith (2019) found that "{q}" in every quartile.'),
+    ("colon lead-in",        'The minutes recorded: "{q}"'),
+    ("mid-sentence",         'Everyone knew "{q}" long before the meeting.'),
+]
 
 
-def test_every_attribution_verb_has_a_fiction_line():
-    """THE LOCK. A new cue verb with no dialogue line for it fails here.
+def test_the_surrounding_words_never_decide():
+    """THE LOCK, and it replaces E-16's cue-list lock.
 
-    E-9 narrowed the verb list and shipped, and seventeen of the verbs it
-    kept were dialogue tags. The only defence that survives a future edit is
-    a test that reads the live pattern rather than a copy of it.
+    E-16's lock read `uc_spans._ATTRIBUTION` and required a dialogue line for
+    every verb on it. That list is gone, and a lock tied to a deleted constant
+    protects nothing. This one is tied to the RULING instead: the same
+    quotation, in fourteen surroundings covering every cue either deleted rule
+    ever keyed on, must get the identical answer.
+
+    Any future change that reads the words around a quotation and decides from
+    them fails here, whatever mechanism it uses.
     """
-    corpus = {verb.lower() for verb, _ in FICTION_LINES}
-    uncovered = []
-    for branch in _top_level_branches(_ATTRIBUTION.pattern):
-        rx = re.compile(branch.replace(r"\s+", " ") + r"\Z", re.IGNORECASE)
-        if not any(rx.match(word) for word in corpus):
-            uncovered.append(branch)
-    assert uncovered == [], (
-        "These cue verbs in uc_spans._ATTRIBUTION have no fiction dialogue "
-        "line in this corpus, so nothing proves they do not freeze a novel: "
-        f"{uncovered}"
+    answers = {}
+    for name, template in SURROUNDINGS:
+        line = template.format(q=SAME_QUOTE)
+        frozen = [s for s in _frozen_spans(line) if s["kind"] == "quote"]
+        answers[name] = bool(frozen) and SAME_QUOTE in frozen[0]["text"]
+
+    free = sorted(n for n, ok in answers.items() if not ok)
+    assert free == [], (
+        "The same quotation froze in some surroundings and not others, so "
+        "something is reading the context and deciding. It must not: "
+        f"free in {free}"
+    )
+
+
+def test_the_detector_no_longer_reports_an_attributed_field():
+    """Structural half of the lock: the field itself must stay gone.
+
+    While `attributed` exists on a span, something downstream can start
+    honouring it again and no behavioural test would notice until a customer
+    did.
+    """
+    text = (
+        'Orwell wrote that "the great enemy of clear language is insincerity."'
+        '\n\n"Mind the second stair," he cautioned, holding the lamp low.'
+    )
+    spans = detect_protected_spans(text)
+    assert spans, "fixture broken: nothing detected"
+    carrying = [s for s in spans if "attributed" in s]
+    assert carrying == [], (
+        "detect_protected_spans is still emitting an `attributed` field: "
+        f"{carrying}"
     )
 
 
 def test_the_same_story_freezes_the_same_however_the_author_tags_dialogue():
-    """The product-level statement of the bug, in one assertion.
+    """Kept from E-16, and it is a stronger statement now.
 
-    Two identical stories, differing only in which dialogue tags the author
-    reached for. Before E-16 the second froze 33.6% of itself and the first
-    froze nothing.
+    Before the ruling this passed by freezing NOTHING in either story. It now
+    passes by freezing the SAME quotations in both — which is the invariant
+    that actually matters, and the one the old rule broke: the author's choice
+    of dialogue tag must not change what the customer is charged for or what
+    comes back.
     """
     story = (
         "The lamp had been burning in the front room since before either of "
@@ -223,40 +269,48 @@ def test_the_same_story_freezes_the_same_however_the_author_tags_dialogue():
     plain_ff = freeze_fraction(plain, TIERS)
     fancy_ff = freeze_fraction(fancy, TIERS)
 
-    assert plain_ff["fraction"] == 0.0, plain_ff
-    assert fancy_ff["fraction"] == 0.0, fancy_ff
-    assert plain_ff["frozen_words"] == fancy_ff["frozen_words"] == 0
+    assert plain_ff["frozen_words"] == fancy_ff["frozen_words"], (
+        f"the dialogue tags changed the freeze: {plain_ff} vs {fancy_ff}")
+    assert plain_ff["spans"] == fancy_ff["spans"]
+    # And it is no longer passing by freezing nothing.
+    assert plain_ff["frozen_words"] > 0, plain_ff
+    assert plain_ff["spans"].get("quote") == 5, plain_ff
 
 
-def test_a_pronoun_subject_is_a_dialogue_tag_not_an_attribution():
-    """D2's residual, pinned so a future session sees it is deliberate.
+def test_a_pronoun_subject_freezes_exactly_like_a_named_one():
+    """E-16 pinned the opposite of this as a deliberate residual.
 
-    «The auditor ... She wrote that "..."» goes FREE. That frees epistolary
-    fiction, which is the point, and it also frees real attribution carried
-    by a pronoun, which is the price. Being wrong toward free costs a few
-    reworded phrases; being wrong toward frozen hands back a paid-for
-    rewrite undone.
+    «The auditor ... She wrote that "..."» went FREE, and so did epistolary
+    fiction, and that was the accepted price of the old rule. Both freeze now,
+    and so does the same sentence with the source named.
     """
     text = (
         "The auditor's verdict took one paragraph. She wrote that the "
         'committee had "acted without malice and without competence in '
         'equal measure."'
     )
-    quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
-    assert len(quotes) == 1
-    assert quotes[0]["attributed"] is False
+    assert [s for s in _frozen_spans(text) if s["kind"] == "quote"]
 
     named = text.replace("She wrote", "The auditor wrote")
-    quotes = [s for s in detect_protected_spans(named) if s["kind"] == "quote"]
-    assert quotes[0]["attributed"] is True
+    assert [s for s in _frozen_spans(named) if s["kind"] == "quote"]
 
 
-def test_a_trailing_tag_never_attributes_but_a_citation_still_does():
-    """The other residual: an UNCITED trailing attribution goes free."""
+def test_an_uncited_trailing_attribution_freezes_now():
+    """The other E-16 residual, also gone."""
     uncited = '"The great enemy of clear language is insincerity," wrote Orwell in 1946.'
-    quotes = [s for s in detect_protected_spans(uncited) if s["kind"] == "quote"]
-    assert quotes[0]["attributed"] is False
+    assert [s for s in _frozen_spans(uncited) if s["kind"] == "quote"]
 
     cited = '"The great enemy of clear language is insincerity" (Orwell, 1946).'
-    quotes = [s for s in detect_protected_spans(cited) if s["kind"] == "quote"]
-    assert quotes[0]["attributed"] is True
+    assert [s for s in _frozen_spans(cited) if s["kind"] == "quote"]
+
+
+def test_a_short_scare_quote_is_still_not_a_quotation():
+    """The 12-character floor in _QUOTE, and it is deliberately untouched.
+
+    «the so-called "gig economy"» is not a quotation and must not freeze. The
+    ruling widened WHOSE quotations count, not what counts as one.
+    """
+    text = ('Everyone in the department now talks about the so-called "gig '
+            'economy" as though the phrase had always been there.')
+    assert [s for s in detect_protected_spans(text) if s["kind"] == "quote"] == []
+    assert freeze_fraction(text, TIERS)["frozen_words"] == 0

@@ -412,8 +412,8 @@ reported `removed_count: 0`. Verified both ways on 24 August 2026.
 
 ### The freeze is ON
 
-Protected spans — headings (structure tier), attributed quotations, block
-quotes and reference entries (quote tier) — are replaced with placeholders
+Protected spans — headings (structure tier), quotations, block quotes and
+reference entries (quote tier) — are replaced with placeholders
 before the model sees a chunk and put back afterwards, so the model cannot
 change them. Detection is `uc_spans.detect_protected_spans` and nothing else;
 policy and masking live in `uc_freeze.py`; the wiring is in `uc_chunk.py`.
@@ -445,3 +445,29 @@ one third of the document's words fall back this way, the job fails with
 | `UC_FREEZE_TIERS` | Comma list of `structure,quotes` (default both, per D1) |
 | `UC_FREEZE_RETRIES` | Extra attempts on a failed restore (default 1) |
 | `UC_FREEZE_REFUND_SHARE` | D3's refund threshold (default one third) |
+
+
+---
+
+## Added 24 August 2026 — every quotation freezes
+
+**Jon's ruling: "any quotation is frozen and kept across the board. There's no
+delineation between novel dialogue and real quotation."** The engine no longer
+tries to tell a sourced quotation from invented dialogue — two attempts at
+that test both failed on ordinary text, because «"Power tends to corrupt,"
+Acton observed» and «"Mind the second stair," Aldous observed» are the same
+sentence to a program.
+
+**What changed in a response:**
+
+- **`report_only.quotes_attributed` and `report_only.quotes_unattributed` are
+  REMOVED.** Their names claimed a distinction the engine no longer makes. The
+  count of quotations is `report_only.spans_found.quote`, where every other
+  kind's count already lived.
+- **`layer_b.freeze.frozen_fraction` and the `billing.freeze` pre-flight rise
+  on documents containing quotations** — measured across the corpus, under two
+  points on academic documents, and much more on dialogue-heavy fiction, which
+  is the case the pre-flight exists to disclose before payment.
+- **Every block quote freezes**, not only one introduced by a colon lead-in.
+- Nothing else about the block moved: same fields, same shapes, same D3
+  fallback and refund threshold.
