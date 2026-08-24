@@ -29,7 +29,7 @@ import { useState } from 'react';
  * into the body of a mail that already carries it. Subject and message are the
  * two fields a draft actually needs, and two fields is also less to scroll.
  */
-const CONTACT_EMAIL = 'unclaudeapp@gmail.com';
+const CONTACT_EMAIL = 'support@un-claude.com';
 
 const fieldClass =
   'bg-card text-foreground ring-border/70 placeholder:text-muted-foreground/60 focus:ring-foreground/25 w-full rounded-[10px] px-3.5 py-2.5 text-[15px] ring-1 outline-none transition-shadow focus:ring-2';

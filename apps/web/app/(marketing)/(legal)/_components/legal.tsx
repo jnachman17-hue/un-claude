@@ -116,10 +116,10 @@ export function Table({
 export function Mail() {
   return (
     <a
-      href={'mailto:unclaudeapp@gmail.com'}
+      href={'mailto:support@un-claude.com'}
       className={'text-foreground font-medium underline underline-offset-2'}
     >
-      unclaudeapp@gmail.com
+      support@un-claude.com
     </a>
   );
 }

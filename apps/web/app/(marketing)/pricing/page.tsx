@@ -261,7 +261,7 @@ const FAQ = [
    */
   {
     q: 'Can I get a refund?',
-    a: 'Yes. Within 30 days of buying, email unclaudeapp@gmail.com and we will refund any credits from that purchase you have not spent, at the price you paid, without asking why. Credits already spent are not refunded, because the work was done.',
+    a: 'Yes. Within 30 days of buying, email support@un-claude.com and we will refund any credits from that purchase you have not spent, at the price you paid, without asking why. Credits already spent are not refunded, because the work was done.',
   },
 ];
 
