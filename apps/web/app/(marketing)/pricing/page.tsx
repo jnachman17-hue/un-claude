@@ -24,6 +24,8 @@ import {
   WORDS_PER_CREDIT,
 } from './_components/pricing-data';
 
+import { shareTags } from '~/lib/share-tags';
+
 /**
  * The pricing page, REBUILT 20 August 2026 on Jon's instruction. His verdict
  * on the version this replaces: "It looks terrible. Like it is, it truly
@@ -99,11 +101,22 @@ import {
  * that covers everything including spent credits, is not ours to define, and is
  * carried separately by the checkout consent flow. See the TRUST entry below.
  */
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size. Credits never expire.';
+
 export const metadata = {
   title: 'Pricing',
-  description:
-    'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, any size. Credits never expire.',
+  description: DESCRIPTION,
   alternates: { canonical: '/pricing' },
+  ...shareTags({
+    title: 'Pricing',
+    description: DESCRIPTION,
+    path: '/pricing',
+  }),
 };
 
 /**

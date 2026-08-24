@@ -61,24 +61,54 @@ function currentTotal(nowMs: number): number {
 }
 
 /**
- * A single visitor's document, roughly. Skewed so most bursts are modest and
- * a few are large, the way real document lengths are distributed: never a
- * fixed size, never a flat range.
- */
-function randomBurstSize(): number {
-  return Math.floor(18 + Math.pow(Math.random(), 2.4) * 560);
-}
-
-/**
- * The pause before the next burst. Arrivals cluster, so roughly one gap in
- * five is a quick follow-on rather than a full pause, which is what keeps
- * the rhythm from reading as a metronome.
+ * THE COUNTER WENT BACKWARDS ON RELOAD, AND THIS IS WHERE IT DID IT.
+ * Fixed 23 August 2026. F1 audit, finding 9.
+ *
+ * Four consecutive fresh loads of the home page:
+ *
+ *   load 1:  2,783,981
+ *   load 2:  2,784,460
+ *   load 3:  2,783,987   <- 473 lower than the load before it
+ *   load 4:  2,784,148
+ *
+ * The cause was directly above this comment. A burst used to ADD an invented
+ * 18 to 578 words to whatever was on screen, on a gap averaging four seconds
+ * — roughly forty words a second of drift — while the anchored figure
+ * underneath it rises at one. So the longer the page stayed open the further
+ * the number floated above the truth, and a reload dropped it straight back
+ * down to the clock. **A public counter that goes down looks broken, or
+ * worse, invented**, on a site whose whole argument is that it does not
+ * overclaim. It also failed the one honesty property this component's own
+ * documentation claims for it, four lines up: anchored to a fixed instant,
+ * the same for everyone, not restarting on refresh.
+ *
+ * THE BURST IS NOW A REVEAL, NOT AN INCREMENT. The value shown is always
+ * `currentTotal(now)` and nothing else, so it is identical in every browser
+ * looking at the same moment and can only ever go up. What the rhythm below
+ * still does is choose WHEN the display catches up with the clock: the figure
+ * holds still, then jumps by however much accrued while it was holding. Real
+ * usage does arrive as whole documents rather than a steady drip, and that is
+ * still what this looks like.
+ *
+ * THE HONEST COST, SAID PLAINLY. At 1.05 words a second a jump is now worth
+ * the seconds that preceded it — nine to twenty-seven words on an ordinary
+ * gap, changing the last two digits — where it used to be worth hundreds.
+ * The counter is quieter than it was. That is what a monotonic counter at
+ * this product's stated rate looks like, and the alternative was a number
+ * that could not survive somebody pressing reload twice.
+ *
+ * THE PATH TO MAKING THE MOTION REAL is unchanged and is in the docblock at
+ * the top of this file: `words_in` on the ledger is the true figure, and a sum
+ * over that column added to SEED makes every jump a real document.
  */
 function randomGapMs(): number {
+  // Arrivals cluster, so roughly one gap in five is a quick follow-on rather
+  // than a full pause, which keeps the rhythm from reading as a metronome.
   if (Math.random() < 0.2) {
-    return 250 + Math.random() * 900;
+    return 3_000 + Math.random() * 3_000;
   }
-  return 1800 + Math.random() * 5200;
+
+  return 9_000 + Math.random() * 17_000;
 }
 
 /**
@@ -141,14 +171,16 @@ export function LiveCounter() {
 
     setAnimate(true);
 
-    // Real usage arrives as whole documents, not a steady drip: sit still,
-    // then jump by a burst, on a gap that is redrawn every time so the
+    // Sit still, then catch up, on a gap that is redrawn every time so the
     // rhythm never repeats. A recursive timeout rather than setInterval
     // because the wait itself is random on each cycle.
     let timerId: number;
     const scheduleNext = () => {
       timerId = window.setTimeout(() => {
-        setWords((current) => current + randomBurstSize());
+        // Catch up to the clock. `Math.max` rather than a bare assignment so
+        // that no future edit to `currentTotal` can make this run backwards
+        // within a single page either.
+        setWords((current) => Math.max(current, currentTotal(Date.now())));
         scheduleNext();
       }, randomGapMs());
     };

@@ -17,11 +17,24 @@ import { CtaBand } from '../_components/cta-band';
 import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { PageHeader } from '../_components/prose';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Give Un-Claude pasted text, a Word document or an image, and see exactly what happens: which marks come off, what comes back, and what we stand behind.';
+
 export const metadata = {
   title: 'What we do',
-  description:
-    'Give Un-Claude pasted text, a Word document or an image, and see exactly what happens: which marks come off, what comes back, and what we stand behind.',
+  description: DESCRIPTION,
   alternates: { canonical: '/capabilities' },
+  ...shareTags({
+    title: 'What we do',
+    description: DESCRIPTION,
+    path: '/capabilities',
+  }),
 };
 
 /**

@@ -36,6 +36,36 @@ export function fileToBase64(file: File): Promise<string> {
 }
 
 /**
+ * THE BIGGEST FILE THAT CAN ACTUALLY REACH US, in the units the visitor sees.
+ *
+ * The product has always had a polite refusal for an oversized file — "That
+ * file is over the 5 MB limit. Try a smaller one." — and NOBODY HAS EVER SEEN
+ * IT. It is set on the base64 length, at about 5.5 MB, and Vercel refuses the
+ * request at roughly 4.5 MB of body before a line of our code runs. Its reply
+ * is plain text rather than the JSON the workbench parses, so what the customer
+ * actually got was a generic failure with no number in it and no way forward.
+ * F1 audit, finding E.
+ *
+ * A file is base64-encoded to be sent, which makes it a third bigger, so the
+ * ceiling in the units a person can see on their own computer is three quarters
+ * of Vercel's. Measured on the live site to the tenth of a megabyte:
+ *
+ *   3.20 MB raw / 4.27 MB encoded  ->  200 OK
+ *   3.30 MB raw / 4.40 MB encoded  ->  413 Request Entity Too Large
+ *
+ * So the check moves here, into the browser, before the upload is attempted,
+ * and it is measured against `file.size` — the number the visitor's own file
+ * manager shows them — rather than against an encoded length they will never
+ * see. 3,200,000 bytes is the largest size measured to pass, not a guess.
+ */
+export const MAX_UPLOAD_BYTES = 3_200_000;
+
+/** "4.1 MB". One decimal, and the same MB a file manager shows. */
+export function megabytes(bytes: number): string {
+  return `${(bytes / 1_000_000).toFixed(1)} MB`;
+}
+
+/**
  * The four things we accept: pasted text, a Word document, a PNG, a JPG.
  *
  * MUST MATCH `ACCEPTED_EXTS` in apps/web/api/_shared.py, which is what actually

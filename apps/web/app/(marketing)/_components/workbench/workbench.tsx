@@ -21,8 +21,10 @@ import { CHECK_CLASSES, prettyName, shortExplain } from './characters';
 import { Checklist, type ChecklistRow } from './checklist';
 import {
   ACCEPTED_FILES,
+  MAX_UPLOAD_BYTES,
   base64ToText,
   fileToBase64,
+  megabytes,
   textToBase64,
 } from './encode';
 import { MarkedText } from './marked-text';
@@ -33,16 +35,19 @@ import { useSupabase } from '@kit/supabase/hooks/use-supabase';
 import { CreditChip, CreditCoin } from './credit-chip';
 import {
   MAX_WORDS,
+  MIN_REWRITE_WORDS,
   WELCOME_CREDITS,
   costFor,
   countWords,
+  creditsNow,
   devMode,
   devOverrides,
   ensureSession,
   estimateSeconds,
-  fetchCredits,
   humanDuration,
-  type CreditsState,
+  publishCredits,
+  refreshCredits,
+  useCredits,
 } from './credits';
 import { OutOfCredits, SignedInWelcome } from './credit-offer';
 import { Paywall } from './paywall';
@@ -124,10 +129,7 @@ export function Workbench() {
    * spent. The first sanitise creates the guest account and from then on the
    * number is the ledger's. 04 entry 97.
    */
-  const [credits, setCredits] = useState<CreditsState>({
-    balance: null,
-    isAnonymous: true,
-  });
+  const credits = useCredits();
   /** Which paywall to show while phase is 'locked', and with what numbers. */
   const [wall, setWall] = useState<{
     variant: 'account' | 'buy';
@@ -327,7 +329,7 @@ export function Workbench() {
   }, [phase]);
 
   useEffect(() => {
-    void fetchCredits().then(setCredits);
+    void refreshCredits();
     setOverrides(devOverrides());
   }, []);
 
@@ -402,6 +404,33 @@ export function Workbench() {
     setIsSample(false);
     setText('');
     track.fileUploaded(file.name, file.size, method);
+
+    /*
+     * THE SIZE IS CHECKED HERE BECAUSE HERE IS THE LAST PLACE IT CAN BE.
+     * F1 audit finding E: over about 3.2 MB the request never arrives, Vercel
+     * answers 413 in plain text before our code runs, and the workbench — which
+     * expects JSON — falls back to "Something went wrong". A student drags in a
+     * photo from their phone, it fails, and nothing tells them the file is too
+     * big or what size would work. They try again and it fails again.
+     *
+     * Nothing has been uploaded at this point: `file` is a handle to something
+     * on their own disk. So the refusal is instant, it costs no bandwidth, and
+     * it can name the two numbers that matter — what they gave us and what fits.
+     */
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setLoaded({ payload: '', name: 'paste.txt', text: '' });
+      setEditing(true);
+      if (fileInput.current) fileInput.current.value = '';
+      setMessage(
+        `That file is ${megabytes(file.size)}. The limit is ${megabytes(
+          MAX_UPLOAD_BYTES,
+        )}. Try a smaller one.`,
+      );
+      setPhase('error');
+      track.scanFailed({ inputKind: 'file', name: file.name });
+      return;
+    }
+
     const payload = await fileToBase64(file);
     void runScan({ payload, name: file.name, text: '' });
   };
@@ -472,6 +501,28 @@ export function Workbench() {
   const wordsNow = isFile ? (scan?.billing?.words ?? 0) : countWords(text);
   const overLimit =
     carriesProse && (scan?.billing?.over_limit ?? wordsNow > MAX_WORDS);
+
+  /*
+   * TOO SHORT FOR THE REWRITE, SAID BEFORE THE MONEY MOVES. Jon's ruling,
+   * 23 August 2026. W9 audit finding 4.
+   *
+   * What used to happen: a six word paste took a credit, came back byte for
+   * byte identical, and the panel above the numbers said REWRITTEN while the
+   * numbers underneath said 0% replaced and 100% of the length kept — under a
+   * label reading "Measured, not estimated". The engine had said exactly why in
+   * a `reason` string on every one of those responses and no file in this
+   * product read it.
+   *
+   * The minimum goes at the front door instead of into an explanation
+   * afterwards: the button is refused, the reason is on screen beside it, and
+   * nobody buys a rewrite that will not run. Scanning is untouched and stays
+   * free at any length, which is the half of this that still works below 16
+   * words.
+   *
+   * A whitespace-only box is the same case and is caught by the same test:
+   * it counts zero words. The audit charged a credit for a single space.
+   */
+  const tooShortToRewrite = carriesProse && wordsNow < MIN_REWRITE_WORDS;
 
   const sanitise = async () => {
     // An image has no prose, so there is nothing for the rewrite to do and no
@@ -579,7 +630,7 @@ export function Workbench() {
       });
       setPhase('locked');
       track.paywallShown({ inputKind: kind, name: loaded.name });
-      void fetchCredits().then(setCredits);
+      void refreshCredits();
       return;
     }
 
@@ -610,12 +661,15 @@ export function Workbench() {
       // The server answers with the new balance on every success, so the
       // number on screen is the ledger's, not an optimistic guess.
       if (typeof finished.credits?.balance === 'number') {
-        setCredits((previous) => ({
-          ...previous,
-          balance: finished.credits!.balance,
-        }));
+        // Published, not held locally: the header reads the same value and
+        // used to sit on the balance it fetched at page load. See the store
+        // in credits.ts.
+        publishCredits({
+          ...creditsNow(),
+          balance: finished.credits.balance,
+        });
       } else {
-        void fetchCredits().then(setCredits);
+        void refreshCredits();
       }
 
       setPhase('cleaned');
@@ -834,9 +888,18 @@ export function Workbench() {
             // button directly above it. On a real document it is a useful next
             // step; on the example it was pure duplication.
             ''
-          : anythingFound
-            ? 'Sanitise to remove it'
-            : 'All three checked';
+          : /*
+              AND IT MUST NOT INVITE AN ACTION THAT IS REFUSED. Below the
+              rewrite's minimum the Sanitise button is greyed out with its
+              reason beside it, so a caption reading "Sanitise to remove it"
+              pointing straight at it is the interface arguing with itself.
+              The line the visitor needs is already on screen, one row up.
+            */
+            tooShortToRewrite
+            ? ''
+            : anythingFound
+              ? 'Sanitise to remove it'
+              : 'All three checked';
 
   /**
    * WHAT THE PANEL SAYS BEFORE ANYTHING HAS BEEN READ.
@@ -1220,6 +1283,15 @@ export function Workbench() {
           {editing ? (
             <textarea
               ref={attachTextArea}
+              /*
+                A NAME, NOT JUST A PLACEHOLDER. F1 audit finding 12: this box
+                had `aria-label: null`, `aria-labelledby: null`, `labels: 0`
+                and a placeholder, and a placeholder is not a name — it
+                disappears the moment the first character is typed, so a
+                screen reader user who pauses mid-paste is sitting in an
+                unnamed edit field. This box IS the product.
+              */
+              aria-label={'Your text'}
               value={text}
               onChange={(event) => {
                 setText(event.target.value);
@@ -1450,6 +1522,14 @@ export function Workbench() {
             ref={fileInput}
             type={'file'}
             accept={ACCEPTED_FILES}
+            /*
+              ONE PIXEL SQUARE, INVISIBLE, IN THE TAB ORDER, AND UNNAMED. F1
+              audit finding 12 again: a blind student tabbing through the home
+              page reached this and was told nothing at all about what it was.
+              `sr-only` hides it from the eye, not from the keyboard, which is
+              the point of `sr-only` and was the defect here.
+            */
+            aria-label={'Upload a file'}
             className={'sr-only'}
             onChange={(event) => void takeFile(event.target.files?.[0])}
           />
@@ -1533,9 +1613,14 @@ export function Workbench() {
             <button
               type={'button'}
               onClick={() => void sanitise()}
-              // Over the word limit the server will refuse this, so the button
-              // does not offer it. The message beside it says why.
-              disabled={busy || overLimit}
+              // Over the word limit the server will refuse this, and under the
+              // rewrite's minimum it would charge for a run that does not
+              // happen. Neither is offered. The message beside it says why.
+              disabled={busy || overLimit || tooShortToRewrite}
+              // The price, and the reason this is greyed out when it is,
+              // read at the moment the control is reached. See the note on
+              // the status line below.
+              aria-describedby={'sanitise-note'}
               className={
                 'bg-mark text-mark-foreground hover:bg-mark-strong inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45'
               }
@@ -1604,15 +1689,46 @@ export function Workbench() {
             </button>
           )}
 
-          <p className={'text-muted-foreground ml-auto text-[11.5px]'}>
-            {/* Copy and download moved into the primary button slot on the
-                left, 20 August 2026, so this line no longer repeats them.
-                When the work is done it says so, plainly. */}
-            {phase === 'error' ? (
-              <span className={'text-destructive font-medium'}>{message}</span>
-            ) : done ? (
-              <span className={'text-emerald-700 font-medium'}>Sanitised</span>
-            ) : phase === 'cleaning' ? (
+          <p
+            /*
+              THE LINE A SCREEN READER NEVER HEARD. F1 audit, accessibility:
+              this paragraph carries "Rewriting", "Sanitised" and every error
+              message the tool produces, and it was a plain paragraph with
+              nothing pointing at it. A sighted visitor watches the button
+              change for up to three minutes; a blind visitor got no
+              notification that the job they had paid for had finished, or
+              failed.
+            */
+            id={'sanitise-note'}
+            className={'text-muted-foreground ml-auto text-[11.5px]'}
+          >
+            {/*
+              ONLY THE STATE GOES IN THE LIVE REGION, and the price line
+              deliberately does not.
+
+              `role="status"` announces its contents whenever they change. The
+              price beside it changes on EVERY KEYSTROKE — "12 words = 1",
+              "13 words = 1" — so wrapping the whole line would make a screen
+              reader talk over somebody while they were still typing, which is
+              worse than the silence it replaces. The three things worth
+              interrupting for are working, finished and failed, and those are
+              exactly what is inside it.
+
+              The span is always in the document rather than appearing with the
+              first message: a live region that is inserted at the same moment
+              as its text is frequently not announced at all.
+
+              The price and the two limit messages are read a different way.
+              They explain a DISABLED button, so they are attached to that
+              button with `aria-describedby` and read when it is reached,
+              rather than shouted whenever they change.
+            */}
+            <span role={'status'}>
+              {phase === 'error' ? (
+                <span className={'text-destructive font-medium'}>{message}</span>
+              ) : done ? (
+                <span className={'text-emerald-700 font-medium'}>Sanitised</span>
+              ) : phase === 'cleaning' ? (
               /*
                 HOW LONG THIS WILL TAKE, said out loud. Jon's instruction,
                 21 August 2026: a long run must tell people it is long, or a
@@ -1641,7 +1757,11 @@ export function Workbench() {
                   </span>
                 ) : null}
               </>
-            ) : text || isFile ? (
+              ) : null}
+            </span>
+
+            {phase !== 'error' && !done && phase !== 'cleaning' ? (
+              text || isFile ? (
               /*
                 THE PRICE, BEFORE THE BUTTON IS PRESSED. 03-pricing 11c: the
                 cost must be known before committing. The words and the coin
@@ -1675,6 +1795,26 @@ export function Workbench() {
                   );
                 }
 
+                /*
+                  THE OTHER END OF THE SAME LINE. It sits exactly where the
+                  over-limit message sits and shares its grammar — the count,
+                  the rule, the way out — because they are the same sentence
+                  about the same control and a visitor meets one or the other,
+                  never both. It is not red: nothing has gone wrong, the scan
+                  ran and was free, and there is simply not enough here to
+                  rewrite yet.
+                */
+                if (tooShortToRewrite) {
+                  return (
+                    <span className={'text-foreground font-medium'}>
+                      {words.toLocaleString('en-US')}{' '}
+                      {words === 1 ? 'word' : 'words'}. The rewrite needs at
+                      least {MIN_REWRITE_WORDS}, so nothing is charged for this.
+                      Add a little more.
+                    </span>
+                  );
+                }
+
                 return (
                   <span className={'inline-flex items-center gap-1.5'}>
                     {/*
@@ -1697,13 +1837,14 @@ export function Workbench() {
                   </span>
                 );
               })()
-            ) : (
-              // Empty with an empty box: the panel caption beside the coin
-              // already says scanning is free, and saying it twice on one
-              // screen was the first thing to look wrong after the chip
-              // landed.
-              ''
-            )}
+              ) : (
+                // Empty with an empty box: the panel caption beside the coin
+                // already says scanning is free, and saying it twice on one
+                // screen was the first thing to look wrong after the chip
+                // landed.
+                ''
+              )
+            ) : null}
           </p>
         </div>
       </div>

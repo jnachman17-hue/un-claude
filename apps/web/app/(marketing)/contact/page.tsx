@@ -1,10 +1,23 @@
 import { ContactForm } from '../_components/contact-form';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Reach Un-Claude. Write a subject and a message here and send it from your own mail app, or email us directly.';
+
 export const metadata = {
   title: 'Contact',
-  description:
-    'Reach Un-Claude. Write a subject and a message here and send it from your own mail app, or email us directly.',
+  description: DESCRIPTION,
   alternates: { canonical: '/contact' },
+  ...shareTags({
+    title: 'Contact',
+    description: DESCRIPTION,
+    path: '/contact',
+  }),
 };
 
 /**

@@ -13,6 +13,8 @@ import {
 
 import { H2, Lead, List, Mail, P, Prose, Updated } from '../_components/legal';
 
+import { shareTags } from '~/lib/share-tags';
+
 /**
  * THE PRICES ARE NEVER TYPED INTO THIS PAGE. They are read from the same
  * `PACKS` array the pricing cards and the calculator read, so a price change
@@ -27,6 +29,13 @@ function dollars(pack: (typeof PACKS)[number]) {
   return `$${pack.dollars}.${pack.cents}`;
 }
 
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'The agreement behind Un-Claude: what each of the three layers is promised to do, how credits and payment work, and our 30 day refund policy.';
+
 export async function generateMetadata() {
   const t = await getTranslations();
 
@@ -39,9 +48,13 @@ export async function generateMetadata() {
      * the product rather than the page. Written here rather than in
      * `lib/root-metdata.ts`, which belongs to the SEO session.
      */
-    description:
-      'The agreement behind Un-Claude: what each of the three layers is promised to do, how credits and payment work, and our 30 day refund policy.',
+    description: DESCRIPTION,
     alternates: { canonical: '/terms-of-service' },
+    ...shareTags({
+      title: t('marketing.termsOfService'),
+      description: DESCRIPTION,
+      path: '/terms-of-service',
+    }),
   };
 }
 

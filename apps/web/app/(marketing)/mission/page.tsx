@@ -1,10 +1,23 @@
 import { CtaBand } from '../_components/cta-band';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Why Un-Claude exists: a mark you cannot see, never agreed to, and cannot answer is not transparency. Written by the person who built it.';
+
 export const metadata = {
   title: 'Our mission',
-  description:
-    'Why Un-Claude exists: a mark you cannot see, never agreed to, and cannot answer is not transparency. Written by the person who built it.',
+  description: DESCRIPTION,
   alternates: { canonical: '/mission' },
+  ...shareTags({
+    title: 'Our mission',
+    description: DESCRIPTION,
+    path: '/mission',
+  }),
 };
 
 /**

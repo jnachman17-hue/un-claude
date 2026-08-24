@@ -4,6 +4,15 @@ import { SitePageHeader } from '~/(marketing)/_components/site-page-header';
 
 import { H2, Mail, P, Prose, Table, Updated } from '../_components/legal';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Un-Claude sets no advertising and no tracking cookies, so there is no consent banner. What is actually set, what it does, and how long it lasts.';
+
 export async function generateMetadata() {
   const t = await getTranslations();
 
@@ -16,9 +25,13 @@ export async function generateMetadata() {
      * the product rather than the page. Written here rather than in
      * `lib/root-metdata.ts`, which belongs to the SEO session.
      */
-    description:
-      'Un-Claude sets no advertising and no tracking cookies, so there is no consent banner. What is actually set, what it does, and how long it lasts.',
+    description: DESCRIPTION,
     alternates: { canonical: '/cookie-policy' },
+    ...shareTags({
+      title: t('marketing.cookiePolicy'),
+      description: DESCRIPTION,
+      path: '/cookie-policy',
+    }),
   };
 }
 

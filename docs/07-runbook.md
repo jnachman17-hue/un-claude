@@ -1797,3 +1797,51 @@ builds only. With it on, **nothing is charged and none of the real path runs** �
 no grant, no spend, no refund, no ledger row. A test that sends it proves the
 interface and nothing else. Every run recorded in `session-notes/lane-b-money.md`
 was made without it.
+
+## Looking at states that need a session, 23 August 2026
+
+**Three parts of this product are gated on a real signed-in account against the
+hosted Supabase, and there is no local one (`06` row 11).** Until now that meant
+they could be changed but not looked at, which `CLAUDE.md` section 4 does not
+accept. All three now have a development-only way in, and all three compile out
+of a production build.
+
+| To see | Do this |
+|---|---|
+| The signed-in header, with the credit pill and the avatar | On `/dev/credits`, pin a balance whose value ends `:account`. `SiteHeaderAccountSection` renders the real signed-in row against a stand-in identity |
+| The wallet's credit history, at any length | `/dev/wallet`, `?page=4`, `?total=8`. The real `CreditHistory` component with fabricated rows |
+| An empty balance, a paywall, the post-signup arrival | `/dev/states`, which already existed |
+
+**None of them signs anybody in.** Every route still asks the server who is
+calling, and the ledger is untouched.
+
+### Driving the workbench from JavaScript does not work; type instead
+
+**Setting a textarea's value with the native property setter and dispatching an
+`input` event does NOT update React state in this build.** The event reaches
+React — `clearResults` fires — but `text` stays empty, so "Scan it" does nothing
+and the phase sits at `idle`. Twenty minutes went into this once.
+
+**Use real keystrokes** (`computer` `left_click` then `type`). That works every
+time. Clicking buttons from JavaScript is fine; only the text input is affected.
+
+### The local engine has to be started by hand, or every scan says "we could not reach the service"
+
+`.env.local` points `UC_ENGINE_URL` at `127.0.0.1:8765`, which is the standalone
+engine and is not running unless somebody starts it:
+
+```bash
+cd ~/un-claude/apps/web/engine && python3 server.py --port 8765
+```
+
+**Scanning is free and local, so this costs nothing.** Sanitising a text paste
+does call a rewrite model and does cost real money; sanitising a `.docx` or an
+image does not, because layer B never runs on a container.
+
+### Only one `next dev` at a time in this repo, whatever the port
+
+`.claude/launch.json` offers four ports so parallel sessions do not collide, but
+Next refuses a second dev server regardless of the port — they share `.next`. The
+refusal names the running PID and its log path. **When two sessions are live,
+whoever starts first owns the dev server**, and it is better to use theirs than
+to kill it.

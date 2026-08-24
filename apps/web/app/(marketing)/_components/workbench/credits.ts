@@ -10,6 +10,8 @@
  * price arithmetic the interface shows before the button is pressed. The
  * server recomputes that price from the payload and trusts none of this.
  */
+import { useSyncExternalStore } from 'react';
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const WELCOME_CREDITS = 2;
@@ -31,6 +33,30 @@ export const WORDS_PER_CREDIT = 1_000;
  * does not reliably finish inside the time the site waits for it.
  */
 export const MAX_WORDS = 10_000;
+
+/**
+ * The fewest words the rewrite will accept.
+ *
+ * MUST MATCH `UC_LAYER_B_MIN_WORDS` in apps/web/engine/server.py, which is what
+ * actually enforces it. Below this the engine does not call a model at all: it
+ * returns the run as `skipped: input_too_short` with a `reason` explaining
+ * itself, runs layers A and metadata as normal, and the route charges for it
+ * anyway.
+ *
+ * WHY THE NUMBER IS 16 AND NOT A ROUND FIGURE. Measured end to end during the
+ * prompt-leak session: every defective output the engine has ever produced had
+ * an input of 15 words or fewer, and 144 runs across the 16-to-32 word band
+ * produced none. A statistical watermark is not present, let alone detectable,
+ * in a handful of words.
+ *
+ * WHAT THIS COPY IS FOR, Jon's ruling of 23 August 2026: the minimum goes at
+ * the FRONT DOOR. The engine's own explanation was reaching the browser and
+ * nothing rendered it, so a customer paid a credit, got their text back byte
+ * for byte, and read "Rewritten · Measured, not estimated" with 0% replaced
+ * above it. The button is now refused before the money moves, with the reason
+ * on screen. The free scan is unaffected at any length.
+ */
+export const MIN_REWRITE_WORDS = 16;
 
 /**
  * Roughly how long a rewrite of this many words will take, rounded UP, so the
@@ -125,6 +151,100 @@ function forcedCredits(): CreditsState | null {
   if (!Number.isFinite(balance)) return null;
 
   return { balance, isAnonymous: who !== 'account' };
+}
+
+/**
+ * ONE BALANCE, READ IN TWO PLACES, AND UNTIL NOW THEY DISAGREED ON SCREEN.
+ * 23 August 2026, LAUNCH-CHECKLIST 6d, photographed by the F1 audit.
+ *
+ * The header held its own `useState`, filled once from /api/credits when the
+ * page loaded and never read again. The workbench chip took its number from
+ * the sanitise response. So the moment a credit was spent the two numbers
+ * differed — seven at the top of the page and six in the middle, at the same
+ * instant, both about money — and nothing but a navigation would settle it.
+ *
+ * Two components cannot hold two copies of one fact. This is the fact, once:
+ * a module-level value plus the React subscription both of them read through.
+ * Whoever learns a newer balance publishes it here and every reader updates
+ * in the same frame.
+ *
+ * WHY NOT POLL. A timer would be a request per visitor per interval, for ever,
+ * for a number that changes only when the visitor does something. The balance
+ * moves on exactly three occasions and each one already has a moment attached:
+ * a sanitise answers with the new balance, a refused sanitise triggers a
+ * refetch, and coming back to the tab after buying credits fires `focus`. The
+ * header listens for the third; the workbench publishes the first two.
+ */
+let snapshot: CreditsState = { balance: null, isAnonymous: true };
+
+/**
+ * The server render has no browser, so it must be a value that never changes
+ * between calls: `useSyncExternalStore` compares the server snapshot by
+ * identity and re-renders for ever if a fresh object comes back each time.
+ */
+const SERVER_SNAPSHOT: CreditsState = { balance: null, isAnonymous: true };
+
+const listeners = new Set<() => void>();
+
+/** Tell every reader on the page what the balance now is. */
+export function publishCredits(next: CreditsState): void {
+  if (
+    next.balance === snapshot.balance &&
+    next.isAnonymous === snapshot.isAnonymous
+  ) {
+    return;
+  }
+
+  snapshot = next;
+
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** The balance right now, outside a render. */
+export function creditsNow(): CreditsState {
+  return snapshot;
+}
+
+/** The balance, live, wherever it is needed. */
+export function useCredits(): CreditsState {
+  return useSyncExternalStore(
+    subscribe,
+    () => snapshot,
+    () => SERVER_SNAPSHOT,
+  );
+}
+
+/**
+ * Ask the server and publish the answer.
+ *
+ * Concurrent callers share one request. The home page has two readers that
+ * both want the balance the moment they mount, and without this it asked
+ * /api/credits twice on every load.
+ */
+let inFlight: Promise<CreditsState> | null = null;
+
+export function refreshCredits(): Promise<CreditsState> {
+  if (inFlight) return inFlight;
+
+  inFlight = fetchCredits()
+    .then((next) => {
+      publishCredits(next);
+
+      return next;
+    })
+    .finally(() => {
+      inFlight = null;
+    });
+
+  return inFlight;
 }
 
 export async function fetchCredits(): Promise<CreditsState> {

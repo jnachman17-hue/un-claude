@@ -6,6 +6,15 @@ import { SitePageHeader } from '~/(marketing)/_components/site-page-header';
 
 import { H2, Lead, Mail, P, Prose, Table, Updated } from '../_components/legal';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'What Un-Claude does with your text and files. Nothing you submit is kept, the optional rewrite is the only thing that leaves, and here is what we store.';
+
 export async function generateMetadata() {
   const t = await getTranslations();
 
@@ -18,9 +27,13 @@ export async function generateMetadata() {
      * the product rather than the page. Written here rather than in
      * `lib/root-metdata.ts`, which belongs to the SEO session.
      */
-    description:
-      'What Un-Claude does with your text and files. Nothing you submit is kept, the optional rewrite is the only thing that leaves, and here is what we store.',
+    description: DESCRIPTION,
     alternates: { canonical: '/privacy-policy' },
+    ...shareTags({
+      title: t('marketing.privacyPolicy'),
+      description: DESCRIPTION,
+      path: '/privacy-policy',
+    }),
   };
 }
 

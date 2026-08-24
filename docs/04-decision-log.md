@@ -5022,3 +5022,68 @@ ever asked whether the answer reached anybody.
 run is recorded first**, because if the rewrite ran we really did pay for it and
 refunding does not undo that — recording it and then refunding is what keeps the
 loss countable.
+
+### 133. The rewrite's minimum goes at the front door, not into an explanation
+
+**Jon's ruling, 23 August 2026.** A paste under sixteen words was charged a
+credit, came back byte for byte identical, and the panel said *"Rewritten ·
+Measured, not estimated"* with 0% replaced sitting directly underneath. The
+engine had returned a `reason` string explaining itself on every one of those
+responses and **nothing in the interface read it.**
+
+**The choice was between showing the reason afterwards and refusing the button
+before.** Jon ruled for the button: below sixteen words Sanitise is disabled with
+the reason beside it, **so nobody pays for a reduced product and the decision
+happens before money moves.** Showing the reason afterwards would still have
+taken the credit.
+
+**Scanning stays free at any length**, which is the half of the tool that still
+works below sixteen words and is also the hook.
+
+**The cost, recorded so it is not discovered later.** Layers A and metadata are
+the two provable layers and they work on six words. A short paste that genuinely
+carries hidden characters can no longer be cleaned at all — the visitor is told
+why and can add words, but the thing they pasted is refused. `06` row 91 carries
+the one-line narrowing (refuse only when the scan also found nothing) and a
+trigger for revisiting it.
+
+### 134. The credit balance is one fact, held once
+
+**23 August 2026.** The header read `/api/credits` once on page load into its own
+state and never again; the workbench chip read the balance out of each sanitise
+response. **Two components, two copies of one number, and the audit photographed
+them disagreeing: seven at the top of the page and six in the middle, at the same
+instant, both about money, on a site taking money.**
+
+**Ruled against polling.** A timer would be a request per visitor per interval,
+for ever, for a number that changes only when the visitor does something. The
+balance moves on exactly three occasions and each already has a moment attached:
+a sanitise answers with the new figure, a refused sanitise triggers a refetch,
+and returning to the tab after buying credits fires `focus`.
+
+**So the fix is a single shared value with a subscription, not a synchronised
+pair.** Two components cannot hold two copies of one fact and be trusted to
+agree. It also halved the home page's calls to `/api/credits`, because the two
+readers now share one request instead of making one each.
+
+### 135. A public counter may be seeded, but it may never go down
+
+**23 August 2026, and it narrows entry 71 rather than reversing it.** Entry 71
+ruled that a seeded figure rising on a clock is acceptable, and that stands. What
+shipped was not that: a burst added an invented 18 to 578 words to whatever was
+on screen every few seconds, roughly forty a second, while the anchored figure
+underneath rose at one. Four consecutive reloads produced four different numbers
+and the third was 473 lower than the second.
+
+**The property the component's own documentation claimed for itself — anchored to
+a fixed instant, the same for everyone, not restarting on refresh — is the
+property it must actually have.** A public counter that goes down looks broken,
+or invented, on a site whose whole argument is that it does not overclaim.
+
+**The burst is a reveal now, not an increment.** The value is always the
+clock-derived total; the rhythm only chooses when the display catches up.
+
+**The price is that the counter is quieter**, because a monotonic counter can
+only rise as fast as the rate it claims. Getting the motion back means making the
+figure real, which entry 71 already described: sum `words_in` on the ledger and
+add it to the seed. That is a route the money lane owns.

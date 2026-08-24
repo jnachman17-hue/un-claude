@@ -100,6 +100,89 @@ function isEngineText(name: string): boolean {
   return ENGINE_TEXT_EXTS.some((ext) => lower.endsWith(ext));
 }
 
+/*
+ * WHAT WE ACCEPT, CHECKED BEFORE ANYBODY IS ASKED TO PAY. 23 August 2026.
+ *
+ * THIS MIRRORS `accepted()` IN engine/uc_policy.py, WHICH REMAINS THE
+ * AUTHORITY. The engine still refuses everything it refused before and still
+ * refunds if it does. This copy exists only to fix an ORDER, and it must never
+ * be stricter than the engine's: a file this refuses is a customer turned away,
+ * while a file this lets through is simply refused one step later, exactly as
+ * it is today.
+ *
+ * The order was the defect. With the account at zero, all ten of the audit's
+ * deliberately broken inputs came back `402 insufficient_credits: this needs 1
+ * credit and you have 0` — including the six the site would have refused for
+ * free anyway. So a visitor is told to buy credits for a job that will never
+ * run: they top up, come back, and are then told their file is not supported.
+ * F1 audit, "the credit check runs before the file check, and it costs a sale".
+ *
+ * It is a conversion fix rather than a bug fix. "We cannot use this file"
+ * must always beat "you need to pay first".
+ */
+const ACCEPTED_EXTS = ['.txt', '.docx', '.png', '.jpg', '.jpeg'];
+
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
+const ZIP_MAGICS = [
+  Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+  Buffer.from([0x50, 0x4b, 0x05, 0x06]),
+  Buffer.from([0x50, 0x4b, 0x07, 0x08]),
+];
+const PDF_MAGIC = Buffer.from('%PDF-', 'latin1');
+
+/** The last suffix, lowercased. Matches Python's `Path(name).suffix.lower()`. */
+function extensionOf(name: string): string {
+  const dot = name.lastIndexOf('.');
+
+  return dot === -1 ? '' : name.slice(dot).toLowerCase();
+}
+
+/**
+ * Does the file's own content agree with the name it arrived under? A .png
+ * renamed .docx is the case this catches, and it is why an extension check
+ * alone would have caught only one of the audit's six refused inputs.
+ */
+function contentsMatch(ext: string, data: Buffer): boolean {
+  if (ext === '.png') return data.subarray(0, 8).equals(PNG_MAGIC);
+
+  if (ext === '.jpg' || ext === '.jpeg') {
+    return data.subarray(0, 3).equals(JPEG_MAGIC);
+  }
+
+  if (ext === '.docx') {
+    // A zip, and specifically a zip with a Word document in it. The second
+    // half matters: .xlsx, .pptx, .odt and .epub are all zips too.
+    const isZip = ZIP_MAGICS.some((magic) =>
+      data.subarray(0, magic.length).equals(magic),
+    );
+
+    return isZip && data.includes('word/document.xml');
+  }
+
+  if (ext === '.txt') {
+    // Text is the one case with no magic number, so the test is negative: it
+    // must not be one of the binaries we DO recognise, and it must not carry
+    // NUL bytes, which no real UTF-8 text does.
+    if (data.subarray(0, 8).equals(PNG_MAGIC)) return false;
+    if (data.subarray(0, 3).equals(JPEG_MAGIC)) return false;
+    if (ZIP_MAGICS.some((m) => data.subarray(0, m.length).equals(m))) {
+      return false;
+    }
+    if (data.subarray(0, 5).equals(PDF_MAGIC)) return false;
+
+    return !data.subarray(0, 8192).includes(0x00);
+  }
+
+  return false;
+}
+
+function accepted(name: string, data: Buffer): boolean {
+  const ext = extensionOf(name);
+
+  return ACCEPTED_EXTS.includes(ext) && contentsMatch(ext, data);
+}
+
 /** Cookie lifetime: a year. The guest's credits should outlive a holiday. */
 const GUEST_COOKIE_SECONDS = 60 * 60 * 24 * 365;
 
@@ -165,6 +248,28 @@ export async function POST(request: Request) {
   const inputName = typeof name === 'string' ? name : 'paste.txt';
   const isFile = inputName !== 'paste.txt';
   const bypass = devBypass(request);
+
+  /*
+   * THE FILE CHECK, NOW IN FRONT OF THE CREDIT CHECK. See `accepted` above for
+   * why the order was the whole defect. Nothing below this point changed: the
+   * price, the spend, the refund and the ledger are exactly as they were, and
+   * the engine re-runs this same policy on everything that gets past it.
+   *
+   * The message is the engine's own word for word, so a refusal reads the same
+   * whichever of the two produced it.
+   */
+  const bytes = Buffer.from(file, 'base64');
+
+  if (bytes.length === 0) {
+    return fail('no_file', 'Nothing was sent. Paste some text or choose a file.');
+  }
+
+  if (!accepted(inputName, bytes)) {
+    return fail(
+      'bad_format',
+      'That file type is not supported. Use text, a Word document, PNG or JPG.',
+    );
+  }
 
   const supabase = getSupabaseServerClient();
   const {

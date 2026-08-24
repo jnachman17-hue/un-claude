@@ -14,11 +14,24 @@ import { StatisticalWatermarkDiagram } from '../_components/diagrams/statistical
 import { MobileDisclosure } from '../_components/mobile-disclosure';
 import { PageHeader } from '../_components/prose';
 
+import { shareTags } from '~/lib/share-tags';
+
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Three kinds of AI watermark, where each hides, and what Un-Claude does to each: found and counted, stripped and byte verified, or sanitised by rewrite.';
+
 export const metadata = {
   title: 'How it works',
-  description:
-    'Three kinds of AI watermark, where each hides, and what Un-Claude does to each: found and counted, stripped and byte verified, or sanitised by rewrite.',
+  description: DESCRIPTION,
   alternates: { canonical: '/how-it-works' },
+  ...shareTags({
+    title: 'How it works',
+    description: DESCRIPTION,
+    path: '/how-it-works',
+  }),
 };
 
 const ANTHROPIC_POST = 'https://www.anthropic.com/news/claude-text-watermark';

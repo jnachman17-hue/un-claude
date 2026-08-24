@@ -6,6 +6,8 @@ import { CoverageSection } from './_components/coverage-section';
 import { FaqSection } from './_components/faq-section';
 import { HeroSection } from './_components/hero-section';
 
+import { shareTags } from '~/lib/share-tags';
+
 /**
  * `title` is `absolute` so the root layout's title template (`%s · brand`)
  * does not append the brand name a second time onto a title that already
@@ -14,11 +16,22 @@ import { HeroSection } from './_components/hero-section';
  * character truncation point without dropping any of the three watermark
  * layers it names.
  */
+/**
+ * Written once and used twice: the browser tab and the share preview must
+ * not be able to drift apart.
+ */
+const DESCRIPTION =
+  'Scan text and files free for hidden AI watermarks: invisible characters, C2PA metadata and the mark in the words themselves. Sanitise in seconds.';
+
 export const metadata = {
   title: { absolute: appConfig.title },
-  description:
-    'Scan text and files free for hidden AI watermarks: invisible characters, C2PA metadata and the mark in the words themselves. Sanitise in seconds.',
+  description: DESCRIPTION,
   alternates: { canonical: '/' },
+  ...shareTags({
+    title: appConfig.title,
+    description: DESCRIPTION,
+    path: '/',
+  }),
 };
 
 /**

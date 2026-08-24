@@ -5,6 +5,7 @@ import { connection } from 'next/server';
 
 import { PageBody, PageHeader } from '@kit/ui/page';
 
+import { CreditHistory, type LedgerRow } from './_components/credit-history';
 import { PurchaseBanner } from './_components/purchase-banner';
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
@@ -19,53 +20,27 @@ import { getSupabaseServerClient } from '@kit/supabase/server-client';
  * needs no service key and cannot leak anyone else's history.
  */
 
-/** The ledger reasons, translated into wallet language. */
-const REASON_LABEL: Record<string, string> = {
-  anon_grant: 'Welcome credits',
-  signup_grant: 'Account credits',
-  purchase: 'Purchase',
-  spend: 'Sanitise',
-  operation_refund: 'Refund: the operation failed',
-  money_refund: 'Refund',
-  adjustment: 'Adjustment',
-};
-
 /**
- * What a row is called, in words the person reading it has not had to learn.
+ * HOW MANY ROWS ONE PAGE OF THE HISTORY SHOWS.
  *
- * `adjustment` USED TO SAY "Transfer", AND NOBODY HAD EVER SEEN IT. The guest
- * merge had never once run against the real database, so no wallet had ever
- * contained one of these rows. It ran for the first time on 21 August 2026,
- * and now it is the FIRST ROW most new accounts will ever see, sitting above
- * their signup credits saying "Transfer +1" — a transfer from what, to what,
- * by whom.
+ * THE OLD `.limit(50)` WAS NOT A PAGE SIZE, IT WAS A SILENT TRUNCATION. There
+ * was no second page, no "load more" and no sentence anywhere saying that
+ * anything had been left out: an account with more than fifty entries simply
+ * stopped having a history, on the page that IS its financial record. The
+ * audit's own account had 82 rows.
  *
- * CLAUDE.md section 8: teach the term before using it, and read it as the
- * visitor. The visitor here used the tool before making an account and has no
- * idea that a "guest session" was ever a thing that existed, so the sentence
- * cannot mention one. It says what happened in their words: they had credits
- * before they signed up, and they still have them.
+ * And it was not solving the problem it looked like it was solving. The audit
+ * measured that page at 210,693 bytes and the same growth is still ahead of
+ * us: fifty rows of a customer with hundreds is still fifty rows, and a phone
+ * still has to parse all of them. Twenty-five is a screen and a bit at phone
+ * width, which is the size of a thing a person actually reads before deciding
+ * whether to look further.
  */
-function labelFor(row: LedgerRow): string {
-  if (row.reason === 'adjustment') {
-    if (row.endpoint === 'transfer_in') return 'Credits from before you signed up';
-    if (row.endpoint === 'transfer_out') return 'Moved to your account';
-  }
+const PAGE_SIZE = 25;
 
-  return REASON_LABEL[row.reason] ?? row.reason;
-}
-
-interface LedgerRow {
-  id: number;
-  delta: number;
-  reason: string;
-  endpoint: string | null;
-  input_kind: string | null;
-  words_in: number | null;
-  created_at: string;
-}
-
-export default async function HomePage() {
+export default async function HomePage(props: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   /*
    * THIS PAGE CAN NEVER BE PRERENDERED, AND HAD NOT SAID SO. 21 August 2026.
    *
@@ -94,31 +69,51 @@ export default async function HomePage() {
 
   if (!user || user.is_anonymous === true) {
     return (
-      <>
+      <Main>
         <PageHeader description={'Your account'} />
         <PageBody>
           <p className={'text-muted-foreground text-sm'}>
             Sign in to see your credit balance and history.
           </p>
         </PageBody>
-      </>
+      </Main>
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
 
+  /*
+   * The page number, from the address bar, floored at 1. Anything that is not
+   * a number — a hand-typed `?page=banana`, a truncated link — is page one
+   * rather than an error, because there is nothing here worth erroring about.
+   */
+  const asked = Number((await props.searchParams).page);
+  const page = Number.isFinite(asked) && asked > 1 ? Math.floor(asked) : 1;
+  const from = (page - 1) * PAGE_SIZE;
+
+  /*
+   * ONE ROW MORE THAN THE PAGE SHOWS, WHICH IS THE WHOLE PAGINATION.
+   *
+   * Asking the database for a total count as well would be a second query on
+   * every wallet load, for ever, to render a number nobody needs: the only
+   * question this page has to answer is "is there anything older than this".
+   * Twenty-six rows come back, twenty-five are shown, and the twenty-sixth is
+   * the answer to that question and is then thrown away.
+   */
   const [{ data: balanceData }, { data: rows }] = await Promise.all([
     db.rpc('credit_balance'),
     db
       .from('credit_ledger')
       .select('id, delta, reason, endpoint, input_kind, words_in, created_at')
       .order('created_at', { ascending: false })
-      .limit(50),
+      .range(from, from + PAGE_SIZE),
   ]);
 
   const balance = (balanceData as number) ?? 0;
-  const history = (rows ?? []) as LedgerRow[];
+  const fetched = (rows ?? []) as LedgerRow[];
+  const hasOlder = fetched.length > PAGE_SIZE;
+  const history = fetched.slice(0, PAGE_SIZE);
 
   /*
    * Has a purchase landed recently? This is the ONLY reliable signal the
@@ -141,7 +136,7 @@ export default async function HomePage() {
     Date.now() - new Date(latestPurchase.created_at).getTime() < RECENT_MS;
 
   return (
-    <>
+    <Main>
       <PageHeader description={'Your credits'} />
 
       <PageBody>
@@ -185,61 +180,38 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div>
-            <h2 className={'text-foreground text-[15px] font-semibold tracking-[-0.01em]'}>
-              History
-            </h2>
-
-            {history.length === 0 ? (
-              <p className={'text-muted-foreground mt-2 text-[13.5px]'}>
-                Nothing yet. Your first sanitise will show up here.
-              </p>
-            ) : (
-              <ul className={'divide-border/70 mt-2 divide-y'}>
-                {history.map((row) => (
-                  <li
-                    key={row.id}
-                    className={'flex items-baseline justify-between gap-4 py-2.5'}
-                  >
-                    <div className={'min-w-0'}>
-                      <p className={'text-foreground text-[13.5px] font-medium'}>
-                        {labelFor(row)}
-                        {row.reason === 'spend' && row.words_in ? (
-                          <span className={'text-muted-foreground font-normal'}>
-                            {' '}
-                            · {row.words_in.toLocaleString('en-US')} words
-                          </span>
-                        ) : row.reason === 'spend' && row.input_kind === 'file' ? (
-                          <span className={'text-muted-foreground font-normal'}>
-                            {' '}
-                            · file
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className={'text-muted-foreground text-[11.5px]'}>
-                        {new Date(row.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-
-                    <span
-                      className={[
-                        'shrink-0 font-mono text-[13px] font-medium tabular-nums',
-                        row.delta > 0 ? 'text-emerald-700' : 'text-foreground',
-                      ].join(' ')}
-                    >
-                      {row.delta > 0 ? `+${row.delta}` : row.delta}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <CreditHistory
+            rows={history}
+            from={from}
+            page={page}
+            hasOlder={hasOlder}
+          />
         </div>
       </PageBody>
-    </>
+    </Main>
+  );
+}
+
+/**
+ * The landmark this page did not have.
+ *
+ * The F1 audit found no `main` on any of the ten pages it checked, so a screen
+ * reader user has to walk the sidebar every time rather than jumping to the
+ * thing they came for. Here that thing is their money.
+ *
+ * IT CARRIES THE FLEX CLASSES ON PURPOSE. `PageBody` is `flex-1` and expects a
+ * flex column parent; dropping a plain block element in between would take its
+ * height away. This replaces that parent exactly rather than adding a level to
+ * the chain.
+ *
+ * The skip link that should point at it belongs in the layout above, which is
+ * shared kit code rather than this product's. Recorded as a handoff in
+ * docs/session-notes/lane-c-workbench.md.
+ */
+function Main({ children }: React.PropsWithChildren) {
+  return (
+    <main id={'main'} className={'flex min-w-0 flex-1 flex-col'}>
+      {children}
+    </main>
   );
 }
