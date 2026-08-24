@@ -40,6 +40,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from uc_wordcount import count_words
+
 # HOW MUCH LONGER THAN ITS INPUT A REWRITE MAY COME BACK.
 #
 # The prompt already demands the rewrite stay within roughly one tenth of the
@@ -184,8 +186,10 @@ def check_leak(src: str, out: str) -> str | None:
 
     None means it passed. The order is cheapest and most certain first.
     """
-    src_n = len(src.split())
-    out_n = len((out or "").split())
+    # Script-aware counting (uc_wordcount): a Chinese or Thai document used to
+    # count as "1 word" on both sides, which made the expansion ratio noise.
+    src_n = count_words(src)
+    out_n = count_words(out or "")
 
     if src_n and out_n > src_n * MAX_EXPANSION + EXPANSION_SLACK:
         return (

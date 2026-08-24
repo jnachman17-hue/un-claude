@@ -735,6 +735,33 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
             text = data.decode("utf-8", errors="surrogateescape")
             layer_b_report: dict[str, Any] | None = None
             words_in = len(text.split())
+
+            detect_before = bool(options.get("detect_before"))
+            detect_after = bool(options.get("detect_after"))
+            detector_reports: dict[str, Any] = {}
+            if detect_before:
+                # ON THE ORIGINAL. This used to run after the rewrite had
+                # already replaced `text`, so "before" was measured on the
+                # rewritten document.
+                detector_reports["before"] = run_text_detectors(text)
+
+            # LAYER A RUNS FIRST, ON WHAT THE CUSTOMER ACTUALLY SENT.
+            #
+            # It used to run AFTER the rewrite, which destroys zero-width
+            # characters as collateral — so the one layer this product can
+            # prove reported removing nothing from a document that arrived
+            # carrying two. Reproduced live on 24 August 2026: two zero-width
+            # characters in, "removed_count": 0 out. The rewrite now receives
+            # the cleaned text, and `stats` describes the customer's own
+            # document. A second, quiet pass after the rewrite (below) catches
+            # anything the model itself emits; its counts are reported
+            # separately and never mixed into the customer's evidence.
+            cleaned, stats = clean_text(
+                text,
+                nfkc=bool(options.get("nfkc")),
+                aggressive_homoglyphs=bool(options.get("aggressive_homoglyphs")),
+            )
+
             if options.get("layer_b") and words_in < LAYER_B_MIN_WORDS:
                 # TOO SHORT TO REWRITE, SO IT IS NOT SENT TO A MODEL AT ALL.
                 #
@@ -811,8 +838,24 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     # document past roughly 2,000 words: a 3,367 word test came
                     # back as 348 words reported as success. 04 entry 22 forbids
                     # truncation outright, so a short result raises instead.
-                    source_text = text
-                    text, layer_b_report = rewrite_long(text, _one)
+                    #
+                    # THE REWRITE RECEIVES THE CLEANED TEXT. Layer A already
+                    # ran above, on the original, and `stats` is its evidence.
+                    out, layer_b_report = rewrite_long(cleaned, _one)
+
+                    # The model can emit invisible characters of its own. A
+                    # second, quiet pass takes them out — reported under
+                    # `after_rewrite`, never mixed into the customer's own
+                    # layer A evidence above.
+                    out, post_stats = clean_text(
+                        out,
+                        nfkc=bool(options.get("nfkc")),
+                        aggressive_homoglyphs=bool(
+                            options.get("aggressive_homoglyphs")),
+                    )
+                    if post_stats.get("removed_count") or post_stats.get(
+                            "replaced_count"):
+                        stats["after_rewrite"] = post_stats
 
                     # REPAIR: take back out of the rewrite what the model put
                     # in — markdown the input never had, curly punctuation the
@@ -822,7 +865,7 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     # and costs no model call. See uc_repair.py.
                     from uc_repair import repair_rewrite
 
-                    text, repair_stats = repair_rewrite(source_text, text)
+                    out, repair_stats = repair_rewrite(cleaned, out)
                     layer_b_report["repair"] = repair_stats
                     # A restored year can retire a flagged figure: the guard
                     # listed it as missing from the rewrite, and the repair
@@ -833,24 +876,15 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
 
                         layer_b_report["figures_to_check"] = [
                             m for m in layer_b_report["figures_to_check"]
-                            if m not in _numbers(text)
+                            if m not in _numbers(out)
                         ]
+                    cleaned = out
                 except TruncatedRewrite as e:
                     raise _layer_b_failure(
                         f"layer B rewrite failed: truncated: {e}", e) from e
                 except Exception as e:  # never leak upstream text to a user
                     raise _layer_b_failure(
                         f"layer B rewrite failed: {type(e).__name__}", e) from e
-            detect_before = bool(options.get("detect_before"))
-            detect_after = bool(options.get("detect_after"))
-            detector_reports: dict[str, Any] = {}
-            if detect_before:
-                detector_reports["before"] = run_text_detectors(text)
-            cleaned, stats = clean_text(
-                text,
-                nfkc=bool(options.get("nfkc")),
-                aggressive_homoglyphs=bool(options.get("aggressive_homoglyphs")),
-            )
             if detect_after:
                 detector_reports["after"] = run_text_detectors(cleaned)
             cleaned_bytes = cleaned.encode("utf-8", errors="surrogateescape")

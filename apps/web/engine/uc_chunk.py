@@ -16,6 +16,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from uc_leakguard import LeakSuspected, check_leak, strip_edge_separator
+from uc_wordcount import count_words
 
 # Words per chunk. Smaller chunks carry fewer facts each, so each one is more
 # likely to survive intact, and more of them run in parallel anyway. Measured:
@@ -126,8 +127,19 @@ _UNITS = {
 _SCALES = {"thousand": 1000, "million": 1000000,
            "billion": 1000000000, "trillion": 1000000000000}
 
-#: A run of digits (commas and one decimal point allowed), or a word.
-_TOKEN = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-z]+")
+#: A number written in digits, or a word. THE COMMA RULE IS THE FOURTH REPAIR
+#: OF THIS READER (W10 §4.2 found it by running it): `\d[\d,]*` read the
+#: citation range "[1,3-5]" as the number 13, and a cosmetic space after the
+#: comma changed what the guard believed. A comma now only joins digits when
+#: it is real thousands grouping — one to three digits followed by groups of
+#: exactly three — so "30,000" is still 30000 and "[1,3-5]" is 1, 3 and 5.
+#: The bare-decimal branch is the other W10 find: "p = .015" read as 15.
+_TOKEN = re.compile(
+    r"\d{1,3}(?:,\d{3})+(?:\.\d+)?"   # 30,000 / 1,234,567.5
+    r"|\d+(?:\.\d+)?"                 # 1698 / 0.015
+    r"|\.\d+"                         # .015
+    r"|[a-z]+"
+)
 
 
 def _format_value(value: float | int) -> str:
@@ -154,7 +166,7 @@ def _numbers(text: str) -> set[str]:
         have = False
 
     for token in _TOKEN.findall(text.lower().replace("-", " ")):
-        if token[0].isdigit():
+        if token[0].isdigit() or token[0] == ".":
             # A figure written in digits ends whatever came before it. A scale
             # word after it still applies: "30 thousand" is 30000.
             flush()
@@ -206,6 +218,69 @@ def _numbers(text: str) -> set[str]:
 # The separators are now kept and put back exactly where they were.
 _PARA_BREAK = re.compile(r"(\n[^\S\n]*(?:\n[^\S\n]*)+)")
 
+#: A markdown code fence marker.
+_FENCE = "```"
+
+
+def _stitch_fences(paras: list[str], seps: list[str]) -> tuple[list[str], list[str]]:
+    """A paragraph that opens a code fence absorbs paragraphs until it closes.
+
+    A blank line inside a code block used to count as a paragraph break, so
+    the chunk planner cut the block in half and sent the halves to two model
+    calls that each saw an orphaned fence — the whole job failed in 3 of 5
+    runs on mistral-medium (W10 §4.6). Stitching happens here, before anything
+    else looks at the paragraphs, so a fence can never straddle a boundary.
+
+    BOUNDED: a paragraph already past three chunks' worth of words stops
+    absorbing, so one stray fence in a long document cannot fold the rest of
+    the document into a single oversized model call.
+    """
+    i = 0
+    while i < len(paras):
+        if (
+            paras[i].count(_FENCE) % 2 == 1
+            and i < len(seps)
+            and count_words(paras[i]) <= 3 * TARGET_WORDS
+        ):
+            paras[i] = paras[i] + seps.pop(i) + paras.pop(i + 1)
+            continue
+        i += 1
+    return paras, seps
+
+
+#: A table row, a mask placeholder, and the symbol set a display equation is
+#: written in.
+_TABLE_ROW = re.compile(r"^\s*\|.*\|?\s*$")
+_PLACEHOLDER = re.compile(r"^\s*\[\[[^\[\]\n]{1,32}\]\]\s*$")
+_MATH_SYMBOLS = set("=+^_/\\<>{}()[]|×·±√∑∫≤≥≈≠")
+
+
+def _fragile(para: str) -> bool:
+    """Would ending a chunk on this paragraph put it at risk?
+
+    W10 §4.11 measured the danger directly: a display equation that ends a
+    chunk was deleted outright in 14 of 30 runs; the identical document with
+    the identical chunk split but the equation moved mid-chunk, 1 of 30. The
+    shapes that must not sit on a boundary: table rows, mask placeholders,
+    and short symbol-heavy lines (display equations).
+    """
+    stripped = para.strip()
+    if not stripped:
+        return False
+    lines = stripped.split("\n")
+    if all(line.lstrip().startswith("|") for line in lines):
+        return True                                    # table rows
+    if _PLACEHOLDER.match(stripped):
+        return True                                    # a mask placeholder
+    if len(lines) == 1 and count_words(stripped) <= 20:
+        symbols = sum(1 for c in stripped if c in _MATH_SYMBOLS)
+        letters = sum(1 for c in stripped if c.isalpha())
+        if "=" in stripped and symbols >= 2:
+            return True                                # x = f(y)
+        if symbols >= 4 and symbols * 3 >= letters:
+            return True                                # symbol-dense notation
+    return False
+
 
 def _split_blocks(text: str) -> tuple[str, list[str], list[str], str]:
     """Take a document apart into (lead, paragraphs, separators, tail).
@@ -241,6 +316,7 @@ def _split_blocks(text: str) -> tuple[str, list[str], list[str], str]:
             tail = seps.pop(i - 1) + blob + tail
         else:
             seps[i - 1] = seps[i - 1] + blob + seps.pop(i)
+    paras, seps = _stitch_fences(paras, seps)
     return lead, paras, seps, tail
 
 
@@ -254,7 +330,7 @@ def _plan_chunks(paras: list[str], seps: list[str]) -> list[dict]:
     current: list[int] = []
     count = 0
     for index, para in enumerate(paras):
-        n = len(para.split())
+        n = count_words(para)
         if current and count + n > TARGET_WORDS:
             groups.append(current)
             current, count = [], 0
@@ -262,6 +338,18 @@ def _plan_chunks(paras: list[str], seps: list[str]) -> list[dict]:
         count += n
     if current:
         groups.append(current)
+
+    # NEVER END A CHUNK ON A LONE EQUATION, TABLE OR PLACEHOLDER. A fragile
+    # paragraph that would close a chunk is moved to the FRONT of the next
+    # chunk instead — off the boundary, and consecutive fragile paragraphs
+    # (a table's rows) travel together, reuniting a table the plan had cut.
+    # The document's own last paragraph stays: there is nothing after it to
+    # join. Measured in W10: this one change took a real 693-word lab report
+    # from 9.0 model calls to 2.0 and job failures from 2 of 8 to 0 of 8.
+    for gi in range(len(groups) - 1):
+        while groups[gi] and _fragile(paras[groups[gi][-1]]):
+            groups[gi + 1].insert(0, groups[gi].pop())
+    groups = [g for g in groups if g]
 
     plan: list[dict] = []
     for group in groups:
@@ -298,7 +386,11 @@ def _restore(rewritten: str, inner: list[str], wanted: int) -> tuple[str, bool]:
     break belongs in somebody's document is not something this engine does.
     """
     parts = _PARA_BREAK.split(rewritten)
-    paras = [p for p in parts[0::2] if p.strip()]
+    # The model's output is stitched the same way its input was, so a code
+    # fence with a blank line inside it counts as ONE paragraph on both sides
+    # of the comparison.
+    stitched, _ = _stitch_fences(parts[0::2], parts[1::2])
+    paras = [p for p in stitched if p.strip()]
     if len(paras) == wanted:
         return _weave(paras, inner), True
     return rewritten, False
@@ -520,7 +612,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # very nearly every paste. API.md section 12 documented that absence
             # as a fact. They are now on both paths. 06 row 48.
             info.update(chunks=1, parallel=False,
-                        words_in=len(text.split()), words_out=len(out.split()),
+                        words_in=count_words(text), words_out=count_words(out),
                         usage=totals(),
                         figures_to_check=[m for m in missing if m not in _numbers(out)],
                         paragraphs_in=len(paragraphs),
@@ -555,7 +647,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         # usage. Overwriting it with the document total is not optional: leaving
         # it would report one chunk's tokens as the whole document's.
         merged.update(chunks=len(chunks), parallel=True,
-                      words_in=len(text.split()), words_out=len(joined.split()),
+                      words_in=count_words(text), words_out=count_words(joined),
                       usage=totals(),
                       figures_to_check=still_missing,
                       paragraphs_in=len(paragraphs),
@@ -593,7 +685,10 @@ def _guard_facts(src: str, out: str, index: int) -> None:
 
 
 def _guard(src: str, out: str, index: int) -> None:
-    src_n, out_n = len(src.split()), len((out or "").split())
+    # Script-aware counting on BOTH sides, so the ratio means something in
+    # Chinese, Japanese and Thai too — a script counted as "1 word" made this
+    # guard blind to any truncation of it.
+    src_n, out_n = count_words(src), count_words(out or "")
     if src_n and out_n / src_n < MIN_RATIO:
         where = "the document" if index < 0 else f"chunk {index + 1}"
         raise TruncatedRewrite(
