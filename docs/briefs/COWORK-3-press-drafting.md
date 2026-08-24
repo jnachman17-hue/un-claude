@@ -209,15 +209,35 @@ it.**
 **Phase 1 marked six people as exclusive candidates. An exclusive offered to six
 people is a lie that all six will discover.**
 
-**Offer the exclusive first look to exactly one: Ax Sharma.** Being the exception in
-a category he has already audited is a story only he can write. **Everyone else is
-offered an interview and hands on access to test it themselves**, which is worth
-more to most of them anyway and can be offered to all eight without conflict.
+**REVISED 24 AUGUST, AFTER THE ATTRIBUTION RULING. NO EXCLUSIVE IS OFFERED TO
+ANYONE.** All nine get the same offer: **an interview, and hands-on access to test
+it themselves.**
 
-**Sequencing for Jon, put it at the top of your output:** Sharma goes first and
-alone, with a one week window. If he passes or does not reply, the exclusive moves
-to Erik Ofgang. Wave one goes after that window closes, offering access rather than
-exclusivity.
+**Why the earlier plan changed.** Sharma was given the exclusive partly *because*
+the upstream disclosure would have landed best with him first. **That disclosure
+is not happening** (see THE UPSTREAM QUESTION above), so the reasoning that
+selected him is gone — and he is now the one reporter who already has the lineage
+in his notes.
+
+**And the trade was poor regardless.** An exclusive costs eight people a week's
+delay for one uncertain yes, and if the holder passes the week is spent for
+nothing. **The window is live now** — the Anthropic announcement produced fifteen
+named bylines in twelve days. Exclusivity is leverage for a big story with
+reporters competing; this is a solo builder doing the asking. **Nine people
+deciding in parallel beats one deciding first.**
+
+It also removes any appearance of steering around anyone. **Sharma is contacted in
+the same wave as everyone else**, on the same terms.
+
+**SEQUENCING — put this at the top of your output.** No holding window. Wave one
+and wave two go out as Jon works through them, **spaced over days rather than sent
+as a batch**, because nine near-identical cold emails from one Gmail address in an
+hour is what gets an account flagged. Each draft must stand on its own; none may
+reference an exclusive, a window, or being contacted before or after anyone else.
+
+**If Jon overrules this and wants an exclusive after all**, the recommendation is
+**Ashley Belanger** — she wrote this product's own argument unprompted in a major
+outlet and carries no lineage angle. **Not Sharma.**
 
 ---
 
