@@ -568,11 +568,37 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             offset = b + len(plan[i]["after"])
             if text[a:b] != chunk:             # defensive; the net says never
                 continue
-            local = [
-                {**s, "start": s["start"] - a, "end": s["end"] - a}
-                for s in doc_spans
-                if a <= s["start"] and s["end"] <= b
-            ]
+            local = []
+            for s in doc_spans:
+                start, end = s["start"], s["end"]
+                if end <= a or start >= b:
+                    continue                   # not in this chunk at all
+                if end > b:
+                    continue                   # straddles the far boundary
+                if start < a:
+                    # A BLOCK QUOTE THAT OPENS A CHUNK, and the reason it was
+                    # silently never frozen (E-16). A block quote is
+                    # recognised by the indentation opening its first line, so
+                    # its span starts at that whitespace — and `_PARA_BREAK`
+                    # puts that whitespace in the separator BEFORE the
+                    # paragraph, which for a chunk-opening block quote is the
+                    # separator BETWEEN chunks. The chunk therefore begins
+                    # four characters after the span does, `a <= s["start"]`
+                    # failed by exactly those four, and the span was dropped
+                    # with no error anywhere: never masked, so never verified,
+                    # so the model rewrote a block quote that the D4
+                    # pre-flight had already counted as protected and the
+                    # customer had already paid to keep. Measured on a
+                    # 9,946-word essay: 4 of 18 block quotes, every run.
+                    #
+                    # Clip to the chunk. The separator puts the indentation
+                    # back at reassembly, so the document is still
+                    # byte-identical and the customer's layout is untouched.
+                    if text[start:a].strip():
+                        continue               # a real straddle: leave it free
+                    start = a
+                local.append({**s, "text": text[start:end],
+                              "start": start - a, "end": end - a})
             if not local:
                 continue
             ids = choose_mask_ids(chunk, len(local), _numbers(chunk))

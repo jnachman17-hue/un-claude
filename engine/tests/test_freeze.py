@@ -513,6 +513,66 @@ def test_a_deleted_heading_placeholder_is_reinserted_not_failed(monkeypatch):
     assert info["structure_kept"] is True
 
 
+def test_a_block_quote_that_opens_a_chunk_is_still_frozen(monkeypatch):
+    """E-16, and it is a SILENT failure — the worst kind this project has.
+
+    A block quote is recognised by the indentation opening its first line, so
+    its span starts at that whitespace, and `_PARA_BREAK` puts that whitespace
+    into the separator BEFORE the paragraph. When a block quote opens a chunk
+    that separator is the gap BETWEEN chunks, so the chunk begins four
+    characters after the span does and the containment test missed it by
+    exactly four. The span was then never masked, therefore never verified,
+    therefore never reported: the model rewrote a block quote that the D4
+    pre-flight had already counted as frozen and the customer had already paid
+    to keep. No error, no fallback, no retry — the run reports success.
+
+    Measured on a 9,946-word essay before the fix: 4 of 18 block quotes
+    rewritten, identically in all three runs. E-9 could not have caught it —
+    its documents are two chunks and no block quote ever opened one, which is
+    exactly the "past ~520 words is unmeasured" gap E-9 closed with.
+    """
+    monkeypatch.delenv("UC_LAYER_B_FREEZE", raising=False)
+    monkeypatch.setattr("uc_chunk.TARGET_WORDS", 60)
+
+    quote = (
+        "    No member present could say who had ordered the second survey,\n"
+        "    who had signed for the deposit, or where the first survey was\n"
+        "    filed. The clerk's ledger shows the sum leaving and nothing back."
+    )
+    filler = (
+        "The committee met on a Tuesday and the minutes record nothing of what "
+        "was said before the vote was taken, which several members later said "
+        "was the whole difficulty with the way the thing had been arranged "
+        "from the beginning of the year onwards."
+    )
+    # The colon lead-in is what makes the block quote ATTRIBUTED, and so
+    # eligible to freeze at all (D2). Enough filler in front to push the
+    # quote onto a chunk boundary, and the lead-in ends the chunk before it.
+    lead_in = "The minutes recorded, in full:"
+    doc = "\n\n".join([filler] * 3 + [lead_in, quote] + [filler] * 2)
+    assert quote in doc
+    assert any(sp["kind"] == "block_quote"
+               for sp in plan_freeze(doc, ("structure", "quotes"))), (
+        "fixture broken: the block quote is not attributed, so nothing here "
+        "would freeze even with the bug present"
+    )
+
+    def rewrites_everything_it_is_shown(chunk, attempt=0, missing=None,
+                                        usage_out=None):
+        # A model that rewrites every word it sees. Anything that survives
+        # survived because it was MASKED, which is the whole point.
+        return re.sub(r"[A-Za-z]{4,}", "WORD", chunk), {}
+
+    out, info = rewrite_long(doc, rewrites_everything_it_is_shown)
+
+    # The block quote came back untouched because it was masked, even though
+    # it opens a chunk.
+    assert quote in out, (
+        "the block quote was rewritten: it opened a chunk, so its indentation "
+        "fell in the separator and the freeze never masked it"
+    )
+
+
 def test_reinsertion_keeps_the_indentation_of_a_neighbouring_block_quote(
         monkeypatch):
     # E-16, found while measuring the document ladder, and it is the reason
