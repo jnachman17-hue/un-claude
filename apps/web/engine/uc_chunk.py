@@ -531,6 +531,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
         best_kept = False
         structure_rerolls = 0
         freeze_failures = 0
+        dropped_masks: list[str] = []
         last_err = None
         usage = usages[i]
         wanted = len(plan[i]["paras"])
@@ -545,7 +546,16 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             try:
                 # THE MODEL SEES THE MASKED CHUNK. The protected spans are
                 # placeholders, so it cannot change them however it rewrites.
-                out, info = rewrite_fn(masked_chunks[i], attempt, best_missing, usage)
+                # After a failed restore, the dropped placeholders are named
+                # to the retry through the SAME channel the fact guard names
+                # dropped figures — the retry prompt already says "every one
+                # of them must appear in your new version, exactly as
+                # written", which is precisely the ask. Measured on the
+                # chunk shape that fails most (consecutive heading masks
+                # opening a chunk): a blind re-roll fails again about 1 time
+                # in 3; the informed retry almost never does.
+                out, info = rewrite_fn(masked_chunks[i], attempt,
+                                       dropped_masks or best_missing, usage)
             except Exception as e:
                 last_err = e
                 if attempt < RETRIES - 1 and time.monotonic() < deadline:
@@ -561,7 +571,7 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
             # expansion — retried, failed the job, and refunded a customer
             # whose rewrite was perfect. The W8 mistake exactly.
             if mask_map:
-                out, _dropped = restore_chunk(out, mask_map)
+                out, dropped_ids = restore_chunk(out, mask_map)
                 problems = verify_restore(chunks[i], out, mask_map)
                 if problems:
                     freeze_failures += 1
@@ -570,12 +580,16 @@ def rewrite_long(text: str, rewrite_fn) -> tuple[str, dict]:
                     if (freeze_failures <= FREEZE_RETRIES
                             and attempt < RETRIES - 1
                             and time.monotonic() < deadline):
+                        dropped_masks = [
+                            f"[[{d}]]" for d in dropped_ids
+                        ] or [f"[[{r['id']}]]" for r in mask_map]
                         time.sleep(0.4)
                         continue
                     # Retry spent. The fallback to the chunk's ORIGINAL text
                     # happens after the loop, where a clean earlier attempt
                     # still wins if one exists.
                     break
+                dropped_masks = []
             try:
                 _guard(chunks[i], out, i)           # length: still a hard failure
             except TruncatedRewrite as e:
