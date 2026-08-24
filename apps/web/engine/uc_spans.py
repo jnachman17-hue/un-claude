@@ -57,7 +57,12 @@ _QUOTE = re.compile(r'"([^"\n]{12,600})"|“([^”\n]{12,600})”')
 #: page ranges, sums of money, years in ordinary prose and equation numbers,
 #: every one of which would then drag the text beside it into the freeze.
 #: See docs/session-notes/freeze-every-quotation.md.
-_CITATION = re.compile(r"\([^()\n]{0,60}(?:19|20)\d\d[^()\n]{0,25}\)|\bpp?\.\s*\d+")
+_CITATION = re.compile(
+    # (Smith, 2019) · (Smith, 2019, p. 47) · (2019) · (p. 47) · (pp. 88-104)
+    r"\([^()\n]{0,60}(?:(?:19|20)\d\d|pp?\.\s*\d+)[^()\n]{0,25}\)"
+    # a bare page reference outside brackets: p. 47 / pp. 88-104
+    r"|\bpp?\.\s*\d+(?:\s*[-–—]\s*\d+)?"
+)
 
 #: THE ATTRIBUTION CUE IS GONE. Deleted 24 August 2026 on Jon's ruling, and
 #: the deletion is the point rather than a side effect.
@@ -86,6 +91,47 @@ _CITATION = re.compile(r"\([^()\n]{0,60}(?:19|20)\d\d[^()\n]{0,25}\)|\bpp?\.\s*\
 #: test, the pronoun-subject test, and the attributed/unattributed split on
 #: every span. This project found three silent freeze defects in two days; a
 #: deleted code path cannot harbour a fourth.
+
+#: Between a citation and the quotation it belongs to, only these may stand.
+#: Whitespace, and at most one colon or comma — «Smith (2019): "..."» is a
+#: real shape, «Smith (2019) argued at length that "..."» is not adjacent and
+#: must not drag the prose between them into the freeze.
+_CITATION_GAP = re.compile(r"^[ \t]*[:,]?[ \t]*\n?[ \t]*$")
+
+
+def _citation_extent(text: str, lo: int, hi: int,
+                     floor: int, ceil: int) -> tuple[int, int]:
+    """Widen a quotation's frozen range over the citations printed beside it.
+
+    Jon, 24 August 2026: "we preserve the text and quotations, and citations
+    around it on either side." A quotation whose page number, year or author
+    is left free is the worse half of two errors — the words are provably
+    intact and the source beside them has been quietly renumbered, which
+    reads as authoritative and is wrong. W10 measured invented authors in 23
+    of 41 runs on this model family.
+
+    `floor` and `ceil` bound the search to the gap between this quotation and
+    its neighbours, so a citation standing between two quotations is claimed
+    by one of them and never by both — overlapping spans are dropped by
+    `plan_freeze`, and a dropped span is an UNFROZEN quotation.
+
+    The trailing sentence period is deliberately left OUT: «"..." (Smith,
+    2019).» freezes up to the closing bracket. A full stop carries no source
+    information, it belongs to the sentence rather than to the citation, and
+    leaving it free lets the model punctuate its own sentence.
+    """
+    # After the closing mark.
+    for m in _CITATION.finditer(text, hi, ceil):
+        if _CITATION_GAP.match(text[hi: m.start()]):
+            hi = m.end()
+        break
+    # Before the opening mark. Walk the citations that END at or before `lo`
+    # and take the last one whose gap to the quotation is empty.
+    for m in _CITATION.finditer(text, floor, lo):
+        if m.end() <= lo and _CITATION_GAP.match(text[m.end(): lo]):
+            lo = m.start()
+    return lo, hi
+
 
 _URL = re.compile(r"https?://[^\s<>\"\)\]]+|\bwww\.[^\s<>\"\)\]]+")
 _EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
@@ -193,9 +239,26 @@ def detect_protected_spans(text: str) -> list[dict]:
     """
     spans: list[dict] = []
 
-    for m in _QUOTE.finditer(text):
-        inner = m.group(1) or m.group(2)
-        spans.append({"kind": "quote", "text": inner, "start": m.start()})
+    # Quotation ranges first, so each can be widened over its citations
+    # without reaching into a neighbouring quotation's territory.
+    quote_marks = [(m.start(), m.end()) for m in _QUOTE.finditer(text)]
+    claimed = 0            # nothing below this is still available to claim
+    for i, (qlo, qhi) in enumerate(quote_marks):
+        ceil = quote_marks[i + 1][0] if i + 1 < len(quote_marks) else len(text)
+        lo, hi = _citation_extent(text, qlo, qhi, claimed, ceil)
+        # A citation standing BETWEEN two quotations is adjacent to both.
+        # Without this running high-water mark it is claimed by both, the two
+        # spans overlap, `plan_freeze` drops the later one — and a dropped
+        # span is an UNFROZEN QUOTATION, the opposite of the ruling. Measured
+        # before this line existed: «"a" (Smith, 2019) "b" (Jones, 2020)»
+        # produced overlapping spans and lost the second quotation. It goes to
+        # the first, a trailing citation being the commoner academic shape.
+        claimed = hi
+        # `text` is the WHOLE frozen run: the quotation marks (E-9 — a model
+        # that drops them must not cost the customer theirs) and any citation
+        # printed beside it.
+        spans.append({"kind": "quote", "text": text[lo:hi], "start": lo,
+                      "end": hi, "quotation": text[qlo + 1: qhi - 1]})
 
     for m in _URL.finditer(text):
         spans.append({"kind": "url", "text": m.group(0), "start": m.start()})

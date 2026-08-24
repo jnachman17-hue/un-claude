@@ -163,3 +163,116 @@ four quotations freeze, by name rather than by count alone.
 ```
 engine suite   810 passed, 1 skipped     (baseline 809 + 1)
 ```
+
+---
+
+# JOB 2 — the citation beside the quotation freezes with it
+
+**Done.** A quotation's frozen span now covers the citation printed next to
+it, on either side, including the whitespace and punctuation between them.
+
+## 2.1 What the model used to be handed
+
+This was the exposure, and it is exactly what the masker produced:
+
+```
+As Smith puts it, [[11]] (p. 47). The minutes were circulated the following week.
+```
+
+**The words were protected and the source beside them was not.** The model
+could renumber the page, shift the year, or rename the author — and W10
+measured invented authors in 23 of 41 runs on this model family. A rewritten
+citation attached to a correctly preserved quotation is the worse half of two
+errors: it reads as authoritative and it is wrong.
+
+## 2.2 Every case the brief listed, run against the shipping code
+
+```
+citation AFTER            '"attendance rose in every quartile" (Smith, 2019, p. 47)'
+citation BEFORE           '(2019): "the change did more for attendance than anything"'
+bare page after           '"the change did more for attendance than anything" (p. 47)'
+bare page, no bracket     '"the market did not fail at all" pp. 88-104'
+period OUTSIDE bracket    '"the iron cage of rationality" (Weber, 1922)'
+two quotes, one citation  '"the first of the two sayings" (Smith, 2019)'
+  between them            '"the second of the two sayings" (Jones, 2020)'
+NOT adjacent              (nothing frozen)
+citation far from quote   '"attendance rose in every quartile"'
+(1887) — the known bound  '"the long campaign in the south"'
+quote inside a block quote → the whole block quote, citation included
+```
+
+## 2.3 The four decisions the brief asked me to make
+
+**1. The citation before the quote — built.** Jon said "on either side", so
+the search runs backwards too. Only whitespace and at most one colon or comma
+may stand between them, so «Smith (2019) argued at length that "…"» is *not*
+adjacent and the prose between is not dragged in.
+
+**2. A trailing sentence period outside the bracket — left FREE.** «"…"
+(Weber, 1922).» freezes up to the closing bracket. A full stop carries no
+source information, it belongs to the sentence rather than the citation, and
+leaving it free lets the model punctuate its own sentence. Pinned in a test so
+the decision is visible rather than accidental.
+
+**3. A citation inside a block quote — already covered, nothing added.** The
+whole indented paragraph is one frozen span, citation included, and the inline
+quotation inside it is deduplicated away by `plan_freeze` because nested masks
+corrupt the restore. Verified.
+
+**4. A citation NOT adjacent to any quotation — deliberately NOT frozen.**
+The brief is explicit that freezing every parenthetical year everywhere is a
+bigger change than Jon asked for. It is not done, and a test asserts it.
+
+## 2.4 A silent regression this feature nearly shipped with
+
+**A citation standing between two quotations is adjacent to both.** The first
+working version let both claim it, so the two spans overlapped — and
+`plan_freeze` drops an overlapping span. **A dropped span is an unfrozen
+quotation**, and nothing would have said so: the pre-flight would have counted
+it, the customer would have paid for it, and the model would have rewritten it.
+That is the same shape as the two silent defects E-16 found.
+
+Caught while testing, before commit:
+
+```
+before   detected: ['"the first..." (Smith, 2019)', '(Smith, 2019) "the second..." (Jones, 2020)']
+after    detected: ['"the first..." (Smith, 2019)', '"the second..." (Jones, 2020)']
+```
+
+A running high-water mark now gives the citation to the first quotation — a
+trailing citation being the commoner academic shape — and
+`test_a_citation_between_two_quotes_never_costs_the_second_one` locks it.
+
+## 2.5 Two bounds I am reporting rather than widening
+
+**`(1887)` is not recognised.** `_CITATION` matches only years beginning 19 or
+20. **Widening it to any four digits would also catch page ranges, sums of
+money, equation numbers and years in ordinary prose**, every one of which
+would then drag the text beside it into the freeze — and it would do so
+*adjacent to quotations*, which is where the damage lands. **My
+recommendation: leave it.** Historical sources cited by year alone are rare
+next to a quotation, and the failure is in the cheap direction (the citation
+is rewritten, which is the status quo). If Jon wants 18th- and 19th-century
+years, the safe widening is `(?:1[6-9]|20)\d\d` — still bounded, and it would
+need its own measurement pass.
+
+**An author name outside the brackets stays free.** «Smith (2019): "…"»
+freezes `(2019): "…"` and leaves `Smith` loose, so the model may still rename
+the author in that one shape. Extending backwards over a capitalised name is a
+guess of exactly the kind this session just deleted — «He returned to Paris
+(1919)» would freeze "Paris" — so I did not build it. **Hand-back for Jon:
+this is the one remaining way a source name next to a quotation can change.**
+
+## 2.6 Also fixed while here
+
+`plan_freeze` used to rebuild a quotation's marks by adding 2 to the inner
+length (`text[start: start + len(span["text"]) + 2]`). That is a second
+opinion about a span's extent living in the file whose **first rule is that it
+holds no detector of its own**, and it cannot express a citation. The detector
+now hands back the whole frozen run with explicit offsets and `plan_freeze`
+uses them.
+
+```
+engine suite   820 passed, 1 skipped     (job 1 left it at 810)
+pre-flight vs delivered   DISAGREEMENTS: 0   (re-run after the change)
+```

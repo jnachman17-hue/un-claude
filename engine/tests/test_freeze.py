@@ -103,8 +103,10 @@ def test_short_story_dialogue_freezes_like_any_other_quotation():
     detected = [s for s in detect_protected_spans(STORY) if s["kind"] == "quote"]
     assert len(detected) == 4, detected
     assert len(quotes) == 4, quotes
-    # Every quotation the detector found, frozen. Not "some".
-    assert {q["text"] for q in detected} <= {q["text"][1:-1] for q in quotes}
+    # Every quotation the detector found is inside a frozen span. Not "some".
+    frozen_text = " ".join(q["text"] for q in quotes)
+    for q in detected:
+        assert q["quotation"] in frozen_text, q
 
 
 def test_structure_tier_alone_freezes_only_headings():

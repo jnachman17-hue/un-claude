@@ -126,13 +126,17 @@ def plan_freeze(text: str, tiers: tuple[str, ...] | None = None) -> list[dict]:
         # attempts at one failed. A quotation is frozen because it is a
         # quotation, whoever said it.
         if kind == "quote":
-            # The detector records the inner text; the mask covers the marks
-            # too, so a model that drops quotation marks cannot cost the
-            # customer theirs.
-            start = span["start"]
-            exact = text[start: start + len(span["text"]) + 2]
-            if len(exact) < 2 or exact[1:-1] != span["text"]:
-                continue                       # defensive: shape mismatch
+            # The detector now hands back the WHOLE frozen run with explicit
+            # offsets — the quotation marks (E-9: a model that drops them must
+            # not cost the customer theirs) and any citation printed beside it
+            # (Jon, 24 August 2026). This used to rebuild the marks here by
+            # adding 2 to the inner length, which cannot express a citation
+            # and put a second opinion about the span's extent in a file whose
+            # first rule is that it holds no detector of its own.
+            start, end = span["start"], span["end"]
+            exact = text[start:end]
+            if exact != span["text"]:
+                continue                       # defensive: detector drift
         else:
             try:
                 start = text.index(span["text"], span["start"])
