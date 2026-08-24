@@ -276,3 +276,71 @@ uses them.
 engine suite   820 passed, 1 skipped     (job 1 left it at 810)
 pre-flight vs delivered   DISAGREEMENTS: 0   (re-run after the change)
 ```
+
+---
+
+# JOB 4 — the "second" silent span shortfall was the first one
+
+**There is no second defect. E-16 misread its own residual, and the arithmetic
+proves it four times over.**
+
+E-16 recorded that `ladder_3000` returned 87 of 90 spans in every run and
+flagged it as a cause it had found but not chased. **It was the block quote
+opening a chunk — the defect E-16 had already fixed.** What threw it off is
+that the lab's span metric counts a span short whenever *any* instance of its
+text was rewritten, and the ladder corpus repeats a template, so one orphaned
+block quote with a twin elsewhere in the document counts as **two** spans
+short. E-16 saw 4 orphans against 8 missing spans at 10,000 words and
+reasonably concluded something else was also happening.
+
+**Simulating the pre-E-16 containment rule and applying the duplicate
+arithmetic reproduces every figure it recorded, exactly:**
+
+```
+document       orphans  w/ twin   predicted   E-16 saw  match
+--------------------------------------------------------------
+ladder_3000          1        0       29/30      29/30    yes
+ladder_5000          2        0       43/45      43/45    yes
+ladder_7500          3        2       59/64      59/64    yes
+ladder_10000         4        4       75/83      75/83    yes
+```
+
+**And on the current engine there are no orphans anywhere** —
+`engine/lab/orphan_spans.py`, no model involved:
+
+```
+document           chunks  planned  masked  ORPHANED
+----------------------------------------------------
+ladder_1000             3       13      13         0
+ladder_10000           33      101     101         0
+ladder_2000             7       24      24         0
+ladder_3000            10       35      35         0
+ladder_500              2        7       7         0
+ladder_5000            17       54      54         0
+ladder_7500            25       78      78         0
+doc_1000 … prose_2500           0       0         0
+
+TOTAL ORPHANED SPANS: 0
+```
+
+**So nothing was fixed, because nothing was broken.** What was added is the
+guard that should have existed before either defect:
+`engine/tests/test_freeze_no_orphan_spans.py` asserts **the invariant itself**
+— every planned word reaches the masker — over documents that walk an indented
+quotation across twelve paragraph positions, so it catches any future cause of
+this class rather than the one shape already known. **It fails against the
+pre-fix code** (positions 9 to 12, plus the pre-flight test) and passes with
+it.
+
+**One thing worth recording that the test surfaced.** When a block quote opens
+a chunk, its frozen span is *clipped* — it starts at the first word, because
+the first line's indentation belongs to the separator between chunks. The
+indentation is restored at reassembly by the separator, not by the model, and
+`out == doc` is asserted byte-for-byte on every one of those twelve documents.
+**The model never sees those four spaces, so it cannot change them.** That is
+correct, but it was not obvious, and my first version of the test asserted the
+unclipped text and failed against working code.
+
+```
+engine suite   833 passed, 1 skipped
+```
