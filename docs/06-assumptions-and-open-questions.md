@@ -519,3 +519,44 @@ defects fixed the same day.
 anywhere a third party can read it; the welcome grant rising materially above 2
 credits; or the guest merge being touched for another reason, at which point
 signing the cookie is a small addition to work already being done.
+
+---
+
+## Does the site disclose that the engine started as someone else's code?
+
+**Raised 23 August 2026, press Phase 2. Open, and it blocks press outreach.**
+
+**The fact.** `apps/web/engine/PROVENANCE.md` records that the engine folder is a
+copy of `guillaumemeyer/watermarks-remover`, MIT licensed, taken at commit
+`063119d` on 18 August. `UPSTREAM-LICENSE` is present and intact, **so the licence
+is satisfied and this is not a legal question.**
+
+**What the repository shows about how much is still upstream.** Counting commits
+since the copy: `text_unicode.py` and `clean_text.py`, which do the entire
+invisible-character layer, have **one commit each, meaning they were copied in and
+never modified.** `image_meta.py` has two. The files carrying the `uc_` prefix,
+`uc_chunk.py`, `uc_policy.py` and `uc_leakguard.py`, are un-claude's own work and
+all three sit on layer B.
+
+**So the two layers the product can prove are the two layers it did not write, and
+the layer it wrote is the one nobody can verify.** That is checkable from the
+repository in minutes.
+
+**Why it is urgent rather than theoretical.** Ax Sharma's 13 August
+BleepingComputer audit of this product category names `watermarks-remover`
+explicitly and quotes Guillaume Meyer volunteering that his tool removes metadata
+only for now. **He is the reporter most likely to cover this and he already has the
+lineage in his notes.** Disclosed lineage and discovered lineage read completely
+differently in a story.
+
+**Working position: disclose, and do it before any journalist is contacted.**
+`PROVENANCE.md` already says a visible attribution "is planned", so **this was
+decided once and never shipped.** The recommendation is to ship the credit line,
+tell Meyer directly before the press hear about it, and lead the Sharma email with
+it. Full reasoning in `docs/session-notes/press-phase-2.md` section 3.
+
+**This is Jon's decision and it is not yet made.** Nothing in press Phase 2 or 3
+starts until it is.
+
+**Trigger for revisiting.** Answered by Jon, or any journalist contact being made,
+whichever is first.
