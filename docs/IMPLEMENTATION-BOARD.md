@@ -530,3 +530,62 @@ urgency is not "we are bleeding money today", and the conductor said it was.**
 4. **If no refund row: STOP.** `waitUntil` needs `@vercel/functions`, a new
    dependency, and that is Jon's call.
 
+---
+
+# ★ TWO NEW ITEMS — 24 August
+
+## P4 — THE "CREDITS ARE SLOW" BANNER CAN NEVER APPEAR (customer-facing, money)
+
+**Found by the email-and-analytics session, measured rather than reasoned.**
+
+A buyer whose credits are slow sits on **"Payment received. Adding your credits
+now…" indefinitely.** The banner is meant to retry ten times over ~15 seconds and
+then say *"refresh, and if they are still missing, email us"*. **It tries once and
+stops forever.**
+
+**Why:** `purchase-banner.tsx` schedules its retry inside an effect whose
+dependencies are `[status, purchaseLanded, gaveUp, router]`. **`router.refresh()`
+changes none of them**, so the effect never re-runs and no second timer is
+scheduled. The file's own comment — *"this re-runs when refresh() produces a new
+render"* — describes behaviour React does not have.
+
+**Measured** against `/dev/purchase?purchase=success&landed=0`: one refresh, then
+silence for 60+ seconds, banner text unchanged.
+
+**This is the moment a customer has paid and is not yet served.** The support
+address in that banner is now correct and no one can ever read it. **Pre-existing,
+not caused by that session.** Territory: `app/home/_components/purchase-banner.tsx`.
+
+## P5 — THE PRESS DRAFTS NEED REWRITING, NOT PATCHING
+
+Nine drafts exist in `docs/session-notes/press-emails-phase-2.md`. **Jon is
+unhappy with them and the conductor agrees.** The research and the personalisation
+are good; **the shape is wrong.**
+
+**They explain the product where they should offer a story.** Three paragraphs of
+layer-by-layer description before any reason to care — the product page pasted
+into an email. **A reporter's question is not "what does it do", it is "what is
+the story".**
+
+**Four specific faults:**
+- **No news hook.** The Anthropic announcement produced fifteen named bylines in
+  twelve days and the emails do not mention it. *Why now?* is unanswered.
+- **The ask is doubled and apologetic** — *"Interview if useful, or I can just
+  give you access."* Two offers dilute each other and "if useful" invites a no.
+- **Jon is invisible.** *"I run it"* is four words. **A solo developer building
+  the first consumer tool in a category the big labs created IS the story**, and
+  it is thrown away.
+- **The honesty is buried in paragraph five.** In a category full of tools
+  claiming proof, *"here is the part I cannot prove"* is the opening move, not
+  the caveat.
+
+**What to keep:** the article-specific openings, and `verified: false` **in the
+API payload rather than as fine print** — the strongest line in the set.
+
+**Direction:** news peg → who Jon is → the one thing that makes him different →
+**one** offer. Technical detail in a single sentence; the rest waits to be asked.
+
+**Also still open from that session:** the Sharma sequencing flag, and a contact
+caveat — **Belanger's published address is a personal Gmail**, self-published for
+contact, not a masthead address. Jon should know before sending.
+
