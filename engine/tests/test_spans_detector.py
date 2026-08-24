@@ -105,10 +105,23 @@ def test_unattributed_quote_is_detected_as_unattributed():
 
 
 def test_curly_quotes_detected_too():
-    text = "She noted “the committee will not meet again this year” and left."
+    # E-16 changed the SUBJECT of this sentence, not what it tests. It was
+    # "She noted ...", and a bare pronoun subject is a dialogue tag rather
+    # than an attribution now, so the attributed assertion below would have
+    # been asserting the defect. The test's own subject — that curly marks
+    # are detected as a quote at all — is untouched.
+    text = "The registrar noted “the committee will not meet again this year” and left."
     quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
     assert len(quotes) == 1
     assert quotes[0]["attributed"] is True
+
+
+def test_curly_quotes_detected_with_a_pronoun_subject_too():
+    # The same marks, the same detection, the D2 answer the other way.
+    text = "She noted “the committee will not meet again this year” and left."
+    quotes = [s for s in detect_protected_spans(text) if s["kind"] == "quote"]
+    assert len(quotes) == 1
+    assert quotes[0]["attributed"] is False
 
 
 def test_narrative_dialogue_tags_are_not_attribution():

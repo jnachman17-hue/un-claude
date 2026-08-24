@@ -73,30 +73,89 @@ _ATTRIBUTION = re.compile(
 _CITATION = re.compile(r"\([^()\n]{0,60}(?:19|20)\d\d[^()\n]{0,25}\)|\bpp?\.\s*\d+")
 #: How far around the quote to look for the cue, in characters.
 _CUE_WINDOW = 120
-#: How close after the closing mark a trailing verb must sit ("..., wrote
-#: Orwell"). Kept short so a reportive verb later in the sentence — ordinary
-#: narration like «"...," she said, and nobody argued» — does not read as
-#: attribution.
-_POST_WINDOW = 20
 _SENTENCE_END = re.compile(r"[.!?]")
+
+#: CORRECTED FOR E-16. Narrowing the verb list (E-9) was not enough: seventeen
+#: of the surviving verbs are also standard fiction dialogue tags, so «"You
+#: never once asked me," she argued» froze — invented dialogue, the most
+#: watermarked text in the document, handed back untouched after the customer
+#: paid for a rewrite. That is precisely the catastrophe D2 exists to prevent.
+#: Measured on 45 fiction lines: the shipped rule froze 35 of them.
+#:
+#: Two things separate real attribution from a dialogue tag, and neither is
+#: the verb:
+#:
+#:   * POSITION. Attribution INTRODUCES its quotation — «Orwell wrote that
+#:     "..."», «As Smith puts it, "..."». A dialogue tag FOLLOWS it — «"...,"
+#:     she argued». The trailing-tag path is therefore gone entirely; it was
+#:     the source of every one of the 35.
+#:   * SUBJECT. Attribution names a source ("Smith", "The committee", "the
+#:     2019 review"). Fiction takes a bare pronoun ("she argued"). A reportive
+#:     verb whose subject is a bare pronoun does not attribute.
+#:
+#: A citation shape stays an INDEPENDENT trigger, subject and position
+#: irrelevant, because it is the strongest evidence a real source exists.
+#:
+#: What this deliberately lets through, in the cheap direction (D2: being
+#: wrong toward free costs a few reworded phrases; being wrong toward frozen
+#: hands back a paid-for rewrite undone — those are not the same size):
+#:   * an UNCITED trailing attribution — «"...," wrote Orwell in 1946» — a
+#:     bare year is not a citation shape, so it no longer freezes;
+#:   * attribution carried by a pronoun — «The auditor... She wrote that
+#:     "..."» — which also, on purpose, frees epistolary fiction;
+#:   * a pre-quote tag on a NAMED character — «Marcus concluded, "..."» —
+#:     textually identical to «The committee concluded, "..."».
+#: Measured residual after this change: 2 of 45 fiction lines, 2 of 30
+#: attribution shapes. See docs/session-notes/e16-detector-and-ceiling.md.
+
+#: A bare pronoun subject is a dialogue tag, not an attribution.
+_PRONOUN_SUBJECTS = frozenset({
+    "i", "you", "he", "she", "it", "we", "they",
+    "me", "him", "her", "us", "them",
+})
+#: Words that stand between a subject and its verb without being the subject:
+#: auxiliaries, negation, and the connectives that open a clause. Adverbs are
+#: handled separately — a LOWERCASE word ending in -ly is skipped, a
+#: capitalised one is not, because Kelly and Molly are subjects.
+_SUBJECT_SKIP = frozenset({
+    "had", "has", "have", "having", "was", "were", "is", "are", "am", "be",
+    "been", "being", "would", "will", "could", "should", "may", "might",
+    "must", "did", "does", "do", "not", "never", "also", "then", "once",
+    "again", "later", "already", "still", "even", "only", "just", "so",
+    "and", "but", "who", "which", "that", "however", "further",
+})
+_SUBJECT_WORD = re.compile(r"[A-Za-z][\w'’-]*")
+
+
+def _subject_before(text: str, verb_start: int) -> str:
+    """The word doing the reporting, auxiliaries and adverbs stepped over."""
+    for m in reversed(list(_SUBJECT_WORD.finditer(text[:verb_start]))):
+        word = re.split(r"['’]", m.group(0))[0]      # she'd -> she
+        low = word.lower()
+        if not low or low in _SUBJECT_SKIP:
+            continue
+        if word.islower() and low.endswith("ly"):
+            continue
+        return word
+    return ""
 
 
 def _quote_attributed(pre: str, post: str) -> bool:
-    """Is a reportive cue in the ATTRIBUTIVE position around this quote?
+    """Does a real source put these words in this document? (D2, E-16.)
 
-    The verb must do the attributing, not merely be nearby: before the quote
-    with no sentence boundary in between («Orwell warned that "..."»), or
-    hard against the closing mark («"...," wrote Orwell»). A window-only test
-    was tried first and froze fiction whenever the narration within a hundred
-    characters used a verb like "argued" or "observed" in its plain sense.
-    A citation shape anywhere near the quote attributes on its own.
+    True when a reportive verb INTRODUCES the quote — before it, no sentence
+    boundary in between — and the subject of that verb is a named source
+    rather than a bare pronoun. A citation shape near the quote attributes on
+    its own, whatever the wording around it. Nothing that FOLLOWS a quotation
+    attributes it: that position is where fiction puts its dialogue tags, and
+    reading it as attribution froze 35 of 45 fiction lines.
     """
     for vm in _ATTRIBUTION.finditer(pre):
-        if not _SENTENCE_END.search(pre[vm.end():]):
-            return True
-    near = post[:_POST_WINDOW]
-    vm = _ATTRIBUTION.search(near)
-    if vm and not _SENTENCE_END.search(near[: vm.start()]):
+        if _SENTENCE_END.search(pre[vm.end():]):
+            continue                       # the verb belongs to an earlier
+                                           # sentence, not to this quote
+        if _subject_before(pre, vm.start()).lower() in _PRONOUN_SUBJECTS:
+            continue                       # a dialogue tag, not attribution
         return True
     return bool(_CITATION.search(pre) or _CITATION.search(post))
 
