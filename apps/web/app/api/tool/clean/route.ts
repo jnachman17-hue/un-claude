@@ -341,6 +341,58 @@ export async function POST(request: Request) {
     await recordRunCost(ledgerId, result);
   }
 
+  /*
+   * DID ANYBODY ACTUALLY RECEIVE THIS? f1-audit.md, "THE CONNECTION-DROP CASE".
+   *
+   * The student on a train, the phone that locks, the tab closed by accident.
+   * With jobs running for minutes that window is wide, and until now it cost
+   * the customer their credits: they were charged, the work ran, and the answer
+   * was handed to a browser that had gone. Watched for eight minutes against a
+   * known three-minute refund window, no refund ever came.
+   *
+   * WHERE THE DEPENDENCY WAS, because it is not where it looks. The refund does
+   * NOT die with the connection — measured on the live site on 23 August 2026:
+   * a job whose client dropped at 3 seconds still wrote its refund row a second
+   * later, so this handler keeps running after the socket closes. What depended
+   * on the client was the DEFINITION OF FAILURE. The only thing that triggered a
+   * refund was `!result.ok`, meaning the ENGINE said no. Nothing ever asked
+   * whether the answer reached anybody. A dropped connection is a delivery
+   * failure and not an engine failure, so it took the success path and the
+   * credit stayed spent.
+   *
+   * Reproduced, same site, same day: a 250,000 word layer A job with the client
+   * dropped at 3 seconds took 250 credits and wrote no refund row.
+   *
+   * THE COST ROW IS WRITTEN FIRST, DELIBERATELY. If the rewrite ran we really
+   * did pay for it, and giving the credit back does not make that spend
+   * disappear. Recording it above and refunding here is what makes the loss
+   * countable instead of invisible.
+   */
+  if (!bypass && user && charged > 0 && request.signal.aborted) {
+    await refund(user.id, charged);
+    balance = balance === null ? null : balance + charged;
+
+    console.warn(
+      `CLIENT GONE: ${charged} credit(s) refunded to ${user.id.slice(0, 8)} — ` +
+        `the job finished but the connection had already closed, so nothing ` +
+        `was delivered. The run itself was still paid for at the gateway.`,
+    );
+
+    /*
+     * Nobody is listening, so this response is discarded. It is written out
+     * anyway rather than left to chance: a body that says what happened is
+     * what a log, a proxy or a future retry will see.
+     */
+    return Response.json(
+      {
+        ok: false,
+        code: 'client_gone',
+        message: 'The connection closed before this finished. Nothing was charged.',
+      },
+      { status: 499 },
+    );
+  }
+
   /**
    * The receipt is computed here rather than in the engine, because it is a
    * comparison of two texts we already hold and it needs no model call, no
