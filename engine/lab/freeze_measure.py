@@ -356,6 +356,47 @@ LADDER_ROWS = OUTDIR / "ladder.jsonl"
 LADDER_RUNS = 3
 
 
+def gateway_refuses() -> str | None:
+    """One bare probe. Returns the refusal text if the key is out of budget.
+
+    THE TRAP THIS EXISTS FOR (E-16). The spend limit is on the KEY and the
+    credits endpoint does not show it: E-16 saw `balance $14.99` while the key
+    stood at `total_used $10.005` against a $10.00 cap, and every model
+    returned HTTP 402. Worse, the engine retries eight times, so ONE refusal
+    was recorded as `chunk N failed after 8 attempts: HTTPError` and read as a
+    bad model. Two of E-16's reported model failures were this.
+    """
+    import urllib.error
+    import urllib.request
+
+    body = json.dumps({"model": "mistral/mistral-small",
+                       "messages": [{"role": "user", "content": "ok"}],
+                       "max_tokens": 2}).encode()
+    req = urllib.request.Request(
+        os.environ["WATERMARKS_REWRITE_BASE_URL"] + "/v1/chat/completions",
+        data=body,
+        headers={"Authorization": f"Bearer {os.environ['WATERMARKS_REWRITE_API_KEY']}",
+                 "Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=30).read()
+        return None
+    except urllib.error.HTTPError as e:
+        return f"HTTP {e.code}: {e.read()[:300].decode(errors='replace')}"
+    except Exception as e:                      # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
+def credits() -> str:
+    import urllib.request
+    req = urllib.request.Request(
+        os.environ["WATERMARKS_REWRITE_BASE_URL"] + "/v1/credits",
+        headers={"Authorization": f"Bearer {os.environ['WATERMARKS_REWRITE_API_KEY']}"})
+    try:
+        return urllib.request.urlopen(req, timeout=30).read().decode()
+    except Exception as e:                      # noqa: BLE001
+        return f"unreadable: {e}"
+
+
 def ladder(models=LADDER_MODELS, docs=LADDER, runs=LADDER_RUNS) -> int:
     """Every model up the ladder, freeze ON, until it crosses the site's wall.
 
@@ -368,6 +409,13 @@ def ladder(models=LADDER_MODELS, docs=LADDER, runs=LADDER_RUNS) -> int:
     OUTDIR.mkdir(exist_ok=True)
     from uc_freeze import freeze_fraction
     from uc_wordcount import count_words
+
+    print(f"gateway credits BEFORE  {credits()}", flush=True)
+    refusal = gateway_refuses()
+    if refusal:
+        print(f"\nSTOP — the gateway refuses before the campaign begins:\n"
+              f"  {refusal}\nNothing was run.", flush=True)
+        return 2
 
     print("THE LADDER (freeze ON, both tiers)", flush=True)
     for name in docs:
@@ -409,6 +457,20 @@ def ladder(models=LADDER_MODELS, docs=LADDER, runs=LADDER_RUNS) -> int:
                     sink.write(json.dumps(row, ensure_ascii=False) + "\n")
                     sink.flush()
                     print(json.dumps(row, ensure_ascii=False), flush=True)
+
+                    # A refusal looks exactly like a bad model once the retry
+                    # loop has turned it into eight failures. Ask the gateway
+                    # directly rather than guessing, and stop the campaign.
+                    if "HTTPError" in (row.get("failure") or ""):
+                        refusal = gateway_refuses()
+                        if refusal:
+                            print(f"\nSTOP — the gateway is refusing, this is "
+                                  f"NOT the model:\n  {refusal}\n"
+                                  f"Campaign abandoned after {len(rows)} runs.",
+                                  flush=True)
+                            print(f"gateway credits AFTER  {credits()}",
+                                  flush=True)
+                            return 2
 
                 secs = [r["seconds"] for r in cell if r.get("seconds")]
                 med = statistics.median(secs) if secs else WALL_CLOCK
