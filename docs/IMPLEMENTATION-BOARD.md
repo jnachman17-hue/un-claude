@@ -26,26 +26,51 @@ malformed-request 400 rather than a permission answer. Applied per Jon.*
 writes the shortfall down, free credits are once per inbox, the header count
 tells the truth, the file-size message can fire, the redirect is closed.
 
-## What is now unproven-in-production rather than unfixed
+## Verified in production after the deploy — Lane B re-ran them
 
-These shipped but were never exercised against the live site. **They are the
-first thing to check, not the last:**
-
-| Check | Why it was never proved |
+| Check | Result |
 |---|---|
-| **Free credits really are once per inbox** *through the site* | Lane B proved the database refuses it. `/api/credits` is a separate path. `scripts/verify-grants-through-the-site.mjs` exists to answer this and needs the deploy that has now happened |
-| **The run-cost writer actually writes** | `run_costs` was empty and correct when Lane B finished. It should be filling now |
-| **A dropped connection refunds** | Lane B's fix is live; `06` row 89 says watch `CLIENT GONE:` on day one |
-| **Wallet pagination against real rows** | Lane C used fabricated rows — no local Supabase |
-| **The webhook end to end** | Lane B called `refund_purchase` directly, not through a real Stripe refund |
+| Free credits once per inbox, **through the real route** | **PASS.** 5, 0, 0 across three rounds driving the live site with a real session. **It was 5, 5, 5 that morning** |
+| The run-cost writer | **PASS.** The first `run_costs` row this product has ever written. **The privacy policy has claimed this since it was written; as of that row it is true** |
+| A delivered job is charged and not refunded | **PASS on production.** So the dangerous failure — everything refunding — is ruled out |
+| **A dropped connection refunds** | **FAIL. See M-6 below** |
+| Wallet pagination against real rows | still unproven |
+| The webhook end to end | still unproven |
 
----
+## ★ M-6 IS INERT ON VERCEL — the fix shipped and does nothing
+
+Measured on production minutes after the deploy, connection dropped at 3s:
+
+```
+250 credits taken, nothing delivered, no refund — exactly as before.
+run_costs row written for that spend, which proves execution REACHED the
+refund check. request.signal.aborted was simply false.
+```
+
+**The code is dead, not wrong.** Vercel request cancellation is **opt-in**:
+`request.signal` only ever aborts for functions declaring `supportsCancellation`
+in `vercel.json`. **Confirmed by the conductor** — `apps/web/vercel.json` has a
+`functions` block covering `api/*.py` **and nothing else**, and the clean route
+is an App Router handler at `app/api/tool/clean/route.ts`, outside that glob.
+
+**Why Lane B did not just switch it on, and all three reasons are good:**
+1. `vercel.json` was not that lane's file.
+2. **It is not established the switch can even reach an App Router route** —
+   Vercel's own examples target `api/**` and `pages/api/**`.
+3. Vercel warns work after a disconnect may not complete without `waitUntil`,
+   which needs `@vercel/functions` — **a dependency, so Jon's call.**
+
+**The experiment is cheap: one config entry, one deploy, one re-run of a script
+that already exists and costs nothing** (a paste the engine refuses for free).
+If the refund row appears, no dependency is needed. If not, `waitUntil` is the
+next question. **BLOCKED: a deploy would ship Lane A's in-progress engine edits.
+It waits for a quiet tree.** `06` row 89.
 
 # ★ LANE STATUS
 
 | Lane | State | What is left |
 |---|---|---|
-| **B — money** | **6 of 6 DONE AND LIVE.** All 5 migrations applied | Verify the five rows above · the privacy sentence, now genuinely owed |
+| **B — money** | **5 of 6 live and verified. M-6 is inert** | **M-6: one config entry + a deploy + a free re-run, blocked on a quiet tree** · the privacy sentence, owed |
 | **C — workbench** | **10 of 10 DONE AND LIVE** | Verify pagination against real rows · three handoffs, below |
 | **E — security** | **4 of 5 DONE AND LIVE** | **CSP still open** — needs a per-request nonce · **S-5 belongs to Lane A** |
 | **A — engine** | **not started** | The whole lane. Decisions D1–D5 are settled and it is unblocked |
