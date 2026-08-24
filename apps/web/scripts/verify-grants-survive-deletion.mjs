@@ -32,7 +32,7 @@ import {
   balanceOf,
   db,
   destroy,
-  forgetGrantClaims,
+  forgetAllLaneClaims,
   ledgerOf,
   ledgerRowIfMissing,
   printLedger,
@@ -156,7 +156,7 @@ report(
       `same address can mint free credits without limit`,
 );
 
-const cleared = await forgetGrantClaims(EMAIL);
+const cleared = await forgetAllLaneClaims();
 console.log(
   cleared
     ? `\n  grant_claims rows for this address cleared.`

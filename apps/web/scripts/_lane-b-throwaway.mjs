@@ -51,8 +51,13 @@ export const RUN = `${Date.now().toString(36)}`;
  * Create a confirmed throwaway account. `tag` becomes part of the address so
  * the ledger reads legibly while the test is running.
  */
+/** Every address this process has created, so its litter can be swept. */
+const created = new Set();
+
 export async function throwaway(tag, fixedEmail) {
   const email = fixedEmail ?? `${THROWAWAY_PREFIX}${tag}-${RUN}@un-claude.com`;
+
+  created.add(email);
 
   const { data, error } = await db.auth.admin.createUser({
     email,
@@ -106,6 +111,31 @@ export async function forgetGrantClaims(email) {
   const { error } = await db.from('grant_claims').delete().eq('email_hash', hash);
 
   return error ? null : hash;
+}
+
+/**
+ * Sweep the grant-claim rows every throwaway address in THIS RUN left behind.
+ * Call it once, at the end of a script.
+ *
+ * WHY THIS IS NOT PART OF `destroy()`, WHICH IS WHERE IT LOOKS LIKE IT BELONGS.
+ * A claim OUTLIVING the account is the entire point of `grant_claims`, and
+ * `verify-grants-survive-deletion.mjs` proves it by deleting an account and
+ * signing up again on the same address. If `destroy()` swept claims, that test
+ * would hand out free credits every round and report the bug as fixed.
+ *
+ * So the sweep is deliberately a separate, end-of-script step. **A script that
+ * signs a throwaway in to the live site and forgets to call this leaves rows in
+ * `grant_claims` for ever** — that is how four of them got there on 24 August
+ * 2026, and they had to be picked out of the table by timestamp afterwards.
+ */
+export async function forgetAllLaneClaims() {
+  let cleared = 0;
+
+  for (const email of created) {
+    if (await forgetGrantClaims(email)) cleared += 1;
+  }
+
+  return cleared;
 }
 
 /** Insert a ledger row, treating "already there" as success. */

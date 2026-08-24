@@ -28,7 +28,7 @@ import {
   balanceOf,
   db,
   destroy,
-  forgetGrantClaims,
+  forgetAllLaneClaims,
   ledgerOf,
   printLedger,
   RUN,
@@ -124,8 +124,8 @@ report(
       `site is still minting them, which means the deploy has not landed`,
 );
 
-const cleared = await forgetGrantClaims(EMAIL);
-console.log(cleared ? '\n  grant_claims rows for this address cleared.' : '\n  (nothing to clear.)');
+const cleared = await forgetAllLaneClaims();
+console.log(`\n  grant_claims rows cleared for ${cleared} throwaway address(es).`);
 
 console.log('\n' + '='.repeat(70));
 

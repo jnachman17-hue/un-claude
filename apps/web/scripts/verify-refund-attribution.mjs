@@ -33,7 +33,7 @@ import {
   balanceOf,
   db,
   destroy,
-  forgetGrantClaims,
+  forgetAllLaneClaims,
   ledgerOf,
   ledgerRow,
   ledgerRowIfMissing,
@@ -196,7 +196,6 @@ let migrationApplied = null;
     }
   } finally {
     await destroy(acct);
-    await forgetGrantClaims(acct.email);
     console.log(`\n  throwaway account deleted.`);
   }
 }
@@ -257,10 +256,11 @@ let migrationApplied = null;
     }
   } finally {
     await destroy(acct);
-    await forgetGrantClaims(acct.email);
     console.log(`\n  throwaway account deleted.`);
   }
 }
+
+await forgetAllLaneClaims();
 
 console.log('\n' + '='.repeat(70));
 

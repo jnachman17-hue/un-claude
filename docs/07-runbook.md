@@ -1878,3 +1878,29 @@ first and grants afterwards**. Copy that order:
 same column name against three different tables, two of which did not have it,
 and the resulting "permission denied"-shaped errors were column errors wearing a
 convincing disguise.
+
+## A throwaway that signs in to the live site leaves a row that deleting it does not remove
+
+**24 August 2026, lane B.** After `20260823120100_grant_claims_survive_deletion.sql`
+landed, two test runs that drove the real site left **four rows in
+`grant_claims`** — and deleting the accounts did not take them, because **not
+being taken by the deletion cascade is the entire purpose of that table.**
+
+They had to be picked out afterwards by timestamp, checked against every
+account that still exists, and removed by hand. That is a bad way to clean a
+money-adjacent table.
+
+**The sweep is `forgetAllLaneClaims()` in `_lane-b-throwaway.mjs`, and it is a
+separate end-of-script step on purpose.** It is deliberately NOT part of
+`destroy()`: `verify-grants-survive-deletion.mjs` proves the fix by deleting an
+account and signing up again on the same address, so a `destroy()` that swept
+claims would hand out free credits every round and report the bug as fixed.
+
+**So: any script that creates a throwaway and touches `/api/credits` or
+`/api/tool/clean` must call `forgetAllLaneClaims()` before it exits.** All three
+verify scripts now do.
+
+**`refund_shortfalls` is the opposite case and cannot be swept at all.** It is
+insert-only, so the two rows `verify-refund-attribution.mjs` writes against
+throwaway payments stay for ever. `read-refund-shortfalls.mjs` skips anything
+whose payment id begins `pi_LANEB_` and says how many it skipped.
