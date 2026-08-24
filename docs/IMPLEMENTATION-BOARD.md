@@ -73,8 +73,8 @@ It waits for a quiet tree.** `06` row 89.
 | **B — money** | **5 of 6 live and verified. M-6 is inert** | **M-6: one config entry + a deploy + a free re-run, blocked on a quiet tree** · the privacy sentence, owed |
 | **C — workbench** | **10 of 10 DONE AND LIVE** | Verify pagination against real rows · three handoffs, below |
 | **E — security** | **4 of 5 DONE AND LIVE** | **CSP still open** — needs a per-request nonce · **S-5 belongs to Lane A** |
-| **A — engine** | **not started** | The whole lane. Decisions D1–D5 are settled and it is unblocked |
-| **D — copy** | **not started** | Split: wording-only now, the four enforcement promises after Lane A |
+| **A — engine** | **ALL SIX STEPS DONE.** Not deployed | A model switch (Jon) · E-12 · the freeze · a deploy |
+| **D — copy** | **briefed, not started** | Seven wording fixes. The four enforcement promises are now unblocked by Lane A's measurements |
 
 ## What each lane could NOT prove — carry these forward
 
@@ -380,4 +380,90 @@ between them closed 20; none of what follows was touched by them.
 | Verify the five unproven-in-production rows above |
 | The upstream-lineage decision — press phase 2 is blocked on it |
 | Approve the Sentry dependency |
+
+---
+
+# ★★ LANE A LANDED — 24 August. What it changes.
+
+**All six steps done. Nothing deployed.** `762 passed, 1 skipped` on the engine
+suite (baseline was 523), pricing drift guard 3/3, do-not-touch list untouched.
+
+## What shipped
+
+- **The safety net caught two real text losses in the committed plumbing**
+  before any model was involved. Both fixed. That is the whole reason it went
+  first.
+- **Repair** strips the AI tells the tool was adding, at **median +0.0000**
+  trigram cost, measured on 12 real gateway runs — and to Jon's rule, not to
+  zero.
+- **Layer A now runs BEFORE the rewrite.** Verified live both ways:
+  `removed_count: 0` before, `removed_count: 2` with both characters named
+  after. **The one provable layer was being measured after something else had
+  already destroyed its evidence.**
+- **The report instrument caught the flagship defect — a rewritten Orwell
+  quotation — on its first live run.**
+- Chunks never end on a lone equation, torn code fences are stitched, the
+  number reader is regression-locked, no new retries, and **the stylometry
+  scanner stopped accusing ordinary English.**
+
+## ★ THE BAKE-OFF — Jon's idea, and it paid for itself
+
+**160 measured runs, 17 model configurations, one 5,047-word scale test.**
+
+**Recommendation: `deepseek/deepseek-v3.2`**, replacing both the live
+`mistral-small` and the standing recommendation of `mistral-medium`.
+
+> *"It avoids most of the defect list instead of needing machinery to mask
+> it — quotations mostly intact where the mistrals destroyed every one,
+> headings 20/24 kept, references untouched, near-zero injected marks, zero
+> fabricated sources observed — while still rewriting within ~0.06 overlap of
+> medium at scale, at the same speed, at a sixth of medium's cost."*
+
+**Kimi K3 was tested and rejected** — time ceiling and cost. K2 near-copies at
+scale. Anything glm timed out or did not rewrite.
+
+**This is why the bake-off belonged in the middle.** Every quotation the model
+leaves alone is masking machinery nobody has to build.
+
+## ★ THE FREEZE IS NOW MUCH SMALLER — and both blockers are resolved
+
+- **The Sources latch is ALREADY FIXED, by construction.** `uc_spans.py` now
+  requires a paragraph to *look* like a reference entry — a bracketed year, a
+  DOI, a URL, a page range — and the section ends at the first that does not.
+  **The verifier's breaking essay now yields zero reference entries.**
+- **The guard-ordering fix is one sentence, written down:** every guard
+  compares customer text to customer text, never the masked pair. Restore
+  first, then guard.
+- **The quotation tier's workload shrinks by most of an order of magnitude**
+  with the model switch — from 6-of-8 quotes rewritten to 4-of-16, and two of
+  those four were boundary shifts rather than rewordings.
+- The structure tier is still clearly needed: **even deepseek renames ~1 in 6
+  headings.**
+
+---
+
+# ★ WHAT LANE A LEFT — new work and new decisions
+
+## Jon's, and nothing proceeds without them
+
+| # | Decision | Note |
+|---|---|---|
+| **D5** | **Switch to `deepseek/deepseek-v3.2`** | One Vercel env var, no code change. **ONE CHECK FIRST: confirm the v3.2 checkpoint is published open-weight.** DeepSeek's releases are MIT, but **a licence cannot be proved from an API** and the ruling is open weights only. |
+| **D8** | **The CJK pricing question — one coupled decision, not three** | Today a Chinese/Japanese/Thai document counts as **~1 word**, bills **1 credit**, passes the 10,000-word gate **at any size**, and is then silently skipped by the 16-word floor. Fixing any one alone breaks another: the floor alone runs rewrites the gate never priced (200,000 Chinese characters = 1 credit, ~170 chunks of model calls); billing alone charges for a rewrite the floor still skips. **And the browser's counter must change in the same release or the price shown is not the price charged — the two-implementations trap this project has hit three times.** |
+| **D9** | The upstream-lineage decision | Press phase 2 still blocked on it |
+
+## New work items
+
+| ID | Item | Owner |
+|---|---|---|
+| **E-12** | **The cost leak — diagnosed exactly, cannot be fixed in the engine.** A run's payload carries `cost_usd` and token counts to every browser inside `report.layer_b.usage`. **Stripping it in Python would feed nulls to the live run-cost writer and silently break the promise the privacy policy makes.** The only correct place is `app/api/tool/clean/route.ts`, **after** `recordRunCost(...)` and before `Response.json`. | a small route session |
+| **E-9** | **The freeze.** Its own session, both prerequisites now written down, workload much smaller than W10 measured | after the model switch |
+| **E-15** | **Non-English is untested on deepseek.** W10 measured French coming back half-translated 16 of 20 on mistral-small. **Unknown for the new model, and CJK has never been rewritten once.** | before advertising either |
+
+## Two operational facts worth keeping
+
+- **Timed-out reasoning calls bill invisibly.** A call abandoned at 45 seconds
+  keeps generating and billing on the server and reports no usage block back.
+  Own-accounting said $0.13; the gateway said **$1.91**. Recorded in `07`.
+- **Gateway balance is now $5.44**, and the live site shares this key.
 
