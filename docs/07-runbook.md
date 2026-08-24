@@ -1904,3 +1904,26 @@ verify scripts now do.
 insert-only, so the two rows `verify-refund-attribution.mjs` writes against
 throwaway payments stay for ever. `read-refund-shortfalls.mjs` skips anything
 whose payment id begins `pi_LANEB_` and says how many it skipped.
+
+---
+
+## A "reasoning" model through this engine thinks with no cap, and it looks exactly like a timeout
+
+**24 August 2026, Lane A bake-off.** The engine never sends the
+`reasoning_effort` parameter (server.py passed `None`, which omits it), so any
+model tagged `reasoning` on the gateway runs in its default thinking mode and
+spends its whole 45-second call budget thinking. From outside this is
+indistinguishable from the model being slow or down: the call times out, the
+retry times out, the run fails.
+
+**This is the likeliest reason `moonshotai/kimi-k2` and `zai/glm-4.6` were
+recorded as "timed out" in the engine-limits bake-off** — recorded there as a
+property of the models, when it may have been a property of our call.
+
+**What to do instead.** `WATERMARKS_REWRITE_REASONING_EFFORT=none` (a Vercel
+env var since 24 August) asks a reasoning model to skip its chain of thought.
+Two cautions, both learned by running it: not every model accepts the
+parameter — some return 400 on an unknown value, which burns the retry budget
+— so measure with it and without before concluding anything; and a bake-off
+that tests a reasoning-tagged model without this setting is testing the
+model's thinking budget, not its rewriting.
