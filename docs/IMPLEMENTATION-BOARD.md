@@ -6,6 +6,93 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 18:00 — SEO: THE HOMEPAGE IS INVISIBLE TO GOOGLE
+
+**Jon reports un-claude.com now ranks for the brand name "un-claude", but the
+search result shows a grey box instead of the logo, and `/capabilities`
+("What we do") ranks ABOVE the homepage. Both diagnosed by probing production.**
+
+## ★★ S-6 — WHY `/capabilities` OUTRANKS THE HOMEPAGE. Proven, not guessed.
+
+**Visible text in the HTML Googlebot receives:**
+
+```
+/                 75 words
+/capabilities    638 words
+/how-it-works  1,240 words
+```
+
+**And the homepage has NO `<h1>` in its served HTML at all.**
+
+The 75 words are the nav, one sentence, and the footer:
+
+> *"AI tools mark what they make, invisibly and without telling you. Un-Claude
+> finds those marks and sanitises them."*
+
+**Everything else exists only inside the RSC script payload.** Checked phrase by
+phrase against the rendered HTML with scripts and attributes stripped:
+
+```
+PHRASE                              in script payload | in RENDERED html
+  If Claude wrote it                       YES                NO
+  Every kind of watermark                  YES                NO
+  100% of detectable marks removed         YES                NO
+  Free. No account needed                  YES                NO
+  Hidden characters                        YES                NO
+  The story, as covered by                 YES                NO
+  Paste your text here / Scan it            no                NO
+```
+
+**127,139 of the page's 137,858 characters are inside `<script>` tags — 92%.**
+
+**`hero-section.tsx` carries no `'use client'` and neither do the coverage,
+marquee or FAQ sections**, so this is not a client-component problem on its
+face. Something above them is deferring the whole page. **Diagnosing which is a
+session's job; the fact is established.**
+
+**This is board item X-4, filed as a performance item.** It is the SEO problem.
+**Google ranks what it can read, and on the homepage it can read a menu.**
+
+## S-7 — THE GREY BOX. Nothing is misconfigured; Google has stale data.
+
+**Everything Google needs is correct and reachable, verified as Googlebot:**
+
+```
+/favicon.ico                  HTTP 200   ICO, 3 images: 16x16, 32x32, 48x48
+/icon.svg                     HTTP 200   viewBox 0 0 26 26, square
+/images/favicon/favicon.ico   HTTP 200
+/images/favicon/apple-touch-icon.png  HTTP 200
+robots.txt                    Allow: /   nothing blocked
+```
+
+48x48 satisfies Google's "square, multiple of 48px" rule, and the SVG is square.
+
+**The cause is history, not configuration. `/favicon.ico` used to 404 — it was
+97% of the entire production error log** until it was fixed. **Google recorded
+that 404 and caches favicons aggressively.** It refreshes on a later recrawl of
+the homepage.
+
+**So there is nothing to fix in code, and no session should be sent at it.**
+**The lever is Google Search Console: verify the domain, request indexing of the
+homepage.** Days to weeks. **Does Jon have Search Console set up? Unknown — ask.**
+
+**Two absences found while checking, neither of which controls the result icon:**
+- **No web app manifest** — `/manifest.json` and `/site.webmanifest` both 404
+- **No `Organization` structured data and no `logo` schema anywhere on the
+  homepage.** This does not drive the favicon; it helps Google associate a brand
+  logo elsewhere. **Cheap, and it belongs with the S-6 work**
+
+## Sequencing
+
+**No collision with the engine lane.** S-6 lives in `app/(marketing)/**`; the
+freeze session is in `apps/web/engine/**`. **Safe to run in parallel.**
+
+**Note for whoever takes S-6:** the homepage is live and selling. CLAUDE.md
+section 8 requires it be rendered and looked at, desktop and phone width, before
+being called done.
+
+---
+
 # ★★★★ 24 AUGUST, 17:20 — JON'S RULING: EVERY QUOTATION FREEZES
 
 **D2's attribution test is abolished. Do not reopen it.** Jon: *"any quotation
