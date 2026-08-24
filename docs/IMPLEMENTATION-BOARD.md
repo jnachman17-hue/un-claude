@@ -6,6 +6,104 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★★ 24 AUGUST, 15:45 — LIVE OUTAGE: LAYER B IS DOWN. IT IS NOT THE MODEL.
+
+**Jon reported rewrites "taking forever" and believed deepseek was still live.
+The observation is right, the diagnosis is not, and the real cause is worse.**
+
+## The gateway key's budget is exhausted. Verified by the conductor directly.
+
+```
+$ curl https://ai-gateway.vercel.sh/v1/chat/completions -d '{"model":"mistral/mistral-small",...}'
+HTTP 402
+{"error":{"message":"API key budget exceeded. Current spend: $10.00,
+ limit: $10.00. Please contact your administrator to increase the budget.",
+ "type":"quota_for_entity_exceeded"}}
+```
+
+**Every model call from every source is being refused.** E-16 hit it too and
+stopped job 2 on it (`589922a`). Two independent discoveries, same wall.
+
+## ★ THE TRAP — topping up the balance does NOT fix this
+
+```
+$ curl https://ai-gateway.vercel.sh/v1/credits
+{"balance": "14.9946587732", "total_used": "10.0053412268"}
+```
+
+**Fifteen dollars of balance, none of it spendable.** The limit is a **spend cap
+on the API KEY**, separate from the account balance, and **the credits endpoint
+does not show the cap.** Jon topped the balance up this morning and the cap was
+untouched.
+
+**Read `total_used` against the key's cap, never `balance`.** Recorded in `07`.
+
+## Production proof — this is what a customer hit at 21:39Z
+
+```
+UC_USAGE {"ok": false, "words_in": 428, "seconds": 73.669,
+          "code": "layer_b_failed",
+          "layer_b": {"chunks": 2, "attempts": 16, "retries": 14}}
+POST /api/clean 400
+```
+
+**16 attempts across 2 chunks — 8 each, the maximum — and NO `model_calls`, NO
+tokens, NO `cost_usd`.** That absence is the signature: the calls were refused
+before generating anything. A run that merely returned bad text records usage;
+this recorded none.
+
+**"Taking forever" is the retry loop hammering a closed door for 73 seconds
+before giving up.**
+
+## What is and is not broken
+
+| | State |
+|---|---|
+| **Layer B (the paid rewrite)** | **DOWN. Every job fails** |
+| Layer A, metadata, the free scan | **Unaffected** — they never touch the gateway |
+| **Customer billing** | **Customers are NOT charged.** The refund path is working — the visitor sees *"Nothing was charged"* |
+
+**So this costs trust and conversions, not money.**
+
+## The model question, answered separately
+
+**Production is on `mistral/mistral-small`.** Verified 20:54:55Z from
+production's own log — `"layer_b_model": "mistral/mistral-small"`, `ok: true`,
+**2.895 seconds**. **No deployment has happened since** (newest is `eu85hqems`,
+the one that run went through). *The log window has since rolled past that
+entry, so it cannot be re-read; the 20:54 verification and the absence of a
+later deploy are the evidence.*
+
+**Jon's redeploy worked. Deepseek is not running.**
+
+## WHAT JON MUST DO — nothing that touches a model can run until this is fixed
+
+**Raise the API key's budget cap in the Vercel dashboard: AI Gateway → API Keys
+→ the key un-claude uses → its budget / spend limit.** Raising the balance again
+will not help. **This blocks E-16 job 2's re-run and every future measurement.**
+
+## E-16 has landed — its findings are NOT yet verified by the conductor
+
+`docs/session-notes/e16-detector-and-ceiling.md`, handoff rewritten. Headline
+claims, all pending my verification:
+
+- **Job 1 done.** 35 of 45 novel dialogue lines were freezing; now 0. Two stories
+  differing only in tags froze 0.0% and 33.6%; both now 0.0%. Suite **809 passed**
+- **A block quote opening a chunk was never frozen at all, silently** — its
+  indentation fell in the chunk separator, missing the containment test by four
+  characters. **4 of 18 block quotes rewritten on a 9,946-word essay while the
+  run reported success, and the pre-flight had already charged the customer for
+  freezing them.** Found only by running past 520 words for the first time
+- **Job 2 incomplete** — the cap landed on deepseek's first ladder run, so
+  **deepseek has no ladder measurement.** Recommends staying on `mistral-small`
+  and dropping the advertised limit from **10,000 to 8,000 words**
+
+**E-16 left files uncommitted** — `docs/04-decision-log.md`,
+`docs/06-assumptions-and-open-questions.md`, and lab outputs. **Not touched by
+me; Jon said the session may still be live.** Tree is **11 commits ahead**.
+
+---
+
 # ★★★ 24 AUGUST, 15:15 — E-16 IS RUNNING, AND THE CONDUCTOR GOT LANE D WRONG
 
 ## What is running
