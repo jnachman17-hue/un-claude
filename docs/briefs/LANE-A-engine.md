@@ -163,6 +163,7 @@ Test the credible candidates against **step 4's harness**, and measure:
   be worse for this product.
 - Timeouts and failures.
 - Cost per 1,000 words, for the record rather than as a deciding factor.
+Investigate Kimi k3 among others
 
 **Recommend one, with the numbers. Do not switch it** — the model is a
 Vercel environment variable and it is Jon's to set.
