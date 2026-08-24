@@ -381,4 +381,52 @@ W-10), and the words it is shown under go through the messaging skill.**
 
 ---
 
-*(Steps 5–6 below are appended as they finish.)*
+# STEP 6 — THE FREEZE, RE-SCOPED ON PAPER. Nothing was built.
+
+The masking machinery (board E-9, W10 phase 4) **was not built and must not
+ship yet** — this section writes down the two fixes its own adversarial
+verifier demanded, and what the bake-off says is still worth freezing.
+
+## Fix 1 — the Sources latch: ALREADY FIXED, by construction, in the detector
+
+The freeze's detection half now exists as `uc_spans.py` (step 4), and the
+latch cannot be reintroduced as long as **the freeze session reuses
+`detect_protected_spans` instead of writing its own detection.** The corrected
+rule, locked in `engine/tests/test_spans_detector.py`: a paragraph after a
+Sources/References/Bibliography/Works-cited heading is a reference entry
+**only if it looks like one** — a bracketed year, a DOI, a URL, a page range,
+a publisher — and the section ends at the first paragraph that does not. The
+verifier's breaking essay (a "Sources" heading over ordinary prose, 56.1%
+frozen, 12 of 12 runs under the old design) now yields zero reference entries.
+"My sources" as a heading never opens the section, exactly as the verifier's
+tell suggested.
+
+## Fix 2 — the guard ordering: one sentence, written down for the E-9 session
+
+**Every guard compares customer text to customer text — never the masked
+pair.** In `uc_chunk.one(i)`, the restore (unmask) must run FIRST, before
+`_guard` (length), `check_leak` and `_guard_facts` see anything:
+
+```
+model output --> tolerant restore (masks -> real text) --> THEN the guards,
+                 each comparing (original unmasked chunk, unmasked output)
+```
+
+Both W10 masking designs did the opposite — guards ran on the masked chunk —
+and against the committed code that produced `FactsLost` complaining about a
+mask number itself, and `LeakSuspected` on a mask-heavy chunk (the masked
+input is short, so a normal-length rewrite reads as a 4.3x expansion), which
+retried and then **failed the job and refunded a customer whose rewrite was
+perfect** — the W8 mistake exactly. Two supporting rules from the W10 design
+that stand: mask tokens must be chosen by asking the engine's own `_numbers()`
+reader what values the chunk already contains, so a mask can never collide
+with a real figure; and a restore failure in one chunk falls back to that
+chunk's original text per D3 (hand back, explain, threshold for refund).
+
+## How much of the freeze is still needed
+
+*(Filled in from the step 5 results below — see the bake-off section.)*
+
+---
+
+*(Step 5's results are appended when the runs finish.)*
