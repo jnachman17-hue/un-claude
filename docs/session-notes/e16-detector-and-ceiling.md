@@ -7,13 +7,24 @@ can actually finish.
 
 ```
 AI Gateway balance at start   $15.3484076412   2026-08-24T20:56:39Z
-AI Gateway balance at end     (job 2 not yet run)
-engine suite                  (not yet re-run)
+AI Gateway balance at end     $14.9946587732   2026-08-24T21:35:31Z
+SPENT                         $ 0.3537488680
+KEY SPEND / KEY LIMIT         $10.0053 / $10.00   EXHAUSTED — see job 2
+engine suite                  809 passed, 1 skipped   (E-9 baseline 800 + 1)
 Pushed or deployed BY THIS SESSION   NOTHING
 ```
 
-*(E-9 ended at $15.3501186492. The $0.0017 gone since is not this session —
-the live site shares this key.)*
+**READ JOB 2 FIRST. The gateway key's $10.00 budget is exhausted and every
+model returns HTTP 402. Every written record says the live site shares this
+key, so layer B on production is very likely failing right now.** Raising the
+cap is a billing setting on Jon's account and is his to do, not mine.
+
+**Job 1 is complete and verified. Job 2 is not** — deepseek was never measured
+on the ladder, and the campaign could not be re-run after a defect was found
+and fixed mid-flight.
+
+*(E-9 ended at $15.3501186492. The $0.0017 gone before this session started is
+not mine — the live site shares this key.)*
 
 ---
 
@@ -478,3 +489,206 @@ short documents: E-9's essay at 517 words, 5.9s and 7.2s, 11/11 spans; and
 `ladder_500` at 463 words, 4.0s and 4.9s, 7/7 spans. **On today's gateway
 deepseek was fast — nothing like E-9's 31.2s median — but a 2-chunk document
 says nothing about 29 chunks, and I am not going to pretend otherwise.**
+
+## 2.1 Rewrite depth, with the metric's own defect corrected
+
+**The whole-document overlap in the table above rises with document size and
+that rise is an artefact of my corpus, not the models.** `trigram_overlap`
+compares SETS of trigrams, so in a document with repeated phrasing a trigram
+surviving in any one section counts as surviving for the whole document. The
+ladder is one template with different facts per section, and its internal
+repetition grows:
+
+```
+ladder_500     4.3% of trigrams are repeats
+ladder_2000   55.2%
+ladder_10000  83.5%
+```
+
+**Between models at one rung the metric is sound — same document, same
+repetition. Across rungs it is not.** `engine/lab/depth_by_paragraph.py`
+aligns rewrite to source paragraph by paragraph and averages, which
+repetition cannot inflate:
+
+```
+doc                      mistral-small        mistral-medium         deepseek-v3.2
+----------------------------------------------------------------------------------
+ladder_500                0.056  (n=6)          0.021  (n=6)          0.081  (n=6)
+ladder_1000              0.045  (n=12)         0.029  (n=12)          not measured
+ladder_2000              0.062  (n=25)         0.029  (n=25)          not measured
+ladder_3000              0.054  (n=38)         0.041  (n=38)          not measured
+ladder_5000              0.070  (n=64)         0.115  (n=64)          not measured
+ladder_7500              0.069  (n=98)         0.116  (n=98)          not measured
+ladder_10000            0.083  (n=130)        0.045  (n=130)          not measured
+```
+
+**Corrected, depth is flat up the ladder** — mistral-small stays in
+0.045–0.083 from 463 words to 9,946 — which is the real finding: **a long
+document is not rewritten less hard than a short one.** Between the two
+models the difference is not consistent in either direction. **Neither model
+wins on depth, and any claim that one does would be reading noise.**
+
+**None of this measures watermark removal.** It measures how much original
+wording came back. Layer B is best effort and nothing here changes that.
+
+## 2.2 THE MODEL: stay on `mistral/mistral-small`
+
+| | mistral-small | mistral-medium | deepseek-v3.2 |
+|---|---|---|---|
+| Failures under the freeze | **0 of 21 runs** | 1 of 21 genuine (+1 from the cap) | **never measured past 2 chunks** |
+| Median at 9,946 words | **21.1s** | 31.0s | not measured |
+| Worst at 9,946 words | **23.1s** | 157.7s (the cap arriving) | not measured |
+| Cost, one 9,946-word document | **$0.0048** | $0.0362 — **7.5x** | not measured |
+| Rewrite depth | comparable | comparable | not measured |
+
+**Medium's case was never made.** It costs 7.5x for no measured advantage in
+speed, depth or reliability, and it failed a 4,958-word document genuinely
+(`chunk 17 failed after 8 attempts: LeakSuspected`) where small failed nothing
+in 21 runs. **It also breaks a claim the pricing document makes** — one
+9,946-word request costs 3.6 cents on medium against `03-pricing.md`'s "no
+single request can cost more than two cents".
+
+**Deepseek cannot be recommended, because it was not measured.** The cap
+landed on its first ladder run. What I can say: on today's gateway it was fast
+on short documents — 4.0s and 4.9s on 463 words, 5.9s and 7.2s on E-9's
+517-word essay, all spans back — with none of E-9's 31.2s median. **That is a
+better day than E-9 saw and it is still only 2 chunks.** And the original
+reason to prefer deepseek is void: the bake-off chose it because it left
+quotations alone, and the freeze now protects quotations on every model.
+
+**Recommendation: change nothing.** Every written record says mistral-small is
+live; it is the cheapest, the fastest, and the only candidate with a clean
+failure record across the whole ladder. **Deepseek stays a live option and
+needs one afternoon of ladder runs once the key has budget — that is the
+single cheapest measurement outstanding.**
+
+## 2.3 THE WORD LIMIT: lower the advertised number from 10,000 to 8,000
+
+**No model crossed 240 seconds, so there is no measured crossing point to
+subtract a margin from. The ceiling has to be argued, and here is the
+argument.**
+
+**Latency is set by WAVES, not by words.** Chunks are ~350 words and 8 run in
+parallel, so a document costs `ceil(chunks / 8)` waves of one model call each.
+The measurement shows this directly — mistral-small at 2 waves 20.8s, at 3
+waves 15.5s, at 4 waves 21.1s. **Between 5,000 and 10,000 words the wall-clock
+barely moves.** Document size is not what will break the ceiling; per-call
+latency on a bad day is.
+
+```
+  5000 words ->  15 chunks -> 2 waves   at 45s/wave  90s   at 65s/wave 130s
+  7500 words ->  22 chunks -> 3 waves   at 45s/wave 135s   at 65s/wave 195s
+  8000 words ->  23 chunks -> 3 waves   at 45s/wave 135s   at 65s/wave 195s
+  8400 words ->  24 chunks -> 3 waves   at 45s/wave 135s   at 65s/wave 195s
+ 10000 words ->  29 chunks -> 4 waves   at 45s/wave 180s   at 65s/wave 260s
+```
+
+**What per-wave time to plan for. Three numbers exist and they disagree by
+13x:**
+
+| Source | Words | Waves | Seconds | Per wave |
+|---|---|---|---|---|
+| This session, lab, mistral-small | 9,946 | 4 | 21.1 | **~5s** |
+| `lib/engine/client.ts`, 21 Aug, engine only | 7,848 | 3 | 104 | **~35s** |
+| **Live production, deepseek** (the brief) | 478 | 1 | 64.982 | **~65s** |
+
+**The worst per-wave figure this project has ever recorded in production is
+~65 seconds. At that rate four waves is 260 seconds and the site aborts at
+240. Ten thousand words does not fit against the worst condition on record.
+Three waves is 195 seconds and does.**
+
+**Recommendation: 8,000 words.** It is 23 chunks and 3 waves, it clears the
+3-wave boundary (24 chunks / 8,400 words) with slack, and **against the worst
+production number on record it lands at 195 seconds — 45 seconds inside the
+abort.** On the day I measured, 8,000 words takes about 16 seconds, so
+**nothing is given up in the ordinary case.**
+
+**The safety margin, stated plainly:** I am not applying a percentage to a
+measured median. I am sizing the document so that the **slowest per-wave time
+ever observed in this project still completes**, and 8,000 is the largest
+round number that does. That is the margin: it survives the worst day on
+record rather than the day I happened to measure.
+
+**If Jon would rather keep 10,000**, the failure mode is not money lost — the
+site aborts at 240s and refunds the credit (`client.ts`), and layers A and
+metadata still deliver. It costs the customer a failed job on the biggest,
+most valuable document. **The way to settle it properly is one production
+measurement of a 10,000-word document, which is the thing I could not do.**
+
+**This is a number, not a sentence. The word limit on the site is Lane D copy
+and not mine to write** — the brief is explicit. Handing back: **8,000.**
+
+---
+
+# WHAT I COULD NOT PROVE
+
+**1. That deepseek can run this site.** It has no ladder measurement at all.
+Two short-document samples today were fast and clean; that says nothing about
+29 chunks. The model recommendation therefore compares two candidates, not
+three, and says so.
+
+**2. That the corrected engine holds at scale.** The block-quote fix in §1.7
+landed mid-campaign. **Exactly one live run is on the fixed code** —
+mistral-medium at 9,946 words, 83/83 spans against 75/83 on the run before it.
+That is a real confirmation and it is n=1. **Every other number in the job 2
+table is from the engine as it was before the fix.** The re-run was written
+and ready; the budget cap stopped it.
+
+**3. That production latency resembles the lab.** The entire ceiling argument
+turns on this and I could not test it. The three per-wave figures available
+span 5s to 65s — a 13x spread — and only the 65s one came from production. My
+8,000-word recommendation is sized against that worst figure precisely because
+I could not measure the real one.
+
+**4. That layer B is actually down on the live site.** The key returns 402 for
+every model, and every written record says production shares this key. **I
+could not read production's environment to confirm it** — the permission layer
+refuses, exactly as it refused E-9. If production has its own key, this is my
+problem only.
+
+**5. That the freeze's remaining span shortfall is understood.** Even before
+the block-quote bug, the pre-fix runs show shortfalls the fix does not
+explain: mistral-small at 2,971 words returned 87/90 in all three runs.
+**Three spans, identical every run, deterministic.** I found and fixed one
+deterministic cause; **this is a second one and I did not chase it.** It is
+the highest-value thing waiting, because it is the same shape as the bug I did
+fix: silent, repeatable, and against the one sentence the freeze exists to
+make. Start at `engine/lab/ladder_report.py` on `ladder_3000`.
+
+**6. Whether a statistical watermark was removed.** Not measurable, by anyone,
+and nothing in this session touched it. Every number here measures how much
+original wording came back. **Layer B is best effort and the site says so.**
+
+---
+
+# WHERE THE NEXT SESSION PICKS UP
+
+**Blocking, and Jon's alone: raise the AI Gateway key's budget past $10.00**,
+or issue a key with headroom. Nothing that touches a model can run until then,
+including the site.
+
+Then, in order:
+
+1. **Re-run the ladder on the corrected engine** —
+   `python engine/lab/freeze_measure.py ladder` — and read it with
+   `python engine/lab/ladder_report.py`. This is written, tested and ready; it
+   just needs budget. **Include deepseek, which is the one candidate with no
+   measurement.**
+2. **Chase the 87/90 shortfall on `ladder_3000`** (§5 above). Deterministic,
+   costs nothing to reproduce, same shape as the bug already fixed.
+3. **Decide the hard-wrap question** in `06` — a hard-wrapped document gets no
+   quote protection at all.
+4. **Recalculate `docs/03-pricing.md` §4b**, whose "no request can cost more
+   than two cents" rests on a 60-second cap that is now 300.
+5. **The corrected word limit, 8,000, is a Lane D copy change** and is not
+   mine to write. The number is handed back; someone else writes the sentence.
+
+**Two things landed locally and are NOT deployed.** Pushes track main and
+deploy continuously (E-9 5.5b), so both reach production on the next push,
+which is Jon's call:
+
+- the attribution correction (job 1) — novels stop being frozen;
+- **the two freeze repairs — the un-indented block quote, and the block quote
+  that opens a chunk being silently never frozen at all.** The second is
+  customer-visible and wrong in the expensive direction: the pre-flight
+  promised protection the engine did not deliver.
