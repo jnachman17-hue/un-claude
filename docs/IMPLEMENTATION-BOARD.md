@@ -6,6 +6,58 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 14:55 — MISTRAL-SMALL IS BACK, VERIFIED FROM PRODUCTION
+
+**Jon changed `WATERMARKS_REWRITE_MODEL` and redeployed. Confirmed from
+production's own log, not from the setting:**
+
+```
+UC_USAGE {"at": "2026-08-24T20:54:55Z", "endpoint": "clean", "ok": true,
+          "words_in": 64, "words_out": 69, "seconds": 2.895,
+          "layer_b_model": "mistral/mistral-small",
+          "layer_b": {"chunks": 1, "cost_usd": 0.0001574}}
+```
+
+**The same 64-word document, across all three states today:**
+
+| State | Result | Time |
+|---|---|---|
+| deepseek, no reinsertion repair | **FAILED**, customer saw an error | 16.8s |
+| deepseek, repair deployed | delivered | ~30s |
+| **mistral-small, repair deployed** | **delivered** | **2.9s** |
+
+**Ten times faster than deepseek on the identical document**, and the freeze
+still holds — the heading and the 17 words inside the quotation marks came back
+character-for-character while everything around them was reworded:
+
+```
+OUT  ## Start Times and Attendance
+     The group assembled in the third month to deliberate on the proposition,
+     with delegates hailing from eleven separate regions present at the
+     gathering. In Smith's words, "the change in start time did more for
+     attendance than any intervention we had previously funded" (p. 47). A
+     week later, the notes were distributed, and not a single recorded dissent
+     was noted among the evaluation team's members.
+```
+
+**D5 is closed on the safe side, not settled.** `mistral-small` is a holding
+position with a proven record under the freeze (0 failures in 29 runs). **The
+three-way contest — small vs medium vs deepseek, freeze ON — is job 2 of the
+brief at `docs/briefs/e16-detector-and-ceiling.md`.**
+
+## Brief issued
+
+`docs/briefs/e16-detector-and-ceiling.md` — **E-16 (the attribution cue) then
+the model/ceiling measurement.** Opus, high effort. Territory
+`apps/web/engine/**`, `engine/tests/**`, `engine/lab/**`. Explicitly barred from
+`app/**` (the word limit is a Lane D copy change, handed back not written),
+`vercel.json`, migrations, and this board. **$3.00 budget stop, because
+timed-out gateway calls bill invisibly.**
+
+**Nothing else may run in the engine lane while it is out.**
+
+---
+
 # ★★★ 24 AUGUST, 14:30 — JON'S QUESTION BROKE THE QUOTATION DETECTOR
 
 **Jon asked how the tool can possibly tell a sourced quotation from invented
