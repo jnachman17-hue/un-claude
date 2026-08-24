@@ -183,6 +183,89 @@ function accepted(name: string, data: Buffer): boolean {
   return ACCEPTED_EXTS.includes(ext) && contentsMatch(ext, data);
 }
 
+/*
+ * SCRIPTS THAT DO NOT PUT SPACES BETWEEN WORDS. Jon's ruling, 24 August 2026.
+ *
+ * Chinese, Japanese and Thai are written without spaces between the words, and
+ * every price on this site comes from a word count that counts spaces:
+ * `countWords` is one word per run of non-space characters. So a 200,000
+ * character Chinese document counts as roughly ONE word. Measured:
+ *
+ *   201,400 characters of Chinese  ->      1 word  ->  1 credit
+ *   102,700 characters of English  -> 20,800 words -> 21 credits
+ *
+ * It is billed one credit, it sails through the 10,000 word ceiling the
+ * rewrite is gated on, and rewriting it would cost us in the region of 170
+ * chunks of model calls. Anyone who noticed could paste unlimited text for a
+ * single credit.
+ *
+ * THAT IS A BILLING HOLE RATHER THAN A LANGUAGE GAP, and the ruling is to
+ * refuse these scripts with a plain message rather than price them. Refusing
+ * closes it completely: no pricing arithmetic, no change to the word ceiling,
+ * and no counter in the browser that then has to be kept in step with this
+ * file. Two implementations of one number is the trap this project has fallen
+ * into three times.
+ *
+ * KOREAN IS DELIBERATELY NOT HERE. Korean puts spaces between its words, so it
+ * counts correctly and prices correctly, and refusing it would turn away a
+ * paying customer for nothing. Verified below.
+ *
+ * THE OTHER SPACELESS SCRIPTS ARE NOT HERE EITHER, and that is a known gap
+ * rather than an oversight: Lao, Khmer, Burmese and Tibetan have exactly this
+ * hole and are one entry away from being closed. The ruling named three, so
+ * three is what this does. `06` has the question.
+ */
+
+/**
+ * The letters of a script that writes without spaces between its words. The
+ * lookahead keeps this to LETTERS specifically, so Thai's vowel and tone marks
+ * are not counted here while being excluded from the total below: both counts
+ * then measure the same thing and their ratio means something.
+ */
+const SPACELESS_LETTERS =
+  /(?=\p{L})[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/gu;
+
+/** Every letter, in any script. The denominator. */
+const ANY_LETTER = /\p{L}/gu;
+
+/**
+ * How many characters a pattern matches, counted without building an array of
+ * them. A 5 MB paste can hold millions of matches and the count is all we want.
+ */
+function countMatched(text: string, pattern: RegExp): number {
+  return text.length - text.replace(pattern, '').length;
+}
+
+/*
+ * THE THRESHOLD, AND WHY IT IS A SHARE RATHER THAN "CONTAINS ANY".
+ *
+ * An English essay quoting a Chinese phrase has to go through. So the test asks
+ * what fraction of the document's letters belong to a spaceless script.
+ *
+ * Below a fifth, it is an English document with something quoted inside it, and
+ * the English around the quotation is still being counted and charged for
+ * honestly. Above a fifth it is not an English document any more and we have no
+ * honest price for it. Measured on an essay carrying repeated Chinese
+ * quotations: 40 separate quoted phrases, 360 Chinese characters, still goes
+ * through at 14.8%.
+ *
+ * The floor of twenty characters is so that an aside cannot trip the test on a
+ * very short paste: "I told him ok and he said 好" is 2.7% and would pass the
+ * share test anyway, but a three word note would not.
+ */
+const SPACELESS_MINIMUM = 20;
+const SPACELESS_SHARE = 0.2;
+
+function isSpacelessScript(text: string): boolean {
+  const spaceless = countMatched(text, SPACELESS_LETTERS);
+
+  if (spaceless < SPACELESS_MINIMUM) return false;
+
+  const letters = countMatched(text, ANY_LETTER);
+
+  return letters > 0 && spaceless / letters >= SPACELESS_SHARE;
+}
+
 /** Cookie lifetime: a year. The guest's credits should outlive a holiday. */
 const GUEST_COOKIE_SECONDS = 60 * 60 * 24 * 365;
 
@@ -268,6 +351,35 @@ export async function POST(request: Request) {
     return fail(
       'bad_format',
       'That file type is not supported. Use text, a Word document, PNG or JPG.',
+    );
+  }
+
+  /*
+   * AND HERE, BEFORE ANYBODY IS ASKED TO PAY. See `isSpacelessScript` above for
+   * the billing hole this closes and the threshold it uses.
+   *
+   * THE POSITION IS PART OF THE FIX. Everything to do with credits is below
+   * this line: the session, the grants, the price and the spend. Refusing here
+   * means nobody is ever told to buy credits for a job that will then be
+   * refused. That exact ordering defect was found by the F1 audit and fixed
+   * once already, in the format check directly above; reintroducing it three
+   * lines later would be a poor joke.
+   *
+   * ONLY THE PAID REWRITE IS REFUSED. The free scan is a different route and is
+   * untouched, and a request that does not ask for the rewrite still runs:
+   * layer A reads characters and the metadata layer reads a file's wrapper, and
+   * neither one cares what language the writing is in, or costs us anything.
+   */
+  if (
+    wantsRewrite &&
+    (!isFile || isEngineText(inputName)) &&
+    isSpacelessScript(bytes.toString('utf8'))
+  ) {
+    return fail(
+      'unsupported_script',
+      'We cannot sanitise Chinese, Japanese or Thai yet. Nothing is wrong ' +
+        'with your document, and scanning it for hidden characters is still ' +
+        'free.',
     );
   }
 
@@ -444,6 +556,37 @@ export async function POST(request: Request) {
    */
   if (ledgerId !== null) {
     await recordRunCost(ledgerId, result);
+  }
+
+  /*
+   * OUR OWN UNIT ECONOMICS COME OFF THE REPLY HERE, AND THE POSITION IS THE
+   * WHOLE FIX. Lane A's E-12, session-notes/lane-a-engine.md 3.8.
+   *
+   * Every rewrite handed the browser `report.layer_b.usage` whole:
+   *
+   *   "usage": { "model_calls": 1, "prompt_tokens": 813, "completion_tokens": 49,
+   *              "total_tokens": 862, "cost_usd": 9.6e-05, ... }
+   *
+   * `_shared.py` is careful to keep cost out of the top-level `usage` block
+   * (_PUBLIC_FIELDS), and then the same figures ride to the browser inside the
+   * report, because `strip_server_paths` removes only `path`. Anyone with the
+   * network tab open could read what a run costs us.
+   *
+   * IT HAS TO HAPPEN AFTER `recordRunCost` ABOVE AND BEFORE THE RESPONSE, and
+   * nowhere else. That writer reads exactly these figures from exactly this
+   * spot, server side, and its row is what makes the privacy policy's promise
+   * to record "what the run cost us" a true sentence. Stripping them any
+   * earlier — higher up this file, or in the Python engine — feeds the writer
+   * nulls and the promise quietly becomes a lie again.
+   *
+   * `chunks`, `attempts` and `retries` stay: they count work rather than money,
+   * and the interface's own behaviour already implies them. Nothing in the
+   * browser reads any part of this block either way.
+   */
+  if (result.report?.layer_b?.usage) {
+    const { chunks, attempts, retries } = result.report.layer_b.usage;
+
+    result.report.layer_b.usage = { chunks, attempts, retries };
   }
 
   /*

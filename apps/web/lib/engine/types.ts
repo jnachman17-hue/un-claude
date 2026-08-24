@@ -75,8 +75,20 @@ export interface LayerBUsage {
   attempts: number;
   /** Attempts beyond the first for each chunk, summed. */
   retries: number;
+  /*
+   * EVERYTHING BELOW THIS LINE IS OURS AND NEVER REACHES A BROWSER. It is our
+   * unit economics on a public site: what a run cost us, in tokens and in
+   * dollars. `app/api/tool/clean/route.ts` strips the whole group out of the
+   * reply after the run-cost writer has read it and before the response goes
+   * out, so a browser sees `chunks`, `attempts` and `retries` and nothing else.
+   *
+   * They are optional here because that stripped reply is a real value of this
+   * type. Server-side callers still get them: they read the engine's answer
+   * before the route narrows it.
+   */
+
   /** Requests the model actually answered. Every one of them was billed. */
-  model_calls: number;
+  model_calls?: number;
   /** Answers that arrived with no usage block, so a zero can be told from a gap. */
   calls_without_usage?: number;
   prompt_tokens?: number;

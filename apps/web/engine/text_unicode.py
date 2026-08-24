@@ -551,7 +551,7 @@ def inspect_text(
         "Layer A only: invisible/format Unicode and space homoglyphs (edit-based carriers).",
         "Statistical (token-sampling) watermarks are not detectable here; use Layer B rewrite.",
         "Inspect kinds: strip, bidi, tag_chars, variation_selector, zwj_family, private_use, space, confusable, other_cf.",
-        "Load-bearing invisibles are preserved by default during cleaning: emoji glue, CJK/Mongolian variation selectors, script joiners, complete flag tag sequences, same-script fillers/selectors (Mongolian FVS, Khmer inherent vowels, Hangul jamo fillers), RTL directional marks/paired embeddings, and orthographic Arabic/Syriac Cf marks. Inspection still reports bidi controls. Use explicit strip flags only after review.",
+        "Some invisible characters are load-bearing, and cleaning keeps them by default, because taking them out would damage the writing rather than unmark it. Kept: the joiners that hold an emoji or a flag together; the joiners that decide whether two letters connect, in scripts such as Arabic and Devanagari; the variation selectors and fillers that choose a letter's shape in Mongolian, Khmer, Hangul, Chinese and Japanese; and the direction marks and paired embeddings that Arabic, Hebrew and Syriac need in order to be read in the right order. Scanning still reports every one of them, direction controls included, so they are kept in plain sight rather than quietly ignored. The strip flags will remove them anyway, once you have looked at what you would be removing.",
     ]
     if not hits:
         notes.append(

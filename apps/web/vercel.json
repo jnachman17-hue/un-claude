@@ -4,6 +4,9 @@
     "api/*.py": {
       "maxDuration": 300,
       "memory": 1024
+    },
+    "app/api/tool/clean/route.ts": {
+      "supportsCancellation": true
     }
   },
   "redirects": [
