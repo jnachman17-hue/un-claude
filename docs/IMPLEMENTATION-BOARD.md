@@ -6,6 +6,91 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 13:20 — DEEPSEEK IS LIVE, AND PRODUCTION IS FAILING A 64-WORD PASTE
+
+**Jon authorised one real rewrite on production to read the live model. It
+failed, and chasing the failure answered three questions at once.**
+
+## 1. THE MODEL IS `deepseek/deepseek-v3.2`. Confirmed from production's own log.
+
+`vercel logs un-claude.com` — a successful customer run at 19:25:23Z:
+
+```
+UC_USAGE {"endpoint": "clean", "ok": true, "words_in": 478, "words_out": 480,
+          "seconds": 64.982, "layer_b_used": true,
+          "layer_b_model": "deepseek/deepseek-v3.2",
+          "layer_b": {"chunks": 2, "attempts": 4, "retries": 2, ...}}
+```
+
+**D5's switch is live.** Jon confirms he changed `WATERMARKS_REWRITE_MODEL`
+only, not the key, and topped the gateway up separately.
+
+**Note the second number: 64.982 seconds for 478 words** — against the
+interface's own promise, *"This can take about 10 seconds."* The site aborts at
+240. **A Lane D item and an E-8 ceiling input, both created by the switch.**
+
+## 2. ★ THE LIVE RUN FAILED — the real customer path, on an ordinary paste
+
+64 words, one heading, one attributed quotation, driven through the actual
+interface as an anonymous guest. The visitor saw:
+
+> **"The rewrite could not be completed. Nothing was charged. Please try again."**
+
+```
+UC_USAGE {"endpoint": "clean", "ok": false, "code": "layer_b_failed",
+          "words_in": 64, "seconds": 16.778,
+          "layer_b": {"chunks": 1, "attempts": 2, "retries": 1,
+                      "model_calls": 2, "cost_usd": 0.00020118}}
+```
+
+**Two honest positives inside the failure:** the customer was *not* charged, so
+D3's refund path works on production; and the blind attempt plus one informed
+retry is exactly the bound Lane A ruled.
+
+## 3. ★★ THE A/B THAT SETTLES IT — the unpushed commit is the fix
+
+The log does not say *why* it failed, and the answer decides whether the push
+is the fix or deepseek simply has to go. **So I ran both versions against the
+same document, on deepseek, through the live gateway, minutes apart.**
+
+`origin/main` is `99be2ea`. `efff100` (the informed retry) **is** an ancestor of
+it — live. `4288e95` (`_reinsert_lost_masks`) **is not** — not live. I copied
+`apps/web/engine` and checked out `origin/main`'s `uc_chunk.py` and
+`uc_freeze.py` over it, so one copy is byte-for-byte what production runs.
+
+```
+PRODUCTION CODE (no reinsertion repair) — 5 runs, deepseek, freeze ON
+  run 1: FAILED  FreezeRestoreFailed: 64 of 64 words came back unrewritten…
+  run 2: FAILED  FreezeRestoreFailed: 64 of 64 words came back unrewritten…
+  run 3: FAILED  FreezeRestoreFailed: 64 of 64 words came back unrewritten…
+  run 4: FAILED  FreezeRestoreFailed: 64 of 64 words came back unrewritten…
+  run 5: FAILED  FreezeRestoreFailed: 64 of 64 words came back unrewritten…
+
+LOCAL CODE (with the unpushed repair) — 5 runs, same document, same model
+  run 1: DELIVERED  heading_intact=True quote_intact=True retries=0 fallbacks=0
+  run 2: DELIVERED  heading_intact=True quote_intact=True retries=0 fallbacks=0
+  run 3: DELIVERED  heading_intact=True quote_intact=True retries=0 fallbacks=0
+  run 4: DELIVERED  heading_intact=True quote_intact=True retries=0 fallbacks=0
+  run 5: DELIVERED  heading_intact=True quote_intact=True retries=0 fallbacks=0
+```
+
+**0 of 5 against 5 of 5. Not intermittent — deterministic for this document
+shape on this model.** `64 of 64 words` is the single-chunk case E-9's note
+names: one chunk, so any fallback is 100%, so it always refunds.
+
+**Conclusion: the five unpushed commits are the fix, and the fix is proven.**
+The push is no longer housekeeping — **production is deterministically failing
+a short heading-plus-quotation paste until it happens.**
+
+## 4. What this changes on the board
+
+- **PUSH IS NOW THE TOP ITEM.** Not "maybe we push."
+- **D5 is answered by accident: deepseek is already live.** It was not ruled in; it was switched on. Post-push it delivers 5 of 5 on this shape, so the switch is survivable — **but 65 seconds for 478 words is unresolved and belongs to E-8/D6.**
+- **The open-weight licence check D5 required has still not been done.**
+- **New Lane D item (C-14):** the interface says *"about 10 seconds"*; production measured 65.
+
+---
+
 # ★★★ 24 AUGUST, 12:55 — E-9 VERIFIED BY THE CONDUCTOR
 
 **E-9 is complete and its note is honest.** I re-ran or recomputed every
