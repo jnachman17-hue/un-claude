@@ -6,6 +6,63 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 15:15 — E-16 IS RUNNING, AND THE CONDUCTOR GOT LANE D WRONG
+
+## What is running
+
+| Session | State |
+|---|---|
+| **E-16 + the model/ceiling measurement** | **IN FLIGHT.** Brief: `docs/briefs/e16-detector-and-ceiling.md`. Territory `apps/web/engine/**`, `engine/tests/**`, `engine/lab/**`. Note will be `docs/session-notes/e16-detector-and-ceiling.md` |
+
+**NO DEPLOYS while it runs.** Pushes deploy automatically on this repo, and a
+deploy ships the working tree — E-16 has engine edits on disk.
+
+## ★★ THE CONDUCTOR'S THIRD ERROR — the copy lane was reported as outstanding and is nearly done
+
+**I built a claims table for Jon from this board's "EVERYTHING STILL
+OUTSTANDING" section without reading `docs/session-notes/lane-d-copy.md`.** That
+session had already closed most of it the same morning. **This is exactly the
+verify-do-not-aggregate failure the handoff warns about, committed by the
+conductor for the third time in this project.**
+
+**Checked against the live site and the code, 15:10:**
+
+| Item | Board said | Truth |
+|---|---|---|
+| **C-2** "you get all three" | outstanding | **FIXED.** 0 occurrences across `/`, `/pricing`, `/how-it-works`, `/capabilities` |
+| **C-10** "any size" | outstanding | **FIXED.** Live text: *"one flat credit at any size we accept, which is up to 3.2 MB"* |
+| **C-7** deletion warning | outstanding | **FIXED.** `i18n/messages/en/account.json` → *"…your entire credit history. Any credits still on your balance go with it, including ones you paid for."* No teams, no subscriptions |
+| **C-11** "quotes 1 credit, charges 5" | outstanding | **NEVER TRUE.** `uc_policy.py:175` returns `{"credits": 1, "basis": "flat"}` for a file. **The board item was wrong, not the site** |
+| **C-12** "the picture itself is untouched" | outstanding | **FIXED** per the Lane D note |
+| **C-13** the privacy sentence | outstanding | **SHIPPED** per the Lane D note |
+| **C-4** "100% of detectable marks removed" | outstanding | **SETTLED — IT STAYS.** Jon reverted a change to it. `04` 134–135. **I listed a settled ruling as open work. Do not reopen** |
+
+**All rows above are struck from the outstanding list.**
+
+## What is ACTUALLY left in Lane D — two items, both blocked on E-16
+
+| ID | Item | Blocked on |
+|---|---|---|
+| **C-3** | **"A hard three-word ceiling."** Confirmed live: 4 occurrences on `/`, 3 on `/how-it-works`. Today's receipt printed **10**. **Permanently wrong** — the freeze returns whole quotations intact by design, so long runs are now a feature. **Needs a new sentence, not a new measurement** | Nothing, strictly — but it should be written once the freeze's final shape is known |
+| **C-14** | **"This can take about 10 seconds."** Measured 65s on deepseek, 2.9s on mistral-small for a short paste. *(Client-rendered, so a `curl` grep cannot see it — I read it in the browser)* | E-16 job 2's timing table |
+| **C-9** | The advertised size ceiling | E-16 job 2 |
+
+**CONSEQUENCE FOR SEQUENCING: there is no useful parallel copy session right
+now.** I was about to recommend one. That recommendation is withdrawn.
+
+## The best parallel work instead: P4, the banner nobody can read
+
+**Unblocked, single file, and it is money-adjacent.** A buyer whose credits are
+slow sits on *"Payment received. Adding your credits now…"* forever. It is meant
+to retry ten times over ~15 seconds then say *"refresh, and if they are still
+missing, email us."* **It tries once and stops.** The retry is scheduled inside
+an effect whose dependencies `router.refresh()` does not change.
+
+Territory: `apps/web/app/home/_components/purchase-banner.tsx` — **no overlap
+with E-16.** Measured against `/dev/purchase?purchase=success&landed=0`.
+
+---
+
 # ★★★ 24 AUGUST, 14:55 — MISTRAL-SMALL IS BACK, VERIFIED FROM PRODUCTION
 
 **Jon changed `WATERMARKS_REWRITE_MODEL` and redeployed. Confirmed from
