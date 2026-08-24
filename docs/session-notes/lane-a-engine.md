@@ -15,8 +15,8 @@ AI Gateway balance at start   $7.57668008
 | 1 — safety net | **DONE** | fc6a11e |
 | 2 — repair | **DONE** | dc8354d |
 | 3 — six fixes + two handovers | **DONE** (two write-ups instead of two of the fixes — see step 3) | 4a217f3, 4d7ea40 |
-| 4 — report | in progress | |
-| 5 — bake-off | not started | |
+| 4 — report | **DONE** | see git log |
+| 5 — bake-off | in progress | |
 | 6 — freeze re-scope | not started | |
 
 ---
@@ -322,4 +322,63 @@ is unchanged.
 
 ---
 
-*(Steps 4–6 below are appended as they finish.)*
+# STEP 4 — REPORT. The instrument exists, the freeze is off, and it caught the flagship defect on its first live run.
+
+`uc_spans.py`: the protected-span detector and its deterministic checks,
+riding in every rewrite's report as `layer_b.protection`. **Report only:** it
+changes no output, fails no job, costs no model call, and nothing raises.
+
+**What it detects:** quotations (with D2's attribution cue, so attributed and
+unattributed are counted separately), block quotes, headings, reference
+entries, URLs, emails, code fences, tables, equations, and `[sic]` markers.
+
+**The Sources latch is fixed by construction.** A paragraph after a
+Sources/References/Bibliography/Works-cited heading counts as a reference
+entry **only if it looks like one** — a bracketed year, a DOI, a URL, a page
+range, a publisher — and the section ends at the first paragraph that does
+not. The W10 verifier's breaking case (a "Sources" heading over ordinary
+analytical prose, 56.1% frozen, 12 of 12 runs under the old design) now
+yields **zero reference entries**, locked in `test_spans_detector.py`.
+
+**What "returned verbatim" means, said in the report itself:** the span
+appears character-for-character in the output as often as in the input.
+Presence and count, not position — the report's own note says which, because
+W10's verifier faulted a design for quietly promoting this test to
+byte-identity.
+
+## The first live run, in full
+
+One real document — a heading, an attributed Orwell quotation, a URL, a
+reference entry — through the real engine and gateway:
+
+```
+"spans_found":        { "quote": 1, "url": 1, "heading": 2, "reference": 1 }
+"returned_verbatim":  { "url": 1, "heading": 2, "reference": 1 }
+"changed":            { "quote": 1 }
+"quotes_attributed":  1
+"examples_changed":   [ { "kind": "quote",
+                          "before": "to make lies sound truthful and murder respectable," } ]
+"structure_kept":     true
+```
+
+The delivered document's quotation read *"to render falsehoods credible and
+killing seem decent"* — *words Orwell never wrote, still in quote marks, still
+attributed to him* — **and for the first time the engine's own report says
+so.** The heading, the URL and the reference entry came back verbatim and the
+report says that too.
+
+**The same run caught a repair blindspot, now fixed:** the prose's "in 1946"
+came back as "in nineteen forty-six" and repair excused it because the same
+year's digits survived inside the reference entry. "The value is still in the
+text somewhere" is the fact guard's own blindness, and repair no longer
+shares it — the spelled-out year is restored wherever it appears, provided
+the customer did not spell it out themselves.
+
+`structure_kept` now rides inside the protection block as well, so the flag
+the engine computed and nothing read sits in the one place a reader of this
+report will open. **Showing it to the visitor is interface work (Lane C,
+W-10), and the words it is shown under go through the messaging skill.**
+
+---
+
+*(Steps 5–6 below are appended as they finish.)*
