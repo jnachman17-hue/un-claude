@@ -144,8 +144,17 @@ _TOKEN = re.compile(
 
 def _format_value(value: float | int) -> str:
     """One spelling per value, so two texts can be compared as sets."""
-    if isinstance(value, float) and value.is_integer():
-        value = int(value)
+    if isinstance(value, float):
+        # Scale multiplication in floating point drifts: 8.3 * 1_000_000 is
+        # 8300000.000000001, which failed to match the same document's own
+        # "8,300,000" and put the string "8300000.000000001" in front of a
+        # customer as a figure to check. Caught live, 24 August 2026. A value
+        # within a millionth of a whole number IS that whole number here.
+        nearest = round(value)
+        if abs(value - nearest) < 1e-6:
+            value = nearest
+        elif value.is_integer():
+            value = int(value)
     if isinstance(value, int):
         return str(value)
     return repr(value).rstrip("0").rstrip(".")

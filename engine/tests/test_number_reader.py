@@ -71,6 +71,16 @@ def test_historical_regressions(text, expected):
     assert _numbers(text) == expected
 
 
+def test_scale_multiplication_does_not_drift():
+    # Caught live on a 5,047-word run: 8.3 * 1,000,000 in floating point is
+    # 8300000.000000001, which failed to match "8,300,000" in the same
+    # document and put that string in front of a customer as a figure to
+    # check.
+    assert _numbers("$8.3 million") == {"8300000"}
+    assert _numbers("$8.3 million") == _numbers("8,300,000 dollars")
+    assert _numbers("1.1 billion") == _numbers("1,100,000,000")
+
+
 def test_same_value_two_spellings_compare_equal():
     # The reader compares VALUES, never spellings: 'eighteen percent' for
     # '18 percent' is not a loss.
