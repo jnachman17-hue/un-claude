@@ -811,7 +811,30 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
                     # document past roughly 2,000 words: a 3,367 word test came
                     # back as 348 words reported as success. 04 entry 22 forbids
                     # truncation outright, so a short result raises instead.
+                    source_text = text
                     text, layer_b_report = rewrite_long(text, _one)
+
+                    # REPAIR: take back out of the rewrite what the model put
+                    # in — markdown the input never had, curly punctuation the
+                    # customer never typed, em dashes past the input's own
+                    # count, and years spelled out against rule 5a. Every rule
+                    # conditions on the customer's own text, is deterministic,
+                    # and costs no model call. See uc_repair.py.
+                    from uc_repair import repair_rewrite
+
+                    text, repair_stats = repair_rewrite(source_text, text)
+                    layer_b_report["repair"] = repair_stats
+                    # A restored year can retire a flagged figure: the guard
+                    # listed it as missing from the rewrite, and the repair
+                    # just put it back.
+                    if repair_stats.get("years_restored") and layer_b_report.get(
+                            "figures_to_check"):
+                        from uc_chunk import _numbers
+
+                        layer_b_report["figures_to_check"] = [
+                            m for m in layer_b_report["figures_to_check"]
+                            if m not in _numbers(text)
+                        ]
                 except TruncatedRewrite as e:
                     raise _layer_b_failure(
                         f"layer B rewrite failed: truncated: {e}", e) from e
