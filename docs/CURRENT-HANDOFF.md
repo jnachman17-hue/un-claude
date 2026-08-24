@@ -2,6 +2,41 @@
 
 ---
 
+# 24 AUGUST 2026, LANE A: ALL SIX STEPS DONE. NOT DEPLOYED.
+
+**The engine lane ran overnight and finished.** Full evidence in
+`session-notes/lane-a-engine.md`; 13 commits, all local. **The tree now holds
+Lane A's engine changes and nothing is deployed** — the board already notes
+M-6's config experiment is waiting on a quiet tree, and this is that tree.
+
+**What changed in the engine (all tested, 762 passed / 1 skipped):**
+the chunk plumbing no longer loses whitespace-edge lines or a customer's own
+`---` (caught by the new byte-identity safety net); a REPAIR pass strips the
+markdown/curly-punctuation/em-dash tells the model injects, at median +0.0000
+trigram cost; **layer A now runs before the rewrite**, so its report describes
+the customer's own document (verified live both ways); the number reader,
+CJK-aware internal word counts, code-fence stitching and fragile chunk
+boundaries are fixed; the stylometry scanner no longer fires on "in the
+world" and seven other ordinary phrases; and every rewrite now carries a
+report-only `protection` block that counts which quotations, headings and
+references came back verbatim — the freeze stays OFF and unbuilt.
+
+**Three things for Jon:**
+
+| | |
+|---|---|
+| **1. The model (D5)** | Bake-off done: 160 runs, 17 configs, a 5,047-word scale test. **Recommendation: `deepseek/deepseek-v3.2`** — quotations mostly intact where the mistrals destroyed every one, same speed as medium at scale, 1/6 the cost, fewest retries. One Vercel env var; confirm the checkpoint is open-weight first. kimi-k3 investigated as asked: completes only with the new reasoning knob, loses nothing, but rewrites weakly and blows the time ceiling |
+| **2. E-12, the cost leak** | Fix is one guarded line in `app/api/tool/clean/route.ts` AFTER `recordRunCost` — written out verbatim in the session note. Out of Lane A's territory; stripping engine-side would break the live run-cost writer |
+| **3. CJK pricing** | The honest word counter exists and runs engine-internally; wiring it to billing/floor/gate + the browser counter is ONE coupled decision, recorded in `06` |
+
+**Deploy note:** deploying now ships all of Lane A's engine fixes plus the
+`protection`/`repair` report blocks. Nothing in them changes a price or a
+claim; the workbench ignores unknown report fields.
+
+---
+
+## Previous handoff follows
+
 # 24 AUGUST 2026, LANE B: APPLIED AND DEPLOYED. ONE FIX DID NOT LAND
 
 **M‑6 does not work in production.** The connection-drop refund is real code

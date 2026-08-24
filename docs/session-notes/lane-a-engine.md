@@ -2,22 +2,50 @@
 
 **24 August 2026, overnight session.** Steps per `docs/briefs/LANE-A-engine.md`.
 
-**STATUS: IN PROGRESS. This header is rewritten as each step lands; if the
-session ended unexpectedly, everything below the line for a finished step is
-real and committed, and anything not listed did not happen.**
+# THE SHORT VERSION
+
+**All six steps are done.** Nothing was skipped outright; two items inside
+step 3 ended as write-ups rather than code, each because the stopping rules
+required it, and both are recorded with exact fixes: **E-12** (the cost leak —
+the only correct fix lives in `route.ts`, which this brief forbids touching,
+and an in-territory fix would break the live run-cost writer) and **the
+customer-facing half of CJK word counting** (one coupled pricing decision,
+Jon's, now in `06`). Everything else shipped, with the real before-and-after
+pasted under each step below.
+
+- The safety net caught **two real text losses in the committed plumbing**
+  before any model was involved. Both fixed.
+- Repair removes the AI tells the tool itself was adding, at **median +0.0000**
+  trigram cost, measured on 12 real gateway runs.
+- Layer A now reports on the document the customer sent — verified live both
+  ways: `removed_count: 0` before, `removed_count: 2` with both characters
+  named after.
+- The report instrument caught the flagship defect (a rewritten Orwell
+  quotation) on its **first live run**, and the Sources latch is fixed by
+  construction.
+- The bake-off: **160 measured runs, 17 model configurations, one 5,047-word
+  scale test.** Recommendation: **`deepseek/deepseek-v3.2`** — the switch
+  itself is Jon's (D5).
+- The freeze re-scope is on paper, nothing built, per the brief.
 
 ```
 AI Gateway balance at start   $7.57668008
+AI Gateway balance at end     $5.44054931     (see the caveat in step 5:
+                              timed-out reasoning calls bill invisibly, and
+                              the live site shares this key)
+engine suite                  762 passed, 1 skipped   (baseline 523 + 1)
+Do-not-touch list             untouched; pricing drift guard 3/3 PASS
+Deployed or pushed            NOTHING
 ```
 
 | Step | State | Commit |
 |---|---|---|
 | 1 — safety net | **DONE** | fc6a11e |
 | 2 — repair | **DONE** | dc8354d |
-| 3 — six fixes + two handovers | **DONE** (two write-ups instead of two of the fixes — see step 3) | 4a217f3, 4d7ea40 |
-| 4 — report | **DONE** | see git log |
-| 5 — bake-off | in progress | |
-| 6 — freeze re-scope | not started | |
+| 3 — six fixes + two handovers | **DONE** (E-12 and CJK-pricing as write-ups, above) | 4a217f3, 4d7ea40 |
+| 4 — report | **DONE** | c1facbb |
+| 5 — bake-off | **DONE** | d75adbf, 0168c96 |
+| 6 — freeze re-scope | **DONE, on paper only** | 4cd6432 + this file |
 
 ---
 
@@ -429,4 +457,177 @@ chunk's original text per D3 (hand back, explain, threshold for refund).
 
 ---
 
-*(Step 5's results are appended when the runs finish.)*
+# STEP 5 — THE BAKE-OFF. 160 measured runs, 17 model configurations, and a recommendation.
+
+**Enumerated from the gateway itself on 24 August, not from any list in these
+documents:** 352 models, of which roughly 90 are open-weight families. 14
+credible candidates ran through the **real engine path** — `rewrite_long`, the
+real prompt, the real guards, the production 45-second call timeout — against
+four documents built to carry the W10 defect list, measured with step 4's
+instrument plus per-document sentinel strings. Then a second pass with
+`reasoning_effort: "none"` on the three models that timed out, and a
+5,047-word scale test on the finalists at the full production retry budget.
+
+**Two stated departures from production in the short-document sweep, both
+bounded:** retries capped at 2 (so a timing-out model costs minutes, not
+hours), and four documents per model run in parallel. The scale test used the
+production budget (8 retries, 180s deadline).
+
+## The full field — 8 runs each, four documents, per model
+
+```
+model                            fail  sec med/max  overlap  sent lost  quotes chg  heads chg  inject
+mistral-small (CURRENT)             0   2.4 / 5.3    0.0611     19/42       8/8        6/12       43
+mistral-medium                      0   2.8 / 7.5    0.0757     16/42       6/8       11/12      131
+mistral-large-3                     1   9.2 / 12     0.0458     17/36       7/8         7/7       24
+meta/llama-4-maverick               0   1.6 / 1.7    0.2628      9/84      6/16        4/24        0
+deepseek-v3.2                       0   3.1 / 5.8    0.2369      5/84      4/16        4/24        3
+deepseek-v4-flash                   7  92.8 / 93.3   —  (times out: reasoning model, default mode)
+deepseek-v4-flash [effort none]     0   3.4 / 4.2    0.2538      3/42       1/8        2/12        0
+zai/glm-4.7-flashx                  5  93.1 / 93.7   —  (times out; IGNORES the effort parameter)
+zai/glm-5                           0   2.8 / 4.9    0.3260      0/42       0/8        2/12        3
+moonshotai/kimi-k2                  1   6.5 / 93.2   0.1692      7/78      0/16       10/19        6
+moonshotai/kimi-k3                  7  93.3 / 93.7   —  (times out in default mode)
+moonshotai/kimi-k3 [effort none]    0   6.6 / 31.0   0.3114      0/42       0/8        2/12        0
+minimax-m2.5                        0  11.5 / 22.1   0.2412     12/42       0/8       12/12        0
+nvidia/nemotron-3-super-120b        0   1.9 / 3.6    0.5220      2/42       1/8        1/12        4
+alibaba/qwen3-next-80b-instruct     0   1.9 / 4.1    0.3161      4/42       2/8        2/12       25
+xiaomi/mimo-v2.5                    0  10.7 / 11.4   0.2442      6/42       2/8        7/12       23
+```
+
+*(quotes chg counts inline quotes + block quotes changed / found; llama,
+deepseek-v3.2 and kimi-k2 ran 16 runs, the rest 8. Fuller columns:
+`engine/.venv/bin/python engine/lab/bakeoff_summary.py`.)*
+
+## The scale test — one 5,047-word document, 18 chunks, production budget
+
+```
+model                     seconds  calls  retries  overlap  cost      marks injected (pre-repair)
+mistral-small (current)     36.8     49      31     0.3866  $0.0088   23 curly + 4 em dashes
+mistral-medium              50.6     60      42     0.2528  $0.0624   42 curly + 2 em dashes
+deepseek-v3.2               48.9     39      21     0.3138  $0.0113   5 curly
+llama-4-maverick            27.0     69      51     0.3606  $0.0384   none
+kimi-k2                     99.4     25      10     0.6667  $0.0283   none
+```
+
+## What the numbers say, per model — averaging would hide it
+
+- **The three mistrals rewrite hardest and destroy the most.** Every inline
+  quotation changed on small (8/8) and large (7/8); medium 6/8. Medium renamed
+  11 of 12 headings and injected 131 marks across 8 runs (now stripped by
+  repair, but the injection is real). Small lost 19 of 42 sentinels including
+  `Uppsala University`, `$4.2 million` and `beyond a reasonable doubt` twice.
+  **Their low overlap is partly bought with exactly the damage W10
+  catalogued** — the McDonald's lesson: a 0.000 overlap can be the worst
+  document in the set.
+- **deepseek-v3.2** changed 4 of 16 quotes (mostly a subtle boundary shift:
+  `designed "to make lies…"` became `crafted to "make lies…"`, moving one word
+  out of the marks), kept 20 of 24 headings, all references, injected 3 marks
+  in 16 runs, never failed, never exceeded 5.8s on a short document, and at
+  scale had the FEWEST retries of any model (21) at 1/6 of medium's cost.
+- **kimi-k2's fingerprint is unique: 0 of 16 quotations changed** — inline,
+  attributed, unattributed and block quotes all byte-identical — and only 6
+  injected marks. **But at 5,047 words it returned a document with two thirds
+  of its trigrams intact (0.6667)** — a customer paying for a rewrite gets a
+  light edit — plus one run in 16 hit two consecutive 45s timeouts. The
+  engine-limits note recorded kimi-k2 as "timed out"; the truth is subtler:
+  it mostly completes, slowly, and goes gentle at scale.
+- **kimi-k3, which Jon asked about by name:** in its default mode it thinks
+  past the 45s ceiling and fails 7 of 8. With `reasoning_effort: "none"` (a
+  new env knob this session added) it completes and **loses zero sentinels —
+  the cleanest content preservation in the field** — but the rewrite is weak
+  and erratic (overlap 0.08 to 0.78 across eight runs), it ran to 31s on a
+  300-word document, and it costs 20–40x the alternatives ($0.0044/run).
+  **The time ceiling rules it out**: at that pace a large document blows the
+  240-second site abort.
+- **glm-5 / nemotron / qwen3-next**: barely rewrite (0.33 / 0.52 / 0.32
+  overlap) — they keep everything by not doing the job.
+- **The timeout pattern is the reasoning tax, now understood**: a model tagged
+  `reasoning` through this engine thinks with no cap because the engine never
+  sent `reasoning_effort`. The new `WATERMARKS_REWRITE_REASONING_EFFORT` env
+  var fixes that for models that honour it (deepseek-v4-flash went from 7/8
+  failed to 8/8 completing at 3.4s); glm-4.7-flashx ignores it and stays
+  unusable.
+- **No model, anywhere, preserved the terms of art.** `in vitro` and `beyond a
+  reasonable doubt` were restated by every model that rewrites at all —
+  kimi-k2 wrote *"a certainty that leaves no reasonable uncertainty"*. W10's
+  rank 4 is not a model-choice problem and no bake-off will fix it.
+
+## RECOMMENDATION — and D5 says the decision is Jon's
+
+**`deepseek/deepseek-v3.2`**, replacing both the current `mistral/mistral-small`
+and the standing engine-limits recommendation of `mistral/mistral-medium`.
+
+The case, in one paragraph: it avoids most of the defect list instead of
+needing machinery to mask it — quotations mostly intact where the mistrals
+destroyed every one, headings 20/24 kept, references untouched, near-zero
+injected marks, zero fabricated sources observed — while still rewriting
+within ~0.06 overlap of medium at scale (0.31 vs 0.25), at the same speed
+(48.9s vs 50.6s on 5,047 words), with the fewest fact-guard retries in the
+field, at a sixth of medium's cost. Every quotation it leaves alone is masking
+machinery nobody has to build, and every heading it keeps shrinks what the
+freeze must do. `engine-limits` §15 recommended medium *"after this plan ships
+and not before"* — the plan shipped this session, and with repair now
+stripping medium's 131 injected marks the remaining difference is medium
+destroying quotations and headings that deepseek simply leaves alone.
+
+**Runner-up:** `deepseek-v4-flash` with `WATERMARKS_REWRITE_REASONING_EFFORT=none`
+— slightly better content preservation, slightly weaker rewrite, needs the
+extra env var. **Not recommended:** kimi-k2 (near-copy behaviour at scale),
+kimi-k3 (time ceiling and cost), anything glm (timeouts or non-rewrites).
+
+**To apply (Jon's, per D5):** set `WATERMARKS_REWRITE_MODEL=deepseek/deepseek-v3.2`
+on Vercel. No code change. **One check first:** confirm the v3.2 checkpoint is
+published open-weight (DeepSeek's releases are MIT-licensed; the ruling is
+open weights only and the licence check is not something this bake-off can
+prove from an API).
+
+## What this bake-off did NOT do — a step skipped is a step failed
+
+- **Non-English text was not tested.** W10 measured French flipping language
+  16/20 on mistral-small; whether deepseek-v3.2 does this is UNKNOWN.
+- Denominators are 8–16 runs per model against W10's thousands; the mistral
+  numbers agree with W10's large-sample findings, which is reassuring but not
+  proof for the others.
+- Latency is one day, one region, one gateway.
+- Nothing ran past 5,047 words / 18 chunks.
+- Licence verification per checkpoint is Jon's, as above.
+
+## What it cost, read from the gateway, with one honest caveat
+
+```
+balance at step 5 start   $7.53968078
+balance at step 5 end     $5.62513968     (spent: $1.91454110)
+own-accounting total      $0.13 across 160 runs + evidence + scale runs
+```
+
+**The gap is mostly the timed-out reasoning calls**: a call our side abandons
+at 45 seconds keeps generating — and billing — on the server, and reports no
+usage block to us. kimi-k3's default-mode thinking at $15 per million output
+tokens is the bulk of it. (The live site shares this gateway key, so some
+fraction may also be real customer traffic tonight; the two cannot be
+separated from here.) Recorded in `07-runbook.md`.
+
+---
+
+# STEP 6, COMPLETED — how much of the freeze is still needed
+
+Given the recommended model, per D1 both tiers still ship, but the bake-off
+reorders what they are FOR:
+
+- **The structure tier (headings, +0.016) is still clearly needed** — even
+  deepseek-v3.2 renames ~1 in 6 headings, and D1 ships it.
+- **The quotation tier's workload shrinks by most of an order of magnitude**
+  with the model switch: from 6-of-8-quotes-rewritten (medium) to 4-of-16 —
+  and two of those four were boundary shifts, not rewordings. It still ships
+  (D1, settled), but its failure surface — and therefore how often D3's
+  hand-back-and-explain path fires — is much smaller than W10's numbers
+  suggested, because those numbers were measured on the mistrals.
+- **What the freeze can never fix stays fixed by nothing**: terms of art and
+  invented facts (ranks 4 and 10) fail on every model and are not findable by
+  a program. The site's claims must continue to steer around them.
+
+The two prerequisite fixes are written down above (the latch is already fixed
+in `uc_spans.py` by construction; the guard-ordering rule is one sentence:
+guards compare customer text to customer text, never the masked pair). E-9
+remains its own session and nothing of it was built here.
