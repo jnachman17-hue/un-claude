@@ -6,6 +6,103 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 24 AUGUST, 12:10 — THE CONDUCTOR WAS WRONG ABOUT THE DEPLOY, AND THE FREEZE IS LIVE
+
+**Everything in this block was RUN, not read. Three of these correct the handoff.**
+
+## 1. "Nothing is deployed" is false. There have been ten production deploys.
+
+`npx vercel ls --prod`, 24 Aug 12:08 — ten Production deployments **Ready** in
+roughly the last ninety minutes, the most recent **five minutes ago**:
+
+```
+5m  ● Ready  Production   un-claude-recobr1t7
+7m  ● Ready  Production   un-claude-dq75e7rur
+37m ● Ready  Production   un-claude-1lm40kpjp
+58m ● Ready  Production   un-claude-ndhn8v05l
+1h  ● Ready  Production   (six more)
+```
+
+`git status -sb` says **`main...origin/main [ahead 1]`** — everything except the
+last E-9 commit is pushed. Confirmed on the live site: `/contact` and `/pricing`
+serve **`support@un-claude.com`** and no gmail address anywhere.
+
+**So the handoff's "immediate sequence" — *E-9 lands → verify → deploy, the
+deploy is the unlock* — describes a blocker that does not exist.** The route
+session's cost leak, CJK, the address and the analytics funnel are all live.
+
+## 2. ★ E-9's freeze is LIVE IN PRODUCTION while E-9 is still measuring it
+
+**Proved by a free scan against `https://un-claude.com/api/tool/scan`** — no
+login, no model call, no credit. A 119-word probe document came back with:
+
+```json
+"billing": {
+  "credits": 1, "words": 119,
+  "freeze": { "fraction": 0.2269, "frozen_words": 27,
+              "spans": { "heading": 3, "quote": 1, "reference": 1 } }
+}
+```
+
+`uc_freeze.py` defaults `UC_LAYER_B_FREEZE` to `"1"` and `UC_FREEZE_TIERS` to
+`"structure,quotes"`, and **`vercel env ls production` contains no
+`UC_LAYER_B_FREEZE`**, so the default stands: **the freeze is on, both tiers,
+for real customers, right now.**
+
+**E-9 is still running.** `engine/lab/freeze_runs/campaign2.log` was written at
+12:04 and `lab/freeze_measure.py` is a live process. **A deploy shipped the
+working tree while a session had unfinished engine work on disk — the exact rule
+the handoff states.**
+
+## 3. ★ E-9's OWN live campaign records the freeze failing whole jobs
+
+64 recorded runs across two campaigns, **$0.0192 total**. Five failures. **Four
+are the identical arithmetic, on both models and both tiers:**
+
+```
+FreezeRestoreFailed: 339 of 517 words came back unrewritten because protected
+spans could not be restored verifiably (66%, past the 33% threshold); the job
+fails rather than deliver this as a rewrite
+```
+
+| Document | Freeze | Failures |
+|---|---|---|
+| essay | **off** | **0 of 16** |
+| essay | structure | **3 of 16** |
+| essay | both | **2 of 12** (one a timeout) |
+| story / mask_heavy | on | 0 of 14 |
+
+**The cause, confirmed in the code that produced the number.**
+`uc_chunk.py:798` records a fallback as `{"chunk": i+1, "words":
+count_words(chunks[i])}` — **the whole chunk's words, not the frozen span's** —
+and `enforce_refund_threshold` compares that sum against the whole document.
+Chunks target **350 words** (`TARGET_WORDS`).
+
+**Therefore: in any document under roughly 1,050 words, one chunk falling back
+is automatically past the one-third threshold and refunds the entire job.** On
+the measured essay the structure tier freezes **3.3%** of the words — six
+headings — and a single restore hiccup returns **66%** and fails everything.
+
+The function's own docstring says *"One chunk falling back is handed back and
+explained, no refund — the customer received the work."* **The arithmetic
+contradicts the docstring on every document under four chunks.** A college essay
+is 500–1,500 words: this fires on the core customer.
+
+**This is the third time a guard would have fired on good work.** Unlike the
+first two it was caught by measurement before anyone complained — but it is live
+while being caught. **DECISION OWED BY JON: see the top of the session.**
+
+## 4. M-6 — step 2's failure branch is RULED OUT
+
+`apps/web/vercel.json` carries `"app/api/tool/clean/route.ts": {
+"supportsCancellation": true }`, and **ten production builds went Ready with it
+in place.** So the build did not reject the `functions` pattern for an App
+Router route, and the board's instruction to *"take the two lines out"* does not
+apply. **Step 3 — the free `verify-connection-drop-refund.mjs` run — is now the
+open question and is unblocked.**
+
+---
+
 # ★★ WHERE THINGS STAND — 24 AUGUST
 
 **Migration 5 applied and DEPLOYED by Jon. Lanes B, C and E are live.**
