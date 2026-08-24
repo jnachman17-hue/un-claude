@@ -467,3 +467,66 @@ leaves alone is masking machinery nobody has to build.
   Own-accounting said $0.13; the gateway said **$1.91**. Recorded in `07`.
 - **Gateway balance is now $5.44**, and the live site shares this key.
 
+---
+
+# ★★ ROUTE SESSION LANDED — 24 August. One correction to the conductor.
+
+**Three of four done. The fourth cannot be tested from a laptop.**
+
+| Item | State |
+|---|---|
+| **The cost leak** | **CLOSED, proved in both directions** — the browser reply no longer carries `cost_usd` or token counts, **and** a `run_costs` row is still written with real numbers. The position was the whole fix. |
+| **CJK refused at the door** | **DONE**, and the premise corrected — see below |
+| **The borrowed note** | **REPLACED** in this product's own words |
+| **M-6, the cancellation switch** | **WRITTEN, SCHEMA-VALID, UNPROVEN.** Its only test is a deploy |
+
+## ★ THE CORRECTION — and the conductor had this wrong
+
+**I told Jon the CJK hole was exploitable today: paste unlimited Chinese, get
+unlimited rewriting for one credit. That is not true, and the session proved it
+by running one through the real engine:**
+
+```
+characters: 2380   space-counted words: 1
+{ "skipped": "input_too_short", "min_words": 16, "words_in": 1 }
+```
+
+**One space-counted word is under the 16-word floor, so no model is ever
+called.** So:
+
+- **The LIVE defect is the customer paying a credit for a rewrite that never
+  runs** — the "paying and not receiving" failure, pointed at the customer
+  rather than at us.
+- **Our 170-chunk exposure is LATENT.** It becomes real the moment anyone wires
+  an honest word counter into that floor — **which is exactly what Lane A
+  recommends in `06`.**
+
+**This makes refusing more right, not less** — it fixes a live customer-facing
+defect *and* closes the hole before the change that would open it. **But the
+urgency is not "we are bleeding money today", and the conductor said it was.**
+
+## Two things it flagged honestly
+
+- **A file outside its territory had to move.** `lib/engine/types.ts` —
+  `LayerBUsage` required `model_calls`, so the stripped reply no longer
+  type-checked. **The money fields are now optional, with the reason written
+  down**, rather than a cast that would leave the type claiming a field that is
+  not there. `tsc --noEmit` clean.
+- **A refusal gap:** Korean is in the refused set. **Lao, Khmer, Burmese and
+  Tibetan are not**, and they have the same no-spaces property.
+
+---
+
+# ★ M-6 — FOUR STEPS FOR JON, IN ORDER
+
+**Do not deploy from a dirty tree.** The email-and-analytics session is live now.
+
+1. **Wait for a quiet tree.**
+2. **Deploy, and watch the build.** If it fails with *"the pattern defined in
+   `functions` doesn't match any Serverless Functions"*, **the switch does not
+   reach an App Router route — take the two lines out, that is the answer.**
+3. **Run one free test** — `UC_SITE=https://un-claude.com node scripts/verify-connection-drop-refund.mjs`.
+   No model call, costs nothing. **A refund row means M-6 is closed.**
+4. **If no refund row: STOP.** `waitUntil` needs `@vercel/functions`, a new
+   dependency, and that is Jon's call.
+
