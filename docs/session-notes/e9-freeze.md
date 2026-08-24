@@ -13,16 +13,20 @@ deepseek is not recorded anywhere as made.
 
 ```
 AI Gateway balance at start   $15.3948425132   2026-08-24T18:12:46Z
-AI Gateway balance at end     $15.3552562692   2026-08-24T19:21:33Z
+AI Gateway balance at end     $15.3501186492   2026-08-24T19:28:54Z
                               --------------
-SPENT                         $ 0.0395862440   (108 measured runs: two
+SPENT                         $ 0.0447238640   (122 measured runs: two
                                                 44-run campaigns, 16 debug
-                                                runs, 4 baseline patches;
-                                                the live site shares this
-                                                key, so some fraction may
-                                                be customer traffic)
-engine suite                  797 passed, 1 skipped   (baseline 762 + 1)
-Deployed or pushed            NOTHING
+                                                runs, 4 baseline patches,
+                                                14 reinsertion checks; the
+                                                live site shares this key,
+                                                so some fraction may be
+                                                customer traffic)
+engine suite                  800 passed, 1 skipped   (baseline 762 + 1)
+Pushed or deployed BY THIS SESSION   NOTHING — but see 5.5b:
+                                     pushes track main and deploy
+                                     continuously, so earlier E-9
+                                     commits are already live
 ```
 
 ---
@@ -161,14 +165,14 @@ louder prompt above 60%, and must not say "quotations" or "reduced removal".
   `test_em_dash_inside_text_copied_from_the_input_is_never_converted`.
 
 **Files:** `uc_freeze.py` (new), `uc_chunk.py`, `uc_spans.py`,
-`uc_policy.py`, `uc_repair.py`; tests `test_freeze.py` (31 tests),
+`uc_policy.py`, `uc_repair.py`; tests `test_freeze.py` (34 tests),
 `test_spans_detector.py`, `test_repair.py`. **`server.py` and
 `app/api/tool/**` untouched** — the freeze report and pre-flight ride
 through existing plumbing (`layer_b.freeze`, `billing.freeze`; documented in
 `API.md`). Env: `UC_LAYER_B_FREEZE`, `UC_FREEZE_TIERS`,
 `UC_FREEZE_RETRIES`, `UC_FREEZE_REFUND_SHARE`.
 
-**Suite: 797 passed, 1 skipped** (baseline 762 + 1). The byte-identity
+**Suite: 800 passed, 1 skipped** (baseline 762 + 1). The byte-identity
 safety net now runs THROUGH mask-and-restore on all 33 corpus documents,
 with the freeze on — split, mask, restore, reassemble, byte-identical, no
 model involved.
@@ -328,6 +332,44 @@ on the blind attempt AND on the informed retry. That run refunded, which is
 D3 behaving as ruled: the failing chunk was 339 of 517 words, 66%, past the
 one-third threshold. **Mistral-small — the model every written record says
 is live — had 0 freeze failures in its 15 frozen-arm runs.**
+
+## 5.5b The conductor's live finding, and the repair that answers it
+
+**While this session measured, the conductor measured production** (board,
+12:10 block): deploys have been continuous — ten in ninety minutes — and
+**the freeze was already live and serving real customers**, because pushes
+track this repo's main and no `UC_LAYER_B_FREEZE` env var exists to say
+otherwise. The conductor also named the arithmetic behind the campaign
+failures precisely: **the fallback unit is a whole chunk, so on any
+document under about three chunks, one unrestorable two-word heading was
+past the one-third threshold and refunded the entire job.** Four of the
+five campaign failures were exactly that.
+
+**The answer is a repair, not a new ruling.** The dominant failure shape —
+a placeholder that stood ALONE as a paragraph, deleted, everything else
+returned faithfully — is fully deterministic to fix: a lone placeholder
+has a recorded slot, so `_reinsert_lost_masks` puts the original paragraph
+back there, free, before anything counts as a failure. Conservative by
+construction: it acts only when every dropped mask was a whole-paragraph
+placeholder and the output's paragraph count is exactly the masked count
+minus the deletions; an inline quotation mask gone, or paragraphs merged,
+declines the repair and the retry/fallback path decides — **D3's ruling
+and threshold are untouched, they just fire far less.**
+
+**Measured live on the cell that failed most** (essay, structure tier,
+mistral-small): **14 of 14 runs delivered, 84 of 84 spans byte-exact, 0
+retries, 0 fallbacks** — and the instrumented runs show the repair
+actually working, not the model behaving: it engaged in **3 of 6 runs,
+reinserting 9 deleted placeholders**, invisibly and at zero model calls.
+Locked in `test_a_deleted_heading_placeholder_is_reinserted_not_failed`
+and two decline-path tests.
+
+**What is live RIGHT NOW versus what this repair changes:** production
+carries the freeze with the informed retry (0 failures in 15 mistral-small
+campaign runs), but not yet this reinsertion — until the next push, a
+customer whose retry also drops a heading mask still hits the D3 path.
+The refund direction is customer-safe; the repair removes most of the
+remaining cases where it fires at all.
 
 ## 5.6 Two operational facts that cost an hour, recorded in `07`
 
