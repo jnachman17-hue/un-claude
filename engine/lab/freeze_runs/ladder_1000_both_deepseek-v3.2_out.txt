@@ -1,0 +1,47 @@
+1. Fairmont: School start times
+
+Fairmont altered its school schedule in September 2016, and the boost to teenage class participation outweighed anything the agency had paid for during the prior ten years. Over the initial twelve months, attendance among adolescents shifted by 8 percent relative to a control set of 15 comparable districts, and three years later the difference still had not closed. Nobody questions the number; the question is what the number means.
+
+Smith (2018) framed the outcome as plainly as possible at that moment, and every subsequent proposal has cited the phrase ever since: "the change in school start times did more for adolescent attendance than any intervention we had previously funded, including the 2012 programme that consumed the whole of the improvement budget" (Smith, 2018, p. 38). That assertion endured two successful reproductions and one unsuccessful one in a district that had previously implemented its own scheduling adjustment.
+
+A 2018 examination covering 23 districts arrived at an identical finding through a different methodology. Those investigators stated that "the evidence base is thinner than the policy assumes, and thicker than its critics allow" — a remark that proponents and opponents have both cited, frequently omitting its latter half. The review's actual recommendation was a gradual implementation with a comparison arm, a step no jurisdiction has tried so far.
+
+The opposing perspective deserves a complete quotation, given that it is typically condensed into something less forceful. The minority statement read:
+
+    We do not dispute the attendance figure. We dispute that it was
+    purchased at the price stated. The transport line rose in the first
+    year and has not returned to its previous level in any district
+    that made the change, and no business case before this committee
+    has carried that number forward beyond year two.
+
+The transport ledger tells the other half of the story, and it is the half that arrives first. Fairmont runs its service in two tiers, and the change pushed the second tier into the same window as the first. The authority bought 4 vehicles and hired 6 staff, and the transport line rose by about 10 percent in the first year and by a further 4 percent in the second. None of that appears in the adolescent attendance figures, and all of it appears in the budget papers.
+
+"The money came out of the same envelope either way," the finance officer said, and nobody at the meeting argued the point. A second officer observed that the envelope had been empty since 2012. Neither remark made the minutes, which recorded only that the committee had noted the report.
+
+What the 2022 follow-up added was duration. The effect on adolescent attendance was undiminished at three years in 10 of the 15 districts, which is the finding that matters for a business case and the one most often left out of the summary. The transport increase was also undiminished. A policy that buys a durable gain with a durable cost is a different proposition from one that buys a durable gain with a one-off cost, and the papers rarely say which is which.
+
+2. Kelso County: Rural broadband subsidy
+
+Kelso County changed rural broadband subsidy in September 2017, and the effect on small business formation was larger than anything the authority had funded in the preceding decade. In the first full year small business formation moved by 9 percent against a comparison group of 16 similar districts, and the gap had not closed three years later. The figure is not in dispute; what the figure is worth is.
+
+Harrison (2019) framed the conclusion as directly as possible at that moment, and that phrasing has appeared in nearly every pitch deck assembled since: "the change in rural broadband subsidy did more for small business formation than any intervention we had previously funded, including the 2013 programme that consumed the whole of the improvement budget" (Harrison, 2019, p. 45). That finding withstood two successful reproductions, plus one that fell short in a region that had already shifted its schedule on its own.
+
+By a separate line of reasoning, the 2019 examination of 26 districts arrived at an equivalent answer. Those authors determined that "the evidence base is thinner than the policy assumes, and thicker than its critics allow" — language cited by supporters and detractors alike from that day forward, typically stripped of its second half. In reality, the report suggested a phased introduction with a comparison group, something no governing body has tried so far.
+
+The objection merits a full citation, given that it usually gets softened into a milder version. The dissenting members wrote:
+
+    We do not dispute the attendance figure. We dispute that it was
+    purchased at the price stated. The civil works line rose in the first
+    year and has not returned to its previous level in any district
+    that made the change, and no business case before this committee
+    has carried that number forward beyond year two.
+
+Conclusion
+
+The adolescent attendance finding stands, the duration finding stands, and the transportation cost stands. To bring up only two of the three is the sole misleading move. Bodies evaluating the proposal ought to estimate the transit expense first, since that element appears from day one and persists indefinitely.
+
+References
+
+Smith, J. A., & Lindsay, R. B. (2018). School start times and adolescent attendance. Journal of School Health, 81(2), 113-122.
+
+Harrison, J. A., & Lindsay, R. B. (2019). Rural broadband subsidy and small business formation. Regional Economics Review, 82(3), 126-136.

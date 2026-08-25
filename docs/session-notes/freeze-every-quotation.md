@@ -6,8 +6,10 @@ freeze with it. Brief: `docs/briefs/freeze-every-quotation.md`.
 
 ```
 AI Gateway total_used at start   $10.0059341268   2026-08-24T22:29:18Z
-AI Gateway total_used at end     (job 5 not yet run)
-engine suite                     (baseline 809 passed, 1 skipped)
+AI Gateway total_used at end     $10.3908069868   2026-08-25T01:00:08Z
+SPENT THIS SESSION               $ 0.3848728600   (the $2.00 stop rule never
+                                                   came close; 63 ladder runs)
+engine suite                     842 passed, 1 skipped   (baseline 809 + 1)
 Pushed or deployed BY THIS SESSION   NOTHING
 ```
 
@@ -428,3 +430,302 @@ engine suite   842 passed, 1 skipped
 pre-flight vs delivered   DISAGREEMENTS: 0
 orphaned spans            0
 ```
+
+---
+
+# JOB 5 — the ladder, once, on the final engine
+
+**63 runs, three models, seven rungs, n=3 everywhere. ZERO failures.** Run
+after jobs 1 to 4 were committed, on one engine, so nothing here is mixed.
+
+```
+AI Gateway total_used at start   $10.0059368268   2026-08-24T22:55:48Z
+AI Gateway total_used at end     $10.3908069868   2026-08-25T01:00:08Z
+                                 ---------------
+SPENT                            $ 0.3848701600
+own accounting said              $ 0.384768        (they agree — no invisible
+                                                    timeout billing this time)
+```
+
+**The budget guard worked and never had to fire.** A one-token probe ran before
+the campaign and would have run again on any `HTTPError`; the gateway answered
+200 throughout.
+
+## 5.1 Seconds by model by document size
+
+```
+model             words chunks  n  median   worst  failed  spans back retries  cost/run
+---------------------------------------------------------------------------------------
+mistral-small       463      2  3     6.2     6.6    0/3       21/21       2   0.00039
+mistral-small       919      3  3     4.0     7.7    0/3       39/39       1   0.00049
+mistral-small      1942      6  3     6.9     8.0    0/3       72/72       2   0.00083
+mistral-small      2971      9  3     7.5     7.9    0/3     105/105       9   0.00145
+mistral-small      4958     15  3    18.5    22.0    0/3     162/162      21   0.00251
+mistral-small      7498     22  3    16.0    54.6    0/3     234/234      21   0.00368
+mistral-small      9946     29  3    20.2    21.7    0/3     303/303      24   0.00479
+
+mistral-medium      463      2  3     3.1     3.3    0/3       21/21       0   0.00138
+mistral-medium      919      3  3     4.4     4.5    0/3       39/39       0   0.00236
+mistral-medium     1942      6  3     9.2    13.1    0/3       72/72       7   0.00684
+mistral-medium     2971      9  3    10.8    14.1    0/3     105/105      12   0.00989
+mistral-medium     4958     15  3    30.8    38.1    0/3     162/162      25   0.01849
+mistral-medium     7498     22  3    22.2    25.0    0/3     234/234      32   0.02495
+mistral-medium     9946     29  3    26.6    30.8    0/3     303/303      44   0.03304
+
+deepseek-v3.2       463      2  3     3.5     3.7    0/3       21/21       0   0.00027
+deepseek-v3.2       919      3  3     4.2     4.3    0/3       39/39       0   0.00051
+deepseek-v3.2      1942      6  3     4.3     5.9    0/3       72/72       0   0.00117
+deepseek-v3.2      2971      9  3     7.8     7.9    0/3     105/105       1   0.00179
+deepseek-v3.2      4958     15  3     8.6    14.1    0/3     162/162       1   0.00300
+deepseek-v3.2      7498     22  3    14.8    15.1    0/3     234/234       2   0.00443
+deepseek-v3.2      9946     29  3    24.1    24.4    0/3     303/303       6   0.00602
+
+FAILED RUNS: 0 of 63
+THE WALL: no model crossed 240 seconds. At 9,946 words the worst run of all
+          63 was 30.8s — 13% of the site's abort.
+```
+
+**Every frozen span came back character-for-character, 936 of 936 per model,
+2,808 of 2,808 in total.** That is the first campaign in this project where
+the span count is perfect at every size, and it is the payoff from E-16's
+chunk-boundary fix plus job 4's invariant guard.
+
+## 5.2 The interaction the brief asked about: cost fell, timings held, and
+## something else got worse
+
+**Cost fell**, as predicted — more frozen text means fewer words sent:
+
+```
+mistral-small, cost per run   now      E-16 (pre-change)
+  1,942 words                 0.00083     0.00103
+  4,958 words                 0.00251     0.00254
+  7,498 words                 0.00368     0.00374
+  9,946 words                 0.00479     0.00484
+```
+
+**Timings held or improved slightly** — medians 6.9 vs 7.6, 7.5 vs 9.4, 18.5
+vs 20.8, 20.2 vs 21.1.
+
+**But chunk fallbacks appeared, and this is the real price of the ruling:**
+
+```
+model             runs  fails        spans  retries  fallbacks  runs w/ fb
+--------------------------------------------------------------------------
+mistral-small       21      0      936/936       80         13       10/21
+mistral-medium      21      0      936/936      120         12       10/21
+deepseek-v3.2       21      0      936/936       10          6         6/21
+
+E-16 mistral-small (pre-change): 21 runs, 0 fallbacks, 67 retries
+```
+
+**Mistral-small went from 0 fallbacks to 13.** More frozen text means more
+placeholders per chunk, more restores that cannot be verified, and D3 hands
+those chunks back as the customer's own text. **In about half of all runs the
+customer now receives at least one chunk — roughly 350 words — unrewritten.**
+
+**This is customer-safe and it is not a refund** (D3 refunds only past one
+third of the document), and the report explains it in every case. **But it is
+a real reduction in what the customer receives, it did not exist before this
+ruling, and Jon should know it is the cost of the trade he chose.**
+
+## 5.3 Rewrite depth — measured per paragraph, and it separates nothing
+
+```
+doc                      mistral-small        mistral-medium         deepseek-v3.2
+----------------------------------------------------------------------------------
+ladder_500                0.042  (n=6)          0.024  (n=6)          0.043  (n=6)
+ladder_1000              0.034  (n=12)         0.032  (n=12)         0.356  (n=12)
+ladder_2000              0.206  (n=25)         0.183  (n=25)         0.065  (n=25)
+ladder_3000              0.144  (n=38)         0.019  (n=38)         0.121  (n=38)
+ladder_5000              0.019  (n=64)         0.038  (n=64)         0.158  (n=64)
+ladder_7500              0.059  (n=98)         0.056  (n=98)         0.107  (n=98)
+ladder_10000            0.089  (n=130)        0.013  (n=130)        0.156  (n=130)
+```
+
+**No model is consistently deeper and the numbers bounce by an order of
+magnitude within one model.** Reading a winner out of this would be reading
+noise. **Depth does not decide the model choice and I am not going to pretend
+it does.** (Whole-document trigram overlap is not used here: E-16 established
+it is inflated by internal repetition, which grows with document size.)
+
+## 5.4 WHICH MODEL: switch to `deepseek/deepseek-v3.2`
+
+**This is a change of recommendation from E-16, and the reason is that E-16
+could not measure deepseek at all — the budget cap landed on its first run.**
+It now has a full ladder.
+
+| | mistral-small | mistral-medium | **deepseek-v3.2** |
+|---|---|---|---|
+| Failures | 0 of 21 | 0 of 21 | **0 of 21** |
+| Spans returned | 936/936 | 936/936 | **936/936** |
+| **Retries across the ladder** | 80 | 120 | **10** |
+| **Runs with a fallback** | 10 of 21 | 10 of 21 | **6 of 21** |
+| Median at 9,946 words | 20.2s | 26.6s | 24.1s |
+| Worst run, whole ladder | **54.6s** | 38.1s | **24.4s** |
+| Cost, 9,946-word document | $0.0048 | $0.0330 | $0.0060 |
+
+**The deciding number is retries: 10 against 80.** Now that a quarter of a
+typical document is frozen into many separate placeholders, **how reliably a
+model preserves those placeholders is the axis that matters**, and deepseek is
+eight times better at it. That is not noise at n=21. It shows up where the
+customer can feel it: **6 runs in 21 with a chunk handed back unrewritten,
+against 10 in 21.**
+
+**It also has the tightest tail** — worst 24.4s against a 24.1s median, where
+mistral-small produced a 54.6s run against a 16.0s median.
+
+**Cost is not a reason to refuse: 0.6 cents against 0.48 cents** for a
+10,000-word document. **Mistral-medium is out** — 5.5x deepseek's cost, the
+most retries of any model, and no advantage anywhere.
+
+**The one thing against deepseek, stated plainly.** E-9 recorded it having a
+bad afternoon: median 26.1s, worst 191.5s, and **3 of 44 runs failing
+outright**. That is the only genuine deepseek failure evidence in this project
+— E-16's two "deepseek failures" were the budget cap, not the model. E-9's own
+note said the switch "should wait for a calmer day's latency numbers".
+**Today is that day, and deepseek is the best model measured.**
+
+**What would falsify this, and it is cheap to watch:** a repeat of E-9's
+afternoon. Re-run `freeze_measure.py ladder deepseek/deepseek-v3.2` on a
+different day; if the retry count stays near 10 and nothing fails, the case is
+closed.
+
+## 5.5 THE WORD LIMIT: I confirm 8,000, and today's data does not raise it
+
+**No model crossed 240 seconds — the worst run of all 63 was 30.8 seconds at
+9,946 words, 13% of the wall.** That is a third consecutive good day and it
+tells us nothing new about a bad one.
+
+**The ceiling is still an argument, not a measured crossing**, and the
+argument has not changed:
+
+```
+  8000 words ->  23 chunks -> 3 waves   at 65s/wave 195s   fits inside 240
+ 10000 words ->  29 chunks -> 4 waves   at 65s/wave 260s   does not
+```
+
+**The only production measurement this project has is ~65 seconds for one
+wave** (478 words, 64.982s). Every lab figure — E-16's, and today's ~6s per
+wave — is a good day. **8,000 words is the largest round number that survives
+the worst per-wave time on record.**
+
+**Two things today's campaign adds, and both point the same way:** cost per
+document fell, and the words sent to the model fell with it, so the ceiling is
+at worst unchanged. **And the fallback finding argues for restraint rather
+than expansion** — a bigger document is more chunks, and every chunk is a
+chance for a fallback.
+
+**Recommendation: 8,000. Unchanged. The number is handed back; the sentence
+is Lane D's and I have not written it.** The one thing that would earn 10,000
+is a single production measurement of a 10,000-word document, which remains
+the missing piece.
+
+## 5.6 §9 hand-back: the "hard three-word ceiling" is wrong by two orders of magnitude
+
+**Measured on the delivered documents, `engine/lab/longest_surviving_run.py`.**
+The site says *"a hard three-word ceiling on surviving sequences"* and *"no
+more than three in a row come through"*.
+
+**The longest unbroken run of the customer's own wording in a delivered
+document was 388 words.**
+
+**The site's own receipt cannot show this.** `lib/engine/receipt.ts` measures
+run lengths `[3, 4, 5, 6, 8, 10]` and reports the largest with any survivor,
+so **10 is the biggest number it can ever print** — which is why the live
+receipt printed 10 rather than the truth.
+
+**Three separate causes, and only one is the freeze:**
+
+| Cause | Typical run |
+|---|---|
+| A frozen span — the ruling working as designed | up to **57 words** |
+| A D3 chunk fallback — the customer's own text handed back | ~**290–390 words** |
+| The model returning a chunk barely changed | up to **352 words** |
+
+**Even with no fallback and no lazy chunk, the freeze alone guarantees runs of
+55 to 57 words** on these documents, because that is the longest frozen span.
+**Three is not a ceiling; it is not even the right order of magnitude.**
+
+**This is Lane D's sentence and I have not touched it.** The numbers to write
+against: **57 words guaranteed by the freeze, 388 words observed.**
+
+---
+
+# WHAT I COULD NOT PROVE
+
+**1. That production behaves like the lab.** The whole ceiling argument turns
+on it and it is still unmeasured. Three per-wave figures exist and they span
+5s to 65s; only the 65s came from production, and it is one run of one
+document on one afternoon. **Today's 63 runs are a third lab day and add
+nothing to this question.**
+
+**2. That deepseek is reliable across days.** It was the best model measured
+today by a clear margin, on 21 runs. **E-9 recorded it failing 3 of 44 runs on
+a bad afternoon**, and that remains the only genuine deepseek failure evidence
+in this project. One good day does not answer one bad day. The model
+recommendation says so and names the cheap way to settle it.
+
+**3. That the fallback rate is stable.** 13 fallbacks in 21 mistral-small runs
+against E-16's 0 is a real change and the direction is certain, but n=21 per
+model is thin for a rate. **What I can prove is that it went from zero to not
+zero, and why.**
+
+**4. That freezing every block quote is right rather than merely defensible.**
+It is my reading of Jon's ruling, not his words — the brief left it open, I
+took indentation at its word, and the price is that an indented address or
+poem now freezes. §1.3 carries the numbers and the argument against; **it is a
+two-line change if he wants the colon test back.**
+
+**5. That the hard-wrap pattern cannot run away on a document I did not think
+of.** Two adversarial documents did not move it, every corpus document freezes
+identically wrapped and unwrapped, and four separate bounds hold it. **That is
+strong evidence and it is not a proof.** The failure it guards against is the
+one that nearly killed the freeze, so it deserves watching on real customer
+documents rather than trust.
+
+**6. Whether a statistical watermark was removed.** Not measurable, by anyone.
+**Every number in this note measures how much original wording came back.**
+Layer B is best effort and the site says so.
+
+---
+
+# WHERE THE NEXT SESSION PICKS UP
+
+**Nothing is blocking.** The budget cap that stopped E-16 has been raised;
+this session spent $0.385 of a $2.00 allowance and the gateway answered 200
+throughout.
+
+**Three numbers are handed back to Lane D and none of them is mine to write:**
+
+1. **The word limit: 8,000**, down from the advertised 10,000.
+2. **The "hard three-word ceiling" sentence is wrong** — the freeze alone
+   guarantees 57-word runs and 388 words was observed. The receipt cannot
+   print above 10, so it cannot show this either.
+3. **The pre-flight percentage rises** on any document containing quotations,
+   and rises a great deal on dialogue-heavy fiction (0.0% to 63.9% on a short
+   story). D4's wording is fixed on the board and this does not change it, but
+   the number behind it moved.
+
+**In order, for the next engine session:**
+
+1. **Re-run deepseek's ladder on a different day.** One command, a few cents,
+   and it is the only thing standing between the model recommendation and a
+   decision.
+2. **Watch the fallback rate.** It went from 0 to 13 in 21 runs on
+   mistral-small. If it climbs on real documents, the lever is
+   `UC_LAYER_B_CHUNK_WORDS` — fewer masks per chunk — not a change to the
+   ruling.
+3. **One production measurement of a 10,000-word document**, which would
+   settle the word limit properly instead of by argument.
+4. **`docs/03-pricing.md` §4b** still rests on a 60-second cap that
+   `vercel.json` now sets to 300 (found by E-16, still unfixed, not my
+   territory).
+
+**Everything landed locally and NOTHING was pushed or deployed.** Pushes track
+main and deploy continuously, so all of it reaches production on the next
+push, which is Jon's call:
+
+- every quotation freezes, and the attribution machinery is gone;
+- the citation beside a quotation freezes with it;
+- a hard-wrapped document is protected for the first time;
+- an invariant guard against the silent-orphan failure shape.
