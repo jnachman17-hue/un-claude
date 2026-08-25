@@ -245,3 +245,173 @@ change what an API route returns, and the stashed-vs-unstashed comparison is
 the evidence for that. But **I did not watch text go in and clean text come
 out**, and the brief asked for exactly that. Somebody with a working engine
 connection should run it once before this deploys.
+
+---
+
+## Job 2 — `Organization` structured data
+
+**Structured data is a small block of machine-readable facts inside the page,
+in a format every search engine agrees on.** A visitor never sees it. It is how
+Google learns that "Un-Claude" is the name of an organisation, that this address
+is its website, and which image is its logo, instead of guessing all three.
+
+### Before
+
+The live homepage carried **zero** blocks of it:
+
+```
+=== LIVE homepage ld+json blocks ===
+TOTAL BLOCKS: 0
+```
+
+### After
+
+**Two blocks, not one.** The first is the one this job asked for:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Un-Claude",
+  "url": "https://un-claude.com",
+  "logo": "https://un-claude.com/images/favicon/android-chrome-512x512.png",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "email": "support@un-claude.com"
+  }
+}
+```
+
+The logo is the 512-pixel icon that already exists and already answers `200`
+as Googlebot — I checked before pointing at it, because Google wants a
+fetchable image and not a promise of one:
+
+```
+/images/favicon/android-chrome-512x512.png     200 image/png
+```
+
+**Every field is a fact and none of them is a claim.** There is deliberately no
+`description`. A description here would be a product claim sitting in a place
+nobody would think to review, and `CLAUDE.md` section 7's test — which layer,
+and is that provable? — cannot even be asked of a sentence hidden in a script
+tag. Name, address, logo, support email. Nothing else.
+
+### The second block was already written and Google never saw it
+
+**A finding worth more than the block I added.** The FAQ section has been
+emitting a full `FAQPage` structured-data block — all nine questions and
+answers — for as long as it has existed. It never reached Google, for exactly
+the reason in Job 1: it was inside the region that was being abandoned.
+
+So the Job 1 fix restored structured data that was already written and paid
+for. The homepage now serves both blocks.
+
+### ★ This does not fix the grey box in search results
+
+**Stated plainly because somebody will otherwise assume it does.** The grey box
+is the favicon. The favicon is already correct and already reachable — I
+confirmed both as Googlebot:
+
+```
+/images/favicon/favicon.ico     200 image/vnd.microsoft.icon
+/icon.svg                       200 image/svg+xml
+```
+
+It is waiting on Google to recrawl the site, which is Google's schedule and not
+ours. **Nothing in Job 2 changes it, and nobody should be told otherwise.**
+
+---
+
+## Job 3 — the web app manifest
+
+**A web app manifest is the small file telling a phone what to call this site
+and which icon to use if somebody adds it to their home screen.**
+
+**It turned out to already exist and to already be correct.** The job was not
+to write one — it was to link it. `public/images/favicon/site.webmanifest`
+names the site and lists all four icons, and it has been served correctly the
+whole time. Nothing pointed at it, and the two addresses a browser guesses at
+both 404:
+
+```
+/manifest.json                              404
+/site.webmanifest                           404
+/images/favicon/site.webmanifest            200 application/manifest+json
+```
+
+So I added the link rather than a second copy of the file — two manifests that
+can drift apart is a worse problem than an unconventional path, and browsers
+follow the link rather than requiring a particular address. One line in
+`lib/root-metdata.ts`, next to the `icons` block that learned the same lesson
+in 04 entries 99 and 100: **a file being built and served is not the same thing
+as a file being linked from `<head>`.**
+
+After, on every page:
+
+```
+/                <link rel="manifest" href="/images/favicon/site.webmanifest"/>
+/capabilities    <link rel="manifest" href="/images/favicon/site.webmanifest"/>
+/pricing         <link rel="manifest" href="/images/favicon/site.webmanifest"/>
+/mission         <link rel="manifest" href="/images/favicon/site.webmanifest"/>
+/contact         <link rel="manifest" href="/images/favicon/site.webmanifest"/>
+```
+
+**One defect fixed inside the file.** It declared `"display"` twice —
+`"fullscreen"` near the top and `"standalone"` at the bottom. A JSON parser
+takes the last one, so `"standalone"` was already what applied; I deleted the
+dead `"fullscreen"` line, which changes no behaviour and removes a line that
+would mislead the next person to read it. The file still parses.
+
+**One thing I left alone and am flagging instead.** The manifest sets
+`"orientation": "portrait"`. That locks an installed copy to portrait, which
+is a real choice and possibly the wrong one for a site people use on a laptop.
+It only affects an installed home-screen copy, it is not an SEO matter, and
+changing it is a behaviour decision rather than a piece of missing furniture.
+**Jon's call.**
+
+**A territory note, per `CLAUDE.md` section 2.** The brief's territory list
+gives me `apps/web/app/(marketing)/**`, `apps/web/public/**` and
+`apps/web/app/layout.tsx`. The manifest link belongs on every page, and the
+only correct place for that is `lib/root-metdata.ts`, which the brief neither
+grants nor forbids — its exclusions are `lib/server/**`, `app/api/**`,
+`supabase/**` and `vercel.json`. I made the call to put it there rather than
+duplicate it into the marketing layout, and I am naming it rather than
+resolving it quietly. One line plus its comment; nothing else in that file was
+touched.
+
+---
+
+## Job 4 — `/pricing`'s `<h1>` is not "5"
+
+**No change made, because there is nothing wrong, and the brief's premise was a
+measurement artefact rather than a defect.** Saying so is the job.
+
+The `<h1>` served on `/pricing` is:
+
+```html
+<h1 class="...">5<!-- --> credits free. Packs from<!-- --> <span class="text-mark-strong">$4.99</span>.</h1>
+```
+
+Read as text, that is **"5 credits free. Packs from $4.99."** — a real heading
+that names the offer.
+
+**Why it was recorded as "5".** React writes `<!-- -->` between two adjacent
+pieces of text so it can tell them apart again when it takes over in the
+browser. Any extractor that stops at the first `<` after the opening tag —
+which is what a simple one does — returns `5` and nothing else. The brief's
+own `<h1>` table and mine disagree on this one line for that reason, and mine
+strips the inner tags before reading:
+
+```
+brief:  /pricing    <h1> = "5"
+mine:   /pricing    h1=[5 credits free. Packs from $4.99.]
+```
+
+**Google and screen readers both read the text, not the first node.** Neither
+announces an HTML comment. A screen reader says the whole sentence.
+
+**So nothing needed proposing to Jon and no copy was invented.** The other
+`<h1>` values in the brief's table were all correct; this was the only one the
+extractor mangled, because it is the only one whose heading begins with a bare
+number followed by more text.

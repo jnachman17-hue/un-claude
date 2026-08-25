@@ -34,6 +34,26 @@ export const generateRootMetadata = (): Metadata => {
       title: appConfig.title,
       description: appConfig.description,
     },
+    /**
+     * THE MANIFEST EXISTED AND NOTHING LINKED IT. Added 24 August 2026.
+     *
+     * A web app manifest is the small file that tells a phone what to call
+     * this site and which icon to use if somebody adds it to their home
+     * screen. `public/images/favicon/site.webmanifest` has been correct and
+     * reachable for days — it names the site and lists all four icons — but
+     * no page pointed at it, and the two addresses a browser guesses at,
+     * `/manifest.json` and `/site.webmanifest`, both returned 404.
+     *
+     * This is the same lesson as the `icons` block directly below, which is
+     * why it sits next to it: the file being built and served is not the same
+     * thing as the file being linked from `<head>`. `04` entries 99 and 100.
+     *
+     * It points at the existing file rather than adding a copy at
+     * `/manifest.json`, because two manifests that can drift apart is a worse
+     * problem than a path that is not the conventional one. Browsers follow
+     * the link; they do not require a particular address.
+     */
+    manifest: '/images/favicon/site.webmanifest',
     icons: {
       // The opposite of what the comment this replaced claimed: setting
       // `icons` at all turns OFF Next's file-convention auto-detection of

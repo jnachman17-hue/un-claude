@@ -35,6 +35,45 @@ export const metadata = {
 };
 
 /**
+ * WHO THIS SITE BELONGS TO, WRITTEN SO A SEARCH ENGINE CAN READ IT.
+ * Added 24 August 2026. There was no structured data anywhere on the site.
+ *
+ * Structured data is a small block of machine-readable facts in the page, in a
+ * format every search engine agrees on. It is not shown to a visitor. It is
+ * how Google learns that "Un-Claude" is the name of an organisation, that this
+ * address is its website, and which image is its logo — rather than inferring
+ * all three from the page and sometimes inferring them wrong.
+ *
+ * ★ EVERY FIELD HERE IS A FACT AND NONE OF THEM IS A CLAIM. Structured data is
+ * copy, and `CLAUDE.md` section 7 governs copy. So this block carries a name,
+ * an address, a logo and a support email, and deliberately carries NO
+ * `description` — a description here would be a product claim in a place
+ * nobody would think to review, and the one question that catches most of them
+ * ("which layer, and is that provable?") cannot even be asked of a sentence
+ * hidden in a script tag.
+ *
+ * ★ THIS DOES NOT FIX THE GREY BOX IN SEARCH RESULTS. That box is the favicon,
+ * the favicon is already correct and already reachable, and it is waiting on
+ * Google to recrawl the site. Nothing in this block changes it, and nobody
+ * should be told otherwise.
+ *
+ * The logo is the 512-pixel icon that already exists and already answers 200.
+ * Google wants a real, fetchable image; it does not want a promise of one.
+ */
+const ORGANIZATION_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: appConfig.name,
+  url: appConfig.url,
+  logo: `${appConfig.url}/images/favicon/android-chrome-512x512.png`,
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: 'support@un-claude.com',
+  },
+};
+
+/**
  * The Un-Claude landing page, radically cut 19 August 2026 on Jon's order:
  * "People don't care about the argument. Show them what they need. Tell them
  * what it does. Make sure they understand that this works with Claude and
@@ -52,6 +91,14 @@ export const metadata = {
 function Home() {
   return (
     <div className={'flex flex-col'}>
+      {/* Renders nothing a visitor sees. It is read, not displayed. */}
+      <script
+        type={'application/ld+json'}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(ORGANIZATION_JSON_LD),
+        }}
+      />
+
       <HeroSection />
       <CoverageMarquee />
       <ClaudeBand />

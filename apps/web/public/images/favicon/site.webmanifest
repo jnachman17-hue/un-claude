@@ -3,7 +3,6 @@
   "short_name": "Un-Claude",
   "theme_color": "#faf9f5",
   "background_color": "#faf9f5",
-  "display": "fullscreen",
   "orientation": "portrait",
   "scope": "/",
   "start_url": "/",
