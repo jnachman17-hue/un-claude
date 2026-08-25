@@ -2147,3 +2147,58 @@ separately with an honest message, or leave the file out of your commit and
 say so in your session note. **Do not rewrite history to tidy it up** — with
 another session live in the same working tree, that is how work gets destroyed
 rather than recovered.
+
+## A single `Date.now()` during render deletes a whole page's HTML
+
+**24 August 2026, homepage-visible-to-google.** The homepage served Google 75
+words — the nav, the footer's sentence and the footer's links — and **no `<h1>`
+at all**, while every other marketing page served its full content. Google
+ranked `/capabilities` above the homepage for the brand name as a result.
+
+**The cause was one line**, `live-counter.tsx:148`:
+
+```tsx
+const [words, setWords] = useState(() => currentTotal(Date.now()));
+```
+
+**Why one clock read costs a whole page.** `next.config.mjs` sets
+`cacheComponents: true`. Next prerenders each page into a plain HTML file, and
+that file is what a crawler reads. `Date.now()`, `Math.random()` and
+`new Date()` cannot be known ahead of time, so calling one during render makes
+Next abandon the prerender — **not of that component, but of everything up to
+the nearest `<Suspense>` boundary.** With no boundary inside the page, the
+abandonment reaches the automatic route boundary that `loading.tsx` creates,
+which wraps the entire page. The body is replaced by `loading.tsx`'s
+placeholder and the real copy ships only as RSC data inside `<script>` tags.
+
+**The tell, in the built HTML:**
+
+```html
+<main id="main">
+  <!--$?-->                                  <!-- "never finished" -->
+  <template id="B:0"></template>
+  <div class="min-h-[60vh] w-full"></div>    <!-- the loading.tsx fallback -->
+  <!--/$-->
+</main>
+```
+
+**How to check any page in one command**, without deploying — the local
+production build writes the same file Vercel serves:
+
+```bash
+cd apps/web && pnpm build
+perl -0777 -pe 's/<script\b.*?<\/script>//gis; s/<style\b.*?<\/style>//gis; s/<[^>]+>/ /gs;' \
+  .next/server/app/index.html | wc -w
+grep -c '<!--\$?-->' .next/server/app/index.html    # any count > 0 on a static route is this bug
+```
+
+**The fix is a `<Suspense>` boundary around the clock-reading component only.**
+It confines the abandonment to the one thing that genuinely cannot be
+prerendered. The cost is that that component's own text leaves the HTML, so put
+the boundary as tight as possible around it and never around a section carrying
+copy that has to rank.
+
+**Note `'use cache'` is exempt.** `site-footer.tsx` calls
+`new Date().getFullYear()` and prerenders fine, because a cached function is
+handed a fixed timestamp. That is why the footer's words were in the HTML on
+every page including the broken one.

@@ -230,9 +230,25 @@ text box accepts input, "Try an example" loads the sample text into it, and
 
 **Not confirmed, and this is a failure to report rather than hide: a scan does
 not complete on this machine, and it did not before my change either.** The
-request comes back `400` with `{"ok":false,"code":"unreachable"}` — the
-site could not reach the engine service that does the actual work.
-`UC_ENGINE_KEY` is not set in the local environment.
+request comes back `400` with `{"ok":false,"code":"unreachable"}` — the site
+could not reach the engine, the separate program that does the actual work.
+
+**The exact reason, and why I did not just start it.** `.env.local` points
+`UC_ENGINE_URL` at `127.0.0.1:8765`, and nothing is listening there. The
+runbook (`07`, "Exercising the paid route locally") gives the command to start
+it. **I did not run it, deliberately.** The only engine running on this machine
+right now is the freeze session's, on port 8780, mid-measurement:
+
+```
+Python 127.0.0.1:8780
+... python3 apps/web/engine/server.py --port 8780
+```
+
+and the command that started it opens with `pkill -f "server.py --port 87"`.
+**Starting a second engine in the 87xx range while that is running risks
+killing or polluting another session's measurement run**, which is a worse
+outcome than an unverified scan in a session that was told not to touch that
+territory at all. So this is reported rather than resolved.
 
 **I proved it is not mine.** I stashed my change, reloaded the unmodified page,
 and ran the identical steps: the same `POST /api/tool/scan → 400` and the same
