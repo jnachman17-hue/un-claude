@@ -5841,3 +5841,35 @@ knows all of this and has ruled.**
 **"Across our test set" is what makes these measured claims rather than absolute
 ones and is not optional.** Neither claim was strengthened and no new supporting
 number was invented.
+
+### 152. The pre-flight sentence ends at "headings". The remainder stays undescribed, and the reason is now measured in both directions.
+
+**Jon, 25 August 2026, offered two options: stop the sentence there, or add a
+line saying we reword and sanitise everything else. The first was taken.**
+
+**The second is entry 150's dropped clause returning in different words, and
+measurement says it is wrong in BOTH directions.**
+
+**Wrong downward, on "reword".** 62 of 263 recorded freeze runs (23.6%) handed
+back at least one chunk as the customer's own unrewritten text. **All of them
+were documents of 2,000 words or more** — ladder_5000 on 19 runs, ladder_10000
+on 18, ladder_7500 on 12, ladder_2000 on 8, ladder_3000 on 5, and **ladder_500
+and ladder_1000 on none.** So the promise is safe on a short paste and fails on
+exactly the long documents that cost the most credits.
+
+**Wrong upward, on "sanitise", and this one is a selling point being given
+away.** The wording implies the protected text is not sanitised. **It is.**
+Layer A runs on the whole document before the freeze and before the rewrite —
+`server.py`, *"THE REWRITE RECEIVES THE CLEANED TEXT. Layer A already ran above,
+on the original."* **A frozen quotation still has its invisible characters
+stripped. It is spared the rewording only.**
+
+**So "protected from being reworded" is exactly and only what is true**, and the
+sentence stops where the truth stops. `"so it comes back character for
+character"` came off with it as redundant: the heading already says "exactly as
+you sent it".
+
+**If Jon wants the reassurance, the true version is about layer A, not about the
+rewrite** — that hidden characters are removed from all of it, protected text
+included. That is provable, it is a stronger thing to say, and it is his to
+decide. Still open alongside entry 150.

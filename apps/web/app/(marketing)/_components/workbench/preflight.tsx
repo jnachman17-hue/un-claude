@@ -98,6 +98,23 @@ export function needsPreFlight(freeze: FreezeEstimate | undefined): boolean {
  *      chunk fall back that way. Dropping a false clause needs no new ruling;
  *      writing a true replacement is a claim about what we disclose, and that
  *      is Jon's call. Nothing on screen now says anything about the remainder.
+ *
+ * THE SENTENCE ENDS AT "headings". Jon's instruction, 25 August 2026. He
+ * offered two options: stop it there, or add a line saying we reword and
+ * sanitise everything else. **The second one is the dropped clause coming back
+ * in different words and it is wrong in BOTH directions**, so it was not taken
+ * and he was told why. 04 entry 152.
+ *
+ *   Wrong downward: we cannot promise the remainder is reworded. See above.
+ *   Wrong upward: it implies the protected text is not sanitised. IT IS.
+ *     Layer A runs on the WHOLE document before the freeze and before the
+ *     rewrite — server.py, "THE REWRITE RECEIVES THE CLEANED TEXT. Layer A
+ *     already ran above, on the original." A frozen quotation still has its
+ *     invisible characters stripped. It is only spared the REWORDING, which is
+ *     exactly and only what this sentence claims.
+ *
+ * "so it comes back character for character" came off with it, as redundant:
+ * the heading above already says "exactly as you sent it".
  */
 export function PreFlight({
   freeze,
@@ -144,8 +161,7 @@ export function PreFlight({
 
         <p className={'text-muted-foreground text-[13px] leading-snug'}>
           That is text we have protected from being reworded, such as
-          quotations, references and headings, so it comes back character for
-          character.
+          quotations, references and headings.
         </p>
 
         <div className={'mt-1 flex flex-wrap items-center justify-center gap-2'}>

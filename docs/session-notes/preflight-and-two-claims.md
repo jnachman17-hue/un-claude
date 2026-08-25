@@ -135,7 +135,7 @@ D4's wording is fixed on the board. **Three changes, no others.**
 
 > **We will return about 66% of this document exactly as you sent it.**
 > That is text we have protected from being reworded, such as quotations,
-> references and headings, so it comes back character for character.
+> references and headings.
 >
 > **Continue** · **Cancel**
 
@@ -147,6 +147,16 @@ this document's own number; every visitor sees theirs.*
 2. **The em dashes are gone.** Jon's style rule forbids them anywhere a visitor
    reads, and the board's own row 4 flags that D4's wording broke it.
 3. **"The other 58% gets the full rewrite" is DROPPED, and nothing replaces it.**
+
+**Jon then ruled the sentence should stop at "headings", 25 August 2026.** He
+offered the alternative of adding a line saying we reword and sanitise
+everything else. **That is the dropped clause returning in different words, and
+it is wrong in both directions — see 04 entry 152.** Wrong downward because we
+cannot promise the remainder is reworded. **Wrong upward because it implies the
+protected text is not sanitised, and it is:** layer A runs on the whole document
+before the freeze and before the rewrite, so a frozen quotation still has its
+invisible characters stripped. `"so it comes back character for character"` came
+off as redundant against the heading.
 
 ### On the dropped clause, because this is the one thing handed back
 
