@@ -70,6 +70,10 @@ const NAMES = [
   'NEXT_PUBLIC_POSTHOG_HOST',
   // Optional tuning, all documented in the session note.
   'POSTHOG_EXCLUDE_IPS',
+  // Where Jon works from. Traffic from these cities is counted as internal.
+  'POSTHOG_EXCLUDE_CITIES',
+  // The accounts that are Jon's own tests rather than customers.
+  'UC_INTERNAL_EMAILS',
   'UC_SITE_HOST',
   'UC_DASHBOARD_PORT',
 ];

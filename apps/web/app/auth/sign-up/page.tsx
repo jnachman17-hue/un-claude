@@ -12,6 +12,8 @@ import { CreditOfferBadge } from '~/(marketing)/_components/workbench/credit-off
 import authConfig from '~/config/auth.config';
 import pathsConfig from '~/config/paths.config';
 
+import { AuthAnalytics } from '../_components/auth-analytics';
+
 export const generateMetadata = async () => {
   const t = await getTranslations();
 
@@ -57,6 +59,8 @@ function SignUpPage() {
         */}
         <CreditOfferBadge />
       </div>
+
+      <AuthAnalytics mode={'sign-up'} />
 
       <SignUpMethodsContainer
         providers={authConfig.providers}

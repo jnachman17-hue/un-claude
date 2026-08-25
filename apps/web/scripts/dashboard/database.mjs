@@ -65,6 +65,55 @@ async function read(env, table, { select = '*', extra = '', limit = 5000 } = {})
   return Array.isArray(response.body) ? response.body : [];
 }
 
+
+/**
+ * IS THIS ACCOUNT A CUSTOMER, OR ONE OF OURS?
+ *
+ * Jon's instruction, 25 August 2026: "half of them are either you or me". He is
+ * right — of nine signed-up accounts, five were his own testing, and counting
+ * them as customers made every ratio on the page a lie. "5 signed up, 2 bought"
+ * is a business. "9 signed up, 2 bought, but 5 of the 9 were me" is not the same
+ * number and should never have been presented as one.
+ *
+ * THREE TESTS, in order of how much they can be trusted:
+ *
+ *   1. NAMED EXPLICITLY in `UC_INTERNAL_EMAILS`. That list lives in
+ *      `.env.local`, which git ignores, so no real address is ever committed to
+ *      this repository — the reason the list is configuration and not code.
+ *   2. OUR OWN DOMAIN. Anything `@un-claude.com` is a test rig, not a buyer;
+ *      `stripe-e2e-buyer@un-claude.com` is exactly that.
+ *   3. PLUS-ADDRESSING. `someone+merge1@gmail.com` is one person making a second
+ *      account, which is what plus-addressing is for. This is a heuristic and it
+ *      is the only one here that could be wrong about a stranger — a real
+ *      customer may legitimately use it. It is applied anyway because the
+ *      alternative is silently counting a test as a sale, and the page lists
+ *      every excluded account by name so a mistake is visible rather than buried.
+ *
+ * NOTHING IS DELETED OR HIDDEN. Internal accounts are still counted, still
+ * listed, and still shown with their credits and jobs — just under their own
+ * heading, so the customer figures mean what they say.
+ */
+export function internalMatcher(env) {
+  const named = new Set(
+    (env.UC_INTERNAL_EMAILS || '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  return (email) => {
+    if (!email) return { internal: false };
+
+    const address = String(email).toLowerCase();
+
+    if (named.has(address)) return { internal: true, why: 'listed as internal' };
+    if (address.endsWith('@un-claude.com')) return { internal: true, why: 'our own domain' };
+    if (/\+[^@]*@/.test(address)) return { internal: true, why: 'a plus-address alias' };
+
+    return { internal: false };
+  };
+}
+
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
@@ -179,6 +228,7 @@ export async function readDatabase(env) {
     ledgerByAccount.get(row.account_id).push(row);
   }
 
+  const isInternal = internalMatcher(env);
   const people = accountRows
     .filter((a) => a.email)
     .map((a) => {
@@ -195,9 +245,13 @@ export async function readDatabase(env) {
           ? own.reduce((oldest, r) => (r.created_at < oldest ? r.created_at : oldest), own[0].created_at)
           : null;
 
+      const verdict = isInternal(a.email);
+
       return {
         email: a.email,
         name: a.name || null,
+        internal: verdict.internal,
+        internalWhy: verdict.why || null,
         joined,
         // The balance is the sum of the ledger, never a stored number.
         balance: own.reduce((total, r) => total + r.delta, 0),
@@ -223,10 +277,25 @@ export async function readDatabase(env) {
   }
 
   // ---- Money, as the ledger recorded it -----------------------------------
-  // `price_cents` is what Stripe charged, copied in by the webhook. These rows
-  // are live money whatever mode this dashboard's Stripe key is in.
-  const purchases = ledger.filter((r) => r.reason === 'purchase');
-  const moneyRefunds = ledger.filter((r) => r.reason === 'money_refund');
+  /*
+   * `price_cents` is what Stripe charged, copied in by the webhook. These rows
+   * are live money whatever mode this dashboard's Stripe key is in.
+   *
+   * ★ PURCHASES BY OUR OWN ACCOUNTS ARE SEPARATED OUT. Jon bought and refunded
+   * himself on 22 August to test the flow. Counted as revenue it made "money in"
+   * read as two sales when there has been one, and it survived the refund
+   * subtraction only because the refund happened to cancel it exactly. A test
+   * purchase that was NOT refunded would have sat in the revenue figure for ever.
+   */
+  const internalAccountIds = new Set(
+    accountRows.filter((a) => a.email && isInternal(a.email).internal).map((a) => a.id),
+  );
+  const isOurs = (row) => internalAccountIds.has(row.account_id);
+
+  const allPurchases = ledger.filter((r) => r.reason === 'purchase');
+  const allRefunds = ledger.filter((r) => r.reason === 'money_refund');
+  const purchases = allPurchases.filter((r) => !isOurs(r));
+  const moneyRefunds = allRefunds.filter((r) => !isOurs(r));
   const cents = (rows) => rows.reduce((total, r) => total + (r.price_cents || 0), 0);
 
   // ---- Runs ---------------------------------------------------------------
@@ -257,9 +326,22 @@ export async function readDatabase(env) {
       withEmail: people.length,
       guestsNeverRegistered: guestOnly.size,
       people,
-      // How many of the signed-up people have ever bought anything. The single
-      // most important ratio in the business.
-      buyers: people.filter((p) => p.purchases > 0).length,
+      /*
+       * ★ CUSTOMERS AND OUR OWN TEST ACCOUNTS, COUNTED APART.
+       *
+       * Every figure a decision could rest on uses `customers`. `internal` is
+       * still reported, because a number that quietly disappeared would be its
+       * own kind of dishonesty — and because Jon needs to be able to check that
+       * the right accounts were classified.
+       */
+      customers: people.filter((p) => !p.internal),
+      internal: people.filter((p) => p.internal),
+      customerCount: people.filter((p) => !p.internal).length,
+      internalCount: people.filter((p) => p.internal).length,
+      // How many real customers have ever bought. The single most important
+      // ratio in the business, and meaningless if it counts Jon's own testing.
+      buyers: people.filter((p) => !p.internal && p.purchases > 0).length,
+      buyersIncludingInternal: people.filter((p) => p.purchases > 0).length,
       // Dated from the first credit grant. See the header.
       datedFromLedger: true,
       createdAtUsable: accountRows.some((r) => r.created_at),
@@ -288,6 +370,10 @@ export async function readDatabase(env) {
       todayCents: cents(after(purchases, todayIso)) - cents(after(moneyRefunds, todayIso)),
       last7Cents: cents(after(purchases, sinceIso(7))) - cents(after(moneyRefunds, sinceIso(7))),
       creditsSold: purchases.reduce((t, r) => t + r.delta, 0),
+      // Our own test purchases, kept visible rather than deleted.
+      internalPurchaseCount: allPurchases.length - purchases.length,
+      internalPurchaseCents: cents(allPurchases.filter(isOurs)),
+      internalRefundCents: cents(allRefunds.filter(isOurs)),
       recent: purchases
         .slice()
         .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))

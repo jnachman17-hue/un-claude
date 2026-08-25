@@ -357,26 +357,32 @@ function bar(loaded, limit, spentThisMonth) {
  * Every column beside the address is computed from that person's own ledger
  * rows, so nothing here can disagree with the balance they see when they log in.
  */
-function peopleTable(people) {
-  if (!people?.length) return '<p class="none">Nobody has signed up yet.</p>';
+function peopleTable(people, title, emptyMessage, internal = false) {
+  if (!people?.length) return emptyMessage ? `<h4>${e(title)}</h4><p class="none">${e(emptyMessage)}</p>` : '';
 
-  return `<h4>Everyone who has signed up</h4>
+  return `<h4>${e(title)}</h4>
     <div class="scroller"><table class="table"><thead><tr>
-      <th>Email</th><th>Joined</th><th class="numeric">Credits</th><th class="numeric">Jobs</th><th class="numeric">Paid</th>
+      <th>Email</th><th>${internal ? 'Why excluded' : 'Joined'}</th><th class="numeric">Credits</th><th class="numeric">Jobs</th><th class="numeric">Paid</th>
     </tr></thead><tbody>${people
       .map(
         (p) => `<tr>
-          <td>${e(p.email)}${p.purchases > 0 ? '<span class="tag good">customer</span>' : ''}</td>
-          <td>${p.joined ? e(when(p.joined)) : '<span class="hint-inline">unknown</span>'}</td>
+          <td>${e(p.email)}${!internal && p.purchases > 0 ? '<span class="tag good">customer</span>' : ''}</td>
+          <td>${internal ? `<span class="hint-inline">${e(p.internalWhy || 'internal')}</span>` : p.joined ? e(when(p.joined)) : '<span class="hint-inline">unknown</span>'}</td>
           <td class="numeric">${num(p.balance)}</td>
           <td class="numeric">${num(p.jobs)}</td>
           <td class="numeric">${p.paidCents ? e(money(p.paidCents)) : '—'}</td>
         </tr>`,
       )
       .join('')}</tbody></table></div>
-    <p class="footnote"><strong>Credits</strong> is what they have left to spend. <strong>Jobs</strong> is how
-    many documents they have cleaned. <strong>Joined</strong> is when their account was created, taken from
-    their first free credits because the accounts table does not record a join date.</p>`;
+    ${
+      internal
+        ? `<p class="footnote">These are excluded because they are named in <code>UC_INTERNAL_EMAILS</code>, use the
+           un-claude.com domain, or are a plus-address alias. <strong>If one of these is actually a customer</strong>,
+           remove it from <code>UC_INTERNAL_EMAILS</code> in <code>apps/web/.env.local</code> and refresh.</p>`
+        : `<p class="footnote"><strong>Credits</strong> is what they have left to spend. <strong>Jobs</strong> is how
+           many documents they have cleaned. <strong>Joined</strong> comes from their first free credits, because the
+           accounts table does not record a join date.</p>`
+    }`;
 }
 
 function databasePanel(d) {
@@ -433,17 +439,38 @@ function databasePanel(d) {
        ['Today', e(money(d.money.todayCents))],
        ['Credits sold', num(d.money.creditsSold)],
      ])}
+     ${
+       d.money.internalPurchaseCount
+         ? `<p class="footnote">${plural(d.money.internalPurchaseCount, 'purchase was', 'purchases were')} made by your own
+            test accounts and ${d.money.internalPurchaseCount === 1 ? 'is' : 'are'} left out of the figures above
+            (${e(money(d.money.internalPurchaseCents))} charged, ${e(money(d.money.internalRefundCents))} refunded).
+            Counting a test purchase as revenue is how a business talks itself into a number it does not have.</p>`
+         : ''
+     }
      ${purchases}
 
      <h3>People</h3>
      ${rows([
-       ['Signed up, with an email', `<strong>${num(d.accounts.withEmail)}</strong>`, 'the real customer list, below'],
-       ['Of those, have ever paid', `${num(d.accounts.buyers)}${d.accounts.withEmail ? ` <span class="hint-inline">${Math.round((d.accounts.buyers / d.accounts.withEmail) * 100)}%</span>` : ''}`],
+       ['Real customers signed up', `<strong>${num(d.accounts.customerCount)}</strong>`, 'excludes your own test accounts'],
+       [
+         'Of those, have ever paid',
+         `${num(d.accounts.buyers)}${d.accounts.customerCount ? ` <span class="hint-inline">${Math.round((d.accounts.buyers / d.accounts.customerCount) * 100)}%</span>` : ''}`,
+       ],
+       ['Your own test accounts', num(d.accounts.internalCount), 'listed separately below, and left out of every figure above'],
        ['Accounts of every kind', num(d.accounts.rowsInTable), 'includes anonymous visitors who never signed up'],
        ['Visitors who never signed up', num(d.accounts.guestsNeverRegistered), 'given free credits on arrival'],
-       ['Signed up in the last 7 days', num(d.accounts.registered7)],
      ])}
-     ${peopleTable(d.accounts.people)}
+     ${peopleTable(d.accounts.customers, 'Real customers', 'Nobody outside the team has signed up yet.')}
+     ${
+       d.accounts.internalCount
+         ? peopleTable(
+             d.accounts.internal,
+             'Your own accounts (not counted as customers)',
+             '',
+             true,
+           )
+         : ''
+     }
      ${
        !d.accounts.createdAtUsable
          ? `<p class="footnote"><strong>Note on the dates.</strong> The accounts table has a "created" column
@@ -588,13 +615,25 @@ function posthogPanel(p) {
        <br><br>
        <strong>For what actually happened, read the Payments and Usage panels.</strong> They are exact.
      </div>
-     <p class="explain"><strong>Whose visits are counted.</strong> Only visits to ${e(p.host)}, which
-     leaves out this laptop and every preview copy of the site.
+     <div class="banner ${p.traffic && p.traffic.internalPageviews > p.traffic.realPageviews ? 'warn' : ''}">
+       <strong>Whose visits are counted.</strong> Only real people visiting ${e(p.host)}. Left out: this
+       laptop, every preview copy of the site, anything identifying itself as a coding agent or a bot, and
+       ${p.excludedCities?.length ? `visits from ${e(p.excludedCities.join(', '))}` : 'nowhere by location'}${p.excludedIps ? `, plus ${p.excludedIps} address${p.excludedIps === 1 ? '' : 'es'} you named` : ''}.
+       ${
+         p.traffic
+           ? `<br><br><strong>${num(p.traffic.realPageviews)} of ${num(p.traffic.allPageviews)} page views were real</strong> —
+              ${num(p.traffic.internalPageviews)} were yours or an agent's. Everything in this panel counts only the
+              ${num(p.traffic.realPageviews)}.`
+           : ''
+       }
+     </div>
      ${
-       p.excludedIps
-         ? `${p.excludedIps} address${p.excludedIps === 1 ? '' : 'es'} you named ${p.excludedIps === 1 ? 'is' : 'are'} also excluded.`
-         : `<strong>Your own visits to the live site are still counted</strong> — PostHog's own "internal user" setting does not apply to this page. To leave yourself out, see the session note.`
-     }</p>
+       p.excludedCities?.length
+         ? `<p class="footnote">Excluding a city also excludes any genuine customer who lives there. That is the right
+            trade while most of the traffic is your own, and the wrong one later — worth revisiting once real visits
+            clearly outnumber yours.</p>`
+         : ''
+     }
      <h3>The journey</h3>
      <div class="funnel">${funnel}</div>
      ${

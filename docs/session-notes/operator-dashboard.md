@@ -340,10 +340,8 @@ determine whether that is a bug.** In 30 days, unfiltered, there are ZERO
 `checkout_account_required`, `purchase_cancelled` and `paywall_signup_clicked`
 events. Two things are true and they point different ways:
 
-- **`signUpStarted` and `signInStarted` are never called from anywhere in the
-  site's code.** Grep-verified. Those two will never fire until somebody wires
-  them up, despite 24 views of `/auth/sign-up` in 30 days. **That one is a
-  definite gap.**
+- **`signUpStarted` and `signInStarted` were never called from anywhere.**
+  **FIXED 25 August 2026** — see "Sign-up tracking" below.
 - **The checkout and purchase events were only wired on 24 August at 18:51 UTC**
   (commit `96c02d7`), and **both real purchases predate it** — 22 August, and
   24 August at 15:06. So zero is exactly what should be expected, and is not
@@ -353,6 +351,69 @@ events. Two things are true and they point different ways:
 **Watch `checkout_started` after the next sale.** If a purchase completes and it
 is still zero, it is broken. All of this is in the website's own code, which this
 session does not own.
+
+---
+
+## What the real data turned out to be, 25 August 2026
+
+**Jon's instinct was right on both counts, and the numbers are worse than he
+guessed.**
+
+### Two thirds of the "traffic" was us
+
+Measured over thirty days on un-claude.com:
+
+| | Page views | Visitors |
+|---|---|---|
+| Everything | 494 | 420 |
+| From Jon's own city | 324 | 284 |
+| From the Claude desktop app (coding agents) | — | 192 events |
+| **Real outside traffic** | **170** | **137** |
+
+The dashboard now excludes three things and says so on the page: any user agent
+carrying `Claude/`, `Electron/`, `Headless`, `bot`, `spider` or `crawl`; the
+cities in `POSTHOG_EXCLUDE_CITIES`; and the IPs in `POSTHOG_EXCLUDE_IPS`.
+**The panel prints "170 of 495 page views were real" so the exclusion is visible
+rather than silent.**
+
+**The cost is named on the page too:** excluding a city excludes real customers
+who live there. That is the right trade while Jon is most of his own traffic and
+the wrong one later.
+
+### The "100% return rate" cannot be real
+
+PostHog is configured with `persistence: 'memory'` (`04` entry 68), which the
+live cookie policy promises. Measured: **422 visitor ids for 494 page views —
+about 1.2 page views each**, and 234 of those ids made exactly one. The id dies
+with the page load. **PostHog therefore cannot tell that anybody came back**, so
+any return or retention figure it shows is an artefact of how it groups
+ephemeral ids, not a measurement of returning people. It is not evidence of bot
+traffic and it is not evidence of loyalty; it is not evidence of anything.
+
+### Five of nine "customers" were Jon
+
+Excluded now, by three rules: named in `UC_INTERNAL_EMAILS` (kept in
+`.env.local`, which git ignores, so no real address is committed), anything at
+`@un-claude.com`, and plus-address aliases. **Real customers: 4, of whom 1 has
+paid.** One purchase-and-refund pair was Jon testing and no longer counts as
+revenue — it only ever cancelled out because the refund happened to match; an
+unrefunded test would have sat in the revenue figure for ever.
+
+### Nobody's card was really declined
+
+Both "declined payments" belong to **one payment intent** — one person trying
+three cards in 39 seconds and succeeding on the third:
+
+| Time | Card | Result |
+|---|---|---|
+| 02:25:07 | Mastercard credit | `transaction_not_allowed` (network code 82), CVC passed |
+| 02:25:17 | Visa debit | `expired_card` (network code 54), **CVC failed** |
+| 02:25:46 | — | **succeeded** |
+
+That purchase was then refunded two minutes later, which is what makes it a test
+by Jon rather than a lost customer. **There is no decline problem to fix and no
+real customer has ever been declined.** Stripe's own advice code on the first was
+`confirm_card_data` — "ask them to check the details".
 
 ---
 
@@ -376,6 +437,39 @@ one after another against a 15-second limit; the panel reported PostHog as
 broken when it was merely slow. They now run together, with 30 seconds. The
 gateway's two calls were also serialised behind a model generation. **A full
 refresh went from 40.6 seconds to 3.4.**
+
+---
+
+## Sign-up tracking, added 25 August 2026
+
+`signUpStarted` and `signInStarted` existed in `events.ts` and were called from
+nowhere, so the sign-up step of the funnel did not exist.
+
+**They are wired from the app layer, not from the auth package.** The forms come
+from `@kit/auth`, a vendored template package. Firing the event at the click
+would mean either editing that package — putting this product's analytics
+vocabulary inside replaceable library code — or having the package call
+`window.posthog` directly, which breaks the rule at the top of `events.ts` that
+one module decides what may leave the browser.
+
+So `app/auth/_components/auth-analytics.tsx` listens instead, on two anchors that
+are part of the package's shape rather than its styling: `[data-provider]` on the
+OAuth buttons (which carries the provider id), and the `<form>` element for the
+password path. **It is a passive capture-phase listener — it cannot interfere
+with signing in.**
+
+**Verified in the browser, both pages**, with a stubbed PostHog (there is no
+PostHog key locally, by design):
+
+```
+/auth/sign-up  ->  signup_started {method: google}, signup_started {method: password}
+/auth/sign-in  ->  signin_started {method: google}, signin_started {method: password}
+```
+
+**The risk, named:** if the package stops rendering a `<form>`, or drops
+`data-provider`, these go quiet rather than erroring. That is why the dashboard
+labels a funnel step reading lower than the step below it as "under-recorded" —
+a silent zero shows up there instead of being believed.
 
 ---
 

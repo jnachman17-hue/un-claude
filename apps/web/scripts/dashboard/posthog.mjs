@@ -97,23 +97,78 @@ async function hogql(env, projectId, query) {
  * The WHERE clause every query shares: real site only, last 30 days, minus any
  * excluded IPs. Written once so no query can quietly forget it.
  */
-function scope(env) {
+/**
+ * ★ WHAT COUNTS AS A REAL VISITOR, AND WHAT IS US.
+ *
+ * Measured 25 August 2026, over thirty days on un-claude.com:
+ *
+ *     everything                       494 pageviews   420 visitors
+ *     from Jon's city                  324 pageviews   284 visitors   (66%)
+ *     from the Claude desktop app      ...  192 events, inside that set
+ *     REAL OUTSIDE TRAFFIC             170 pageviews   137 visitors
+ *
+ * Two thirds of the traffic was Jon's own machine and the coding agents running
+ * on it. Presented as one number it made the site look four times more visited
+ * than it is, and it is exactly why the funnel looked strange.
+ *
+ * THREE FILTERS, and each is stated on the page rather than applied quietly:
+ *
+ *   1. HOST. Only `un-claude.com`. Removes local development and every Vercel
+ *      preview URL.
+ *   2. AUTOMATION. Any user agent carrying `Claude/`, `Electron/`, `Headless`,
+ *      `bot`, `spider` or `crawl`. The Claude desktop app identifies itself as
+ *      `Claude/1.34493.1 ... Electron/42.9.2`, so agent visits are removable
+ *      exactly rather than guessed at.
+ *   3. PLACE. Cities named in `POSTHOG_EXCLUDE_CITIES`, plus any IPs in
+ *      `POSTHOG_EXCLUDE_IPS`. A city is the more useful of the two: a home IP
+ *      changes, a home town does not, and PostHog resolves the city itself.
+ *
+ * THE COST, NAMED: excluding a city excludes real customers who live there. Jon
+ * is in Hermosa Beach; a genuine buyer from Hermosa Beach would be invisible in
+ * the behaviour panel. That is the right trade while he is the majority of his
+ * own traffic, and it is the wrong trade later — the page prints what was
+ * excluded so the moment to revisit is obvious.
+ */
+function scope(env, { includeInternal = false } = {}) {
   const host = siteHost(env).replace(/'/g, '');
-  const ips = (env.POSTHOG_EXCLUDE_IPS || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const list = (name) =>
+    (env[name] || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
 
   let clause = `timestamp > now() - INTERVAL 30 DAY AND (properties.$host = '${host}' OR properties.$host = 'www.${host}')`;
 
-  if (ips.length) {
-    const list = ips.map((ip) => `'${ip.replace(/'/g, '')}'`).join(', ');
+  if (includeInternal) return clause;
 
-    clause += ` AND (properties.$ip IS NULL OR properties.$ip NOT IN (${list}))`;
+  clause += ` AND NOT (${AUTOMATION})`;
+
+  const cities = list('POSTHOG_EXCLUDE_CITIES');
+
+  if (cities.length) {
+    const names = cities.map((c) => `'${c.replace(/'/g, '')}'`).join(', ');
+
+    clause += ` AND (properties.$geoip_city_name IS NULL OR properties.$geoip_city_name NOT IN (${names}))`;
+  }
+
+  const ips = list('POSTHOG_EXCLUDE_IPS');
+
+  if (ips.length) {
+    const addresses = ips.map((ip) => `'${ip.replace(/'/g, '')}'`).join(', ');
+
+    clause += ` AND (properties.$ip IS NULL OR properties.$ip NOT IN (${addresses}))`;
   }
 
   return clause;
 }
+
+/** Anything that is a program rather than a person. */
+const AUTOMATION = `properties.$raw_user_agent LIKE '%Claude/%'
+  OR properties.$raw_user_agent LIKE '%Electron/%'
+  OR properties.$raw_user_agent LIKE '%Headless%'
+  OR properties.$raw_user_agent LIKE '%bot%'
+  OR properties.$raw_user_agent LIKE '%spider%'
+  OR properties.$raw_user_agent LIKE '%crawl%'`;
 
 /**
  * Find the project, so Jon only has to create a key and paste nothing else.
@@ -182,6 +237,7 @@ export async function readPostHog(env) {
   }
 
   const where = scope(env);
+  const whereAll = scope(env, { includeInternal: true });
 
   try {
     /*
@@ -190,7 +246,7 @@ export async function readPostHog(env) {
      * together the panel costs about as long as its slowest single query.
      * They are still separate queries so each stays readable on its own.
      */
-    const [steps, pages, checkoutFailures, scans] = await Promise.all([
+    const [steps, pages, checkoutFailures, scans, totals] = await Promise.all([
       hogql(
         env,
         project.id,
@@ -227,8 +283,19 @@ export async function readPostHog(env) {
          FROM events WHERE ${where} AND event = 'scan_completed'
          GROUP BY sample`,
       ),
+      /*
+       * How much was filtered out. Reported on the page so the exclusion is a
+       * visible decision rather than a silent one — and so Jon can see at a
+       * glance when his own traffic stops being the majority of it.
+       */
+      hogql(
+        env,
+        project.id,
+        `SELECT countIf(event = '$pageview'), count(DISTINCT distinct_id) FROM events WHERE ${whereAll}`,
+      ),
     ]);
 
+    const [[allPageviews, allVisitors] = [0, 0]] = totals;
     const sampleRow = scans.find(([x]) => x === true || x === 'true');
     const ownRow = scans.find(([x]) => x === false || x === 'false');
     const scanSplit = {
@@ -269,6 +336,14 @@ export async function readPostHog(env) {
       windowDays: 30,
       funnel,
       scanSplit,
+      traffic: {
+        realPageviews: counts.get('$pageview')?.total || 0,
+        realVisitors: counts.get('$pageview')?.people || 0,
+        allPageviews,
+        allVisitors,
+        internalPageviews: Math.max(0, allPageviews - (counts.get('$pageview')?.total || 0)),
+      },
+      excludedCities: (env.POSTHOG_EXCLUDE_CITIES || '').split(',').map((s) => s.trim()).filter(Boolean),
       pages: pages.map(([path, views]) => ({ path: path || '(none)', views })),
       failures: FAILURES.map((event) => ({ event, total: counts.get(event)?.total || 0 })),
       checkoutFailures: checkoutFailures.map(([reason, total]) => ({ reason: reason || 'not recorded', total })),

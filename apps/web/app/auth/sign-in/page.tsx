@@ -10,6 +10,8 @@ import { Trans } from '@kit/ui/trans';
 import authConfig from '~/config/auth.config';
 import pathsConfig from '~/config/paths.config';
 
+import { AuthAnalytics } from '../_components/auth-analytics';
+
 export const generateMetadata = async () => {
   const t = await getTranslations();
 
@@ -34,6 +36,8 @@ function SignInPage() {
           />
         </Heading>
       </div>
+
+      <AuthAnalytics mode={'sign-in'} />
 
       <SignInMethodsContainer paths={paths} providers={authConfig.providers} />
 
