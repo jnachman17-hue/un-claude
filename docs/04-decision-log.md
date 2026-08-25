@@ -5511,3 +5511,77 @@ after, same spans.**
 the live cue pattern and fails if any verb on it has no dialogue line proving
 it does not freeze a novel. Adding a cue verb without that proof now fails the
 suite.
+
+### 143. Every quotation freezes. There is no test of whose words they are. Supersedes 137's D2 implementation and 142.
+
+**Jon's ruling, 24 August 2026, in his own words:** *"I don't want to try and
+differentiate real quotation versus novel dialogue. I think that makes no
+sense, and it's purely a non-deterministic, subjective guessing game. What
+we're going to do is any quotation is frozen and kept across the board.
+There's no delineation between novel dialogue and real quotation. We preserve
+the text and quotations, and citations around it on either side."*
+
+**Two sessions built the test he is abolishing and both failed on ordinary
+text.** E-9 keyed on reportive verbs; E-16 replaced that with a
+position-and-subject test after measuring that the shipped rule froze 35 of 45
+ordinary novel dialogue lines. Neither failed through carelessness. The two
+things are grammatically identical:
+
+```
+"Power tends to corrupt," Acton observed.      <- real, must freeze
+"Mind the second stair," Aldous observed.      <- fiction, must not
+```
+
+Quote, comma, capitalised name, reportive verb, in both. **The difference is
+that Acton published and Aldous is a character, which is world knowledge and
+not syntax.** No program has it.
+
+**The cost of dropping the distinction, measured before the change and
+confirmed on the shipping code afterwards:**
+
+| document | words | frozen before | frozen after |
+|---|---|---|---|
+| ladder_500 | 463 | 27.4% | 27.4% |
+| ladder_1000 | 919 | 27.7% | 28.8% |
+| ladder_2000 | 1,942 | 23.6% | 25.1% |
+| ladder_3000 | 2,971 | 23.5% | 25.2% |
+| ladder_5000 | 4,958 | 22.3% | 24.1% |
+| ladder_10000 | 9,946 | 21.4% | 23.2% |
+| dialogue-heavy story | 61 | 0.0% | 63.9% |
+
+**Under two points on every academic document.** It is dramatic only for
+dialogue-heavy fiction — the case this product does not optimise for, and the
+case D4's pre-flight already discloses before any money changes hands.
+
+**Three things went with the distinction, and the deletion is the prize rather
+than a side effect:** the reportive-verb list, the attributive-position and
+pronoun-subject tests, and the `attributed` field on every span. The report's
+`quotes_attributed` and `quotes_unattributed` are removed rather than renamed —
+their names claimed a distinction the engine no longer makes, and the count of
+quotations already lived in `spans_found.quote`. **This project found three
+silent freeze defects in two days; a deleted code path cannot harbour a
+fourth.**
+
+**Block quotes lost their colon lead-in test too, which the brief left open.**
+That test decided from the introducing line whether indented text was quoted
+material — the same species of guess. Indenting a paragraph is the typographic
+statement that it is quoted, and the engine now takes it at its word. **The
+price, accepted: indented text that is not a quotation — an address block, a
+poem, unfenced code — freezes too.** On a 45-word document with an indented
+address, 2.2% frozen becomes 24.4%.
+
+**The second half of the ruling: the citation freezes with the quotation.**
+Until now the masker handed the model a protected quotation with its source
+loose — `As Smith puts it, [[11]] (p. 47)` — so a page, year or author could be
+renumbered, and W10 measured invented authors in 23 of 41 runs on this model
+family. **A rewritten citation attached to a correctly preserved quotation is
+the worse half of two errors: it reads as authoritative and it is wrong.** A
+citation adjacent on either side is now inside the frozen span. **A citation
+not adjacent to any quotation is deliberately NOT frozen** — that would be a
+larger change than the ruling asked for.
+
+**Locked by `test_the_surrounding_words_never_decide`**, which puts one
+quotation into fourteen different surroundings — every cue either deleted rule
+ever keyed on — and requires the identical answer from all fourteen. Any future
+attempt to read the context and decide fails the suite, whatever mechanism it
+uses.
