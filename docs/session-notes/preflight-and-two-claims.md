@@ -135,9 +135,14 @@ D4's wording is fixed on the board. **Three changes, no others.**
 
 > **We will return about 66% of this document exactly as you sent it.**
 > That is text we have protected from being reworded, such as quotations,
-> references and headings.
+> references and headings. Everything else goes through the full rewrite.
 >
 > **Continue** · **Cancel**
+
+**The verb "goes through" is load-bearing and must not be tightened.** Jon asked
+for a clause covering the remainder; "gets the full rewrite" and "is rewritten"
+are false on the one run in four where a chunk falls back. "Goes through"
+describes the action, which happens every time. 04 entry 153.
 
 *That is the real panel, copied out of the live DOM in section 6. The 66% is
 this document's own number; every visitor sees theirs.*

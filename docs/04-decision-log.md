@@ -5873,3 +5873,45 @@ you sent it".
 rewrite** — that hidden characters are removed from all of it, protected text
 included. That is provable, it is a stronger thing to say, and it is his to
 decide. Still open alongside entry 150.
+
+### 153. The pre-flight says "Everything else goes through the full rewrite". The verb is load-bearing. Amends entry 152.
+
+**Jon's ruling, 25 August 2026.** He asked for a clause covering the remainder
+and gave the reasoning: the watermark rides on high entropy tokens, and
+quotations, citations and references are low entropy, so freezing them forfeits
+almost nothing. **He was shown the argument's limits and the measurement, and
+chose the hedged coverage wording over the mechanism wording.** Implemented.
+
+**What was measured before he chose.** `overlap_unfrozen` is survival in the
+NON-FROZEN text only, which is the direct test of whether the remainder is
+really rewritten. Over 237 recorded runs:
+
+```
+runs with NO chunk fallback    n=175   median 91.5% of three-word runs broken
+runs WITH a chunk fallback     n= 62   median 63.3% broken
+```
+
+**On three runs in four the rewrite does exactly what the sentence implies. On
+the fourth a 350-word chunk comes back verbatim** and roughly a third of the
+non-frozen text is untouched.
+
+**So the verb decides whether the sentence is true.** *"Gets the full rewrite"*
+and *"is rewritten"* are false on that fourth run and are the wording the board
+flagged (row 4). **"Goes through" describes the action, which happens every
+time: the chunk is sent and rewritten, and a result that cannot be verified is
+rejected rather than never attempted.** Do not tighten the verb.
+
+**The entropy argument is right and it has a hole, recorded because it will come
+up again.** It holds well for citations and reference entries, which are close
+to fully determined. **It does not hold for invented dialogue, which entry 143
+freezes along with every other quotation without testing whose words they are.**
+When a model writes «"You could have called," Marta said» it chose those words
+freely, at full entropy. **The documents that trip this pre-flight at 51 to 66
+percent are exactly the dialogue-heavy ones**, so the frozen text there is the
+case the argument covers least well. **This is a reason not to lean on the
+entropy claim in visitor copy**, and the shipped sentence does not.
+
+**Nothing is said about sanitising, deliberately.** Layer A runs on the whole
+document before the freeze, so the protected text IS stripped of invisible
+characters. Saying "we sanitise everything else" would imply otherwise and give
+away a real selling point. Entry 152 stands on that point.

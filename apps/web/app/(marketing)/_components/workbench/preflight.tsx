@@ -99,22 +99,37 @@ export function needsPreFlight(freeze: FreezeEstimate | undefined): boolean {
  *      writing a true replacement is a claim about what we disclose, and that
  *      is Jon's call. Nothing on screen now says anything about the remainder.
  *
- * THE SENTENCE ENDS AT "headings". Jon's instruction, 25 August 2026. He
- * offered two options: stop it there, or add a line saying we reword and
- * sanitise everything else. **The second one is the dropped clause coming back
- * in different words and it is wrong in BOTH directions**, so it was not taken
- * and he was told why. 04 entry 152.
+ * "so it comes back character for character" came off, as redundant: the
+ * heading above already says "exactly as you sent it".
  *
- *   Wrong downward: we cannot promise the remainder is reworded. See above.
- *   Wrong upward: it implies the protected text is not sanitised. IT IS.
- *     Layer A runs on the WHOLE document before the freeze and before the
- *     rewrite — server.py, "THE REWRITE RECEIVES THE CLEANED TEXT. Layer A
- *     already ran above, on the original." A frozen quotation still has its
- *     invisible characters stripped. It is only spared the REWORDING, which is
- *     exactly and only what this sentence claims.
+ * ★ "EVERYTHING ELSE GOES THROUGH THE FULL REWRITE" — Jon's ruling,
+ * 25 August 2026, 04 entry 153. READ THIS BEFORE CHANGING THE VERB.
  *
- * "so it comes back character for character" came off with it, as redundant:
- * the heading above already says "exactly as you sent it".
+ * "GOES THROUGH" IS LOAD-BEARING. It describes what happens
+ * to the text, which is always true: every unfrozen chunk is sent to the model
+ * and rewritten. It deliberately does NOT promise that every word comes back
+ * changed, because sometimes it does not.
+ *
+ *   A chunk whose protected text cannot be verified on the way back is handed
+ *   to the customer as their own original. Measured on `overlap_unfrozen`,
+ *   which is survival in the NON-FROZEN text only, over 237 recorded runs:
+ *
+ *     no chunk fell back   n=175   median 91.5% of three-word runs broken
+ *     a chunk fell back    n= 62   median 63.3% broken
+ *
+ *   So on three runs in four the rewrite does exactly what this sentence
+ *   implies. On the fourth, a 350-word chunk comes back verbatim.
+ *
+ * **"Gets the full rewrite" or "is rewritten" would be false on that fourth
+ * run.** "Goes through" survives it. This is the wording the board flagged as
+ * false (row 4) coming back in a form that is not. Do not tighten it.
+ *
+ * NOTE ALSO: this sentence says nothing about sanitising, on purpose. Layer A
+ * runs on the WHOLE document before the freeze and before the rewrite
+ * (server.py: "THE REWRITE RECEIVES THE CLEANED TEXT. Layer A already ran
+ * above, on the original"), so the protected text IS sanitised of invisible
+ * characters. Saying "we sanitise everything else" would imply it is not, and
+ * would give away a real selling point. 04 entry 152.
  */
 export function PreFlight({
   freeze,
@@ -161,7 +176,8 @@ export function PreFlight({
 
         <p className={'text-muted-foreground text-[13px] leading-snug'}>
           That is text we have protected from being reworded, such as
-          quotations, references and headings.
+          quotations, references and headings. Everything else goes through the
+          full rewrite.
         </p>
 
         <div className={'mt-1 flex flex-wrap items-center justify-center gap-2'}>
