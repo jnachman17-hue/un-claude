@@ -329,14 +329,37 @@ export function CoverageSection() {
             </ul>
           </div>
 
-          <div className={'text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px]'}>
+          {/*
+            ONE PER LINE ON A PHONE, A ROW ON DESKTOP. Jon's instruction,
+            25 August 2026, six-ui-fixes brief fix 6.
+
+            `flex-wrap` with four items of four different widths cannot make a
+            tidy grid at 375px: measured before this, it broke into a ragged
+            two-by-two, "Marking today | Committed, coming" over "Nothing yet |
+            Does not produce this", with the second column starting at a
+            different x in each row. Wrapping is the wrong instrument for a key,
+            because a key is read down, not across.
+
+            Stacked, the symbols line up in a column on the left edge for free.
+            Desktop is untouched and keeps the single row it already had.
+
+            The third entry carried `gap-2` where the other three carry
+            `gap-1.5`. Invisible in a wrapped row and obvious in a stack: its
+            label sat two pixels further right than the other three. Normalised,
+            which is the whole point of the fix.
+          */}
+          <div
+            className={
+              'text-muted-foreground mt-3 flex flex-col gap-y-2 text-[12px] sm:flex-row sm:flex-wrap sm:gap-x-5'
+            }
+          >
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'yes'} /> Marking today
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'committed'} /> Committed, coming
             </span>
-            <span className={'inline-flex items-center gap-2'}>
+            <span className={'inline-flex items-center gap-1.5'}>
               <Cell mark={'none'} /> Nothing yet
             </span>
             <span className={'inline-flex items-center gap-1.5'}>
