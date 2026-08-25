@@ -165,20 +165,45 @@ function rows(pairs) {
 // ---------------------------------------------------------------------------
 
 function stripePanel(s) {
+  /*
+   * NO LIVE KEY MEANS NO NUMBERS, ON PURPOSE.
+   *
+   * Jon's instruction, 25 August 2026: "I only want a real payments section."
+   * Rather than a broken-looking panel, this is the one place on the page that
+   * asks him to do something, with the exact steps.
+   */
+  if (!s.ok && s.needsLiveKey) {
+    return panel(
+      'Payments',
+      'Stripe — needs your live key',
+      `<div class="setup">
+        <p class="setup-why">${e(s.reason)}</p>
+        <p class="explain">Meanwhile the money figures on this page come from our own database, which
+        recorded each payment as it happened. Those are real. Adding the live key gets you the detail
+        Stripe holds and nothing else does: declined cards, refunds and disputes.</p>
+        <h4>To switch it on, once</h4>
+        <ol class="steps">
+          <li>Open the <strong>Stripe dashboard</strong> and make sure the <strong>Test mode</strong>
+              switch at the top right is <strong>OFF</strong>.</li>
+          <li>Go to <strong>Developers → API keys</strong>.</li>
+          <li>Next to <strong>Secret key</strong>, press <strong>Reveal</strong> and copy it.
+              It starts with <code>sk_live_</code>.</li>
+          <li>Open <code>apps/web/.env.local</code> and add one line:
+              <code class="block">UC_DASHBOARD_STRIPE_KEY=sk_live_your_key_here</code></li>
+          <li>Refresh this page.</li>
+        </ol>
+        <p class="footnote"><strong>Why that name and not <code>STRIPE_SECRET_KEY</code>.</strong>
+        That other variable is the key the website itself uses when it runs on this laptop, and it is a
+        test key on purpose so development cannot charge a real card. Putting a live key there would arm
+        the local site with real money. This name is used by the dashboard and nothing else.</p>
+      </div>`,
+    );
+  }
+
   if (!s.ok) return brokenPanel('Payments', 'Stripe', s);
 
-  const mode = s.mode;
-  const isTest = mode === 'test';
   const cur = s.currency;
-
-  const modeBanner = isTest
-    ? `<div class="banner warn">
-         <strong>These are practice payments, not real ones.</strong>
-         This dashboard is using a <em>test</em> Stripe key, which can only see Stripe's sandbox.
-         Every figure in this panel is imaginary money. Your real sales are not here —
-         look at <strong>Money taken</strong> in the Usage panel below, which is real.
-       </div>`
-    : `<div class="banner live"><strong>Live mode. This is real money.</strong></div>`;
+  const modeBanner = `<div class="banner live"><strong>Live mode. This is real money.</strong></div>`;
 
   const recent = s.recent.length
     ? `<table class="table"><thead><tr><th>When</th><th>Amount</th><th></th></tr></thead><tbody>${s.recent
@@ -192,8 +217,8 @@ function stripePanel(s) {
     : '<p class="none">No successful payments in this mode.</p>';
 
   return panel(
-    isTest ? 'Payments (practice mode)' : 'Payments',
-    `Stripe, ${mode} mode`,
+    'Payments',
+    'Stripe, live mode',
     `${modeBanner}
      ${rows([
        ['Kept, all time', `<strong>${e(money(s.money.netAll, cur))}</strong>`, 'after refunds'],
@@ -215,7 +240,6 @@ function stripePanel(s) {
      <h3>The most recent payments</h3>
      ${recent}
      ${s.missing.length ? `<p class="footnote">Could not read: ${e(s.missing.join(', '))}. Those figures show as —.</p>` : ''}`,
-    isTest ? 'muted' : '',
   );
 }
 
@@ -238,21 +262,121 @@ function gatewayPanel(g) {
      ${
        g.partial
          ? `<p class="footnote">The spending figures could not be read this time (${e(g.reason)}), but the check above still ran.</p>`
-         : rows([
-             ['Spent on this key, all time', `<strong>${e(usd(g.totalUsed))}</strong>`, 'this is the number that matters'],
-             ['Prepaid credit sitting on the account', e(usd(g.balance)), 'NOT your remaining headroom — see below'],
-           ])
+         : `
+     <h3>How much is left</h3>
+     <p class="explain">Two separate things can stop the rewrite, and they run out independently.
+     Whichever empties first is the one that matters.</p>
+     ${rows([
+       [
+         'Money loaded on the account',
+         `<strong>${e(usd(g.loaded))}</strong>`,
+         'real prepaid credit — at zero, the rewrite stops for everyone',
+       ],
+       [
+         'Your monthly spending limit',
+         e(usd(g.monthlyLimit)),
+         'a figure you set in Vercel and typed into this dashboard — not read from any API',
+       ],
+       [
+         'Spent so far this month',
+         g.month.spent === null || g.month.tooYoung
+           ? '<span class="hint-inline">still measuring — see below</span>'
+           : `${e(usd(g.month.spent))} <span class="hint-inline">of ${e(usd(g.monthlyLimit))}</span>`,
+         g.month.spent === null || g.month.tooYoung ? undefined : 'at least this much — see the note below',
+       ],
+       [
+         'Spending rate',
+         g.burn?.perDay > 0
+           ? `${e(usd(g.burn.perDay, 4))} <span class="hint-inline">a day</span>`
+           : '<span class="hint-inline">not enough history yet</span>',
+         g.burn?.perDay > 0 ? `measured over the last ${g.burn.days.toFixed(1)} days` : undefined,
+       ],
+       [
+         'At that rate, the loaded credit lasts',
+         g.burn?.perDay > 0 && g.loaded !== null
+           ? `<strong>about ${Math.floor(g.loaded / g.burn.perDay)} days</strong>`
+           : '<span class="hint-inline">not enough history yet</span>',
+       ],
+     ])}
+     ${g.month.tooYoung ? '' : bar(g.loaded, g.monthlyLimit, g.month.spent)}
+     ${rows([['Spent since the account opened', e(usd(g.totalUsed)), 'all time, not this month']])}
+     ${
+       g.month.spent === null || g.month.tooYoung
+         ? `<p class="footnote"><strong>Why "spent this month" is not a number yet.</strong> The gateway only reports a
+            total for all time, never a monthly figure, so the only way to know this month's spend is to
+            compare readings. This dashboard writes down what the gateway says every time you run it, and it
+            only started doing that ${g.month.since ? e(when(g.month.since)) : 'just now'}. Showing the difference so far
+            would read as "nothing spent this month", which is not what it means.
+            <strong>Leave it a day and a real figure appears.</strong></p>`
+         : `<p class="footnote"><strong>Why "at least".</strong> The monthly figure is the difference between
+            now and the first reading taken this month${g.month.since ? ` (${e(when(g.month.since))})` : ''}. Anything
+            spent before that first reading is not counted, so the true figure is that much or more. Running
+            the dashboard regularly makes it tighter.</p>`
+     }`
      }
      <div class="banner warn">
-       <strong>The spending limit cannot be shown here, and this has bitten before.</strong>
-       There is a separate cap set on this key. No API reports it, so this page cannot show how much
-       room is left. On 24 August the key hit its cap and the paid rewrite went down while the
-       "prepaid credit" figure still read $14.99 — that money existed and none of it was spendable.
+       <strong>The limit above is a number you typed in, not one we can read.</strong>
+       No API reports the cap on a gateway key — it exists only in the Vercel dashboard, under
+       AI Gateway → API keys → this key. <strong>If you change it there, change it here too</strong>, or this
+       page will be confidently wrong.
        <br><br>
-       To see the actual limit: Vercel dashboard → AI Gateway → API keys → this key.
-       The <strong>Working normally</strong> line above is the reliable answer to "is it up right now".
+       This caught the site out on 24 August: the key hit its $10 cap and the paid rewrite went down while
+       the loaded-credit figure still read $14.99. The money was real and none of it was spendable.
+       <strong>The “${e(g.serving.state === 'serving' ? 'Working normally' : 'status')}” line at the top of this panel is the
+       reliable answer to “is it up right now”</strong>, because it asks rather than calculates.
      </div>`,
   );
+}
+
+/**
+ * A two-part meter: how much money is loaded, and how much of the monthly cap is
+ * gone. Drawn rather than tabulated because "am I close to running out" is a
+ * question about proportion, and a bar answers it before the number is read.
+ */
+function bar(loaded, limit, spentThisMonth) {
+  if (spentThisMonth === null || !limit) return '';
+
+  const used = Math.min(100, (spentThisMonth / limit) * 100);
+  const colour = used >= 95 ? '#cf222e' : used >= 80 ? '#9a6700' : '#1a7f37';
+
+  return `<div class="chart">
+    <h4>This month's budget</h4>
+    <div class="meter"><span style="width:${used.toFixed(1)}%;background:${colour}"></span></div>
+    <div class="axis"><span>${e(usd(spentThisMonth))} spent</span><span>${Math.round(used)}%</span><span>${e(usd(limit))} limit</span></div>
+  </div>`;
+}
+
+/**
+ * THE CUSTOMER LIST. Everyone who has signed up, newest first.
+ *
+ * ★ THIS IS PERSONAL DATA and it is the reason the page carries a warning at the
+ * top and the folder is git-ignored. It is here because Jon asked for it on
+ * 25 August 2026, and because a list of nine people is a different kind of
+ * useful from the number nine: it is who to email.
+ *
+ * Every column beside the address is computed from that person's own ledger
+ * rows, so nothing here can disagree with the balance they see when they log in.
+ */
+function peopleTable(people) {
+  if (!people?.length) return '<p class="none">Nobody has signed up yet.</p>';
+
+  return `<h4>Everyone who has signed up</h4>
+    <div class="scroller"><table class="table"><thead><tr>
+      <th>Email</th><th>Joined</th><th class="numeric">Credits</th><th class="numeric">Jobs</th><th class="numeric">Paid</th>
+    </tr></thead><tbody>${people
+      .map(
+        (p) => `<tr>
+          <td>${e(p.email)}${p.purchases > 0 ? '<span class="tag good">customer</span>' : ''}</td>
+          <td>${p.joined ? e(when(p.joined)) : '<span class="hint-inline">unknown</span>'}</td>
+          <td class="numeric">${num(p.balance)}</td>
+          <td class="numeric">${num(p.jobs)}</td>
+          <td class="numeric">${p.paidCents ? e(money(p.paidCents)) : '—'}</td>
+        </tr>`,
+      )
+      .join('')}</tbody></table></div>
+    <p class="footnote"><strong>Credits</strong> is what they have left to spend. <strong>Jobs</strong> is how
+    many documents they have cleaned. <strong>Joined</strong> is when their account was created, taken from
+    their first free credits because the accounts table does not record a join date.</p>`;
 }
 
 function databasePanel(d) {
@@ -313,11 +437,13 @@ function databasePanel(d) {
 
      <h3>People</h3>
      ${rows([
-       ['Accounts of every kind', num(d.accounts.rowsInTable), 'includes anonymous visitors'],
-       ['Real accounts, signed up', `<strong>${num(d.accounts.registered)}</strong>`],
+       ['Signed up, with an email', `<strong>${num(d.accounts.withEmail)}</strong>`, 'the real customer list, below'],
+       ['Of those, have ever paid', `${num(d.accounts.buyers)}${d.accounts.withEmail ? ` <span class="hint-inline">${Math.round((d.accounts.buyers / d.accounts.withEmail) * 100)}%</span>` : ''}`],
+       ['Accounts of every kind', num(d.accounts.rowsInTable), 'includes anonymous visitors who never signed up'],
        ['Visitors who never signed up', num(d.accounts.guestsNeverRegistered), 'given free credits on arrival'],
        ['Signed up in the last 7 days', num(d.accounts.registered7)],
      ])}
+     ${peopleTable(d.accounts.people)}
      ${
        !d.accounts.createdAtUsable
          ? `<p class="footnote"><strong>Note on the dates.</strong> The accounts table has a "created" column
@@ -330,16 +456,32 @@ function databasePanel(d) {
 
      <h3>Work done</h3>
      ${rows([
-       ['Jobs run, all time', `<strong>${num(d.runs.total)}</strong>`],
+       ['Jobs run, all time', `<strong>${num(d.runs.total)}</strong>`, 'a paid clean-up — the thing that costs a credit'],
        ['Today', num(d.runs.today)],
        ['Last 7 days', num(d.runs.last7)],
        ['Jobs that failed and were refunded', `${num(d.runs.refunded)}${d.runs.refundedToday ? ` <span class="tag warn">${d.runs.refundedToday} today</span>` : ''}`, 'the credit was returned'],
        ['Words processed', num(d.runs.wordsTotal)],
      ])}
+     ${
+       d.runs.freeScansRecorded
+         ? ''
+         : `<p class="footnote warnish"><strong>Free scans are not counted here, and cannot be.</strong>
+            A scan costs no credit, so it writes nothing to this database — every one of the ${num(d.runs.total)} rows
+            above is a paid clean-up. <strong>The only place a free scan is recorded is PostHog</strong>, as the
+            <code>scan_completed</code> event, which is why the Behaviour panel below is worth switching on:
+            it is the only way to see how many people try the product without buying.</p>`
+     }
      <div class="chart"><h4>Jobs run, last 14 days</h4>${bars(d.runs.byDay, { colour: '#1f6feb' })}</div>
 
      <h3>Credits, by what caused them</h3>
      ${rows(creditRows)}
+     ${rows([
+       [
+         'Credits people hold and have not spent',
+         `<strong>${num(d.credits.outstanding)}</strong>`,
+         'work already paid for or given away that we still owe',
+       ],
+     ])}
 
      <h3>What it costs us to serve</h3>
      <p class="explain">Only the paid rewrites cost anything. Stripping hidden characters and file
@@ -455,7 +597,46 @@ function posthogPanel(p) {
 // The whole document
 // ---------------------------------------------------------------------------
 
-export function renderPage({ generatedAt, alerts, headline, stripe, gateway, database, posthog }) {
+export function renderPage({ generatedAt, alerts, headline, stripe, gateway, database, posthog, live, token }) {
+  const people = database.ok ? database.accounts.withEmail : 0;
+
+  /*
+   * LIVE MODE GETS A REFRESH CONTROL AND A HONEST TIMESTAMP.
+   *
+   * When served by `serve.mjs`, every load re-reads all four sources, so the
+   * page is genuinely current and the button simply reloads it. When written to
+   * a file by `run.mjs` it is frozen, and says so — the difference must be
+   * obvious, because acting on a stale revenue figure is exactly the mistake
+   * this page exists to prevent.
+   */
+  const freshness = live
+    ? `<p class="stamp">Live. Read <b>${e(when(generatedAt))}</b> — every refresh fetches everything again.
+       <button class="refresh" onclick="location.reload()">Refresh now</button>
+       <label class="auto"><input type="checkbox" id="auto"> refresh every minute</label></p>`
+    : `<p class="stamp">A frozen snapshot taken <b>${e(when(generatedAt))}</b>. It will never change —
+       run the command again for fresh numbers.</p>`;
+
+  const autoScript = live
+    ? `<script>
+        // Opt-in only, and remembered for the session so a refresh does not
+        // switch it off. Sixty seconds is slow enough not to hammer four APIs.
+        var box = document.getElementById('auto');
+        if (sessionStorage.getItem('auto') === '1') box.checked = true;
+        var timer = box.checked ? setTimeout(function(){ location.reload(); }, 60000) : null;
+        box.addEventListener('change', function () {
+          sessionStorage.setItem('auto', box.checked ? '1' : '0');
+          if (box.checked) { timer = setTimeout(function(){ location.reload(); }, 60000); }
+          else { clearTimeout(timer); }
+        });
+      </script>`
+    : '';
+
+  const privacyNote = people
+    ? `<div class="alert privacy"><span class="alert-dot"></span><div><strong>This page lists ${people}
+       customer email address${people === 1 ? '' : 'es'}.</strong> Treat it like the Stripe dashboard —
+       ${live ? 'it is served only to this computer' : 'the file is kept out of version control'}, and it should not
+       be shared or emailed.</div></div>`
+    : '';
   const alertStrip = alerts.length
     ? `<div class="alerts">${alerts
         .map(
@@ -502,7 +683,11 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
   .alert.good { background: var(--green-bg); border-color: #b4e5c1; }
   .alert.good .alert-dot { background: var(--green); }
 
-  .bigs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 28px; }
+  /* Six numbers, laid out so they never leave one card stranded on its own row:
+     three and three on a desktop, two by three on a phone. An auto-fit grid was
+     doing five-and-one at typical widths, which reads as a mistake. */
+  .bigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+  @media (max-width: 700px) { .bigs { grid-template-columns: repeat(2, 1fr); } }
   .big { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: var(--panel); }
   .big-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); font-weight: 600; }
   .big-value { font-size: clamp(24px, 6vw, 32px); font-weight: 650; letter-spacing: -0.02em; margin: 6px 0 2px; }
@@ -561,6 +746,34 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
   .degraded-fix { margin: 0 0 8px; font-size: 14.5px; }
   .degraded-note { margin: 0; font-size: 13.5px; color: var(--dim); }
 
+  .alert.privacy { background: #f6f0ff; border-color: #e0d0f7; margin-bottom: 24px; font-size: 14px; }
+  .alert.privacy .alert-dot { background: #8250df; }
+
+  .refresh {
+    font: inherit; font-size: 13px; font-weight: 600; margin-left: 10px; padding: 4px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  .refresh:hover { background: #eaeef2; }
+  .auto { font-size: 13px; color: var(--dim); margin-left: 10px; white-space: nowrap; }
+  .auto input { vertical-align: middle; }
+
+  /* The monthly budget meter. */
+  .meter { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; height: 20px; overflow: hidden; }
+  .meter span { display: block; height: 100%; border-radius: 5px 0 0 5px; }
+
+  /* The customer list can outgrow a phone. Let the table scroll, not the page. */
+  .scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scroller .table { min-width: 460px; }
+
+  .tag.good { background: var(--green-bg); color: var(--green); }
+
+  .setup { background: var(--blue-bg); border: 1px solid #b6e3ff; border-radius: 8px; padding: 16px; }
+  .setup-why { margin: 0 0 10px; font-weight: 600; }
+  .steps { margin: 6px 0 0; padding-left: 22px; font-size: 14.5px; }
+  .steps li { margin-bottom: 8px; }
+  code { background: #eef1f4; border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+  code.block { display: block; margin-top: 5px; padding: 8px 10px; overflow-x: auto; white-space: nowrap; }
+
   .none { color: var(--faint); font-size: 14px; font-style: italic; }
   .footnote { font-size: 13px; color: var(--dim); margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef1f4; }
   .footnote.warnish { background: var(--amber-bg); border: 1px solid #f0e2a3; border-radius: 8px; padding: 10px 12px; color: var(--ink); }
@@ -586,11 +799,11 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
 <div class="wrap">
   <header class="top">
     <h1>How the business is doing</h1>
-    <p class="stamp">A snapshot taken <b>${e(when(generatedAt))}</b>. Nothing here updates on its own —
-    run the command again for fresh numbers.</p>
+    ${freshness}
   </header>
 
   ${alertStrip}
+  ${privacyNote}
 
   <div class="bigs">${headline.map(headlineCard).join('')}</div>
 
@@ -600,5 +813,6 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
   ${posthogPanel(posthog)}
 
   <footer>Generated on this machine and never uploaded. Contains no keys or passwords.</footer>
-</div>`;
+</div>
+${autoScript}`;
 }

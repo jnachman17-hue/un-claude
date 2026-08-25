@@ -77,14 +77,41 @@ function within(charges, since, pick) {
   return charges.filter((c) => c.created * 1000 >= since).reduce((total, c) => total + pick(c), 0);
 }
 
-export async function readStripe(env, mode) {
-  const key = env.STRIPE_SECRET_KEY;
-
+export async function readStripe(env, mode, key) {
   if (!key) {
     return {
       ok: false,
-      reason: 'No Stripe key was found.',
-      fix: 'Add STRIPE_SECRET_KEY to apps/web/.env.local, or run the command with it set for one run.',
+      needsLiveKey: true,
+      reason: 'No Stripe key was found, so there are no payment figures.',
+      fix: 'Add UC_DASHBOARD_STRIPE_KEY to apps/web/.env.local with your live key from Stripe → Developers → API keys.',
+    };
+  }
+
+  /*
+   * ★ REAL PAYMENTS ONLY. A TEST KEY GETS NO PANEL.
+   *
+   * Jon's instruction, 25 August 2026: "I only want a real payments section."
+   *
+   * A test key can only see Stripe's sandbox, where every payment is invented.
+   * The previous version rendered those figures behind a warning banner, which
+   * was worse than useless: it filled the panel with numbers that look exactly
+   * like revenue and are not, and it made the page longer without making it
+   * more true. There is no arrangement of warnings that makes a fake revenue
+   * figure worth showing to the person trying to run the business.
+   *
+   * So the panel refuses, and says what to do instead. The real money is still
+   * on the page — it comes from the database, which recorded the live payments
+   * as they happened.
+   */
+  if (mode !== 'live') {
+    return {
+      ok: false,
+      needsLiveKey: true,
+      reason:
+        mode === 'test'
+          ? 'The Stripe key on this machine is a test key, so it can only see practice payments. Those are not shown, because a fake revenue figure is worse than none.'
+          : 'The Stripe key is not recognisable as a live key.',
+      fix: 'Add UC_DASHBOARD_STRIPE_KEY to apps/web/.env.local with your live key from Stripe → Developers → API keys (with Test mode switched OFF).',
     };
   }
 

@@ -116,10 +116,21 @@ export async function readDatabase(env) {
   let costs;
 
   try {
-    // Only the timestamp is fetched. Counting sign-ups needs no email and no
-    // name, and the less personal data this process holds the less there is to
-    // leak into a file.
-    accountRows = await read(env, 'accounts', { select: 'created_at' });
+    /*
+     * ★ THIS NOW FETCHES CUSTOMER EMAIL ADDRESSES. Jon asked for the list of
+     * people who have signed up, by name, on 25 August 2026.
+     *
+     * TWO CONSEQUENCES, both handled rather than noted and forgotten:
+     *
+     *   1. THE GENERATED PAGE NOW CONTAINS PERSONAL DATA. It was already
+     *      git-ignored; the page now carries a line saying so, because a file
+     *      of customer emails is a different object from a file of totals and
+     *      should not be mailed around or dropped in a shared folder.
+     *   2. NOTHING PRINTS THEM TO A TERMINAL. `run.mjs` reports counts only.
+     *      Everything in a terminal here is transmitted to an API provider
+     *      (`CLAUDE.md` section 3), and a customer list has no business in it.
+     */
+    accountRows = await read(env, 'accounts', { select: 'id,email,name,created_at' });
     ledger = await read(env, 'credit_ledger', {
       select: 'id,account_id,delta,reason,endpoint,input_kind,words_in,price_cents,created_at',
       extra: '&order=id.desc',
@@ -147,6 +158,56 @@ export async function readDatabase(env) {
   const guestOnly = new Set(
     firstGrants.filter((r) => r.reason === 'anon_grant' && !registeredIds.has(r.account_id)).map((r) => r.account_id),
   );
+
+  /*
+   * THE ACTUAL LIST OF PEOPLE, which is what Jon asked for.
+   *
+   * An account counts as a real signed-up person if it has an email address.
+   * That is a stronger test than "has a signup_grant": the grant is minted by a
+   * trigger that could in principle miss, whereas an email only exists because
+   * somebody typed one in. Both numbers are shown so a divergence is visible.
+   *
+   * Everything per-person is computed from the ledger this account owns — it is
+   * the same arithmetic the site itself uses for a balance, so these rows cannot
+   * disagree with what the customer sees when they log in.
+   */
+  const ledgerByAccount = new Map();
+
+  for (const row of ledger) {
+    if (!ledgerByAccount.has(row.account_id)) ledgerByAccount.set(row.account_id, []);
+
+    ledgerByAccount.get(row.account_id).push(row);
+  }
+
+  const people = accountRows
+    .filter((a) => a.email)
+    .map((a) => {
+      const own = ledgerByAccount.get(a.id) || [];
+      const grants = own.filter((r) => r.reason === 'anon_grant' || r.reason === 'signup_grant');
+      const buys = own.filter((r) => r.reason === 'purchase');
+      const spends = own.filter((r) => r.reason === 'spend');
+
+      // Dated from the first grant, because `accounts.created_at` is empty on
+      // every row in this database. Measured, not assumed. See the header.
+      const joined = grants.length
+        ? grants.reduce((oldest, r) => (r.created_at < oldest ? r.created_at : oldest), grants[0].created_at)
+        : own.length
+          ? own.reduce((oldest, r) => (r.created_at < oldest ? r.created_at : oldest), own[0].created_at)
+          : null;
+
+      return {
+        email: a.email,
+        name: a.name || null,
+        joined,
+        // The balance is the sum of the ledger, never a stored number.
+        balance: own.reduce((total, r) => total + r.delta, 0),
+        jobs: spends.length,
+        purchases: buys.length,
+        paidCents: buys.reduce((t, r) => t + (r.price_cents || 0), 0),
+        lastSeen: own.length ? own.reduce((newest, r) => (r.created_at > newest ? r.created_at : newest), own[0].created_at) : null,
+      };
+    })
+    .sort((a, b) => (a.joined || '') < (b.joined || '') ? 1 : -1);
 
   // ---- Credits ------------------------------------------------------------
   // Grouped over whatever reasons actually appear rather than a list written
@@ -193,7 +254,12 @@ export async function readDatabase(env) {
       // The table's own row count: the one exact total available.
       rowsInTable: accountRows.length,
       registered: registeredIds.size,
+      withEmail: people.length,
       guestsNeverRegistered: guestOnly.size,
+      people,
+      // How many of the signed-up people have ever bought anything. The single
+      // most important ratio in the business.
+      buyers: people.filter((p) => p.purchases > 0).length,
       // Dated from the first credit grant. See the header.
       datedFromLedger: true,
       createdAtUsable: accountRows.some((r) => r.created_at),
@@ -203,7 +269,15 @@ export async function readDatabase(env) {
       byDay: countByDay(registered, 14),
     },
 
-    credits: { byReason },
+    credits: {
+      byReason,
+      /*
+       * Credits people hold and have not spent. This is a LIABILITY: work
+       * already paid for (or given away) that we still owe. It is also what a
+       * sudden gateway outage would strand.
+       */
+      outstanding: ledger.reduce((total, r) => total + r.delta, 0),
+    },
 
     money: {
       purchaseCount: purchases.length,
@@ -235,6 +309,20 @@ export async function readDatabase(env) {
       byInput: tally(spends, 'input_kind'),
       byEndpoint: tally(spends, 'endpoint'),
       wordsTotal: spends.reduce((t, r) => t + (r.words_in || 0), 0),
+      /*
+       * ★ FREE SCANS ARE NOT IN THIS DATABASE AND CANNOT BE COUNTED HERE.
+       *
+       * Jon asked how many people have run a free scan. Measured on 25 August
+       * 2026: every one of the 78 spend rows carries the endpoint `clean`.
+       * There is no `scan` endpoint, no scans table, and nothing else records
+       * one — which is correct, because a scan costs no credit and writes no
+       * ledger row. A free scan therefore leaves no trace in our own data.
+       *
+       * The only place a scan is recorded is PostHog, as `scan_completed`. This
+       * flag lets the page say that plainly instead of showing a zero, which
+       * would read as "nobody scans" when it means "we do not write it down".
+       */
+      freeScansRecorded: spends.some((r) => r.endpoint === 'scan'),
     },
 
     cost: {

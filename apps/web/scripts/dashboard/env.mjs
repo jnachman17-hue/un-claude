@@ -12,15 +12,10 @@
  * refuse to write the file if any of them survived. That check is mechanical
  * rather than careful, because careful is what fails at 1am.
  *
- * THE REAL ENVIRONMENT WINS OVER THE FILES, and that is deliberate. The Stripe
- * key sitting in `apps/web/.env.local` on this machine is a TEST key — it can
- * only see test-mode payments, so it cannot show a real sale. The live key lives
- * in Vercel and should stay there. Letting `process.env` override the file means
- * Jon can run the dashboard against live mode for one command:
+ * THE REAL ENVIRONMENT WINS OVER THE FILES, and that is deliberate. It lets a
+ * key be supplied for a single command without ever being written to disk:
  *
- *     STRIPE_SECRET_KEY='sk_live_...' node scripts/dashboard/run.mjs
- *
- * without the live key ever being written to disk in this project.
+ *     UC_DASHBOARD_STRIPE_KEY='sk_live_...' node scripts/dashboard/serve.mjs
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,29 +40,68 @@ const FILES = [
  * pulled into a process that writes an HTML file.
  */
 const NAMES = [
-  // Stripe: the money that came in.
+  /*
+   * ★ THE DASHBOARD'S OWN STRIPE KEY, AND WHY IT HAS A SEPARATE NAME.
+   *
+   * `STRIPE_SECRET_KEY` in `apps/web/.env.local` is the key the WEBSITE uses
+   * when it runs on this laptop, and it is deliberately a TEST key so that
+   * local development cannot charge a real card. Putting a live key in that
+   * variable to satisfy the dashboard would silently arm the local dev site
+   * with real money — an actual card charge from a page being poked at during
+   * development.
+   *
+   * So the dashboard reads its own name first. Setting `UC_DASHBOARD_STRIPE_KEY`
+   * to the live key affects this dashboard and nothing else.
+   */
+  'UC_DASHBOARD_STRIPE_KEY',
   'STRIPE_SECRET_KEY',
   // The database: usage and the credit ledger.
   'NEXT_PUBLIC_SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   // The AI Gateway: the money going out.
   'AI_GATEWAY_API_KEY',
-  // PostHog: behaviour. None of these exist yet; see the session note.
+  // What the gateway cannot tell us and Jon must state: the cap on the key.
+  'AI_GATEWAY_MONTHLY_LIMIT',
+  // The model used for the liveness probe. Production is deepseek.
+  'AI_GATEWAY_PROBE_MODEL',
+  // PostHog: behaviour.
   'POSTHOG_PERSONAL_API_KEY',
   'POSTHOG_PROJECT_ID',
   'NEXT_PUBLIC_POSTHOG_HOST',
-  // Optional tuning, both documented in the session note.
+  // Optional tuning, all documented in the session note.
   'POSTHOG_EXCLUDE_IPS',
   'UC_SITE_HOST',
+  'UC_DASHBOARD_PORT',
 ];
 
-/** The four that are secret. Only these are scanned for in the output. */
+/** The secret ones. Only these are scanned for in the output. */
 const SECRET_NAMES = [
+  'UC_DASHBOARD_STRIPE_KEY',
   'STRIPE_SECRET_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'AI_GATEWAY_API_KEY',
   'POSTHOG_PERSONAL_API_KEY',
 ];
+
+/**
+ * The Stripe key the dashboard should use, and where it came from.
+ *
+ * Prefers the dashboard's own variable. Falls back to the website's key only so
+ * that the panel can explain itself rather than appear broken — if that fallback
+ * is a test key, the Payments panel refuses to show figures at all rather than
+ * presenting sandbox money as though it were real.
+ */
+export function stripeKey(env) {
+  if (env.UC_DASHBOARD_STRIPE_KEY) {
+    return { key: env.UC_DASHBOARD_STRIPE_KEY, source: 'UC_DASHBOARD_STRIPE_KEY' };
+  }
+
+  if (env.STRIPE_SECRET_KEY) {
+    return { key: env.STRIPE_SECRET_KEY, source: 'STRIPE_SECRET_KEY' };
+  }
+
+  return { key: null, source: null };
+}
 
 function readEnvFile(file) {
   const found = {};

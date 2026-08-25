@@ -41,8 +41,18 @@ function postIsAllowed(url) {
   return ALLOWED_POSTS.some((rule) => (typeof rule === 'string' ? rule === url : rule.test(url)));
 }
 
-/** Ten seconds. Long enough for a slow API, short enough that four of them in a row is not a coffee break. */
-const TIMEOUT_MS = 10_000;
+/**
+ * Fifteen seconds for an ordinary read.
+ *
+ * The gateway probe overrides this and asks for much longer. It is not a metadata
+ * lookup — it makes a real model generate real tokens, and deepseek (the model
+ * production uses) regularly takes longer than ten seconds when it is cold.
+ * At the old ten-second limit the probe timed out intermittently and the page
+ * reported the AI service as "Unclear" while it was in fact working perfectly.
+ * A false alarm on the one line that means "the product is down" is worse than
+ * waiting.
+ */
+const TIMEOUT_MS = 15_000;
 
 /**
  * One HTTP call, guarded.
@@ -51,7 +61,7 @@ const TIMEOUT_MS = 10_000;
  * when the response is JSON and the raw text otherwise, because an API having a
  * bad day tends to answer in HTML and a parse error would hide the real status.
  */
-export async function request(url, { method = 'GET', headers = {}, body } = {}) {
+export async function request(url, { method = 'GET', headers = {}, body, timeout = TIMEOUT_MS } = {}) {
   if (method !== 'GET' && !postIsAllowed(url)) {
     // Deliberately a throw and not a returned failure. This is a programming
     // mistake in this directory, not a source being unreachable, and it must be
@@ -64,7 +74,7 @@ export async function request(url, { method = 'GET', headers = {}, body } = {}) 
       method,
       headers,
       body,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeout),
     });
 
     const text = await response.text();
@@ -84,7 +94,7 @@ export async function request(url, { method = 'GET', headers = {}, body } = {}) 
   } catch (error) {
     // A timeout, a DNS failure, no network at all. All of them are "this source
     // is unreachable", which is a panel that degrades rather than a crash.
-    const reason = error?.name === 'TimeoutError' ? `no answer within ${TIMEOUT_MS / 1000}s` : String(error?.message || error);
+    const reason = error?.name === 'TimeoutError' ? `no answer within ${timeout / 1000}s` : String(error?.message || error);
 
     return { ok: false, status: 0, body: null, error: reason };
   }

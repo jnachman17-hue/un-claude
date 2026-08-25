@@ -5,3 +5,8 @@
 # It contains no keys (run.mjs refuses to write the file if it does), but it is
 # still a private picture of the business and it does not belong in a repository.
 *.html
+
+# The record of gateway readings used to work out monthly spend. Two dollar
+# amounts and a timestamp per line, no secrets — but it is this business's
+# spending history and belongs on Jon's machine only.
+.gateway-history.json
