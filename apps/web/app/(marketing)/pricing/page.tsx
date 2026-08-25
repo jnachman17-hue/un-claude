@@ -245,7 +245,7 @@ const FAQ = [
   },
   {
     q: 'What can I put through it?',
-    a: 'Pasted text, Word documents, PNG and JPG. Paste text, or upload a .txt file, and you get the invisible characters and the rewrite. A Word document gets the invisible characters and the metadata, and its wording is not rewritten. A PNG or a JPG has no text in it, so it gets the metadata alone.',
+    a: 'Pasted text, Word documents, PNG and JPG. Paste text, or upload a .txt file, and you get the invisible characters and the rewrite. A Word document gets the invisible characters and the metadata, and its wording is not rewritten. A PNG or a JPG has no text in it, so it gets the metadata alone. One rewrite takes up to 8,000 words, which is a long chapter. Anything bigger goes through in parts, and credits are charged by the word either way, so splitting a document costs you nothing extra.',
   },
   {
     q: 'Is the free allowance a trial that runs out?',

@@ -43,8 +43,6 @@ import {
   devMode,
   devOverrides,
   ensureSession,
-  estimateSeconds,
-  humanDuration,
   publishCredits,
   refreshCredits,
   useCredits,
@@ -1759,14 +1757,41 @@ export function Workbench() {
                 minutes concludes the site is broken and leaves — and they leave
                 during the one operation we charged them for.
 
-                The figure is a CEILING, not an estimate, and the wording says
-                so ("up to"). Time here tracks retries rather than length, so a
-                number presented as an estimate would be wrong about half the
-                time; a number presented as a ceiling is one people beat.
+                THE NUMBER CAME OUT ON 25 AUGUST 2026, AND JON'S INSTRUCTION
+                ABOVE IS STILL BEING OBEYED. A long run still says it is long.
+                What it stopped doing is naming seconds.
+
+                It was a ceiling built entirely out of lab timings — 15 seconds
+                per 1,000 words, floored at 10 — and production went straight
+                through it. MEASURED ON PRODUCTION: 478 words took 65 seconds
+                on deepseek. That document was quoted "about 10 seconds" and
+                took six and a half times it. The same box quoted 2.9 seconds
+                correctly for a short paste on mistral-small, so the figure was
+                not merely pessimistic or optimistic, it was unrelated.
+
+                A ceiling nobody can stand behind is worse than no ceiling,
+                because it is the number somebody decides the site is broken
+                against.
+
+                THE REPLACEMENT HAS TO SURVIVE THE MODEL CHANGING, which is
+                the reason it names no seconds at all. The model is under review
+                right now, and the per-wave time is the whole ceiling: every
+                figure here would be stale the day it switches. "A few minutes"
+                is true of a long document on any of the three models measured,
+                and the counter beside it is the real elapsed time rather than
+                a prediction about it.
+
+                estimateSeconds and humanDuration in credits.ts are left in
+                place and are no longer displayed anywhere. DO NOT WIRE THEM
+                BACK IN without a production measurement behind them; the
+                reasoning is in docs/session-notes/tell-the-truth-about-runs.md
+                section 6.
               */
               <>
                 {carriesProse
-                  ? `Breaking up the wording. This can take ${humanDuration(estimateSeconds(wordsNow))}.`
+                  ? wordsNow >= 1_000
+                    ? 'Breaking up the wording. A document this long can take a few minutes.'
+                    : 'Breaking up the wording.'
                   : 'Working through the file.'}
                 {elapsed >= 3 ? (
                   <span
@@ -1847,10 +1872,17 @@ export function Workbench() {
                     <CreditChip amount={price} tone={'spend'} />
                     {/* A long document warns before the button, not only while
                         it is running. Below a thousand words the run is quick
-                        enough that saying so is noise. */}
+                        enough that saying so is noise.
+
+                        No seconds here either, and for the same reason as the
+                        progress line above: the only per-wave time ever
+                        measured in production is 65 seconds, the model that
+                        produced it is under review, and a quoted figure that
+                        moves with the model is a promise the site cannot keep
+                        past the next switch. */}
                     {carriesProse && words >= 1_000 ? (
                       <span className={'text-muted-foreground/70'}>
-                        · takes up to {humanDuration(estimateSeconds(words))}
+                        · can take a few minutes
                       </span>
                     ) : null}
                   </span>

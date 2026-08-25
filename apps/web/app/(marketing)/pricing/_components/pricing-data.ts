@@ -70,7 +70,11 @@ export const PACKS: Pack[] = [
     words: 100_000,
     rate: '25¢ a credit',
     saving: 'Save 50%',
-    covers: 'A dissertation, with room to spare.',
+    // WAS "A dissertation, with room to spare." One rewrite takes 8,000 words,
+    // so a dissertation is a dozen runs rather than one, and the old line let a
+    // visitor buy the biggest pack believing otherwise. The pack still covers
+    // it; it does not do it in a single press.
+    covers: 'A dissertation, run in parts.',
     featured: false,
   },
 ];

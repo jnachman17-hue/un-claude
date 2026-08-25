@@ -456,3 +456,191 @@ $ npx tsc --noEmit
 === tsc exit: 0 ===
 ```
 
+---
+
+# 5. JOB 2 — the word limit. THE BRIEF'S TWO TARGETS WERE BOTH THE WRONG ONES
+
+**The brief named `pricing-data.ts` ("a dissertation") and the calculator's
+"10,000" as the places to change. Neither is the advertised per-job ceiling.**
+
+| The brief's target | What it actually is |
+|---|---|
+| `pricing-data.ts:73` "A dissertation, with room to spare." | The **Pro pack's total coverage**: 100 credits, 100,000 words. Nothing to do with one job |
+| `credit-calculator.tsx:121` `<span>10,000</span>` | **A tick mark on a slider** running 500 to 100,000, sizing a credit purchase. Not a limit claim |
+
+**The real per-job ceiling reaches a visitor in exactly two places, and both are
+driven by a constant rather than written out:**
+
+```
+app/(marketing)/_components/workbench/credits.ts:35   export const MAX_WORDS = 10_000
+  -> workbench.tsx:1811   "{words} words. The rewrite takes {MAX_WORDS} at a time..."
+
+lib/engine/client.ts:64   'That is longer than 10,000 words, which is the most
+                           the rewrite can do in one go. Split it and run it in parts.'
+```
+
+## 5.1 What I changed
+
+**`MAX_WORDS`: 10,000 -> 8,000.** §5.5 of the freeze note derived it and handed
+it back; I did not re-derive it and did not raise it. The workbench message
+renders the constant, so it followed automatically. **Proved live, at 375px**,
+by driving 8,500 words into the paste box:
+
+```
+8,500 words. The rewrite takes 8,000 at a time. Split it and run it in parts.
+   width 292px, 2 lines, not clipped, does not overflow the viewport
+```
+
+**The pricing FAQ now states the limit**, because `"What can I put through it?"`
+was the obvious home for it and said nothing:
+
+> **ADDED** One rewrite takes up to 8,000 words, which is a long chapter.
+> Anything bigger goes through in parts, and credits are charged by the word
+> either way, so splitting a document costs you nothing extra.
+
+**The Pro pack line**, because the brief named it and because a visitor buying
+the biggest pack should not think a dissertation is one press:
+
+> **BEFORE** A dissertation, with room to spare.
+> **AFTER** A dissertation, run in parts.
+
+**The pack cards did not move: all three measure 332px at 1280px**, so entry
+109's signed-off card geometry is intact.
+
+## 5.2 ★ TWO THINGS I DID NOT DO, AND THE SECOND IS THE IMPORTANT ONE
+
+**1. `lib/engine/client.ts` still says 10,000, ON PURPOSE.** That string is the
+message shown when the PYTHON ENGINE refuses, and the engine refuses at
+`UC_MAX_WORDS`, which is still 10,000 and is Lane A's file. **Changing it to
+8,000 would have made it fire at 10,001 words while claiming the limit is
+8,000, which is a brand new false statement.** It becomes correct the moment
+Lane A lowers `UC_MAX_WORDS`, and not before.
+
+**2. ★ THE 8,000 IS ADVISORY, NOT ENFORCED, AND THE SITE AND THE ENGINE NOW
+DISAGREE.** The brief asked me to say this loudly, so here it is loudly.
+
+`workbench.tsx:503` reads:
+
+```ts
+carriesProse && (scan?.billing?.over_limit ?? wordsNow > MAX_WORDS)
+```
+
+**The server's answer comes FIRST and `MAX_WORDS` is only the fallback.** So:
+
+| Case | What happens now |
+|---|---|
+| 8,500 words, before a scan runs | **Refused**, with the 8,000 message. Verified above |
+| 8,500 words, after a scan has run | **Allowed through.** The server said `over_limit: false`, because ITS ceiling is still 10,000 |
+
+**So a scanned 9,000 word document still runs, and the site now advertises a
+number it does not always hold itself to.** The direction is the safe one —
+nothing is charged for a job that is then refused, and no job that starts is at
+any new risk — but it is a real gap and it is not mine to close. **Closing it is
+one number in the Python engine: `UC_MAX_WORDS` to 8,000. That is Lane A's, and
+the `client.ts` string above follows it in the same change.**
+
+**This is the "two implementations of one number" trap the brief named, and I
+could only move one of the two.**
+
+---
+
+# 6. JOB 3 — "about 10 seconds"
+
+**There was no literal "10 seconds" in the source to find.** The sentence is
+assembled at runtime from `estimateSeconds`, which is
+`Math.max(10, ceil(words / 1000 * 15))` — **a floor of ten seconds**, so every
+document under about 670 words was quoted "about 10 seconds".
+
+**Why that had to go, in one line: the only time this project has ever measured
+the rewrite in production, a 478 word document took 65 seconds.** That document
+is quoted 10 seconds by this function. **It was out by 6.5x on the single
+real-world case anyone has checked it against, in the direction that makes a
+working tool look hung** — and the same box quoted 2.9 seconds correctly for a
+short paste on mistral-small, so it was not conservative or optimistic, it was
+unrelated to the answer.
+
+**BEFORE**
+
+> Breaking up the wording. This can take about 10 seconds.
+> · takes up to about 30 seconds *(the pre-button line, on a 2,000 word paste)*
+
+**AFTER**
+
+> Breaking up the wording. *(under 1,000 words)*
+> Breaking up the wording. A document this long can take a few minutes. *(1,000+)*
+> · can take a few minutes *(the pre-button line)*
+
+**Verified live at 375px on a 2,000 word paste:**
+
+```
+2,000 words = 2 · can take a few minutes
+   1 line, 260px wide, does not overflow
+
+Seconds figures anywhere on the page:  NONE
+   (/\d+\s*seconds/ against document.body.innerText -> false)
+```
+
+**Jon's instruction of 21 August is still being obeyed.** "A long run must tell
+people it is long, or a working tool reads as a hung one." It still says so. It
+stopped naming seconds.
+
+**Why no number at all rather than a bigger number, which is the part the brief
+asked me to argue.** The ceiling here is the per-wave time, and **the per-wave
+time is a property of the model, which is under review right now.** Any constant
+becomes a lie the day the model switches. "A few minutes" is true of a long
+document on all three models measured, and **the elapsed-second counter that
+already sits beside it is the real time rather than a prediction about it** — a
+number that keeps climbing answers "is this hung?" better than any estimate.
+
+**`estimateSeconds` and `humanDuration` are left in `credits.ts`, no longer
+called, carrying a warning not to wire them back in without a production
+measurement.** Deleting them would have thrown away the lab measurements in
+their comment; leaving them bare would have invited the next session to reuse
+them.
+
+---
+
+# 7. RENDERED AND MEASURED — AND THE PART THAT FAILED
+
+**★ I could not photograph anything. The browser pane returned a blank image on
+every attempt**, at three viewport sizes and after fronting the tab. It is the
+pane, not the pages: the same pages report full geometry, real element heights
+and correct text through the DOM, and the dev server answers 200. **The brief
+asked for screenshots at desktop and phone width and I do not have them. That is
+a step that failed and I am not dressing it up as anything else.**
+
+**What I did instead, and it answers the same question more precisely than an
+eye would.** For every changed string, at 1280px and at 375px: rendered width,
+line count, whether the element clips its own content vertically or
+horizontally, whether it crosses the viewport edge, and whether the document
+scrolls sideways.
+
+```
+/how-it-works — the four engine rule cards
+  1280px   Break the runs 3 lines · the other three 2 lines each
+           no clipping · no sideways scroll
+   375px   Break the runs 5 lines · others 4, 3, 3
+           no clipping · no sideways scroll · nothing crosses the edge
+
+  (first draft was 4 lines against 2 at desktop, which read as a broken row.
+   Rewritten shorter to the same shape as the moat card before it was kept.)
+
+/ homepage — the two rewritten FAQ answers
+  1280px   613px wide · 9 lines and 7 lines · no clipping · no sideways scroll
+   375px   335px wide · 16 lines and 12 lines · no clipping · no sideways scroll
+
+/pricing — the new limit sentence and the changed pack line
+  1280px   FAQ 615px, 7 lines, not clipped
+           pack cards 332px / 332px / 332px — EQUAL, entry 109 geometry intact
+   375px   FAQ 335px, not clipped, right edge 355 of 375
+           pack line 1 line, not clipped
+
+workbench, driven live with real input at 375px
+   8,500 words -> "8,500 words. The rewrite takes 8,000 at a time. Split it
+                   and run it in parts."   2 lines, not clipped
+   2,000 words -> "2,000 words = 2 · can take a few minutes"   1 line
+```
+
+**Two surfaces are NOT covered by any of that, and both are named again in §9.**
+
+---

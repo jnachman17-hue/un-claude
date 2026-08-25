@@ -21,18 +21,42 @@ export const WORDS_PER_CREDIT = 1_000;
 /**
  * The most words one rewrite will accept.
  *
- * MUST MATCH `UC_MAX_WORDS` in apps/web/api/_shared.py, which is what actually
- * enforces it. This copy exists so the interface can refuse before the button
- * rather than after a two minute wait. If they ever disagree the server wins and
- * the user is refunded, so drift is annoying rather than dangerous — but it is
- * still drift, and this project has been bitten by two lists that had to agree
- * before.
+ * 8,000 SINCE 25 AUGUST 2026, DOWN FROM 10,000, and the reasoning is not
+ * mine: `docs/session-notes/freeze-every-quotation.md` §5.5 derived it and
+ * handed the number back for someone else to write down. The ceiling is TIME,
+ * not size. The site aborts a job at 240 seconds and documents run as waves of
+ * 8 parallel calls:
  *
- * Measured rather than guessed. Words against seconds, engine only, no network:
- * 2,616 -> 36s, 5,232 -> 69s, 7,848 -> 104s, 10,464 -> 79s. Above this the run
- * does not reliably finish inside the time the site waits for it.
+ *    8,000 words -> 23 chunks -> 3 waves   at 65s a wave = 195s   FITS
+ *   10,000 words -> 29 chunks -> 4 waves   at 65s a wave = 260s   DOES NOT
+ *
+ * 65 seconds is THE ONLY PER-WAVE FIGURE EVER MEASURED IN PRODUCTION (478
+ * words, 64.982s). Every faster number this project holds came from the lab on
+ * a good day. 8,000 is the largest round number that survives the worst
+ * production figure on record.
+ *
+ * ★ THIS NO LONGER MATCHES `UC_MAX_WORDS`, AND THE DISAGREEMENT IS ON PURPOSE.
+ *
+ * The Python engine still refuses at 10,000 and is another lane's territory.
+ * So the two numbers now mean two different things, and that is the honest
+ * arrangement rather than a bug:
+ *
+ *   - 8,000 is what the site ADVERTISES AND STANDS BEHIND. It declines here,
+ *     before the button and before any money moves.
+ *   - 10,000 is where the engine hard-refuses, unchanged, as a backstop.
+ *
+ * The direction is the safe one. This gate is stricter than the server's, so
+ * nothing is charged for a job that is then refused, and no job that starts is
+ * at any new risk.
+ *
+ * ★ AND IT IS ADVISORY RATHER THAN ENFORCED. `workbench.tsx` reads
+ * `scan?.billing?.over_limit ?? wordsNow > MAX_WORDS`, so ONCE A SCAN HAS RUN
+ * THE SERVER'S ANSWER WINS and a scanned 9,000 word document is still allowed
+ * through. Closing that needs `UC_MAX_WORDS` to come down to 8,000, which is
+ * Lane A's, and it is written up in
+ * `docs/session-notes/tell-the-truth-about-runs.md` §5.
  */
-export const MAX_WORDS = 10_000;
+export const MAX_WORDS = 8_000;
 
 /**
  * The fewest words the rewrite will accept.
@@ -59,14 +83,32 @@ export const MAX_WORDS = 10_000;
 export const MIN_REWRITE_WORDS = 16;
 
 /**
- * Roughly how long a rewrite of this many words will take, rounded UP, so the
- * number shown to somebody waiting is a ceiling they beat rather than a promise
- * they watch slip.
+ * ★ NOT DISPLAYED ANYWHERE SINCE 25 AUGUST 2026. Kept, not deleted, so the
+ * measurements below are not lost, and so a future session finds this warning
+ * rather than the function on its own.
  *
- * 15 seconds per 1,000 words comes from the worst measured run (7,848 words in
- * 104 seconds, 13.4s per 1,000). Time tracks retries rather than length — the
- * 7,848 word document took LONGER than the 10,464 word one — so this is honest
- * as an upper bound and would be dishonest as an estimate.
+ * DO NOT WIRE THIS BACK INTO THE INTERFACE without a production measurement
+ * behind it. Every figure in it is from the lab. THE ONE PRODUCTION FIGURE
+ * THIS PROJECT HAS BROKE IT: 478 words took 65 seconds on deepseek, and this
+ * function quotes that document 10 seconds. It is out by 6.5x on the only
+ * real-world case anyone has ever checked it against, in the direction that
+ * makes a working tool look hung.
+ *
+ * It is also model-dependent, and the model is under review. The same 478-word
+ * paste took 2.9 seconds on mistral-small. Any constant here is a promise about
+ * whichever model happens to be wired up on the day it was measured.
+ *
+ * The interface now says "a few minutes" on a long document and shows the real
+ * elapsed seconds while it runs, which is true on every model measured and
+ * cannot go stale. See docs/session-notes/tell-the-truth-about-runs.md §6.
+ *
+ * ORIGINAL REASONING, KEPT VERBATIM: "Roughly how long a rewrite of this many
+ * words will take, rounded UP, so the number shown to somebody waiting is a
+ * ceiling they beat rather than a promise they watch slip. 15 seconds per 1,000
+ * words comes from the worst measured run (7,848 words in 104 seconds, 13.4s
+ * per 1,000). Time tracks retries rather than length — the 7,848 word document
+ * took LONGER than the 10,464 word one — so this is honest as an upper bound
+ * and would be dishonest as an estimate."
  */
 export function estimateSeconds(words: number): number {
   return Math.max(10, Math.ceil((words / 1_000) * 15));

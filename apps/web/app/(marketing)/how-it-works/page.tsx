@@ -98,7 +98,7 @@ const ENGINE_RULES = [
    */
   {
     head: 'Break the runs',
-    body: 'The signature travels only in unbroken runs of your original wording, so swapping a word here and there leaves it intact. The engine rebuilds the wording wherever it rewrites, working to a three-word limit on what carries over. Quotations and references are protected on purpose and come back exactly as you sent them.',
+    body: 'The signature travels only in unbroken runs of your original wording. The engine rebuilds those runs wherever it rewrites, working to a three-word limit, and protects your quotations and references rather than rewording them.',
   },
   {
     head: 'Never rewritten by Claude',
