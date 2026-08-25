@@ -50,6 +50,7 @@ import {
 import { OutOfCredits, SignedInWelcome } from './credit-offer';
 import { Paywall } from './paywall';
 import { PreFlight, needsPreFlight } from './preflight';
+import { ScrollCue } from './scroll-cue';
 import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { ReceiptPanel } from './receipt-panel';
 import type { Receipt } from '~/lib/engine/receipt';
@@ -186,6 +187,22 @@ export function Workbench() {
 
   const fileInput = useRef<HTMLInputElement>(null);
   const textArea = useRef<HTMLTextAreaElement>(null);
+  /**
+   * The results region, so the scroll cue can point at the real element
+   * rather than at a guessed offset. six-ui-fixes fix 3.
+   */
+  const findings = useRef<HTMLDivElement>(null);
+  /**
+   * The receipt specifically, which is a different target from the findings
+   * and the one Jon actually named: "so people actually see receipts."
+   *
+   * The findings region's TOP is the checklist, and the receipt sits below it
+   * inside the same block. Pointing the cue at the region would therefore let
+   * it go quiet the moment the checklist appeared, with the receipt still a
+   * screen further down and still unseen, which is the exact failure the cue
+   * exists to prevent.
+   */
+  const receiptRegion = useRef<HTMLDivElement>(null);
 
   /*
    * PUTTING THE CURSOR IN THE BOX, WHICH USED NOT TO HAPPEN AT ALL.
@@ -1642,6 +1659,23 @@ export function Workbench() {
           ) : null}
         </div>
 
+        {/*
+          THE CUE ITSELF. Mounted only once a scan has actually produced
+          something; whether it SHOWS is decided inside, by measuring the region
+          above against the viewport. See scroll-cue.tsx for why both tests have
+          to be there.
+
+          The label names what is down there rather than saying "scroll", which
+          is an instruction about the page instead of a reason to follow it, and
+          it changes once a receipt exists because the receipt is the thing Jon
+          wanted people to actually reach.
+        */}
+        <ScrollCue
+          targetRef={receipt ? receiptRegion : findings}
+          active={phase === 'scanned' || phase === 'cleaned'}
+          label={receipt ? 'See your receipt' : 'See what we found'}
+        />
+
         {/* Actions */}
         <div className={'mt-3 flex flex-wrap items-center gap-2'}>
           <input
@@ -2129,13 +2163,23 @@ export function Workbench() {
           </div>
         ) : null}
 
-        <Checklist rows={rows} />
+        {/*
+          THE THING THE SCROLL CUE POINTS AT. six-ui-fixes fix 3. The checklist
+          and the receipt are one region as far as a visitor is concerned: it is
+          "the answer", and it is what sits below the fold on a laptop.
+        */}
+        <div ref={findings}>
+          <Checklist rows={rows} />
 
-        {receipt ? (
-          <div className={'border-border/70 mt-4 border-t pt-4'}>
-            <ReceiptPanel receipt={receipt} />
-          </div>
-        ) : null}
+          {receipt ? (
+            <div
+              ref={receiptRegion}
+              className={'border-border/70 mt-4 border-t pt-4'}
+            >
+              <ReceiptPanel receipt={receipt} />
+            </div>
+          ) : null}
+        </div>
 
       </div>
     </div>

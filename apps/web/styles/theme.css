@@ -294,4 +294,49 @@
       transform: translateX(230%);
     }
   }
+
+  /*
+   * THE CUE THAT SAYS THERE IS SOMETHING BELOW. six-ui-fixes fix 3.
+   *
+   * Jon: "a dynamic arrow pointing downwards you click or something so people
+   * actually see receipts." It arrives, then nudges three times and stops.
+   *
+   * THREE TIMES, NOT FOREVER, which is the same judgment `sheen` above already
+   * makes and for the same reason: a thing that keeps moving while somebody is
+   * trying to read is furniture they learn to ignore, and this project's rule
+   * is that a cue firing on ordinary work is worse than no cue. It only ever
+   * mounts when there really is something out of view, so the movement has a
+   * job and then stops doing it.
+   *
+   * The global prefers-reduced-motion rule in globals.css collapses both of
+   * these to their end state, which for `cue-nudge` is the resting position:
+   * the control is still there, still clickable, just still.
+   */
+  --animate-cue-in: cue-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-cue-nudge: cue-nudge 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.34s 3 both;
+
+  @keyframes cue-in {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes cue-nudge {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+    75% {
+      transform: translateY(3px);
+    }
+    88% {
+      transform: translateY(1px);
+    }
+  }
 }
