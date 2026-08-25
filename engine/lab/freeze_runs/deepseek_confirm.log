@@ -1,3 +1,13 @@
+gateway credits BEFORE  {"balance":"14.6062203332","total_used":"10.3937796668"}
+THE LADDER (freeze ON, both tiers)
+  ladder_500         463 words    2 chunks  frozen  28.3%  spans={'heading': 3, 'quote': 2, 'block_quote': 1, 'reference': 1}
+  ladder_1000        919 words    3 chunks  frozen  29.7%  spans={'heading': 4, 'quote': 5, 'block_quote': 2, 'reference': 2}
+  ladder_2000       1942 words    6 chunks  frozen  25.9%  spans={'heading': 6, 'quote': 11, 'block_quote': 3, 'reference': 4}
+  ladder_3000       2971 words    9 chunks  frozen  26.0%  spans={'heading': 8, 'quote': 16, 'block_quote': 5, 'reference': 6}
+  ladder_5000       4958 words   15 chunks  frozen  24.8%  spans={'heading': 12, 'quote': 27, 'block_quote': 9, 'reference': 6}
+  ladder_7500       7498 words   22 chunks  frozen  24.4%  spans={'heading': 16, 'quote': 42, 'block_quote': 14, 'reference': 6}
+  ladder_10000      9946 words   29 chunks  frozen  23.9%  spans={'heading': 21, 'quote': 56, 'block_quote': 18, 'reference': 6}
+
 {"doc": "ladder_500", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 4.1, "cost_usd": 0.000235816, "failure": null, "overlap": 0.3333, "overlap_unfrozen": 0.0726, "spans_verbatim": "7/7", "fallbacks": 0, "retries": 0, "masks_reinserted": 1, "words": 463}
 {"doc": "ladder_500", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 4.0, "cost_usd": 0.000253456, "failure": null, "overlap": 0.3469, "overlap_unfrozen": 0.0946, "spans_verbatim": "7/7", "fallbacks": 0, "retries": 0, "masks_reinserted": 1, "words": 463}
 {"doc": "ladder_500", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 3.9, "cost_usd": 0.000244636, "failure": null, "overlap": 0.3469, "overlap_unfrozen": 0.0978, "spans_verbatim": "7/7", "fallbacks": 0, "retries": 0, "masks_reinserted": 1, "words": 463}
@@ -19,3 +29,18 @@
 {"doc": "ladder_10000", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 1, "seconds": 19.1, "cost_usd": 0.005654152, "failure": null, "overlap": 0.5655, "overlap_unfrozen": 0.408, "spans_verbatim": "101/101", "fallbacks": 1, "retries": 1, "masks_reinserted": 3, "words": 9946}
 {"doc": "ladder_10000", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 2, "seconds": 21.8, "cost_usd": 0.005690272, "failure": null, "overlap": 0.6222, "overlap_unfrozen": 0.4816, "spans_verbatim": "101/101", "fallbacks": 1, "retries": 1, "masks_reinserted": 9, "words": 9946}
 {"doc": "ladder_10000", "arm": "both", "model": "deepseek/deepseek-v3.2", "run": 3, "seconds": 19.9, "cost_usd": 0.005411784, "failure": null, "overlap": 0.5826, "overlap_unfrozen": 0.4298, "spans_verbatim": "101/101", "fallbacks": 0, "retries": 0, "masks_reinserted": 2, "words": 9946}
+
+==============================================================================
+SECONDS BY MODEL BY DOCUMENT SIZE (freeze ON, both tiers)
+==============================================================================
+model             doc             words  n   median   worst  fail     spans   depth
+deepseek-v3.2     ladder_500        463  3      4.0     4.1   0/3     21/21   0.088
+deepseek-v3.2     ladder_1000       919  3      4.2     4.5   0/3     39/39   0.151
+deepseek-v3.2     ladder_2000      1942  3      4.9     5.1   0/3     72/72   0.304
+deepseek-v3.2     ladder_3000      2971  3      7.8     8.3   0/3   105/105   0.251
+deepseek-v3.2     ladder_5000      4958  3     13.8    13.8   0/3   162/162   0.456
+deepseek-v3.2     ladder_7500      7498  3     14.2    15.0   0/3   234/234   0.380
+deepseek-v3.2     ladder_10000     9946  3     19.9    21.8   0/3   303/303   0.440
+
+own-accounting cost across 21 runs  $0.048012  (the gateway balance is the number that counts)
+FAILED RUNS: 0 of 21

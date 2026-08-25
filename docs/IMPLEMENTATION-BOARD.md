@@ -6,6 +6,56 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 25 AUGUST — DEEPSEEK CONFIRMED ON A SECOND DAY. D5 IS SETTLED.
+
+**The conductor re-ran deepseek's full ladder, which was the one thing standing
+between the recommendation and a decision. It is now two independent clean days,
+42 runs, and the model is already live.**
+
+```
+when        model                      runs  fails  retries  fallbacks  worst  med@10k
+yesterday   deepseek/deepseek-v3.2       21      0       10          6   24.4     24.1
+yesterday   mistral/mistral-medium       21      0      120         12   38.1     26.6
+yesterday   mistral/mistral-small        21      0       80         13   54.6     20.2
+TODAY       deepseek/deepseek-v3.2       21      0        7          5   21.8     19.9
+```
+
+**Today is better than yesterday on every axis** — fewer retries (7 vs 10),
+fewer fallbacks (5 vs 6), faster median at 9,946 words (19.9s vs 24.1s), tighter
+worst case (21.8s vs 24.4s). **All 936 spans returned character-for-character,
+zero failures.**
+
+**Across two days: 42 deepseek runs, 0 failures, 17 retries total — against
+mistral-small's 80 retries in 21 runs.**
+
+**Cost of this confirmation: $0.0480.** Gateway `total_used` $10.3938 →
+$10.4418, serving HTTP 200 throughout, no 402.
+
+## What this settles, and what it does not
+
+**E-9's bad afternoon is now outweighed but not erased.** That record stands: 3
+of 44 runs failing on eight consecutive 45-second timeouts, one of them in the
+freeze-OFF arm. **Genuine timeouts, not the budget-cap 402s that fooled E-16.**
+**Two clean days do not prove deepseek never has a bad afternoon** — they prove
+the bad afternoon is not the norm, on 42 runs against 44.
+
+**The mitigation already exists and should be stated rather than assumed:** the
+site aborts at 240 seconds and refunds the credit, so a bad day costs a customer
+a failed job, not money.
+
+**D5 CLOSED: `deepseek/deepseek-v3.2` stays.** Verified live from production's
+own log today — `"layer_b_model": "deepseek/deepseek-v3.2"`. Jon made the switch.
+
+**Retries are the axis that matters** now that a quarter of a typical document
+is frozen behind placeholders: how reliably a model preserves them decides
+whether the customer gets a full rewrite or 350 words handed back. **Deepseek is
+roughly ten times better at it than mistral-small.**
+
+**Yesterday's campaign preserved as `ladder_25aug_campaign1.jsonl`; today's is
+`ladder.jsonl`. Nothing was overwritten.**
+
+---
+
 # ★★★ 25 AUGUST — ANALYTICS: WHAT JON ASKED FOR IS PART DONE AND PART BLOCKED BY A LIVE PROMISE
 
 **Jon: PostHog shows sessions that are him or the conductor, and he wants a real
