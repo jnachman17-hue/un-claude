@@ -82,21 +82,49 @@ export function CreditOfferBadge({
  * prefers-reduced-motion rule in styles/globals.css collapses both.
  */
 function OfferFigure({ animate = true }: { animate?: boolean }) {
+  /*
+   * NO BOX, NO OUTLINE. Jon's instruction, 25 August 2026, six-ui-fixes
+   * brief fix 1: "remove the box and its outline entirely. Keep the credit
+   * coin symbol and the words."
+   *
+   * WHY THIS ONE AND NOT THE OTHER TWO IN THIS FILE, because the brief quotes
+   * a different element's class string than the text it complains about. His
+   * complaint is that the pill "is vertically off balance AGAINST THE TEXT
+   * BESIDE IT", and this is the only pill that sits inline inside a sentence:
+   * "Sign up to receive [3 more] free credits". `CreditOfferBadge` and the
+   * "0 credits" readout below are standalone blocks with no text beside them,
+   * so the complaint cannot describe them and they are left alone.
+   *
+   * THE VERTICAL BALANCE WAS THE REAL FAULT AND THE BOX WAS HIDING IT. The
+   * old version carried BOTH `align-baseline` and `translate-y-[1px]`, which
+   * is two alignment mechanisms disagreeing: baseline-aligning a flex box
+   * whose contents are centred, then nudging it back by a pixel to
+   * compensate. It cannot come out right at every font size, and the pill's
+   * outline made the error visible as a tilt. `align-middle` centres the
+   * whole object on the surrounding text's midline in one instruction, and
+   * with no outline there is no edge to read a tilt against.
+   *
+   * THE SHEEN CAME OFF WITH THE BOX, and this was a judgment the brief asked
+   * for. `animate-sheen` is a white gradient swept across the element and
+   * clipped by `overflow-hidden` on a rounded background. With no background
+   * it has nothing to travel over: on the page it is either invisible or, at
+   * dark-mode contrast, a smear passing across live text, which reads as a
+   * rendering fault rather than as emphasis.
+   *
+   * `animate-offer-pop` STAYS. That is the bounce Jon actually asked for in
+   * the first place ("so it pops out and you see it more and calls your
+   * attention"), it acts on the object rather than on a surface behind it,
+   * and it survives the box being removed. The accent colour, the size step
+   * and the coin carry the rest of the emphasis. Reduced motion still
+   * collapses it globally via styles/globals.css.
+   */
   return (
     <span
       className={[
-        'bg-mark/[0.16] ring-mark/40 relative mx-0.5 inline-flex translate-y-[1px] items-center gap-1 overflow-hidden rounded-full py-[1px] pr-2 pl-1 align-baseline ring-1',
+        'mx-0.5 inline-flex items-center gap-1 align-middle',
         animate ? 'animate-offer-pop' : '',
       ].join(' ')}
     >
-      {animate ? (
-        <span
-          className={
-            'animate-sheen pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/20'
-          }
-          aria-hidden
-        />
-      ) : null}
       <CreditCoin className={'size-[15px] shrink-0'} />
       <span className={'text-foreground text-[17px] leading-none font-extrabold tabular-nums'}>
         {SIGNUP_CREDITS}
