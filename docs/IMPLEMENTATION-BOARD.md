@@ -6,6 +6,71 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★ 25 AUGUST — THE CONDUCTOR LOOKED AT THE PAGES. Follow-up 6 is closed.
+
+**The copy session could not get screenshots — its browser pane returned blank
+images every attempt — so five changed surfaces had never been seen by anyone.
+I ran the dev server and looked.** Desktop 1280 and phone 375.
+
+**Favicon restored** — `git checkout` on `apps/web/public/favicon.ico`, back and
+clean. **Jon deleted it by accident while pulling the logo for social profile
+pictures.** His `favicon copy.png` is still in `public/` untracked — it is an
+ICO carrying a `.png` name and is useless as a profile picture. **The real
+sources are `apps/web/app/icon.svg` (scales to any size) and
+`public/images/favicon/android-chrome-512x512.png`.**
+
+## What the pages actually say now
+
+**`/how-it-works`, the rewrite rules — the replacement reads well and is
+honest:**
+
+> **Break the runs.** The signature travels only in unbroken runs of your
+> original wording. The engine rebuilds those runs wherever it rewrites,
+> **working to a three-word limit**, and **protects your quotations and
+> references rather than rewording them.**
+
+**It keeps a three-word number but scopes it to the text the engine rewrites,
+and names the protected spans as the reason long runs exist.** That is the
+distinction the brief asked for and it survives being read aloud.
+
+**`"Zero figures lost across our test set."` IS STILL LIVE on `/how-it-works`.**
+Jon asked for it to be kept and on this page it already is — the session only
+removed it from the FAQ answer. **"over 90%" is gone from every page.**
+
+**`/pricing` carries the new limit sentence:**
+
+> One rewrite takes up to 8,000 words, which is a long chapter. Anything bigger
+> goes through in parts, and credits are charged by the word either way, so
+> splitting a document costs you nothing extra.
+
+## ★ ONE NEW FINDING, and only looking at the page produces it
+
+**`/pricing` shows "8,000" and "10,000" on the same screen.**
+
+```
+"One rewrite takes up to 8,000 words, which is a long chapter."
+Starter · 10 credits · 10,000 words · About four college essays.
+slider ticks: 500 — 10,000 — 100,000
+```
+
+**Neither is false** — the pack figure is total coverage and the tick is a
+slider label, both different from a per-job ceiling, and the session documented
+that correctly. **But a visitor reads one page, not three definitions.** Seeing
+"up to 8,000 words" a few centimetres from "10,000 words" reads as the site
+contradicting itself. **`CLAUDE.md` section 8: repeated elements must share one
+grammar.** Handed to Lane D, not fixed here.
+
+## Rendering: clean
+
+Desktop and phone both fine — **no viewport overflow, no sideways scroll**, type
+legible at 375px. The large blank band on mobile `/pricing` is an `animate-rise`
+entrance that had not triggered yet, **not a layout fault.**
+
+**Still unseen: the receipt panel**, which needs a completed paid rewrite and a
+live engine. **It remains the one surface changed most and looked at least.**
+
+---
+
 # ★★★★ 25 AUGUST — THE COPY SESSION LANDED. IT IS **NOT** LIVE, AND ONE THING BLOCKS THE DEPLOY.
 
 ## ★ CORRECTION: nothing from the copy session is on the site
