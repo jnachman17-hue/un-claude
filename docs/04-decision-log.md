@@ -5727,3 +5727,117 @@ real time rather than a prediction about it.
 
 **`estimateSeconds` and `humanDuration` are kept, uncalled, carrying a warning
 not to reuse them without a production measurement.**
+
+---
+
+## 25 August 2026. D4's pre-flight, and two claims restored
+
+### 148. D4's pre-flight is ONE message at ONE threshold. The louder variant above 60% is removed. Amends D4.
+
+**Jon's amendment, given 25 August 2026.** D4 as originally ruled specified an
+escalated prompt above 60% frozen. **He has removed it.** One standard message,
+one tone, fired above a single threshold, with Continue and Cancel.
+
+**The reasoning is the same one that sets the threshold in entry 149.** A second,
+louder tier is a second chance to interrupt somebody who is doing nothing
+unusual, and the measurement below shows the population it would have fired on
+is not a distinct group of documents. Two tiers imply two kinds of situation.
+There is only one: some of your document comes back as you sent it, and here is
+how much.
+
+### 149. The pre-flight threshold is 40%, not the 35% the plan recommended, and the "empty band" it was chosen from does not exist
+
+**Measured this session against `uc_freeze.freeze_fraction`, which is the
+function the paid rewrite itself runs**, over 103 documents: every text document
+in `engine/lab`, section-length pastes cut from the academic ladder documents,
+and two written for the purpose. The plan's own corpus was 14 whole documents.
+
+**What the plan believed:** ordinary documents cluster at 24 to 30%, quote-dense
+documents start at 52.3%, nothing lands between, so 35% sits safely in an empty
+band.
+
+**What the wider corpus says.** The cluster is real for WHOLE documents and
+holds exactly: 23.9% at 9,946 words up to 29.7% at 919 words. **But the plan only
+measured whole documents at seven fixed lengths, and the frozen fraction depends
+on length as much as on content.** The same academic prose, cut to the section a
+student actually pastes, runs from 7.0% to 66.1%: a heading or a reference list
+is a small share of 5,000 words and a large share of 200.
+
+**So there is no empty band.** Above 30% the ordinary distribution is continuous
+to 66% with no gap anywhere, and the quote-dense documents (45.7% to 51.0%) sit
+INSIDE the ordinary range rather than above it. **No threshold separates the two
+populations cleanly. The number is a trade, and it is chosen to be the best
+available trade rather than a clean cut.**
+
+```
+                ordinary documents firing   quote-dense + fiction caught
+above 25%              50 of 98                      5 of 5       <- noise
+above 30%              22 of 98                      5 of 5
+above 35%              11 of 98                      4 of 5       <- the plan's number
+above 40%               7 of 98                      4 of 5       <- CHOSEN
+above 50%               3 of 98                      1 of 5       <- goes quiet too often
+```
+
+**40% catches exactly what 35% catches and interrupts four fewer ordinary
+documents, so it dominates the planned number on this corpus.** It clears the
+stable whole-document ceiling (29.7%) by ten points and sits five points under
+the quote-dense cluster (45.7%).
+
+**A word floor was tested and rejected.** Requiring 500 words before firing cuts
+ordinary firings to 1 of 98, but every quote-dense and fiction document measured
+is under 300 words, so it would silence the warning exactly where the fraction is
+highest. **The constant is `FREEZE_WARNING_ABOVE` in
+`app/(marketing)/_components/workbench/preflight.tsx`, with the full reasoning
+beside it.**
+
+### 150. D4's "the other 58% gets the full rewrite" is DROPPED, not replaced. A replacement is still Jon's.
+
+**The board records this clause as false (its row 4) and assigns it to Jon.** It
+is false because a chunk whose protected text cannot be verified on the way back
+is handed to the customer as their own original, unrewritten, so text outside the
+frozen share can also come back unchanged.
+
+**Measured this session over the 263 recorded freeze runs that carry a fallback
+count: 62 of them, 23.6%, had at least one chunk fall back that way.** The board
+says "about half the time"; the recorded runs say closer to a quarter. Either way
+the clause is not true often enough to ship.
+
+**What was done: the clause was removed and nothing was put in its place.**
+Dropping a false sentence needs no new ruling. **Writing a true replacement is a
+decision about how much to disclose, and that is Jon's** — the honest options run
+from saying nothing about the remainder, which is what ships now, to naming the
+fallback outright. **The pre-flight now says only what share comes back as sent,
+which is what D4 exists to disclose.**
+
+**Two other changes to D4's fixed wording, both mandated:** the percentages are
+rendered from the visitor's own document rather than the board's illustrative 42
+and 58, and the em dashes are gone, which is Jon's own style rule and something
+the board itself flagged.
+
+### 151. The two claims go back. Jon has ruled, against the measurements, and this supersedes entry 145.
+
+**"Across our test set it breaks over 90% of three-word sequences with zero
+figures lost."** Entry 145 took it down and handed the question to Jon under
+entry 77, which makes statistics his. **He has ruled that both halves stay, and
+he reaffirmed after being shown the measurements below. His instruction is the
+higher authority (`CLAUDE.md` section 2) and it is implemented.**
+
+**Restored to both places it was removed from**, scoped exactly as it was:
+
+- `app/(marketing)/_components/faq-items.tsx`, the answer to *"Why can't I just
+  ask another AI to reword it?"*, which is collapsed by default on the homepage.
+- `app/(marketing)/how-it-works/page.tsx`, under *"Facts held, character for
+  character"*. **"Zero figures lost across our test set" was still live there**
+  and was absorbed back into the single sentence the two claims originally
+  shared, rather than being restored twice or left to repeat the scoping.
+
+**Recorded so nobody re-derives it, and NOT to be acted on:** across 63 measured
+runs the 90% figure holds on 18, the median is 81.5%, and on deepseek, the
+settled model, it holds on 3 of 21. It holds on 9 of 9 runs at 463 words and 0 of
+9 at 1,942 and 7,498 words. A year was measured vanishing from a live document,
+and the figure counter reported 21 figures on a document containing none. **Jon
+knows all of this and has ruled.**
+
+**"Across our test set" is what makes these measured claims rather than absolute
+ones and is not optional.** Neither claim was strengthened and no new supporting
+number was invented.

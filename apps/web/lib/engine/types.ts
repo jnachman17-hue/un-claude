@@ -31,6 +31,33 @@ export interface ScanReport {
 }
 
 /**
+ * THE D4 PRE-FLIGHT: how much of this document the rewrite will hand back
+ * untouched, known before anybody pays for it.
+ *
+ * Protected spans — quotations, headings, block quotes and reference entries —
+ * are swapped for placeholders before the model sees them and put back
+ * afterwards, so they come back character for character. That is the point of
+ * the freeze, and it is also a thing a customer would want to know they were
+ * buying.
+ *
+ * The engine computes this on the FREE scan, with no model call, using the same
+ * plan the rewrite itself runs (`uc_policy.billing_estimate` calls
+ * `uc_freeze.freeze_fraction`, which calls the same `plan_freeze` the rewrite
+ * uses). One implementation, so the number shown is the number delivered.
+ *
+ * ABSENT on anything that is not text, and absent when the freeze is switched
+ * off. Never assume it is here.
+ */
+export interface FreezeEstimate {
+  /** 0 to 1. The share of the document's words that come back exactly as sent. */
+  fraction: number;
+  frozen_words: number;
+  words: number;
+  /** Count per kind: quote, heading, block_quote, reference. */
+  spans: Record<string, number>;
+}
+
+/**
  * What this job will cost, worked out by the server on the FREE scan.
  *
  * 04 entry 16: the price must be knowable before somebody commits to paying it.
@@ -45,6 +72,8 @@ export interface BillingEstimate {
   basis: 'words' | 'flat';
   limit: number | null;
   over_limit: boolean;
+  /** Text only, and only while the freeze is on. See FreezeEstimate. */
+  freeze?: FreezeEstimate;
 }
 
 export interface ScanResult {

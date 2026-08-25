@@ -91,10 +91,21 @@ const ENGINE_RULES = [
    * AND 2" — and holding your facts and your length both outrank it. So it is
    * a rule, stated as a rule, and never a promise about a reader's document.
    *
-   * The "over 90%" figure came off with it. It is a test-set average that
-   * predates the quotation freeze, and the only measurement taken since the
-   * freeze shipped contradicts it on the model the engine lane recommends.
-   * See docs/session-notes/tell-the-truth-about-runs.md section 3.
+   * The "over 90%" figure came off with it, and JON HAS PUT IT BACK. It now
+   * sits in "Facts held, character for character" below, which is the sentence
+   * it was removed from.
+   *
+   * DO NOT REMOVE IT AGAIN WITHOUT ASKING HIM. He was shown the measurements
+   * that argue against it and reaffirmed the claim on 25 August 2026, so this
+   * is a ruling and not an oversight. Entry 151 of `04` records the ruling and
+   * supersedes entry 145, which took the figure down. The measurements are in
+   * both, and in docs/session-notes/preflight-and-two-claims.md, so that
+   * nobody has to re-derive them: across 63 measured runs the figure holds on
+   * 18, the median is 81.5%, and on deepseek it holds on 3 of 21.
+   *
+   * The scoping to "our test set" is what makes it a measured claim rather
+   * than an absolute one, and it is not optional. Keep it.
+   * See also docs/session-notes/tell-the-truth-about-runs.md section 3.
    */
   {
     head: 'Break the runs',
@@ -106,7 +117,7 @@ const ENGINE_RULES = [
   },
   {
     head: 'Facts held, character for character',
-    body: 'Every number, date and name is checked against your original, and the section retries if one drifts. Zero figures lost across our test set.',
+    body: 'Every number, date and name is checked against your original, and the section retries if one drifts. Across our test set it breaks over 90% of three-word sequences with zero figures lost.',
   },
   {
     head: 'Length held',

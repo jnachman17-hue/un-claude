@@ -24,6 +24,14 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "web", "dev", "--port", "3003"],
       "port": 3003
+    },
+    {
+      "name": "engine",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["server.py", "--port", "8765"],
+      "cwd": "apps/web/engine",
+      "env": { "UC_PRODUCT_POLICY": "1" },
+      "port": 8765
     }
   ]
 }

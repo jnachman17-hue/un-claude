@@ -49,6 +49,7 @@ import {
 } from './credits';
 import { OutOfCredits, SignedInWelcome } from './credit-offer';
 import { Paywall } from './paywall';
+import { PreFlight, needsPreFlight } from './preflight';
 import { SAMPLE_HINT, SAMPLE_TEXT } from './sample';
 import { ReceiptPanel } from './receipt-panel';
 import type { Receipt } from '~/lib/engine/receipt';
@@ -61,7 +62,13 @@ type Phase =
   | 'cleaning'
   | 'cleaned'
   | 'error'
-  | 'locked';
+  | 'locked'
+  /**
+   * D4's pre-flight is on screen and the visitor has not answered it yet.
+   * Nothing has been spent: the number came from the free scan. See
+   * preflight.tsx.
+   */
+  | 'preflight';
 
 interface Loaded {
   /** base64, exactly as sent to the engine, kept so sanitising can reuse it. */
@@ -522,7 +529,43 @@ export function Workbench() {
    */
   const tooShortToRewrite = carriesProse && wordsNow < MIN_REWRITE_WORDS;
 
-  const sanitise = async () => {
+  /**
+   * The freeze estimate for what is in the box right now, or undefined.
+   *
+   * The engine returns it on the FREE scan and only for text, so it is in hand
+   * before any credit moves and is absent for a .docx or an image, which is
+   * correct: the rewrite never runs on those, so nothing freezes. Guarded by
+   * `carriesProse` as well, because that is the flag that decides whether the
+   * rewrite runs at all, and by the short-paste rule, because a rewrite that is
+   * refused for being under sixteen words has nothing to disclose.
+   */
+  const freezeEstimate =
+    carriesProse && !tooShortToRewrite ? scan?.billing?.freeze : undefined;
+
+  /**
+   * D4'S PRE-FLIGHT GATE. Jon's ruling, and board W-10.
+   *
+   * The only thing between pressing Sanitise and the work starting. When a
+   * large share of this document is going to come back exactly as it arrived,
+   * the visitor is told the real number and given Continue or Cancel before
+   * anything is spent. Everything below it is unchanged.
+   *
+   * IT SITS IN FRONT OF THE CREDIT CHECK. D4 says "before a visitor pays", so
+   * the disclosure cannot be behind the thing that asks them to pay. This is
+   * the same ordering fault the board has open as W-4.
+   *
+   * NOT gated on `devMode()`. The bypass exists to stop credits being charged,
+   * and this is not a charge. It describes the document.
+   */
+  const sanitise = () => {
+    if (needsPreFlight(freezeEstimate)) {
+      setPhase('preflight');
+      return;
+    }
+    void runSanitise();
+  };
+
+  const runSanitise = async () => {
     // An image has no prose, so there is nothing for the rewrite to do and no
     // reason to spend a model call on it.
     const wantsRewrite = carriesProse;
@@ -1340,6 +1383,20 @@ export function Workbench() {
               have={wall.have}
               onDismiss={() => setPhase('scanned')}
             />
+          ) : phase === 'preflight' && freezeEstimate ? (
+            /*
+              D4's pre-flight, in the same slot the paywall uses, because it is
+              the same kind of thing: the flow has stopped inside the box and is
+              asking a question. One grammar for both.
+
+              Cancel is `setPhase('scanned')`, which is exactly where the
+              visitor was, with their scan still on screen and nothing spent.
+            */
+            <PreFlight
+              freeze={freezeEstimate}
+              onContinue={() => void runSanitise()}
+              onCancel={() => setPhase('scanned')}
+            />
           ) : isFile ? (
             /*
               A LOADED FILE IS A DIV, NOT A BUTTON, and the difference cost a
@@ -1633,7 +1690,14 @@ export function Workbench() {
               // Over the word limit the server will refuse this, and under the
               // rewrite's minimum it would charge for a run that does not
               // happen. Neither is offered. The message beside it says why.
-              disabled={busy || overLimit || tooShortToRewrite}
+              //
+              // Greyed out while D4's pre-flight is open, because Continue in
+              // that panel and this button would otherwise be two controls
+              // doing the same thing on one screen. The decision belongs to
+              // the panel; this goes quiet until it is answered.
+              disabled={
+                busy || overLimit || tooShortToRewrite || phase === 'preflight'
+              }
               // The price, and the reason this is greyed out when it is,
               // read at the moment the control is reached. See the note on
               // the status line below.
