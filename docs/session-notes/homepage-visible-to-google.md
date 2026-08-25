@@ -431,3 +431,67 @@ announces an HTML comment. A screen reader says the whole sentence.
 `<h1>` values in the brief's table were all correct; this was the only one the
 extractor mangled, because it is the only one whose heading begins with a bare
 number followed by more text.
+
+---
+
+## The whole-site sweep, since the same bug could be anywhere
+
+Every built page, word count from the production build:
+
+```
+PAGE                     WORDS
+_global-error            18
+_not-found               42
+capabilities             638
+contact                  136
+cookie-policy            464
+home                     15
+how-it-works             1240
+index (/)                1234
+mission                  637
+pricing                  1046
+privacy-policy           2036
+terms-of-service         1375
+update-password          7
+```
+
+**No other page has it.** `/home` and `/update-password` are behind the login
+and are genuinely per-visitor, so they are supposed to be short. `/contact` at
+136 is a form and matches the live site exactly.
+
+**One thing this sweep corrected in my own work.** I first wrote the runbook
+check as "count `<!--$?-->`, any hit is the bug". **That is wrong and I have
+fixed it there.** Pending boundaries are normal — most healthy pages here have
+one, and after the fix `/` has three of them along with its 1,234 words. The
+reliable signal is the word count collapsing to nav-plus-footer length, and a
+missing `<h1>` on a page whose source has one.
+
+---
+
+## Where things stand
+
+**Done and committed, four commits, nothing left uncommitted of mine.**
+
+| Job | Outcome |
+|---|---|
+| 1. Homepage content in the HTML | **Fixed.** 75 → 1,234 words, `<h1>` present |
+| 2. `Organization` structured data | **Added**, and a pre-existing `FAQPage` block was restored by Job 1 |
+| 3. Web app manifest | **Linked.** The file already existed and was already correct |
+| 4. `/pricing`'s `<h1>` | **Nothing wrong.** The "5" was a measurement artefact |
+
+**Not done, and each has its reason above:** a scan was not driven end to end
+(the freeze session's engine is mid-run on this machine); nothing is deployed,
+so **un-claude.com still serves 75 words until somebody deploys**; and Google
+recrawling is Google's schedule.
+
+**Two things left for Jon, neither of them mine to decide.** Whether the
+counter should be reseeded so it stops fading in (04 entry 71 behaviour), and
+whether the manifest's `"orientation": "portrait"` is right for an installed
+copy.
+
+**`04-decision-log.md` and `06-assumptions-and-open-questions.md` were left
+alone on purpose.** Both had another session's uncommitted edits in them for
+this session's whole duration, and `07`'s own entry of 24 August says staging
+by path does not protect a shared document. Everything that would have gone to
+them is in this note and in the runbook entry, both of which are pure appends
+to files nobody else was editing.

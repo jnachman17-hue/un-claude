@@ -2187,10 +2187,19 @@ production build writes the same file Vercel serves:
 
 ```bash
 cd apps/web && pnpm build
-perl -0777 -pe 's/<script\b.*?<\/script>//gis; s/<style\b.*?<\/style>//gis; s/<[^>]+>/ /gs;' \
-  .next/server/app/index.html | wc -w
-grep -c '<!--\$?-->' .next/server/app/index.html    # any count > 0 on a static route is this bug
+for f in .next/server/app/*.html; do
+  printf '%-22s %s\n' "$(basename $f .html)" \
+    "$(perl -0777 -pe 's/<script\b.*?<\/script>//gis; s/<style\b.*?<\/style>//gis; s/<[^>]+>/ /gs;' $f | wc -w)"
+done
 ```
+
+**Read the WORD COUNT, not the boundary count.** A page collapsing to roughly
+the length of the nav plus the footer — about 75 words on this site — is the
+symptom. **Do not test for `<!--$?-->` instead: pending boundaries are normal
+and most healthy pages here have one.** After the fix `/` has three of them and
+1,234 words. It is a boundary that swallowed the page BODY that matters, and
+the word count is what shows that. A missing `<h1>` on a page that has one in
+its source is the other reliable tell.
 
 **The fix is a `<Suspense>` boundary around the clock-reading component only.**
 It confines the abandonment to the one thing that genuinely cannot be
