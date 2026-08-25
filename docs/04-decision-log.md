@@ -5960,3 +5960,75 @@ nothing.
 **Not fixed here.** The display half is Lane C but `lib/engine/receipt.ts` is
 ruled off-limits by Jon, so it needs his say-so. **Recorded rather than
 actioned.**
+
+### 155. The rewrite prompt never told the model what a placeholder was. Saying so cut fallbacks by 97% and made the rewrite better.
+
+**Found and fixed 25 August 2026, on Jon's instruction, after he asked whether
+prompt engineering could reduce entry 154's problem.**
+
+**The defect.** The freeze replaces a protected span with `[[11]]` before the
+chunk goes to the model. **`grep` for "placeholder", "mask", "bracket" or `[[`
+across `rewrite_text.py` found nothing.** The model was handed text containing
+`[[11]]`, given eight rules about facts, numbers, length and layout, and never
+told what `[[11]]` was or that it had to come back.
+
+**It collided with the rules that were there.** Rule 5a shouts *"NEVER CHANGE A
+NUMBER'S VALUE, AND NEVER SPELL A YEAR OUT"*, and a placeholder is a bare number
+in brackets. The prompt instructed loudly about numbers while silently depending
+on the model to leave one particular number alone for reasons it never gave.
+
+**The evidence it was happening**, from the runs already on disk: the tolerant
+matcher in `restore_chunk` had to rescue **261 mangled masks across 139 runs**,
+and `uc_chunk.py`'s own comment recorded that an informed retry "almost never"
+fails where a blind re-roll fails one time in three. **The retry prompt already
+told the model; the first prompt did not.**
+
+**The fix.** Rule 1a added to the `unclaude` prompt, placed straight after the
+facts rule: what a placeholder is, that it must come back character for
+character in the same position, that it must never be renumbered, reformatted,
+turned into a footnote or moved, and **that rules 5 and 5a do not apply to it**.
+It is conditional, so a chunk with no placeholders ignores it, and it says
+explicitly never to invent one. A compact version was added to the retry prompt,
+which listed the missing ids without ever saying what they were.
+
+**Measured: the same 7 documents, 3 models, 3 runs, 63 runs each way.**
+
+```
+                                  BEFORE      AFTER
+runs with at least one fallback   26 (41%)    1 (1.6%)
+fallback chunks                   31 of 774   1 of 774     97% fewer
+retries fired                     210         56           73% fewer
+masks the matcher had to rescue   111         41           63% fewer
+gateway cost                      $0.3848     $0.2935      24% cheaper
+protected spans back verbatim     2808/2808   2808/2808    no change
+```
+
+**AND THE REWRITE ITSELF GOT BETTER, which is the part worth noticing.** Median
+surviving three-word overlap in the non-frozen text fell from 18.5% to 12.9%,
+and the gain is concentrated exactly where the fallbacks were:
+
+```
+ladder_2000   18.5% -> 11.2%      ladder_7500   28.9% -> 16.0%
+ladder_3000   25.0% -> 13.9%      ladder_10000  36.0% -> 18.2%
+ladder_5000   32.0% -> 14.6%
+```
+
+**This settles the open question in entry 153.** That entry recorded, as an
+unproven hypothesis, that a fallback might be a symptom rather than a cause of
+high surviving overlap. **It was substantially causal:** removing the fallbacks
+removed half the surviving overlap on long documents, because a fallback chunk
+was handing back the customer's own text at 100% overlap.
+
+**Entry 145's figure moves with it.** "Over 90% of three-word sequences broken"
+now holds on **21 of 63 runs against 18**, median broken **87.1% against 81.5%**.
+**It is still false on long documents** (0 of 9 at 4,958 words and above) and
+still weakest on deepseek, the settled model, at 2 of 21. **Jon's ruling in entry
+151 stands and the claim is unchanged on the site.** The figure is recorded here
+because it moved, not as an argument to restate it.
+
+**The second proposed change, `UC_FREEZE_RETRIES` from 1 to 2, was NOT made.**
+With one failing chunk in 774 it now targets a 0.13% event, and it is a
+production environment variable rather than code. **Held, and it can be switched
+on at any time without a deploy if the rate ever climbs.**
+
+**Engine tests: 842 passed, 1 skipped.**
