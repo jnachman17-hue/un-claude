@@ -6,6 +6,81 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 25 AUGUST — ANALYTICS: WHAT JON ASKED FOR IS PART DONE AND PART BLOCKED BY A LIVE PROMISE
+
+**Jon: PostHog shows sessions that are him or the conductor, and he wants a real
+funnel — who scanned, who clicked pricing, who bought, every page visited.**
+
+## What already exists, and it is more than anyone thought
+
+**20 custom events are already shipped** in `lib/analytics/events.ts`:
+`own_text_entered` · `file_uploaded` · `scan_completed` · `scan_failed` ·
+`sanitise_started` · `sanitise_completed` · `sanitise_failed` ·
+`result_downloaded` · `paywall_shown` · `paywall_dismissed` ·
+`paywall_signup_clicked` · `out_of_credits_shown` · `out_of_credits_clicked` ·
+`signup_started` · `signin_started` · `checkout_started` · `checkout_failed` ·
+`checkout_account_required` · `purchase_completed` · `purchase_cancelled`.
+
+Plus `capture_pageview: 'history_change'` and `autocapture: true`, so **every
+page visited and every click is already recorded.**
+
+## ★ THE CONSTRAINT — `persistence: 'memory'`, and it is a RULED decision
+
+```js
+posthog.init(KEY, { persistence: 'memory', capture_pageview: 'history_change',
+                    disable_session_recording: true, autocapture: true,
+                    respect_dnt: true });
+```
+
+**The live cookie policy promises this, verified by curl today:**
+
+> *"PostHog analytics — Counts visits, pages read, and which steps of the tool
+> are [used]. **Configured to store nothing on your device, so it sets no cookie
+> and writes no local storage.** Nothing is stored, so there is nothing to
+> expire."*
+
+**`04` entry 68 and the entry at line ~5377 both record this as deliberate:**
+*"NOTHING IDENTIFIES A PERSON, and the funnel is deliberately left broken rather
+than fixed by identifying one… That trade is Jon's to make and it was not made
+here."*
+
+## ★★ WHAT THIS ACTUALLY COSTS — narrower than the decision log implies
+
+**Verified today:** the nav uses Next.js `<Link>` (`site-navigation.tsx:117`),
+so moving between pages is a **client-side** navigation — **no page reload, so
+the in-memory id SURVIVES.**
+
+**Therefore, already answerable today, joined as one person:**
+- every page a visitor moved through via the site's own navigation
+- scanned → viewed pricing → started checkout, as one funnel
+- everything up to the moment they leave the site
+
+**Genuinely broken, and only these:**
+- **`checkout_started` → `purchase_completed`.** `buy-button.tsx:122` does
+  `window.location.href = data.url`, so the buyer leaves for Stripe and returns
+  through a full page load as a **new person.**
+- **Any returning visitor**, any hard refresh, any direct arrival on a deep link.
+- **Session counts are inflated** against real humans, which is exactly what Jon
+  is seeing.
+
+## The three routes, and only one needs a ruling
+
+| | What it gets | Cost |
+|---|---|---|
+| **1. Internal-traffic filter** | Removes Jon's and the conductor's visits | **PostHog UI only. No code, no policy change.** Do this first |
+| **2. Use what is already there** | Most of the funnel, within a visit | **Free. Nobody has built the insights yet** |
+| **3. Persist the id** | The complete funnel, purchases and return visits | **A cookie-policy change, a privacy-policy change, and probably a consent banner. JON'S RULING, never made** |
+
+**A fourth route nobody has used: the DATABASE has exact answers to the money
+questions.** `credit_ledger` and `run_costs` record every signup, grant, spend
+and purchase. *"How many accounts were created is a database question, not an
+analytics one"* — `04` entry 68. **Exact, not sampled, and needs no cookie.**
+
+**RECOMMENDATION: do 1 and 2 now, and put 3 to Jon as a decision rather than
+building it.** Route 3 is the only one that touches a published promise.
+
+---
+
 # ★★★ 25 AUGUST — PUSHED AND LIVE. 19 commits, `dee5092..fb1813a`.
 
 **Verified on production by the conductor after the deploy went Ready.**
