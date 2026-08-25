@@ -5879,39 +5879,84 @@ decide. Still open alongside entry 150.
 **Jon's ruling, 25 August 2026.** He asked for a clause covering the remainder
 and gave the reasoning: the watermark rides on high entropy tokens, and
 quotations, citations and references are low entropy, so freezing them forfeits
-almost nothing. **He was shown the argument's limits and the measurement, and
-chose the hedged coverage wording over the mechanism wording.** Implemented.
+almost nothing. Implemented as *"Everything else goes through the full
+rewrite."*
 
-**What was measured before he chose.** `overlap_unfrozen` is survival in the
-NON-FROZEN text only, which is the direct test of whether the remainder is
-really rewritten. Over 237 recorded runs:
+**★ CORRECTION, same session, and the corrected numbers are the ones to quote.**
+The figures first given to Jon were wrong in two ways and he caught the
+implication. **`_ladder_prev.jsonl` is byte-for-byte identical to
+`ladder_25aug_campaign1.jsonl`**, so every total counting both double-counted a
+whole campaign. And **"one run in four" is the chance a run contains at least
+one fallback, which is not the share of a document affected**, which is what it
+was allowed to sound like.
+
+**Deduped, 200 runs:**
 
 ```
-runs with NO chunk fallback    n=175   median 91.5% of three-word runs broken
-runs WITH a chunk fallback     n= 62   median 63.3% broken
+runs containing at least one fallback chunk   36 of 200  = 18.0%
+chunks that fell back                         43 of ~1425 = 3.02% of all chunks
+share of a document handed back unrewritten   mean 2.21%   median 0%   worst 16.7%
 ```
 
-**On three runs in four the rewrite does exactly what the sentence implies. On
-the fourth a 350-word chunk comes back verbatim** and roughly a third of the
-non-frozen text is untouched.
+**And it is entirely a long-document effect:**
 
-**So the verb decides whether the sentence is true.** *"Gets the full rewrite"*
-and *"is rewritten"* are false on that fourth run and are the wording the board
-flagged (row 4). **"Goes through" describes the action, which happens every
-time: the chunk is sent and rewritten, and a result that cannot be verified is
-rejected rather than never attempted.** Do not tighten the verb.
+```
+<= 919 words     0 of ~102 runs      ladder_500, ladder_1000, essay, story
+1,942 words      8 of 27
+2,971 words      5 of 27
+4,958 words     19 of 26
+7,498 words     12 of 27
+9,946 words     18 of 26
+```
 
-**The entropy argument is right and it has a hole, recorded because it will come
-up again.** It holds well for citations and reference entries, which are close
-to fully determined. **It does not hold for invented dialogue, which entry 143
-freezes along with every other quotation without testing whose words they are.**
-When a model writes «"You could have called," Marta said» it chose those words
-freely, at full entropy. **The documents that trip this pre-flight at 51 to 66
-percent are exactly the dialogue-heavy ones**, so the frozen text there is the
-case the argument covers least well. **This is a reason not to lean on the
-entropy claim in visitor copy**, and the shipped sentence does not.
+**More chunks means more chances one fails, so the run-level rate climbs with
+length while the per-chunk rate stays near 3%.**
+
+**The verb still has to be "goes through".** When a chunk does fall back, that
+chunk, up to 350 words of high entropy text that should have been rewritten,
+comes back exactly as sent. *"Gets the full rewrite"* is false for that chunk.
+**"Goes through" is true every time: the chunk is sent and rewritten, and a
+result that cannot be safely reassembled is rejected rather than never
+attempted.** Do not tighten the verb.
+
+**One inference was also overstated and is corrected here.** Runs with a
+fallback show median 36.7% of three-word runs surviving in the non-frozen text
+against 17.8% for runs without, comparing within the same document. **3% of
+words cannot produce a 19 point gap, so the fallback is mostly a SYMPTOM rather
+than the cause:** a model having a poor run stays closer to the original, which
+both leaves more original wording everywhere and makes a placeholder restore
+more likely to fail. **That is a hypothesis and it is not proven.**
+
+**The entropy argument is right and has a hole, recorded so nobody re-derives
+it.** It holds for citations and reference entries, which are close to fully
+determined. **It does not hold for invented dialogue, which entry 143 freezes
+along with every other quotation without testing whose words they are.** The
+documents that trip this pre-flight at 51 to 66 percent are the dialogue-heavy
+ones, so the frozen text there is the case the argument covers least well. The
+shipped sentence does not lean on it.
 
 **Nothing is said about sanitising, deliberately.** Layer A runs on the whole
 document before the freeze, so the protected text IS stripped of invisible
-characters. Saying "we sanitise everything else" would imply otherwise and give
-away a real selling point. Entry 152 stands on that point.
+characters. Entry 152 stands.
+
+### 154. The engine knows a chunk was handed back unrewritten and NOTHING TELLS THE CUSTOMER. Open.
+
+**Found 25 August 2026 while answering Jon's question about entry 153.** The
+engine returns `layer_b.freeze.chunks_fallback`, each entry carrying the chunk,
+its words and the reason, plus a plain-English note when the list is not empty.
+**`grep` across `apps/web/app` and `apps/web/lib` finds nothing reading it.**
+
+**So a customer can pay for a rewrite, have up to 350 words of it not happen,
+and be told nothing.** The receipt reports what was replaced without reporting
+what was never attempted. **This is the same defect as D4's pre-flight and as
+E-7's `structure_kept`: the engine computed the honest number and no file read
+it.**
+
+**It matters most exactly where it happens**, on long documents, which are the
+ones costing the most credits. **The existing refund only fires above one third
+of the document**, so a run with 16.7% falling back charges full price and says
+nothing.
+
+**Not fixed here.** The display half is Lane C but `lib/engine/receipt.ts` is
+ruled off-limits by Jon, so it needs his say-so. **Recorded rather than
+actioned.**

@@ -81,7 +81,7 @@ export function needsPreFlight(freeze: FreezeEstimate | undefined): boolean {
  * as it was.
  *
  * ONE MESSAGE, ONE TONE. Jon's amendment of 25 August 2026 removed D4's
- * original louder variant above 60%. 04 entry 143.
+ * original louder variant above 60%. 04 entry 148.
  *
  * THE WORDING IS D4'S, FIXED ON THE BOARD, WITH THREE CHANGES AND NO OTHERS:
  *
@@ -93,9 +93,8 @@ export function needsPreFlight(freeze: FreezeEstimate | undefined): boolean {
  *   3. "The other 58% gets the full rewrite" IS DROPPED, NOT REPLACED. The
  *      board records it as false (row 4) and assigns the replacement to Jon,
  *      because a chunk whose protected text cannot be verified on the way back
- *      is handed to the customer as their own original, unrewritten. Measured
- *      over 263 recorded freeze runs, 62 of them (23.6%) had at least one
- *      chunk fall back that way. Dropping a false clause needs no new ruling;
+ *      is handed to the customer as their own original, unrewritten. See the
+ *      corrected measurement below. Dropping a false clause needs no new ruling;
  *      writing a true replacement is a claim about what we disclose, and that
  *      is Jon's call. Nothing on screen now says anything about the remainder.
  *
@@ -111,18 +110,31 @@ export function needsPreFlight(freeze: FreezeEstimate | undefined): boolean {
  * changed, because sometimes it does not.
  *
  *   A chunk whose protected text cannot be verified on the way back is handed
- *   to the customer as their own original. Measured on `overlap_unfrozen`,
- *   which is survival in the NON-FROZEN text only, over 237 recorded runs:
+ *   to the customer as their own original, unrewritten. Deduped over 200
+ *   recorded runs (`_ladder_prev.jsonl` is a byte-identical copy of
+ *   `ladder_25aug_campaign1.jsonl` and must be excluded or it double-counts a
+ *   whole campaign):
  *
- *     no chunk fell back   n=175   median 91.5% of three-word runs broken
- *     a chunk fell back    n= 62   median 63.3% broken
+ *     runs containing at least one fallback   36 of 200   = 18.0%
+ *     chunks that fell back                   43 of ~1425 =  3.0%
+ *     share of a document unrewritten         mean 2.2%, median 0%, worst 16.7%
  *
- *   So on three runs in four the rewrite does exactly what this sentence
- *   implies. On the fourth, a 350-word chunk comes back verbatim.
+ *   It is entirely a long-document effect: ZERO fallbacks across ~102 runs at
+ *   919 words or fewer, rising to 18 of 26 runs at 9,946 words, because more
+ *   chunks means more chances one fails.
  *
- * **"Gets the full rewrite" or "is rewritten" would be false on that fourth
- * run.** "Goes through" survives it. This is the wording the board flagged as
- * false (row 4) coming back in a form that is not. Do not tighten it.
+ *   Small on average, and still fatal to the wrong verb: when it does happen,
+ *   up to 350 words of high entropy text that should have been rewritten come
+ *   back exactly as sent.
+ *
+ * **"Gets the full rewrite" or "is rewritten" would be false for that chunk.**
+ * "Goes through" is true every time: the chunk IS sent and rewritten, and a
+ * result that cannot be safely reassembled is rejected rather than never
+ * attempted. This is the wording the board flagged as false (row 4) coming back
+ * in a form that is not. Do not tighten it. 04 entry 153.
+ *
+ * SEE ALSO 04 entry 154, open: the engine reports `chunks_fallback` and no file
+ * in this app reads it, so the customer is never told when this happened.
  *
  * NOTE ALSO: this sentence says nothing about sanitising, on purpose. Layer A
  * runs on the WHOLE document before the freeze and before the rewrite

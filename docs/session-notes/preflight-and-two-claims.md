@@ -140,9 +140,20 @@ D4's wording is fixed on the board. **Three changes, no others.**
 > **Continue** · **Cancel**
 
 **The verb "goes through" is load-bearing and must not be tightened.** Jon asked
-for a clause covering the remainder; "gets the full rewrite" and "is rewritten"
-are false on the one run in four where a chunk falls back. "Goes through"
-describes the action, which happens every time. 04 entry 153.
+for a clause covering the remainder. When a chunk cannot be safely reassembled
+it is handed back as the customer's own unrewritten text, so "gets the full
+rewrite" is false for that chunk while "goes through" stays true. 04 entry 153.
+
+**★ The first numbers given for this were wrong and are corrected in 04 entry
+153.** `_ladder_prev.jsonl` is byte-identical to `ladder_25aug_campaign1.jsonl`,
+so any total counting both double-counts a campaign. Deduped over 200 runs:
+**18.0% of runs contain at least one fallback chunk, that is 3.0% of all chunks,
+and the share of a document affected is mean 2.2%, median 0%, worst 16.7%.** It
+is entirely a long-document effect: zero across ~102 runs at 919 words or fewer.
+
+**A defect was found while checking this and is open as 04 entry 154:** the
+engine reports `chunks_fallback` and **nothing in `apps/web` reads it**, so a
+customer whose chunk came back unrewritten is never told.
 
 *That is the real panel, copied out of the live DOM in section 6. The 66% is
 this document's own number; every visitor sees theirs.*
