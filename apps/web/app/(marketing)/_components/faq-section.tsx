@@ -54,22 +54,32 @@ export function FaqSection() {
 
       <div className={'mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-20'}>
         <div className={'grid gap-10 lg:grid-cols-12 lg:gap-14'}>
+          {/*
+            JUST "FAQ". Jon's instruction, 25 August 2026, six-ui-fixes brief
+            fix 5. It overrides the messaging skill's preference for a fuller
+            heading, and `CLAUDE.md` section 2 makes his instruction the higher
+            authority.
+
+            What came out: "Straight answers to the hard questions." and
+            "Including the ones most tools in this category hope you will not
+            ask." Both were doing the same job the questions do better, one
+            screen further down, and the second line was a claim about other
+            products rather than about this one.
+
+            THE TWO-LINE BLOCK WAS ALSO THE COLUMN'S ONLY HEIGHT. Removing it
+            blind leaves a `lg:col-span-4` column holding a single short word
+            beside eight rows of questions, so the type size comes down from
+            the 28/34px display pair to the size of a section label. It is a
+            label now, not a headline, and it is sized like one.
+          */}
           <div className={'lg:col-span-4'}>
             <h2
               className={
-                'text-foreground text-[28px] leading-[1.1] font-semibold tracking-[-0.028em] text-balance sm:text-[34px]'
+                'text-foreground text-[20px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[22px]'
               }
             >
-              Straight answers to the hard questions.
+              FAQ
             </h2>
-            <p
-              className={
-                'text-muted-foreground mt-4 max-w-[40ch] text-[15px] leading-[1.6]'
-              }
-            >
-              Including the ones most tools in this category hope you will not
-              ask.
-            </p>
           </div>
 
           <div className={'lg:col-span-8'}>
