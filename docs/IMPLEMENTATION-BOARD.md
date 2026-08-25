@@ -6,6 +6,62 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 25 AUGUST — D4'S PRE-FLIGHT WAS NEVER BUILT. The conductor had this wrong.
+
+**I told Jon D4's pre-flight sentence was false and needed his ruling. It is not
+false. IT DOES NOT EXIST.** Verified three ways:
+
+```
+grep for the wording across apps/web/app        -> NOTHING
+grep for anything reading billing.freeze        -> NOTHING
+the only "freeze" in the workbench              -> a code comment
+board W-10                                      -> still open, never done
+```
+
+**And the engine has been sending the number the whole time.** Live production,
+free scan, just now:
+
+```
+"billing": { "credits": 1, "words": 36,
+             "freeze": {"fraction": 0.5, "frozen_words": 18, "spans": {"quote": 1}} }
+```
+
+**Half of that document would come back exactly as sent, the engine knows it,
+and nothing tells the customer before they pay.**
+
+## This is worse than a wrong sentence, not better
+
+**D4 is Jon's own ruling** — a visitor sees the frozen fraction with
+Continue/Cancel, and a louder prompt above 60%. **The engine half shipped with
+E-9. The interface half is board W-10 and was never built.**
+
+**And it matters more now than when he ruled it.** Every-quotation-freezing
+raised the frozen fraction on every document with quotations, and a
+dialogue-heavy story now measures **63.9%** — straight past the threshold Jon
+set for the louder warning that also does not exist.
+
+**So the correction to my own advice: there is no sentence to soften. There is a
+ruling to implement.** W-10 moves up the board.
+
+## Where the other two claims actually live — for Jon, who asked
+
+**Both are in the SAME SENTENCE, and it appears in two places:**
+
+> *"…every number, date and name checked against your original with a retry if
+> one drifts, and length held within a tenth. **Across our test set it breaks
+> over 90% of three-word sequences with zero figures lost**, and every run hands
+> you those numbers."*
+
+| Where | How a visitor reaches it |
+|---|---|
+| **Homepage FAQ** | Under *"Why can't I just ask another AI to reword it?"* — **collapsed, they must click to open it** |
+| **`/how-it-works`** | The "rewrite, rule by rule" section, under **Facts held, character for character** |
+
+**Neither is in the hero or anywhere a visitor meets first.** That is worth
+knowing before deciding how hard to fight for them.
+
+---
+
 # ★★ 25 AUGUST — THE CONDUCTOR LOOKED AT THE PAGES. Follow-up 6 is closed.
 
 **The copy session could not get screenshots — its browser pane returned blank
