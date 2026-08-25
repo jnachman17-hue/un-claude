@@ -6,6 +6,90 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★★ 25 AUGUST — BOTH SESSIONS LANDED AND ARE VERIFIED. NOTHING IS DEPLOYED.
+
+**Verified by the conductor on harnesses written BEFORE either session existed,
+which is stronger than re-running theirs.**
+
+## FREEZE SESSION — every quotation, the citation, hard-wrap, orphan guard
+
+| Claim | My check | Result |
+|---|---|---|
+| Suite `842 passed, 1 skipped` | ran pytest | **CONFIRMED** |
+| Every quotation freezes | **my pre-existing 20-line fiction harness** | **0 frozen → 19 of 20.** The 20th is `"Why now?"` — 8 chars, under the deliberate 12-char floor. **Correct, not a bug** |
+| Predicted table matched | my `freezeall.py` | **"frozen now" == "if all quotes" on every rung, ±0.0%** |
+| The citation freezes with the quote | **my pre-existing masker probe** | **`[[11]] (p. 47)` → `[[11]]`.** The source is inside the mask |
+| Hard-wrap closed | **my pre-existing wrap harness** | **61.6% / 5.8% → 66.3% / 66.3%.** Identical |
+| Zero orphaned spans | ran their invariant | **0 across every corpus document** |
+
+**Job 4's finding is a correction to E-16, not a fix:** the "second" silent span
+shortfall **never existed.** E-16's residual was its own already-fixed bug,
+double-counted because the lab metric counts a span short whenever any instance
+of its text was rewritten and the corpus repeats a template. **Reproduced E-16's
+four figures exactly by simulating the old rule.** What was added is an
+invariant guard for the whole failure class.
+
+## ★ THE LADDER — 63 runs, three models, ZERO failures, 2,808 of 2,808 spans
+
+**The first campaign in this project with a perfect span count at every size.**
+
+```
+model            median@9946   worst run   retries   runs w/ fallback   cost@9946
+mistral-small       20.2s        54.6s        80         10 of 21        $0.0048
+mistral-medium      26.6s        38.1s       120         10 of 21        $0.0330
+deepseek-v3.2       24.1s        24.4s        10          6 of 21        $0.0060
+```
+
+**No model came near the 240s wall — worst of all 63 runs was 30.8s at 9,946
+words, 13% of the budget.**
+
+## ★★ THE PRICE OF JON'S RULING, AND HE SHOULD SEE IT
+
+**Chunk fallbacks went from 0 to 13 in 21 runs on mistral-small.** More frozen
+text means more placeholders per chunk, more restores that cannot be verified,
+and D3 hands those chunks back as the customer's own words.
+
+**In roughly half of all runs the customer now receives at least one chunk —
+about 350 words — unrewritten.** Not a refund, explained in the report, and
+customer-safe. **But it did not exist before the ruling and it is real.** The
+lever if it climbs is `UC_LAYER_B_CHUNK_WORDS`, not the ruling.
+
+## SEO SESSION — the homepage is readable, and the cause was one line
+
+**Verified by the conductor against their own prerendered build output:**
+
+```
+apps/web/.next/server/app/index.html
+  words in prerendered HTML : 1234        (was 75)
+  <h1>                      : "If Claude wrote it, it's marked."   (was NONE)
+  PRESENT  100% of detectable marks removed
+  PRESENT  Every kind of watermark
+  PRESENT  The story, as covered by
+  ld+json blocks            : 4           (was 0)
+```
+
+**The cause: one `Date.now()` read during render**, in `live-counter.tsx:148`.
+Under `cacheComponents`, reading the clock abandons prerendering **up to the
+nearest `<Suspense>` boundary** — and the homepage had none inside it, so the
+nearest was the route-wide one `loading.tsx` creates. **A desktop-only counter
+took the entire page body with it.** Isolated by building one throwaway page
+per section, then per component, then a two-page probe differing by one line.
+
+**The fix is one `<Suspense>` around the counter.** No copy changed.
+
+**The cost, disclosed:** the counter's three lines are no longer crawlable, and
+it now fades in a beat late — **behaviour ratified in `04` entry 71, so undoing
+that properly is Jon's call.**
+
+**One thing that session could NOT verify: a scan end to end.** `UC_ENGINE_URL`
+points at a dead local port, and it **deliberately did not start an engine
+because the freeze session was mid-measurement on 87xx and the start command
+opens with `pkill -f "server.py --port 87"`.** It proved the failure predates
+its change by stashing and re-running. **Correct call. Somebody must run one
+real scan before or right after the deploy.**
+
+---
+
 # ★★ 24 AUGUST, 18:20 — THE CONDUCTOR MADE THE COMMIT MISTAKE IT WARNED ABOUT
 
 **Commit `fa7f59a` ("Brief: make the homepage visible to Google") also contains
