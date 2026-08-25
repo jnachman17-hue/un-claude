@@ -154,3 +154,94 @@ a page it cannot.** All of these throwaway pages were deleted before any commit.
 no other page. The footer's `new Date().getFullYear()` is exempt because it
 sits inside a `'use cache'` function, which is handed a fixed timestamp — which
 is why the footer's words are in the HTML on every page, including this one.
+
+### The fix
+
+One `<Suspense>` boundary around the counter, in
+`app/(marketing)/_components/hero-section.tsx`:
+
+```tsx
+<Suspense fallback={<div className={'min-h-[150px]'} />}>
+  <LiveCounter />
+</Suspense>
+```
+
+That is the entire change. It stops the abandonment at the one component that
+genuinely cannot be known ahead of time, so everything above and below it
+prerenders into the HTML. **No copy changed, no component's logic changed, and
+nothing was deleted.** The reasoning is written into the file at the boundary.
+
+### After, same command, same build
+
+```
+index (/)        words=1234   h1=[If Claude wrote it, it’s marked.]
+capabilities     words=638    h1=[What we do, exactly.]
+how-it-works     words=1240   h1=[Where an AI watermark actually hides.]
+pricing          words=1046   h1=[5 credits free. Packs from $4.99.]
+```
+
+**75 → 1,234 words, and the `<h1>` is there.** The homepage is now the second
+longest page on the site by crawlable text, level with `/how-it-works`. The
+two control pages are unchanged to the word, which is the check that this did
+not disturb anything else.
+
+The `<h1>` is the headline that was already at `hero-section.tsx:116`, exactly
+as written. The governed claims are all in the served HTML — I grepped the
+built file for each one rather than trusting the word count:
+
+```
+PRESENT  : 100% of detectable marks removed
+PRESENT  : Every kind of watermark
+PRESENT  : Free. No account needed.
+PRESENT  : We sanitise every kind of AI watermark in seconds.
+PRESENT  : The story, as covered by:
+ABSENT   : Words cleaned with Un-Claude
+```
+
+**That last line is the cost and it is deliberate.** The counter is now the
+only thing on the page the browser draws rather than the server, so its three
+lines of text are not crawlable. Three lines out of 1,234 words, none of them
+load-bearing for ranking, against 1,231 words that were invisible before.
+
+**One thing for Jon.** The counter now fades in a beat after the page instead
+of being there on arrival, which is the exact thing the note at
+`live-counter.tsx:145` was written to avoid. The gap is reserved so nothing
+jumps. Undoing it properly means seeding the counter from a constant and
+reading the clock in its effect instead — a small change, but it changes
+behaviour ratified in 04 entry 71, so it is Jon's call and not mine.
+
+### Rendered and looked at
+
+`docs/session-notes/homepage-visible-to-google/desktop.png` (1440 wide) and
+`.../phone.png` (390 wide), captured from a real browser against the running
+app.
+
+Desktop: headline, promise line, authority strip, hairline, counter reading
+2,961,487, tool on the right, all in place, no gap where the boundary is.
+Phone: headline, one line, the tool — exactly what 04 entry 84 ruling 3
+requires. The counter is `hidden lg:block`, so the new fallback height costs a
+phone visitor nothing, which I checked rather than assumed.
+
+### The workbench: what I confirmed and what I could not
+
+**Confirmed.** The tool renders, mounts and is interactive at both widths. The
+text box accepts input, "Try an example" loads the sample text into it, and
+"Scan it" fires a real `POST /api/tool/scan`.
+
+**Not confirmed, and this is a failure to report rather than hide: a scan does
+not complete on this machine, and it did not before my change either.** The
+request comes back `400` with `{"ok":false,"code":"unreachable"}` — the
+site could not reach the engine service that does the actual work.
+`UC_ENGINE_KEY` is not set in the local environment.
+
+**I proved it is not mine.** I stashed my change, reloaded the unmodified page,
+and ran the identical steps: the same `POST /api/tool/scan → 400` and the same
+`"We could not reach the service."` Then I restored the change. The engine and
+its API route are also outside this session's territory and a freeze session is
+live in them, so this is reported, not touched.
+
+**What that leaves.** A `<Suspense>` boundary around a sibling component cannot
+change what an API route returns, and the stashed-vs-unstashed comparison is
+the evidence for that. But **I did not watch text go in and clean text come
+out**, and the brief asked for exactly that. Somebody with a working engine
+connection should run it once before this deploys.

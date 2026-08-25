@@ -7,6 +7,8 @@ import {
   TypeIcon,
 } from 'lucide-react';
 
+import { Suspense } from 'react';
+
 import { LiveCounter } from './live-counter';
 import { Workbench } from './workbench/workbench';
 
@@ -214,7 +216,71 @@ export function HeroSection() {
             }
           >
             <div className={'max-w-[46ch]'}>
-              <LiveCounter />
+              {/*
+                THE BOUNDARY THAT PUT THIS PAGE BACK IN GOOGLE'S INDEX.
+                Added 24 August 2026.
+
+                What was wrong. The homepage served a crawler 75 words — the
+                navigation menu, the footer's sentence and the footer's links —
+                and no `<h1>` at all, while every other marketing page served
+                its full content. Google ranked `/capabilities` above the
+                homepage for the brand name because `/capabilities` was the
+                only one of the two it could read.
+
+                The cause was one line inside `LiveCounter`: the counter reads
+                the clock while it renders, because the figure it shows is
+                derived from a fixed anchor and the current time (04 entry 71).
+
+                `cacheComponents` in `next.config.mjs` builds every page ahead
+                of time into a plain HTML file, and that file is what a crawler
+                reads. Reading the clock is one of the few things Next cannot
+                know ahead of time, so the moment it happens Next abandons
+                prerendering — not of the component that read the clock, but of
+                everything up to the nearest `<Suspense>` boundary. There was
+                no boundary anywhere inside this page, so the abandonment ran
+                all the way up to the automatic route boundary that
+                `(marketing)/loading.tsx` creates, which wraps the entire page.
+                The whole body was replaced by that file's empty placeholder.
+
+                This boundary is the fix and it is the whole fix. It stops the
+                abandonment here, at the one component that genuinely cannot be
+                known ahead of time. Everything else on the page — the
+                headline, the promise line, the authority strip, the marquee,
+                the coverage table, the FAQ — is identical for every visitor,
+                and now prerenders into the HTML where a crawler finds it.
+
+                WHAT THIS COSTS, STATED PLAINLY. The counter is now the only
+                thing on the page that is not in the prerendered HTML: the
+                whole route still builds as one static file, so the counter is
+                drawn by the browser after the page arrives rather than being
+                in the file. Two consequences, both checked.
+
+                Its three lines of text — the caption, the figure and
+                "Hidden characters stripped..." — are no longer readable by a
+                crawler. That is three lines out of 1,234 words, and none of
+                them is a claim the page needs to rank. Before this change the
+                crawler read 75 words and none of the other 1,231.
+
+                And the figure now fades in instead of being there on arrival,
+                which is the one thing the docblock at `live-counter.tsx:145`
+                was avoiding. The fallback below reserves its height so nothing
+                moves when it lands. Undoing that properly means seeding the
+                counter from a constant and reading the clock in its effect
+                instead, which changes behaviour Jon ratified (04 entry 71),
+                so it is written up for him rather than done here.
+
+                NOT ONE WORD OF COPY CHANGED. The brief was explicit that the
+                job was to make the existing words visible, not to write
+                different ones.
+
+                The fallback is deliberately empty. It reserves the counter's
+                height so the column does not jump when the figure lands, and
+                it says nothing, because a placeholder that says something is a
+                claim nobody ratified.
+              */}
+              <Suspense fallback={<div className={'min-h-[150px]'} />}>
+                <LiveCounter />
+              </Suspense>
             </div>
           </div>
 
