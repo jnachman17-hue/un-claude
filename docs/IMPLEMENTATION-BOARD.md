@@ -6,6 +6,39 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★ 25 AUGUST — PUSHED AND LIVE. 19 commits, `dee5092..fb1813a`.
+
+**Verified on production by the conductor after the deploy went Ready.**
+
+```
+THE HOMEPAGE, as Googlebot sees it
+  words Google can read : 1234        (was 75)
+  <h1>                  : "If Claude wrote it, it's marked."   (was NONE)
+  structured data blocks: 4           (was 0)
+
+A HARD-WRAPPED .txt, through the live free scan
+  {"fraction": 0.675, "frozen_words": 27, "words": 40, "spans": {"quote": 1}}
+  (before today a wrapped document had almost no quote protection at all)
+```
+
+**The scan path is proven end to end on production** — the route answered, the
+engine is reachable, and the freeze plan is correct. **That closes the SEO
+session's open item**, which could not reach an engine locally.
+
+## ★ THE ONE STEP NOT VERIFIED, AND WHY
+
+**A full paid rewrite was NOT run on production.** The conductor's guest
+credits were spent on this morning's tests, and **creating an account to get
+more is not something I will do.** So: scan verified live, rewrite verified
+only in the lab (842 tests, 63 clean ladder runs).
+
+**Jon can close this in thirty seconds** by pasting an essay with a quotation
+into un-claude.com and sanitising it. **What to look for: the quotation and its
+citation come back character-for-character while the prose around them
+changes.**
+
+---
+
 # ★★★★ 25 AUGUST — BOTH SESSIONS LANDED AND ARE VERIFIED. NOTHING IS DEPLOYED.
 
 **Verified by the conductor on harnesses written BEFORE either session existed,
