@@ -4,11 +4,36 @@
 session.**
 
 **One sentence: the site promises that no more than three of a customer's
-original words survive in a row, the real figure is up to 388, and the receipt
-that would show it is built so it can never print a number above 10.**
+original words survive in a row, and the real figure is up to 388.**
 
-**This is a code job AND a copy job, and it is one job because neither half is
-honest without the other.**
+**This is a COPY job. There is no code in it.**
+
+## ★ JON'S RULING, 25 August — READ BEFORE ANYTHING ELSE
+
+**`lib/engine/receipt.ts` probes a fixed ladder `[3, 4, 5, 6, 8, 10]`, so 10 is
+the largest number the receipt can ever print. Jon has ruled that it STAYS that
+way. Do not change it, do not propose changing it, do not touch that file.**
+
+**One consequence you MUST handle, and it is the reason this ruling needs care.**
+The workbench currently tells a paying customer:
+
+> *"Rewritten. The longest stretch of your original wording left is 10 words in
+> a row."*
+
+**That is stated as a fact about their own document and it is not one** — 10 is
+the ceiling of the measurement, not the answer. A capped number reported as an
+exact one is a false statement to someone who has paid.
+
+**So the number must stop being presented as precise.** *"At least 10 words"*,
+or no number at all, or some third thing you argue for. **This is wording, it
+costs nothing, and it is the one thing that makes Jon's ruling honest.**
+
+**There is also a real argument FOR the cap, and it should shape what you
+write.** Now that quotations freeze on purpose, a long surviving run is usually
+**the feature working as Jon ruled** rather than a failure — so a single
+"longest run" number measures frozen text and rewritten text with the same
+ruler and tells the customer nothing useful about either. **Copy that leans on
+that number is copy built on a broken instrument.**
 
 ---
 
@@ -95,13 +120,13 @@ being read aloud by a college student on a phone who knows nothing yet.**
 
 **Yours:**
 - `apps/web/app/(marketing)/**` — the copy
-- **`apps/web/lib/engine/receipt.ts`** — the measurement, job 1
 - `apps/web/app/(marketing)/_components/workbench/receipt-panel.tsx` and
-  `workbench.tsx` — where the number is displayed
+  `workbench.tsx` — **only the WORDS around the number, never the arithmetic**
 - `docs/session-notes/tell-the-truth-about-runs.md` (create it)
 
 **NOT yours:**
 - **`apps/web/engine/**` and `engine/**` — the Python engine. Not one file.**
+- **`apps/web/lib/engine/receipt.ts` — RULED OUT BY JON. See section 3.**
 - `apps/web/lib/server/**`, `apps/web/app/api/**`, `supabase/**`, `vercel.json`
 - **`docs/IMPLEMENTATION-BOARD.md`, which only the conductor writes.**
 
@@ -117,37 +142,7 @@ being read aloud by a college student on a phone who knows nothing yet.**
 
 ---
 
-## 3. JOB 1 — make the receipt able to count past 10
-
-**`apps/web/lib/engine/receipt.ts:42`:**
-
-```ts
-const RUN_LENGTHS = [3, 4, 5, 6, 8, 10];
-```
-
-`longestRun` is then the largest of those with any survivor, so **10 is the
-biggest number this product can ever print.** The live receipt printed "10"
-today not because 10 was true but because the ladder stops there. **A customer
-is shown a number that is structurally incapable of being the answer.**
-
-**Measure the actual longest run** rather than probing a fixed ladder. The
-delivered text and the original are both in hand; the longest common unbroken
-word sequence is a direct computation.
-
-**Two things to be careful about, and say what you decided for each:**
-- **Cost.** Do not ship something that walks the document quadratically on a
-  10,000-word input. **Measure the time on the real corpus and paste it.**
-- **The survival table.** The panel also shows the "3 in a row / 4 in a row / …"
-  percentages. Decide whether that ladder still earns its place once a true
-  longest run is displayed, and justify whichever way you go.
-
-**Then check what the number does to the panel's layout.** It has been printing
-one or two digits and may now print three. `CLAUDE.md` section 8: **render it
-and look at it, desktop and phone width.**
-
----
-
-## 4. JOB 2 — the sentence, in every place it appears
+## 3. JOB 1 — the sentence, in every place it appears
 
 **Every fix here brings a claim DOWN to what is true. None goes up.**
 
@@ -172,7 +167,7 @@ reopen it.**
 
 ---
 
-## 5. JOB 3 — the advertised word limit: 10,000 → 8,000
+## 4. JOB 2 — the advertised word limit: 10,000 → 8,000
 
 **Handed back by two sessions, measured, and not yet written.**
 
@@ -194,7 +189,7 @@ the engine is another lane's. **If the site and the engine would then disagree,
 say so loudly in your note and hand it back.** Two implementations of one number
 is a trap this project has hit three times.
 
-## 6. JOB 4 — "This can take about 10 seconds"
+## 5. JOB 3 — "This can take about 10 seconds"
 
 `workbench.tsx` tells a waiting customer the rewrite takes about 10 seconds.
 **Measured on production: 65 seconds for 478 words on deepseek, 2.9 seconds for
@@ -206,7 +201,7 @@ the model. **Write something true for a customer watching a progress line, and
 make sure it stays true if the model changes**, because the model is currently
 under review.
 
-## 7. JOB 5 — check D4's pre-flight wording still holds
+## 6. JOB 4 — check D4's pre-flight wording still holds
 
 Jon's ruling moved the frozen percentage up on any document containing
 quotations, and a great deal on dialogue-heavy fiction (0.0% to 63.9% on one
@@ -217,20 +212,17 @@ not.**
 
 ---
 
-## 8. HOW TO PROVE ANY OF THIS
+## 7. HOW TO PROVE ANY OF THIS
 
 **Show the artefact, never a measurement of it.**
 
 - Every changed sentence **in full, before and after, as plain text Jon can read
   aloud.** No summaries.
-- The receipt change: **run it on real delivered documents from
-  `engine/lab/freeze_runs/` and paste the actual longest runs it now reports**,
-  against the old ceiling of 10.
 - `tsc --noEmit` clean, and paste it.
 - **Rendered and photographed at desktop and phone width** for anything whose
   layout could move.
 
-## 9. WHAT TO HAND BACK
+## 8. WHAT TO HAND BACK
 
 `docs/session-notes/tell-the-truth-about-runs.md`, **written as you go, not at
 the end.** Every before/after in full, the receipt numbers, the screenshots, and
@@ -245,8 +237,8 @@ judged unfixable by rewording, and saying so was the right answer.
 Commit locally by explicit path as you go. **Leave nothing uncommitted.** Do not
 push.
 
-## 10. MODEL AND EFFORT
+## 9. MODEL AND EFFORT
 
 **Opus, high reasoning effort.** This is the most exposed claim on a live
-commercial site, the argument underneath it has to survive the correction, and
-one half of the job is arithmetic on a hot path.
+commercial site and the argument underneath it has to survive the correction.
+**There is no code to write; every hard part is a sentence.**
