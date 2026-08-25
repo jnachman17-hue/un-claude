@@ -59,7 +59,7 @@ const FUNNEL = [
   { event: '$pageview', label: 'Visited the site' },
   { event: 'own_text_entered', label: 'Pasted their own text', note: 'or uploaded a file' },
   { event: 'file_uploaded', label: 'Uploaded a file', merge: 'own_text_entered' },
-  { event: 'scan_completed', label: 'Got a scan result' },
+  { event: 'scan_completed', label: 'Scanned their own document', note: 'the built-in example is counted separately' },
   { event: 'paywall_shown', label: 'Hit the paywall' },
   { event: 'checkout_started', label: 'Pressed a pack button' },
   { event: 'purchase_completed', label: 'Came back having paid', broken: true },
@@ -78,6 +78,10 @@ async function hogql(env, projectId, query) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
+    // HogQL runs a real query over the event store. Fifteen seconds was not
+    // enough once four of them were being asked, and the panel reported PostHog
+    // as broken when it was merely working.
+    timeout: 30_000,
   });
 
   if (!response.ok) {
@@ -111,26 +115,47 @@ function scope(env) {
   return clause;
 }
 
-/** Find the project id, so Jon only has to create one key and paste nothing else. */
+/**
+ * Find the project, so Jon only has to create a key and paste nothing else.
+ *
+ * ★ IT ASKS FOR `@current` AND NOT FOR A LIST, and that distinction is the whole
+ * of a bug found on 25 August 2026.
+ *
+ * A personal API key can be SCOPED TO ONE PROJECT, which is the safer thing to
+ * do and what Jon did. Such a key cannot list projects at all — `/api/projects/`
+ * answers:
+ *
+ *     403 "API keys with scoped projects are only supported on project-based
+ *          endpoints."
+ *
+ * That is a permission error, so the obvious reading is "the key needs another
+ * scope", and adding scopes would never have fixed it. The key was correct; the
+ * question was wrong. `/api/projects/@current/` IS a project-based endpoint, so
+ * it answers for a scoped key, and it also answers for an unscoped one — which
+ * makes it strictly better than the listing for both.
+ */
 async function findProject(env) {
   if (env.POSTHOG_PROJECT_ID) return { id: env.POSTHOG_PROJECT_ID, discovered: false };
 
-  const response = await request(`${apiHost(env)}/api/projects/`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${env.POSTHOG_PERSONAL_API_KEY}` },
-  });
+  const headers = { Authorization: `Bearer ${env.POSTHOG_PERSONAL_API_KEY}` };
+  const current = await request(`${apiHost(env)}/api/projects/@current/`, { method: 'GET', headers });
 
-  if (!response.ok) {
-    throw new Error(
-      `could not list projects (HTTP ${response.status}). Either add the "Project" read scope to the key, or set POSTHOG_PROJECT_ID`,
-    );
+  if (current.ok && current.body?.id) {
+    return { id: current.body.id, discovered: true, name: current.body.name };
   }
 
-  const first = response.body?.results?.[0];
+  // A key with no project scoping at all may still prefer the listing. Kept as
+  // a fallback so both kinds of key work without Jon having to know which he made.
+  const list = await request(`${apiHost(env)}/api/projects/`, { method: 'GET', headers });
+  const first = list.ok ? list.body?.results?.[0] : null;
 
-  if (!first) throw new Error('the key is valid but can see no projects');
+  if (first) return { id: first.id, discovered: true, name: first.name };
 
-  return { id: first.id, discovered: true, name: first.name };
+  const detail = current.body?.detail || list.body?.detail || `HTTP ${current.status}`;
+
+  throw new Error(
+    `the project could not be identified (${String(detail).slice(0, 120)}). Set POSTHOG_PROJECT_ID to the number in your PostHog URL`,
+  );
 }
 
 export async function readPostHog(env) {
@@ -159,30 +184,57 @@ export async function readPostHog(env) {
   const where = scope(env);
 
   try {
-    // One query per question. Kept separate so a single failing query cannot
-    // take the whole panel with it, and so each is readable on its own.
-    const steps = await hogql(
-      env,
-      project.id,
-      `SELECT event, count() AS total, count(DISTINCT distinct_id) AS people
-       FROM events WHERE ${where} GROUP BY event ORDER BY total DESC`,
-    );
+    /*
+     * All four questions at once. Asked one after another they took long enough
+     * that the whole panel timed out and reported PostHog as broken; asked
+     * together the panel costs about as long as its slowest single query.
+     * They are still separate queries so each stays readable on its own.
+     */
+    const [steps, pages, checkoutFailures, scans] = await Promise.all([
+      hogql(
+        env,
+        project.id,
+        `SELECT event, count() AS total, count(DISTINCT distinct_id) AS people
+         FROM events WHERE ${where} GROUP BY event ORDER BY total DESC`,
+      ),
+      hogql(
+        env,
+        project.id,
+        `SELECT properties.$pathname AS path, count() AS views
+         FROM events WHERE ${where} AND event = '$pageview'
+         GROUP BY path ORDER BY views DESC LIMIT 12`,
+      ),
+      hogql(
+        env,
+        project.id,
+        `SELECT properties.reason AS reason, count() AS total
+         FROM events WHERE ${where} AND event = 'checkout_failed'
+         GROUP BY reason ORDER BY total DESC LIMIT 10`,
+      ),
+      /*
+       * ★ SCANS ARE SPLIT BY WHETHER THEY WERE THE DEMO, AND THE FUNNEL BREAKS
+       * WITHOUT THIS. The workbench loads with example text and scans it
+       * automatically, so `scan_completed` fires for practically every visitor
+       * whether or not they did anything. Counted whole it read: 487 visited,
+       * 14 pasted their own text, 119 got a scan result — a funnel that grows in
+       * the middle, which looks like a broken chart and is really the demo being
+       * counted as a customer action. `is_sample` already tells them apart.
+       */
+      hogql(
+        env,
+        project.id,
+        `SELECT properties.is_sample AS sample, count() AS total, count(DISTINCT distinct_id) AS people
+         FROM events WHERE ${where} AND event = 'scan_completed'
+         GROUP BY sample`,
+      ),
+    ]);
 
-    const pages = await hogql(
-      env,
-      project.id,
-      `SELECT properties.$pathname AS path, count() AS views
-       FROM events WHERE ${where} AND event = '$pageview'
-       GROUP BY path ORDER BY views DESC LIMIT 12`,
-    );
-
-    const checkoutFailures = await hogql(
-      env,
-      project.id,
-      `SELECT properties.reason AS reason, count() AS total
-       FROM events WHERE ${where} AND event = 'checkout_failed'
-       GROUP BY reason ORDER BY total DESC LIMIT 10`,
-    );
+    const sampleRow = scans.find(([x]) => x === true || x === 'true');
+    const ownRow = scans.find(([x]) => x === false || x === 'false');
+    const scanSplit = {
+      own: { total: ownRow?.[1] || 0, people: ownRow?.[2] || 0 },
+      sample: { total: sampleRow?.[1] || 0, people: sampleRow?.[2] || 0 },
+    };
 
     const counts = new Map(steps.map(([event, total, people]) => [event, { total, people }]));
 
@@ -193,12 +245,15 @@ export async function readPostHog(env) {
         0,
       );
 
+      // The scan step counts scans of the visitor's OWN text. See scanSplit above.
+      const isScan = step.event === 'scan_completed';
+
       return {
         label: step.label,
         note: step.note,
         event: step.event,
-        total: own.total + merged,
-        people: own.people,
+        total: isScan ? scanSplit.own.total : own.total + merged,
+        people: isScan ? scanSplit.own.people : own.people,
         broken: Boolean(step.broken),
       };
     });
@@ -213,6 +268,7 @@ export async function readPostHog(env) {
       excludedIps: (env.POSTHOG_EXCLUDE_IPS || '').split(',').map((s) => s.trim()).filter(Boolean).length,
       windowDays: 30,
       funnel,
+      scanSplit,
       pages: pages.map(([path, views]) => ({ path: path || '(none)', views })),
       failures: FAILURES.map((event) => ({ event, total: counts.get(event)?.total || 0 })),
       checkoutFailures: checkoutFailures.map(([reason, total]) => ({ reason: reason || 'not recorded', total })),

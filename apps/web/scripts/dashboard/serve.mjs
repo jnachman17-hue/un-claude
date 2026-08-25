@@ -53,8 +53,24 @@ import { buildView } from './view.mjs';
 const args = process.argv.slice(2);
 const OPEN = !args.includes('--no-open');
 
-const env = loadEnv();
-const PORT = Number(env.UC_DASHBOARD_PORT || 4477);
+/*
+ * ★ THE ENVIRONMENT IS RE-READ ON EVERY REQUEST, NOT ONCE AT STARTUP.
+ *
+ * This was a real bug, found by Jon on 25 August 2026. He added his live Stripe
+ * key and his PostHog key to `.env.local` exactly as instructed, refreshed, and
+ * the page still told him the key was a test key — because the server had read
+ * the file once when it started and never looked again. Both keys were correct
+ * the whole time.
+ *
+ * It is a nasty failure because it looks like the instructions are wrong rather
+ * than the program: the file plainly contains the right key, and the page
+ * plainly says it does not. Nothing about it suggests "restart the server".
+ *
+ * So `buildHtml` loads the environment itself. Adding a key while the dashboard
+ * is running now works on the next refresh, which is what the documentation
+ * always said. The cost is reading two small files per page load.
+ */
+const PORT = Number(loadEnv().UC_DASHBOARD_PORT || 4477);
 
 /** New every start, so a link copied yesterday is dead today. */
 const TOKEN = crypto.randomBytes(16).toString('hex');
@@ -63,6 +79,8 @@ const TOKEN = crypto.randomBytes(16).toString('hex');
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`, `[::1]:${PORT}`]);
 
 async function buildHtml() {
+  // Fresh every time. See the note above the PORT constant.
+  const env = loadEnv();
   const { key, source } = stripeKey(env);
   const mode = stripeMode(key);
 
@@ -76,7 +94,9 @@ async function buildHtml() {
   const view = buildView({ env, mode, keySource: source, stripe, gateway, database, posthog });
   const html = renderPage({ ...view, live: true, token: TOKEN });
 
-  return { html, view, stripe, gateway, database, posthog, mode };
+  // `env` goes back with it so the leak check scans for the keys THIS build
+  // actually used, rather than a set captured when the server started.
+  return { html, view, env, mode };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -101,7 +121,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const started = Date.now();
-    const { html, view } = await buildHtml();
+    const { html, view, env } = await buildHtml();
 
     // The same guard the written file gets. A response that would carry a key
     // is never sent; the browser gets an error page instead.

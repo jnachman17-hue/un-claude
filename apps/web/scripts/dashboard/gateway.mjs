@@ -66,22 +66,28 @@ export async function readGateway(env) {
   const monthlyLimit = Number(env.AI_GATEWAY_MONTHLY_LIMIT || DEFAULT_MONTHLY_LIMIT);
   const headers = { Authorization: `Bearer ${key}` };
 
-  const credits = await request(CREDITS, { method: 'GET', headers });
-
-  // The probe runs whether or not the credits call worked. They fail
-  // independently and the probe is the more important of the two.
-  const probe = await request(COMPLETIONS, {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: 'ok' }],
-      max_tokens: 16,
+  /*
+   * Together, not one after the other. The probe is a real model generation and
+   * dominates the wait, so asking for the credits alongside it costs nothing —
+   * it took the whole page from 40 seconds to about 6. They also fail
+   * independently: the probe still runs if the credits call is down, and it is
+   * the more important of the two.
+   */
+  const [credits, probe] = await Promise.all([
+    request(CREDITS, { method: 'GET', headers }),
+    request(COMPLETIONS, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: 'ok' }],
+        max_tokens: 16,
+      }),
+      // A real generation, not a metadata lookup. Deepseek can take a while when
+      // it is cold, and a timeout here would wrongly report the product as down.
+      timeout: 25_000,
     }),
-    // A real generation, not a metadata lookup. Deepseek can take a while when
-    // it is cold, and a timeout here would wrongly report the product as down.
-    timeout: 40_000,
-  });
+  ]);
 
   let serving;
 

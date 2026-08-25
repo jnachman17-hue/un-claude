@@ -68,6 +68,15 @@ by this dashboard and by nothing else.
 
 ### 3. Create the PostHog key (5 minutes)
 
+**★ If you scope the key to a single project — which you should — make sure you
+are on a version of this dashboard from 25 August 2026 or later.** An earlier
+version tried to LIST your projects to find the right one, and a project-scoped
+key is not allowed to do that. PostHog answers `403 "API keys with scoped
+projects are only supported on project-based endpoints"`, which reads like a
+missing permission and is not: no amount of extra scopes fixes it. It now asks
+for `@current` instead, which works for both kinds of key.
+
+
 **This is the only way to see free scans.** A scan costs no credit, so it writes
 nothing to our database — measured 25 August 2026, all 78 job rows are paid
 clean-ups and there is no scan row anywhere. PostHog is the only place a scan is
@@ -292,20 +301,17 @@ read as cleaner than it is.
 **The honest list, per `CLAUDE.md` section 4. A step I skipped is a step that
 failed.**
 
-**1. The Behaviour panel has never returned real data.** There is no PostHog key
-on this machine, so the only paths I could exercise were the failure ones — no
-key, a rejected key, and a key that cannot list projects. All three degrade
-correctly and are shown on the page with the fix. **The success path — the query
-running and its answer being drawn as a funnel — is written but unverified.**
-The first time you run it with a real key, it may need a correction. If it does,
-the panel will say what went wrong rather than breaking the page.
+**1. ~~The Behaviour panel has never returned real data.~~ NOW PROVEN,
+25 August 2026.** Jon's key made it real: 487 visits, 78 scans of a visitor's own
+document by 53 people, 41 demo scans, 12 paywalls, 2 scan failures, 5 clean-up
+failures. It needed two fixes to get there (project discovery and query
+timeouts), both recorded above.
 
-**2. The Payments panel has never been run against a live Stripe key.** Only the
-test key exists on this machine, and I will not put a live key anywhere myself.
-The code path is identical for both — same requests, same arithmetic, only the
-key differs — so I have no specific reason to doubt it. But I did not run it, so
-I am not claiming it as verified. **The first thing to check after you add the
-key is that the "Kept, all time" figure matches your Stripe dashboard.**
+**2. ~~The Payments panel has never been run against a live Stripe key.~~ NOW
+PROVEN, 25 August 2026.** Jon added his live key. It reads: $9.98 charged, one
+$4.99 refund, **$4.99 kept**, 2 payments succeeded, 2 declined, 0 disputes.
+**That $4.99 matches the database's independent figure exactly**, which is the
+cross-check worth having — two different systems, same answer.
 
 **3. "Jon's first real sale must appear" — it does, but not from Stripe.** The
 brief asked for the real sale to be visible. With the key on this machine it
@@ -327,6 +333,49 @@ calculates, which is why it is the line to trust.
 from an earlier day to subtract from, and the first readings were taken today.
 The arithmetic is simple and the "still measuring" state is what you will see
 until tomorrow. I could not test the populated state without waiting a day.
+
+**6. The money and account events have never fired once, and I could not
+determine whether that is a bug.** In 30 days, unfiltered, there are ZERO
+`checkout_started`, `purchase_completed`, `checkout_failed`,
+`checkout_account_required`, `purchase_cancelled` and `paywall_signup_clicked`
+events. Two things are true and they point different ways:
+
+- **`signUpStarted` and `signInStarted` are never called from anywhere in the
+  site's code.** Grep-verified. Those two will never fire until somebody wires
+  them up, despite 24 views of `/auth/sign-up` in 30 days. **That one is a
+  definite gap.**
+- **The checkout and purchase events were only wired on 24 August at 18:51 UTC**
+  (commit `96c02d7`), and **both real purchases predate it** — 22 August, and
+  24 August at 15:06. So zero is exactly what should be expected, and is not
+  evidence of a bug. Since it deployed there have been 13 `/pricing` views and no
+  pack-button press, which is plausible for a page people browse and leave.
+
+**Watch `checkout_started` after the next sale.** If a purchase completes and it
+is still zero, it is broken. All of this is in the website's own code, which this
+session does not own.
+
+---
+
+## Three bugs Jon's own keys exposed, 25 August 2026
+
+**All three were mine, and none would have been found without real keys.**
+
+**1. The server read the environment once, at startup.** Jon added both keys to
+`.env.local` exactly as instructed, refreshed, and the page still said his key
+was a test key. Both keys were correct the whole time — the running server had
+never looked at the file again. It is a nasty failure because everything points
+at the instructions rather than the program. `serve.mjs` now re-reads the
+environment on every request, so adding a key while it is running works on the
+next refresh, exactly as the documentation always claimed.
+
+**2. Project discovery could not work with a project-scoped key.** See the
+warning in step 3 above.
+
+**3. Four PostHog queries in a row timed out the panel.** They were being asked
+one after another against a 15-second limit; the panel reported PostHog as
+broken when it was merely slow. They now run together, with 30 seconds. The
+gateway's two calls were also serialised behind a model generation. **A full
+refresh went from 40.6 seconds to 3.4.**
 
 ---
 

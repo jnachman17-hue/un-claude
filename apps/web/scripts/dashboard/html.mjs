@@ -530,18 +530,35 @@ function posthogPanel(p) {
 
   const top = p.funnel[0]?.total || 0;
 
+  /*
+   * ★ A STEP SMALLER THAN A LATER ONE IS MARKED, NOT QUIETLY DRAWN.
+   *
+   * A funnel that grows in the middle looks like a broken chart, and the reader's
+   * first instinct is to distrust the whole panel. It usually means one step is
+   * recorded less often than the traffic reaching it — measured 25 August 2026,
+   * "pasted their own text" showed 14 while 53 different people went on to scan
+   * a document that was not the built-in example.
+   *
+   * The dashboard cannot fix that (the event lives in the website's code), and it
+   * must not hide it either. So the step is labelled as a floor, which tells Jon
+   * the true number is higher and stops him reading it as a collapse in interest.
+   */
   const funnel = p.funnel
-    .map((step) => {
+    .map((step, index) => {
       const width = top ? Math.max(1.5, (step.total / top) * 100) : 1.5;
+      const laterMax = Math.max(0, ...p.funnel.slice(index + 1).map((s) => s.total));
+      const undercounted = step.total < laterMax;
 
       return `<div class="funnel-step">
         <div class="funnel-label">${e(step.label)}${step.note ? `<span class="hint"> ${e(step.note)}</span>` : ''}${
           step.broken ? '<span class="tag warn">cannot be linked to the step above</span>' : ''
-        }</div>
+        }${undercounted ? '<span class="tag warn">at least this many — under-recorded</span>' : ''}</div>
         <div class="funnel-bar"><span style="width:${width.toFixed(1)}%"></span><b>${num(step.total)}</b></div>
       </div>`;
     })
     .join('');
+
+  const anyUndercounted = p.funnel.some((s, i) => s.total < Math.max(0, ...p.funnel.slice(i + 1).map((x) => x.total)));
 
   const pages = p.pages.length
     ? `<table class="table"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody>${p.pages
@@ -575,11 +592,35 @@ function posthogPanel(p) {
      leaves out this laptop and every preview copy of the site.
      ${
        p.excludedIps
-         ? `${p.excludedIps} address${p.excludedIps === 1 ? '' : 'es'} you named are also excluded.`
+         ? `${p.excludedIps} address${p.excludedIps === 1 ? '' : 'es'} you named ${p.excludedIps === 1 ? 'is' : 'are'} also excluded.`
          : `<strong>Your own visits to the live site are still counted</strong> — PostHog's own "internal user" setting does not apply to this page. To leave yourself out, see the session note.`
      }</p>
      <h3>The journey</h3>
      <div class="funnel">${funnel}</div>
+     ${
+       anyUndercounted
+         ? `<p class="footnote warnish"><strong>One step above is smaller than a step below it.</strong>
+            That is not a mistake in the chart — it means the website records that action less often than
+            people actually do it, so the real number is higher. Read it as a floor. Fixing it means
+            changing where the event fires on the site.</p>`
+         : ''
+     }
+     ${
+       p.scanSplit
+         ? rows([
+             [
+               'Scans of their own document',
+               `<strong>${num(p.scanSplit.own.total)}</strong> <span class="hint-inline">by ${num(p.scanSplit.own.people)} visitors</span>`,
+               'somebody actually trying it on their own work',
+             ],
+             [
+               'Scans of the built-in example',
+               `${num(p.scanSplit.sample.total)} <span class="hint-inline">by ${num(p.scanSplit.sample.people)} visitors</span>`,
+               'the demo runs by itself when the page loads, so this is closer to "looked at it"',
+             ],
+           ])
+         : ''
+     }
      <h3>Things going wrong</h3>
      ${rows(p.failures.map((f) => [failureNames[f.event] || f.event, num(f.total)]))}
      ${
