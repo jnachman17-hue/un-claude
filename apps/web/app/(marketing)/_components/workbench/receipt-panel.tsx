@@ -5,6 +5,34 @@ import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
 import type { Receipt } from '~/lib/engine/receipt';
 
 /**
+ * THE LADDER HAS A CEILING, AND THE NUMBER MUST SAY SO.
+ *
+ * `lib/engine/receipt.ts` probes run lengths [3, 4, 5, 6, 8, 10] and reports
+ * the longest one with any survivor, so TEN IS THE LARGEST NUMBER IT CAN EVER
+ * PRINT. Jon's ruling, 25 August 2026: the ladder stays exactly as it is.
+ *
+ * Measured against the shipping file rather than reasoned about. A 57 word run,
+ * a 352 word run and a 388 word run all come back as `10`; a 6 word run comes
+ * back as `6`. So the reading is exact right up to the top of the scale, and at
+ * the top of the scale it is a floor.
+ *
+ * Printing a bare "10" to somebody who has paid states the ceiling of the
+ * measurement as a fact about their own document, and it is not one. The "+"
+ * is the whole fix and it costs nothing.
+ *
+ * The ceiling is READ OFF THE RECEIPT rather than written down again here. Two
+ * copies of one number is a trap this project has been caught by three times;
+ * if the ladder ever grows, this follows it.
+ */
+export function longestRunLabel(receipt: Receipt): string {
+  const ceiling = receipt.runs.at(-1)?.length ?? 0;
+
+  return receipt.longestRun >= ceiling && ceiling > 0
+    ? `${receipt.longestRun}+`
+    : String(receipt.longestRun);
+}
+
+/**
  * What the rewrite did, shown as measurement.
  *
  * REBUILT 20 August 2026 to Jon's review of the first version, which he could
@@ -73,12 +101,25 @@ export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
           label={'of your wording'}
           lit
         />
+        {/*
+          NOT LIT ANY MORE, and that is the point of this change rather than a
+          styling preference.
+
+          This tile and Replaced were the two headline figures. Replaced is the
+          honest one: run against the shipping receipt, a document whose only
+          survivor is a 57 word frozen quotation reads 94.5%, and one that came
+          back with a 388 word chunk unrewritten reads 61.3%. It separates the
+          two cases cleanly.
+
+          This tile cannot separate them at all — 57, 352 and 388 all print
+          "10". So it keeps its place, because below ten it is exact and
+          useful, and it stops carrying the weight of a headline.
+        */}
         <Figure
           name={'Longest run'}
-          value={receipt.longestRun > 0 ? String(receipt.longestRun) : '0'}
+          value={longestRunLabel(receipt)}
           unit={receipt.longestRun > 0 ? 'words' : undefined}
-          label={'of your original left in a row'}
-          lit
+          label={'of your wording, in a row'}
         />
         <Figure
           name={'Length'}
@@ -105,11 +146,22 @@ export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
         {survivingRuns.length > 0 ? (
           <>
             <p className={'text-foreground mb-0.5 text-[12.5px] font-medium'}>
-              Pieces of your original wording still in a row
+              Runs of your original wording still in a row
             </p>
+            {/*
+              "This is all that is left of them" came off. It told a customer
+              the chart was the whole story of what survived, and since the
+              quotation freeze shipped it is not: some of what this chart
+              counts is text the engine protected on purpose and never tried
+              to rewrite. A number that measures the frozen text and the
+              rewritten text with one ruler has to say so, or the reader
+              draws the wrong conclusion from a bar that is working correctly.
+            */}
             <p className={'text-muted-foreground mb-2 text-[11.5px] leading-snug'}>
-              The mark can only travel in unbroken stretches of the original
-              words. This is all that is left of them.
+              The mark can only travel in unbroken runs of your wording, so
+              those are what the rewrite breaks up. Some runs survive on
+              purpose: quotations and references are protected, and come back
+              exactly as you sent them.
             </p>
 
             <ul className={'space-y-1.5'}>
@@ -146,8 +198,8 @@ export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
               strokeWidth={2.6}
               aria-hidden
             />
-            No stretch of even three original words survived. The sequences
-            the mark travels in are broken up completely.
+            No run of even three of your original words survived. The runs the
+            mark travels in are broken up completely.
           </p>
         )}
       </div>

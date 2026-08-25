@@ -1179,8 +1179,22 @@ export function Workbench() {
             ? 'A Word document is cleaned of its metadata and its hidden characters. Its wording is not rewritten, so a statistical mark in the writing itself would stay. Paste the text instead to have it rewritten.'
             : 'An image carries no writing, so there are no word choices for this mark to hide in.'
           : done && receipt
-            ? `Rewritten. The longest stretch of your original wording left is ${receipt.longestRun} words in a row. The mark rides only on unbroken stretches of your original words.`
-            : 'Presumed present, because Claude marks what it writes and no tool can show the mark in place. It is not hidden in your words. It is your words: the exact sequence they were chosen in. Ask another AI to reword and whatever it leaves alone still carries the mark, so we rebuild every sentence. Three words in a row is the most that survives, and your facts and length are checked against your original.',
+            ? // THE NUMBER CAME OUT OF THIS SENTENCE, and it is the one change
+              // in this file that matters. It read "the longest stretch of your
+              // original wording left is 10 words in a row" — stated as a fact
+              // about a document somebody had paid to have rewritten.
+              //
+              // It is not a fact. The receipt's ladder stops at 10, so 10 is
+              // the top of the scale rather than the answer, and runs of 388
+              // words have been measured behind that same "10".
+              //
+              // The receipt panel sits directly below this line and now prints
+              // "10+" with the protected text explained beneath it. Saying the
+              // number twice would put the weakest measurement the product has
+              // in front of the customer twice, so this line says what happened
+              // and points at the evidence instead of restating it.
+              'Rewritten. The receipt below shows how much of your wording was replaced, and the longest run of it still standing. Quotations and references are protected on purpose, so those come back exactly as you sent them.'
+            : 'Presumed present, because Claude marks what it writes and no tool can show the mark in place. It is not hidden in your words. It is your words: the exact sequence they were chosen in. Ask another AI to reword and whatever it leaves alone still carries the mark, so we rebuild every sentence we rewrite, working to a three-word limit on what carries over. Quotations and references are protected on purpose and come back as you sent them. Your facts and length are checked against your original.',
       },
     ] satisfies ChecklistRow[]
   ).map((row) =>

@@ -29,8 +29,8 @@ const RULES = [
     body: 'Rewriting Claude with Claude re-applies the mark as it writes. The rewrite runs on a different model, by design.',
   },
   {
-    title: 'Break every sequence',
-    body: 'The mark survives only where your words survive in order. Hard ceiling: no more than three in a row come through.',
+    title: 'Break the runs',
+    body: 'The mark survives only where your words survive in order. The engine works to a three-word limit wherever it rewrites, and protects your quotations and references rather than rewording them.',
   },
   {
     title: 'Guard every fact',
@@ -44,9 +44,17 @@ const RULES = [
 
 const RECEIPT = [
   { figure: 'Wording replaced', detail: 'the share of your text rebuilt' },
+  /*
+   * "The mark needs longer" came off. It asserted that whatever survived was
+   * too short to carry the mark, which is exactly the claim the measurement
+   * killed: runs of up to 388 words have been observed in a delivered
+   * document, and the receipt's own ladder stops at 10 so it cannot even show
+   * them. The line now says what the figure is and does not tell the reader
+   * what to conclude from it.
+   */
   {
-    figure: 'Longest surviving sequence',
-    detail: 'the most of your words left in a row. The mark needs longer',
+    figure: 'Longest surviving run',
+    detail: 'the most of your wording left in a row, protected text included',
   },
   {
     figure: 'Figures carried through',
@@ -153,8 +161,8 @@ export function MoatSection() {
               'text-muted-foreground mt-5 max-w-[62ch] text-[13.5px] leading-[1.6]'
             }
           >
-            On our test set: over 90% of three-word sequences broken, zero
-            figures lost. Measured, not estimated.
+            Every figure there is measured on your own document, not averaged
+            from ours.
           </p>
         </div>
 

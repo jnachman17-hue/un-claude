@@ -83,9 +83,22 @@ const MAP = [
  * section 3 and the measured figures already ratified for the landing FAQ.
  */
 const ENGINE_RULES = [
+  /*
+   * WAS "Three words in a row, maximum", and it was the site's most exposed
+   * false claim: runs of up to 388 words have been measured in a delivered
+   * document. Three is the limit the engine WORKS TO — ENGINE.md section 3
+   * rule 3, "no runs of more than three consecutive words, SUBJECT TO RULES 1
+   * AND 2" — and holding your facts and your length both outrank it. So it is
+   * a rule, stated as a rule, and never a promise about a reader's document.
+   *
+   * The "over 90%" figure came off with it. It is a test-set average that
+   * predates the quotation freeze, and the only measurement taken since the
+   * freeze shipped contradicts it on the model the engine lane recommends.
+   * See docs/session-notes/tell-the-truth-about-runs.md section 3.
+   */
   {
-    head: 'Three words in a row, maximum',
-    body: 'The signature needs unbroken stretches of the original words, so the engine holds what survives to three in a row. Across our test set it breaks over 90% of three word sequences.',
+    head: 'Break the runs',
+    body: 'The signature travels only in unbroken runs of your original wording, so swapping a word here and there leaves it intact. The engine rebuilds the wording wherever it rewrites, working to a three-word limit on what carries over. Quotations and references are protected on purpose and come back exactly as you sent them.',
   },
   {
     head: 'Never rewritten by Claude',
