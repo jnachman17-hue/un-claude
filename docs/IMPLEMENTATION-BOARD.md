@@ -6,6 +6,38 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★ 24 AUGUST, 18:20 — THE CONDUCTOR MADE THE COMMIT MISTAKE IT WARNED ABOUT
+
+**Commit `fa7f59a` ("Brief: make the homepage visible to Google") also contains
+the freeze session's `04` entry 143 — Jon's every-quotation ruling.** Nothing
+was lost or overwritten; it is committed and intact under the wrong message.
+
+**Not rewriting history.** A freeze session is live in this working tree, and
+rewriting a shared branch is how work actually gets destroyed. E-16's precedent
+and reasoning, and the failure is cosmetic.
+
+**Why it happened, and the handoff predicted it exactly.** I ran
+`git diff --cached --name-only`. It printed `docs/04-decision-log.md`. **I had
+chained it to `git add` and `git commit` with `&&` in one shell command, so the
+output scrolled past and the commit went ahead anyway.** The handoff's words:
+*"Run `git diff --cached --name-only` and READ IT AS A SEPARATE STEP BEFORE
+committing — running the check in the same command as the commit does not stop
+the commit."*
+
+**THE PROCEDURE, which is now three separate tool calls and never one:**
+1. `git add <explicit paths>` — nothing else
+2. `git diff --cached --name-only` **alone, in its own call, and read it**
+3. `git commit` **only after step 2 came back clean**
+
+**Also: `git status --porcelain` before staging.** Another session's file can be
+staged before you start, which is what happened here.
+
+**Good news buried in the same check: the freeze session is running the ladder
+and `ladder_*_both_deepseek-v3.2_out.txt` files now exist for every rung.
+Deepseek is being measured across the full ladder for the first time.**
+
+---
+
 # ★★★ 24 AUGUST, 18:00 — SEO: THE HOMEPAGE IS INVISIBLE TO GOOGLE
 
 **Jon reports un-claude.com now ranks for the brand name "un-claude", but the
