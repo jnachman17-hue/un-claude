@@ -333,6 +333,27 @@ export function Workbench() {
     return () => window.clearInterval(timer);
   }, [phase]);
 
+  /*
+   * THE SWOOSH IS DECLARED OVER AFTER 3 SECONDS WHATEVER HAPPENS.
+   *
+   * Since six-ui-fixes fix 4 the placeholder is hidden while `swooshDone` is
+   * false, so that flag now controls whether the box explains itself at all,
+   * and a flag that only ever flips on an `animationend` event is not safe
+   * enough to carry that. The event does not fire if the tab is in the
+   * background when the box mounts, and it does not fire if the animation is
+   * interrupted by a re-render mid-run.
+   *
+   * The swoosh itself is 2.4s (`--animate-swoosh` in theme.css). Three seconds
+   * is that plus a margin, so in the ordinary case `onAnimationEnd` has already
+   * won and this changes nothing. It exists so the worst case is a placeholder
+   * that arrives late rather than one that never arrives.
+   */
+  useEffect(() => {
+    if (swooshDone) return;
+    const timer = window.setTimeout(() => setSwooshDone(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [swooshDone]);
+
   useEffect(() => {
     void refreshCredits();
     setOverrides(devOverrides());
@@ -1362,7 +1383,33 @@ export function Workbench() {
               placeholder={
                 'Paste your text here, or drop a file anywhere in this box.'
               }
-              className={
+              /*
+               * THE PLACEHOLDER STAYS OUT OF THE WAY UNTIL THE SWOOSH HAS
+               * PASSED. Jon's instruction, 25 August 2026, six-ui-fixes fix 4:
+               * the orange panel sweeps the box carrying its own sentence, and
+               * the placeholder was legible underneath it the whole way across,
+               * so two sentences competed in one rectangle.
+               *
+               * DONE IN CSS, NOT BY WITHHOLDING THE ATTRIBUTE, and the reason
+               * is the reduced-motion trap the brief names. The swoosh overlay
+               * carries `motion-reduce:hidden`, so for a visitor who asked for
+               * less motion it never renders, its animation never runs, and
+               * `onAnimationEnd` never fires: `swooshDone` would stay false for
+               * the whole visit. Gating the placeholder on that state alone
+               * would have deleted it permanently for exactly the people least
+               * able to guess what the box wants. The `motion-reduce` variant
+               * below hands it straight back, from the first paint.
+               *
+               * `focus:` is the second guard the brief asks for: a visitor who
+               * clicks into the box while the swoosh is still travelling gets
+               * the normal box, placeholder and all, rather than an empty
+               * rectangle. Typing hides it anyway, by the browser's own rules.
+               *
+               * The text is never removed from the accessibility tree by any of
+               * this. It is a colour change, so a screen reader still reads the
+               * box's placeholder, and `aria-label` above is the real name.
+               */
+              className={[
                 /*
                  * 16PX ON PHONES, ONLY ON PHONES. iOS Safari auto-zooms the
                  * page on focus of any input/textarea whose computed
@@ -1373,8 +1420,13 @@ export function Workbench() {
                  * (mobile-first in Tailwind) and `sm:text-[14.5px]` restores
                  * the original desktop size untouched.
                  */
-                'text-foreground placeholder:text-muted-foreground/60 max-h-[280px] min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[16px] leading-[1.75] tracking-[-0.005em] outline-none sm:text-[14.5px]'
-              }
+                'text-foreground placeholder:text-muted-foreground/60 max-h-[280px] min-h-[184px] w-full resize-none bg-transparent px-4 py-3.5 text-[16px] leading-[1.75] tracking-[-0.005em] outline-none sm:text-[14.5px]',
+                // Order matters: these come after the base placeholder colour
+                // above, so they win while the swoosh is crossing the box.
+                !swooshDone
+                  ? 'placeholder:text-transparent focus:placeholder:text-muted-foreground/60 motion-reduce:placeholder:text-muted-foreground/60'
+                  : '',
+              ].join(' ')}
             />
           ) : phase === 'locked' ? (
             <Paywall
