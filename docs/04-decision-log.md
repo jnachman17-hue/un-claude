@@ -5512,6 +5512,31 @@ the live cue pattern and fails if any verb on it has no dialogue line proving
 it does not freeze a novel. Adding a cue verb without that proof now fails the
 suite.
 
+**Amended the same day, when the platform research landed.** Ruling 3 above said
+to post from a personal account, and the reason given was partly wrong. **TikTok
+has no academic integrity policy at all** — all 38 advertising policy articles
+were enumerated and the nearest clause is "Document falsification, forgery, or
+counterfeiting". Competitors are not using euphemism either: `@phrasly`'s bio
+reads "bypass AI detectors" and live Meta ad copy reads "Bypass tools like
+Turnitin and Originality effortlessly".
+
+**The real exposure is press, not policy.** TikTok removed videos and banned
+accounts only after a Digital Services Act study named them, and **The New York
+Times, 18 June 2026, wrote up this exact category** — naming a creator and a
+brand, and singling out **a video that was not labelled an ad**. **The ruling
+stands and gains a second half: post from a personal account, and disclose
+properly when it is paid.** The thing that gets written up is the undisclosed ad,
+not the product.
+
+**A channel finding worth more than the video.** Every brand account in this
+category is small, between 1,600 and 8,200 followers. **Growth is bought through
+affiliates at 20 to 25% recurring, for life.** StealthGPT publishes 50 million
+affiliate views and $100,000 paid out. **No affiliate programme in the category
+restricts academic use**, including Undetectable AI's, whose own ethics page lists
+"Cheating in school" as unacceptable. **That gap between the ethics page and the
+acquisition channel is what a reporter writes about**, and it is avoidable here
+because `04` entry 141's whole point is that this project does not run one.
+
 ### 143. Every quotation freezes. There is no test of whose words they are. Supersedes 137's D2 implementation and 142.
 
 **Jon's ruling, 24 August 2026, in his own words:** *"I don't want to try and
@@ -5585,3 +5610,120 @@ quotation into fourteen different surroundings — every cue either deleted rule
 ever keyed on — and requires the identical answer from all fourteen. Any future
 attempt to read the context and decide fails the suite, whatever mechanism it
 uses.
+
+### 144. [T1] The three-word ceiling is retired as a promise and kept as a rule
+
+**25 August 2026, session brief `tell-the-truth-about-runs.md`.**
+
+**The site told every visitor that no more than three of their own words survive
+in a row. The measured figure on a delivered document is up to 388.** The freeze
+alone guarantees runs of 55 to 57 words, so the claim was not merely optimistic,
+it was out by two orders of magnitude and would have been out even if nothing
+had ever gone wrong.
+
+**The fix is not deletion, because the sentence carries the whole anti-detection
+argument.** The mark rides on unbroken runs of the model's own word choices, so
+"we break the runs" is the reason a rewrite is the answer at all. **What changed
+is its grammar: three is now stated as the limit the engine WORKS TO, not as a
+guarantee about the reader's document.** That is what `ENGINE.md` section 3 rule
+3 always said — *"no runs of more than three consecutive words, subject to rules
+1 and 2"* — with facts and length both outranking it. **The site was the only
+place in the project where it had been written as a promise.**
+
+**Six places, one grammar, and "runs" replaces "sequences" throughout** per
+entry 76, where Jon ruled *"three word sequences no one knows what that means."*
+Three of the six were still using the phrase he rejected.
+
+**The freeze is named on the site for the first time.** Before this, the words
+"quotation" and "reference" appeared nowhere a visitor could read them, while
+about a quarter of a typical document came back untouched by design. **A long
+surviving run is now distinguishable in the copy between the product working and
+the product falling short, which is the distinction the whole job turned on.**
+Placement follows the earlier ruling recorded at `how-it-works:360`: the fullest
+statement is in the FAQ, and the proof block is untouched.
+
+**The receipt's ladder stays at `[3, 4, 5, 6, 8, 10]` by Jon's ruling and was
+not touched.** Measured against the shipping file, a 57-word run, a 352-word run
+and a 388-word run all print "10". **So the tile prints "10+" at the ceiling and
+is no longer one of the two lit headline figures** — on the same three cases the
+Replaced tile reads 94.5%, 64.9% and 61.3%, so it separates a frozen document
+from a partly unrewritten one and Longest run cannot. **The honest instrument
+gets the emphasis.**
+
+### 145. [T1] "Over 90% of three-word sequences broken" comes down, with no
+### number put in its place
+
+**Same session. This one is handed back rather than settled, because `04` entry
+77 makes statistics Jon's.**
+
+The brief proposed keeping the figure by scoping it to the text the engine
+actually rewrites. **The engine lane committed a 63-run ladder the same day
+(`dfc4cad`) recording `overlap_unfrozen`, which is precisely that measurement.
+The claim holds on 18 of 63 runs.**
+
+```
+                        n      min   median      max   meets "over 90% broken"
+mistral/mistral-small  21   0.0347   0.1747   0.4302    6 of 21
+mistral/mistral-medium 21   0.0252   0.1009   0.4093    9 of 21
+deepseek/deepseek-v3.2 21   0.0505   0.2887   0.6017    3 of 21   <- the settled model
+ALL 63 RUNS            median 0.1846 -> 81.5% broken
+```
+
+**And it fails by document size, which is the part with a product meaning:** it
+holds on 9 of 9 runs at 463 words and 0 of 9 at both 1,942 and 7,498 words.
+**True of a short paste, false of a term paper.**
+
+**So no single site-wide figure is honest here** — any one number lies about one
+end of the range, because the real answer depends on how long the document is.
+**The figure was removed from both whole-service slots and the moat line now
+points at the per-job receipt instead: "Every figure there is measured on your
+own document, not averaged from ours."** That is stronger commercially as well
+as more honest: a number the visitor can check on their own document beats a
+test-set average they cannot, and it cannot go stale when the model changes.
+
+**Open for Jon.** If he wants a figure back, the only one the data supports is a
+floor with its condition attached — *"on documents under a thousand words, over
+90% of your three-word runs broken; longer documents are lower and the receipt
+shows you yours."* **It is not written anywhere and it is his call.**
+
+### 146. [T1] The advertised word limit is 8,000, and the engine has not moved yet
+
+**Same session, executing `freeze-every-quotation.md` §5.5 rather than
+re-deriving it.** The ceiling is time: the site aborts at 240 seconds, documents
+run as waves of 8 parallel calls, and 10,000 words is 4 waves against 8,000
+words' 3. **At 65 seconds a wave — the only per-wave figure ever measured in
+production — 8,000 fits at 195s and 10,000 does not at 260s.**
+
+**`MAX_WORDS` is 8,000 and the pricing FAQ states the limit for the first time.**
+The brief's two named targets both turned out to be something else: *"a
+dissertation"* is the Pro pack's 100,000-word coverage and the calculator's
+10,000 is a slider tick.
+
+**Recorded because it is a live inconsistency rather than a closed decision.
+`UC_MAX_WORDS` is still 10,000 and the browser trusts the server's `over_limit`
+first, so a SCANNED 9,000 word document still runs.** The site now advertises a
+limit it does not always hold itself to. The direction is the safe one — nothing
+is charged for a job that is then refused — but it is real. **`lib/engine/client.ts`
+deliberately still says 10,000, because it describes the engine's own refusal
+and saying 8,000 there would fire at 10,001 claiming 8,000.** Both close in one
+Lane A change. `06` carries it as open.
+
+### 147. [T1] The wait stops naming seconds, because the number belongs to the model
+
+**Same session.** The progress line quoted "about 10 seconds" to every short
+paste, from `estimateSeconds`, which floors at 10. **The only time this project
+has measured the rewrite in production, 478 words took 65 seconds — 6.5x the
+quote, in the direction that makes a working tool read as hung.** The same box
+was right at 2.9 seconds for a short paste on mistral-small, so the figure was
+not conservative, it was unrelated.
+
+**No seconds are named now.** Jon's instruction of 21 August 2026 stands and is
+still obeyed — a long run says it is long — but it says "a few minutes" on a
+document over 1,000 words and nothing at all below that. **The reason for naming
+no number is that the per-wave time is a property of the model and the model is
+under review: any constant is stale the day it switches.** The elapsed-second
+counter already beside it was always the honest instrument, because it is the
+real time rather than a prediction about it.
+
+**`estimateSeconds` and `humanDuration` are kept, uncalled, carrying a warning
+not to reuse them without a production measurement.**

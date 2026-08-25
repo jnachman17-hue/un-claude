@@ -16,12 +16,15 @@ show this cannot print a number above 10.**
 
 **A second thing, not in the brief, found while verifying it: the rescue the
 brief proposed does not hold either.** The brief says to keep "over 90% of
-three-word sequences broken" by scoping it to the rewritten text. **The only
-post-freeze measurement this project has contradicts that on the model the
-engine lane recommends.** §3 below. **That figure is a statistic, `04` entry 77
-makes statistics Jon's, and I have taken it off the two whole-service slots
-rather than restate it. Jon may want it back with a fresh measurement behind
-it.**
+three-word sequences broken" by scoping it to the text we rewrite. **The engine
+lane committed a 63-run ladder hours ago that measures exactly that, and the
+claim holds on 18 of the 63 runs.** The median is 81.5% broken, not over 90%,
+and on deepseek — settled as the model in that same commit — it holds 3 times in
+21. **It is true of a 500 word paste and false of a term paper.** §3.
+
+**I removed it and wrote no number in its place. `04` entry 77 makes statistics
+Jon's**, so the replacement figure is his call, and §3 sets out the only version
+of it I think the data supports.
 
 ---
 
@@ -118,61 +121,81 @@ not at the edges.
 
 ---
 
-# 3. THE FIGURE THE BRIEF ASKED ME TO KEEP, AND WHY I DID NOT
+# 3. THE FIGURE THE BRIEF ASKED ME TO KEEP, AND WHY IT HAD TO GO
 
-**The brief's rescue:** *"measured overlap on the unfrozen text runs 0.02 to
-0.09, meaning over 90% of the original three-word sequences in the rewritten
-portion are gone."*
+**The brief's rescue for "over 90% of three-word sequences broken":** *"measured
+overlap on the unfrozen text runs 0.02 to 0.09, meaning over 90% of the original
+three-word sequences in the rewritten portion are gone."*
 
-**The measurement it cites is `freeze-every-quotation.md` §5.3, and that table
-does not say 0.02 to 0.09.** It is reproduced here in full, unedited. These are
-three-word overlap figures measured per paragraph; higher means more of the
-customer's original wording survived.
+**The engine lane committed a fresh 63-run ladder while I was working
+(`dfc4cad`, 25 August, "Deepseek confirmed on a second day"). It records
+`overlap_unfrozen` per run — THE EXACT METRIC THE BRIEF NAMES: the share of the
+customer's three-word runs still present in the text the engine actually
+rewrote.** So this does not have to be inferred. It can be counted.
+
+**It is not 0.02 to 0.09. Across 63 runs on the shipped engine it is 0.025 to
+0.602, with a median of 0.185.**
 
 ```
-doc                      mistral-small        mistral-medium         deepseek-v3.2
-----------------------------------------------------------------------------------
-ladder_500                0.042  (n=6)          0.024  (n=6)          0.043  (n=6)
-ladder_1000              0.034  (n=12)         0.032  (n=12)         0.356  (n=12)
-ladder_2000              0.206  (n=25)         0.183  (n=25)         0.065  (n=25)
-ladder_3000              0.144  (n=38)         0.019  (n=38)         0.121  (n=38)
-ladder_5000              0.019  (n=64)         0.038  (n=64)         0.158  (n=64)
-ladder_7500              0.059  (n=98)         0.056  (n=98)         0.107  (n=98)
-ladder_10000             0.089 (n=130)         0.013 (n=130)         0.156 (n=130)
+BY MODEL              n      min   median      max    meets "over 90% broken"
+-----------------------------------------------------------------------------
+mistral/mistral-small 21   0.0347   0.1747   0.4302    6 of 21
+mistral/mistral-medium 21  0.0252   0.1009   0.4093    9 of 21
+deepseek/deepseek-v3.2 21  0.0505   0.2887   0.6017    3 of 21  <- THE SETTLED MODEL
+-----------------------------------------------------------------------------
+ALL 63 RUNS           median 0.1846  ->  81.5% broken, not "over 90%"
+The claim holds on 18 of 63 runs.
 ```
 
-**"Over 90% broken" means a cell at or under 0.10. Counting the cells:**
+**★ AND IT FAILS BY DOCUMENT SIZE, WHICH IS THE part WITH A PRODUCT MEANING.**
 
-| model | cells at or under 0.10 | cells over |
-|---|---|---|
-| mistral-small | 5 of 7 | 2 |
-| mistral-medium | 6 of 7 | 1 |
-| **deepseek-v3.2 — the model §5.4 recommends switching to** | **2 of 7** | **5** |
-| **all three** | **13 of 21** | **8** |
+```
+  words   median overlap   median % broken   meets "over 90% broken"
+    463           0.0473             95.3%   9 of 9      holds
+    919           0.0514             94.9%   6 of 9
+   1942           0.1846             81.5%   0 of 9      gone
+   2971           0.2497             75.0%   2 of 9
+   4958           0.3201             68.0%   1 of 9
+   7498           0.2887             71.1%   0 of 9
+   9946           0.3604             64.0%   0 of 9
+```
 
-**So the claim fails on 8 of 21 measured documents, and on 5 of 7 for the model
-the engine lane recommends.** The worst cell, deepseek at 1,000 words, is 0.356 —
-**64% broken, not 90%.**
+**The claim is true of a 500 word paste and false of everything a paying
+customer is likely to bring.** It holds on 9 of 9 short runs and on 0 of 9 at
+both 1,942 and 7,498 words. **A student's term paper is the size at which it
+stops being true.**
 
-**This is not a scoping problem and rewording does not fix it.** The brief hoped
-the figure survived once you pointed it at the rewritten text only; §5.3 already
-is the rewritten text only, measured per paragraph precisely so the frozen spans
-would not inflate it.
+**On deepseek — settled as the model in `dfc4cad`, hours before I wrote this —
+it holds 3 times in 21.** The single worst run left 60% of the customer's
+three-word runs standing in the text it had just rewritten.
 
-**What I did.** Removed the figure from the two places it stood as a
-whole-service claim, and put nothing numeric in its place. The brief's own rule
-governs this: *"If you cannot name a number honestly, do not name one."* **No
-claim went up; one came down and one went away.**
+**So the figure could not be rescued by scoping, and rewording could not save
+it.** The brief hoped that pointing it at the rewritten text only would make it
+true. `overlap_unfrozen` IS the rewritten text only, and the claim is false
+there on 45 of 63 runs.
 
-**What Jon has to decide, and it is his under `04` entry 77.** Either
-re-measure the rewritten-text overlap on the shipped engine and publish whatever
-it actually is, or leave the site making no averaged claim and let the per-job
-receipt speak instead. **My recommendation is the second.** A per-customer
-number the visitor can check on their own document is worth more than a test-set
-average they cannot, it cannot go stale when the model changes, and the model is
-under review right now.
+**What I did.** Removed it from the two whole-service slots and put nothing
+numeric in its place, under the brief's own rule: *"If you cannot name a number
+honestly, do not name one."* **No claim went up.**
+
+**What is Jon's to decide, and it is his under `04` entry 77 (statistics are
+discussed before they are changed).** Either publish an honest replacement from
+this data, or publish no averaged figure at all and let the per-job receipt
+speak. **My recommendation is the second, and this table is the argument for
+it:** any single site-wide number is a lie about one end of the range or the
+other, because **the honest figure depends on how long the customer's document
+is** — 95% on a short paste, 64% on a long one. **The receipt already tells each
+customer their own number, which is why the moat line now reads "Every figure
+there is measured on your own document, not averaged from ours."**
+
+**If Jon wants a number anyway, the only defensible one from this data is a
+floor stated with its condition attached**, along the lines of *"on documents
+under a thousand words we measure over 90% of your three-word runs broken; on
+longer documents it is lower and the receipt shows you yours."* **I have not
+written that anywhere. It is a new statistic and it is his call.**
 
 ---
+
 # 4. JOB 1 — EVERY SENTENCE, BEFORE AND AFTER, IN FULL
 
 **The one grammar all six now share**, so a visitor who reads two of these pages
@@ -644,3 +667,200 @@ workbench, driven live with real input at 375px
 **Two surfaces are NOT covered by any of that, and both are named again in §9.**
 
 ---
+# 8. JOB 4 — D4'S PRE-FLIGHT WORDING. IT NO LONGER READS CORRECTLY
+
+**First, the thing that decides how to read the rest of this section: D4 IS NOT
+BUILT.** It is board item **W-10**, in Lane C, and nothing implements it.
+Verified:
+
+```
+$ grep -rn "exactly as you sent it\|protected from being reworded\|full rewrite" \
+    apps/web/app apps/web/lib --include=*.tsx --include=*.ts
+(no match)
+```
+
+**So this is a review of the text on the board, not of a rendered dialogue. I
+have changed nothing, which is what the brief asked.**
+
+**D4's fixed wording, quoted from `IMPLEMENTATION-BOARD.md`:**
+
+> **We will return about 42% of this document exactly as you sent it.**
+> That's text we've protected from being reworded — quotations, references and
+> similar — so it comes back character for character. The other 58% gets the
+> full rewrite.
+>
+> **Continue** · **Cancel**
+
+## 8.1 The percentage itself: fine, and the 60% trigger now earns its place
+
+**The number rising does not hurt this wording.** It is written as "about X%"
+with the figure substituted, so 23% and 64% both read correctly.
+
+**And Jon's "louder prompt above 60%" has gone from theoretical to live.** Before
+the ruling the dialogue-heavy short story measured 0.0% frozen; after it, 63.9%.
+**That threshold now fires on exactly the case it was designed for**, which is a
+point in the design's favour rather than against it.
+
+## 8.2 ★ BUT "The other 58% gets the full rewrite" IS NOW FALSE, and it is the
+## sentence the customer is asked to click Continue on
+
+**Two independent reasons, and the first is the serious one.**
+
+**1. A chunk inside that 58% can come back unrewritten.** That is D3's fallback,
+and it is not rare. The freeze note §5.2: *"In about half of all runs the
+customer now receives at least one chunk — roughly 350 words — unrewritten."*
+The 25 August ladder shows the same thing on the settled model: every
+`ladder_5000` deepseek run recorded `fallbacks: 1`.
+
+**So a visitor is told "the other 58% gets the full rewrite", clicks Continue,
+pays, and receives 350 words of that 58% exactly as they sent it.** The promise
+is made at the one moment it is load-bearing: before the money moves.
+
+**2. "Full rewrite" overstates what the rewritten portion gets even when nothing
+falls back.** §3's table: on a document of a few thousand words, the median run
+leaves 18% to 36% of the customer's three-word runs standing inside the text it
+did rewrite. **That is a heavy rewrite. It is not a full one, and this project
+has just spent a whole session removing the last sentence that said otherwise.**
+
+## 8.3 ★ AND IT BREAKS JON'S OWN STYLE RULE
+
+**D4's wording contains an em dash** — *"protected from being reworded —
+quotations, references and similar"*. The `unclaude-messaging` skill, from
+`docs/05` section 2: **"No em dashes and no en dashes. Anywhere a visitor
+reads."** It is Jon's own rule for his own site.
+
+**This is a trap for whoever builds W-10**, who is told the wording is fixed and
+may not be improvised. They will either ship the dash and break the style rule,
+or change the wording and break the board. **Only Jon can release that.**
+
+## 8.4 One smaller thing, flagged and not acted on
+
+*"quotations, references and similar"* was accurate when the freeze was
+attribution-gated. Since the ruling **every block quote freezes, with no test at
+all** — the freeze note's own §1.3 records that an indented address or a poem
+now freezes too, and its "what I could not prove" #4 flags it as the author's
+reading of Jon's ruling rather than Jon's words. **"And similar" is carrying
+more weight than it was written to carry.** Minor next to §8.2, and listed for
+completeness.
+
+## 8.5 What I recommend, in one sentence, since D4 is Jon's
+
+**Change only the last sentence, keep the rest byte for byte:** *"The other 58%
+is rewritten."* **It drops the word doing the damage, needs no new number, keeps
+the two-part shape and the Continue/Cancel, and stops promising a completeness
+the engine does not deliver in about half of runs.** The em dash in §8.3 still
+needs his separate say-so.
+
+---
+# 9. WHAT I COULD NOT PROVE
+
+**1. ★ I have no screenshots. The brief asked for them and I do not have them.**
+The browser pane returned a blank image on every attempt, at 800x450, 1280x900
+and 375x812, before and after fronting the tab. It is the pane rather than the
+pages: the same pages report full geometry and correct text through the DOM and
+the dev server answers 200 throughout. **What I have instead is measured
+geometry at both widths — width, line count, self-clipping, viewport overflow,
+sideways scroll — which answers the layout question more precisely than an eye
+would, and does not answer the question of whether it LOOKS right.** §7 has the
+numbers. **Somebody should look at these five surfaces before this ships.**
+
+**2. ★ I never saw the receipt panel render, and it is the surface I changed
+most.** It only exists after a completed rewrite, which needs credits and a
+live engine call, which costs money and was not mine to spend. **So "10+" in the
+tile, the un-lit Longest run, and the new two-sentence chart caption are
+unrendered.** What I can say: the tile's value slot already carries "100%" in
+the Length tile and "53/53" in the Facts tile at the same size, so a three
+character "10+" cannot overflow anything those do not — **but that is reasoning,
+not a measurement, and I am labelling it as such.**
+
+**3. That "a few minutes" is right for the longest documents.** It is true of
+everything measured: the worst lab run is 30.8s and the worst production
+per-wave figure is 65s, and 8,000 words is 3 waves. **But the whole word-limit
+argument rests on one production measurement of one document on one afternoon,
+and that has not changed today.** If production is routinely slower than the
+lab, "a few minutes" is right and my confidence in it is borrowed.
+
+**4. Whether removing the 90% figure costs conversions.** It was the site's only
+hard number about the rewrite's depth. **Taking it down is the honest move and
+it is also the commercially expensive one**, and I have not measured that trade
+because it is not measurable from here. §3 names the version I think the data
+supports if Jon wants a number back.
+
+**5. Whether "protected on purpose" reads as reassurance or as a catch.** It is
+new language on this site and no visitor has ever seen it. **My reading is that
+"your quotations come back exactly as you sent them" is a feature to a student
+who is quoting a source, and the D4 pre-flight exists precisely because it might
+not be.** Untested either way.
+
+**6. Whether a statistical watermark is removed.** Not measurable, by anyone,
+and nothing here claims otherwise. **Every number in this note measures how much
+of the customer's own wording came back.**
+
+---
+
+# 10. HANDED BACK — THINGS I FOUND AND DID NOT FIX
+
+**In the order I would want them looked at.**
+
+**1. ★ `UC_MAX_WORDS` — LANE A. The site now says 8,000 and the engine still
+refuses at 10,000**, and because the browser trusts the server's `over_limit`
+first, a scanned 9,000 word document still runs. **One number in the Python
+engine closes it, and `lib/engine/client.ts:64` follows in the same change.**
+§5.2.
+
+**2. ★ D4's pre-flight wording — JON. "The other 58% gets the full rewrite" is
+false about half the time**, and the wording is fixed on the board so I could
+not touch it. It also carries an em dash into visitor-facing copy, against Jon's
+own rule. §8.
+
+**3. ★ The replacement for "over 90%" — JON.** Removed, nothing put in its
+place, and `04` entry 77 makes the new figure his. §3 has the data and my
+recommendation.
+
+**4. `moat-section.tsx` IS DEAD CODE, and two of the brief's five targets were
+in it.** Nothing imports it. `claude-band.tsx` replaced it on 19 August 2026 and
+carries no version of the claim, so the live site was never showing those two.
+**I fixed them anyway — a dead file that gets revived carrying a false claim is
+how this comes back.** `fact-cards.tsx`, `how-it-works-section.tsx` and
+`stakes-section.tsx` are dead the same way. **Somebody should delete them, and
+it should be a deliberate decision rather than mine at the end of a copy
+session.**
+
+**5. "Zero figures lost" is still live in two places** (`/how-it-works` engine
+rule 3, and the FAQ). **The F1 audit measured a live run dropping a figure.**
+That is board item **C-1**, not this brief. I took it out of the one sentence I
+was rewriting and left it untouched elsewhere. §4.6.
+
+**6. `/capabilities` says nothing about the freeze.** Jon's ruling of
+`how-it-works:360` names `/capabilities` and the FAQ as the two homes for
+quotation scope. **The FAQ now has it. `/capabilities` does not**, and putting
+it there was outside this brief.
+
+**7. The pricing calculator will size a 100,000 word job** and never mentions
+that it runs in parts. The pack line now says so; the slider does not.
+
+**8. `ENGINE.md` section 3 still documents only the seven prompt rules and does
+not mention the freeze at all.** The site now describes behaviour the engine's
+own document does not. Lane A's file.
+
+---
+
+# 11. WHERE THE NEXT SESSION PICKS UP
+
+**Nothing here is blocking and nothing was pushed or deployed.** Three commits,
+all local, all staged by explicit path:
+
+```
+a459798  Runs: the site said three, the measurement says up to 388
+14c239e  Word limit down to 8,000, and the wait stops naming seconds
+(this note)
+```
+
+**Other lanes committed underneath me while I worked** — `dfc4cad` (deepseek
+confirmed) and `c1f8c1c` (the operator dashboard). **I staged nothing of
+theirs.** `docs/04-decision-log.md` and `docs/06` had uncommitted marketing-session
+work in them when I started; I have added to them and committed only those two
+files plus my own.
+
+**The single most useful next thing is not copy.** It is `UC_MAX_WORDS`, because
+until it moves the site is advertising a limit it does not hold itself to.

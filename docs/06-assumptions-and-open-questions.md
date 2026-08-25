@@ -107,6 +107,10 @@ the Closed section with the reason, rather than deleted.
 | 93 | **The finished result is wrapped in a control whose name replaces it** | technical | **No change made, deliberately: the brief asked for a check.** Measured 23 August — the customer's text IS present in the accessibility tree, so the strongest version of the agent's claim is refuted, **but the wrapper's `aria-label="Edit this text"` replaces the contents when the accessible name is computed, so a screen-reader user who reaches the result hears "Edit this text, button" and not their document** | Whether the text can be reached another way depends on the screen reader: under the ARIA presentational-children rule a button's descendants may be flattened, and browse-mode behaviour differs between VoiceOver, NVDA and JAWS. **The proposed fix is narrow: once a job is finished the result does not need a click-to-edit affordance at all** — there is a "Start over" button beside it, and clicking the result currently discards the finished work — so the wrapper can be a plain block in the `done` state only | **Ten minutes with VoiceOver**, which nobody has done. Or sooner: the `done`-state half of the fix stands on its own as a bug fix and needs no screen reader to justify it |
 | 94 | **C2PA now specifies an invisible-character text watermark, in layer A's exact territory** | technical | **Unresolved and nobody has checked.** Working position: our detector probably does not catch it, because it was built for spaces and zero-width marks rather than variation selectors | **C2PA specification 2.4, appendix A.8**, encodes a full manifest into plain text using **Unicode variation selectors, U+FE00 to U+FE0F and U+E0100 to U+E01EF**, prefixed by U+FEFF with magic bytes `C2PATXT\0`. That is deterministic, detectable and strippable, which makes it **the first text watermark layer A could genuinely defeat and prove.** The spec labels A.8 "under review", so it is a moving target. The steering committee that publishes it includes OpenAI, Google, Meta, Microsoft, Adobe and **TikTok** | **Test it: run a variation-selector sequence through the scanner and see whether it is found.** One afternoon. If the answer is no, it is a small change to a character class and a real capability nobody else in the category has |
 | 95 | **`ENGINE.md` section 2 may be describing a tell that no longer exists** | risk | **Surfaced, not resolved. The documents govern under `CLAUDE.md` section 2 and this session did not override them** | `ENGINE.md` says layer A "defends against a real, present, observable tell that catches people today", citing Rumi's 2025 finding of ChatGPT emitting narrow no-break spaces. **Three things now cut against the word "today":** OpenAI denied it was deliberate and called it a reinforcement learning artifact; **Rumi reported on 23 April 2025 that the characters had disappeared**; and an independent scan of 1,815 characters of current Claude output found zero invisible characters, matching Originality.AI's published test. **Row 63 already records the commercial consequence in Jon's own words: "for pasted Claude text it finds nothing."** | **A measurement session, and it is cheap.** Scan twenty real ChatGPT and Claude outputs, of varying length, and count. **It decides whether the free scan has a hook at all**, which is upstream of the free-tier arithmetic in row 63 |
+| 96 | **Marketing copy is the evidence that meets the knowledge element in seventeen state term paper statutes** | risk | **Unresolved and it needs a real lawyer, not a session.** Working position: keep the site's careful FAQ posture, and **do not let a CTA anywhere instruct a submission** | **Seventeen US states have term paper mill statutes and seven criminalise or enjoin the ADVERTISING separately from the selling**, including **California Education Code 66401**, where section 66403 gives standing to **"any person"**, and **Texas Penal Code 32.50(b)**, which reaches whoever "offers or advertises for sale". Un-Claude does not write papers, so the ten statutes needing a submittable assignment fit badly. **Two categories do reach it**: the states prohibiting sale of "assistance" (Oregon "any assistance", Maryland, Pennsylvania, Massachusetts), and **every editing carve-out, each conditioned on not making "substantive changes"** (Washington, Oregon, Colorado, Texas). **A tool that rebuilds every sentence makes substantive changes on its face.** All seventeen carry a knowledge element about the student's intent, and **two courts have held disclaimers do not defeat it when the marketing points the other way**: *People v. Magee* (NY 1979) called signed disclaimers "patently tongue-in-cheek, and executed with an obvious wink", and *Trustees of Boston University v. ASM Communications* (D. Mass. 1998) found "for research only" warnings did not help. **The counterweight is substantial:** no US case, AG opinion or enforcement action has ever applied any of the seventeen to an AI tool or any software; total case law is three decisions in fifty years; **the plaintiff lost every count in the leading case** and the Massachusetts AG declined to prosecute; the First Amendment question was raised there and expressly not reached; none of the seventeen has been amended for AI; and the peer-reviewed analysis (Gaumann and Veale, 2024) judges the knowledge requirement "will likely prove difficult" to meet and calls the regimes "primarily symbolic". **Related to row 53, the Stripe business description, which is the same question asked by a payments risk team** | **Before the first paid or organic campaign goes out, and it is cheap: twenty minutes of a real lawyer's time.** The free mitigation is already identified and costs nothing: **a CTA that ends on the free scan rather than on "do it before you hand anything in"** |
+| 97 | **In Australia, New Zealand and Ireland the ADVERTISING is a standalone criminal offence, and Australia blocks websites** | risk | **Unresolved, and this is now the largest open risk attached to marketing. It needs a real legal opinion, not a session.** Working position: keep the site's data-hygiene characterisation and never let marketing describe the product as helping a student pass work off as their own | **Australia, TEQSA Act s 114B:** advertising an academic cheating service is a standalone offence at **2 years imprisonment or 500 penalty units, five times that for a company**, with a parallel civil penalty. **Strict liability applies to key elements** and s 114A(4) says it is "not necessary to prove that the person provided ... to a particular student". The Act reaches a person "whether that person is in Australia or elsewhere", **and that was proven against a US company: Chegg, Federal Court, 27 March 2026, $500,000 plus $150,000 costs.** **TEQSA blocks websites: 616 as of 19 May 2026**, routinely via an ISP protocol under s 313(3) of the Telecommunications Act, and its one Federal Court injunction was granted on the **advertising** provision. **Ireland, s 43A(5) and (6):** two separate advertising offences, up to **EUR 100,000 and 5 years**, prosecuted by QQI, **whose own page lists "paraphrasing services (to hinder counter-plagiarism tools such as TurnItIn)" as a commercial contract cheating service.** **New Zealand, s 393(1)(b) and (c):** advertising and publishing an ad, NZ$10,000. **The counterweight is real: Un-Claude provides no work.** Australia's definition is "the provision of work to or the undertaking of work for students", and this tool takes a document the student already has. **No regulator has placed AI tools inside the definition** — TEQSA's guidance, good practice notes, gen-AI hub and both sector alerts were checked and it treats gen AI and cheating services as separate tracks. **The exposure is specific to broadcast marketing, because TikTok does not respect borders**: a video aimed at students reaches Australian, NZ and Irish students whatever the creator intends | **A proper legal opinion before the channel is scaled, not before the first post.** The question is whether a watermark removal and rewriting tool is an "academic cheating service" in those three jurisdictions, and nobody has answered it. **The free mitigation is already applied:** the CTA no longer instructs a submission, and the site's careful FAQ posture is what supports the data-hygiene characterisation. **Realistic worst case is a block, not a prosecution**, which is survivable, reversible and public |
+| 98 | **The enforcement record in this category has never once reached a post-processing tool, and it materially downgrades row 97** | risk | **Working position, and it is now evidenced rather than hoped: the statutory exposure in row 97 is real but the enforcement risk is low, and the mitigation is reputational rather than legal.** Do not shelve the marketing channel over row 97 | **Every enforcement action ever taken in this space hit someone producing or selling the academic work**: TEQSA's 616 blocks, the Chegg penalty, the UK offence, PayPal 2019, Paddle, Lemon Squeezy, Google Ads, YouTube 2018. **The decisive check: TEQSA's live blocklist was pulled in full, 615 domains, and grepped for `humaniz|bypass|undetect|stealth|paraphras|rewrit|gptzero|turnitin|quillbot|phrasly|humbot|writehuman|hix`. Zero matches.** It is entirely essay and homework mills. Five further verified negatives: **no registrar or host has ever taken down an essay mill or humanizer anywhere**; **Visa's Integrity Risk Program names no education category** at all; **the UK has had an advertising offence since June 2022 with zero prosecutions**, confirmed by the BBC with both the CPS and the DfE in December 2025 while "dozens" of firms advertise openly; no UDRP action has ever been brought against a bypass tool; and Google Ads bans "essay or thesis **generators**", giving seven days' warning first. **On payments this is actively good news: Stripe publishes a marketing case study for Undetectable AI**, describing a tool that helps writing "pass muster with AI content detectors", at 18 million users, and **Stripe's restricted list contains no academic category.** **Un-Claude is already on the right processor by luck rather than judgement**: Paddle names "essay and paper mills, ghostwriting services" and Lemon Squeezy names "Homework/Essay mills", both by name. **The one documented payment withdrawal, PayPal 2019, was triggered by press and a minister, not by chargebacks, a card network or a regulator**: the QAA wrote to six platforms in Nov 2018, the BBC named PayPal in Dec 2018, the Education Secretary named PayPal personally on 20 March 2019, and **PayPal folded fourteen days later** | **Nothing to do now. Revisit if a journalist contacts the project, which is the actual trigger this evidence identifies.** The standing mitigation is the one the site already runs: honest claims, careful characterisation, and not being the story. **Answers row 53 from the outside and downgrades row 97** |
+| 99 | **[URGENT] Layer B calls Vercel's AI Gateway, and Vercel's Acceptable Use Policy names watermark removal as prohibited** | risk | **Live conflict, verified in the repo and against Vercel's own policy page on 24 August 2026. Not a hypothetical.** Working position: **move layer B to a direct provider call.** The code already takes the base URL from an environment variable, so this is a URL and a key, not a rewrite | **The repo side:** `WATERMARKS_REWRITE_BASE_URL` is documented as `https://ai-gateway.vercel.sh` in `ENGINE.md` line 262, and `server.py` line 822 reads it. **Layer B, the only layer that costs money and the only one that earns it, routes through a Vercel AI Service.** **The policy side, fetched from vercel.com/legal/acceptable-use-policy and quoted verbatim.** Section 3, Artificial Intelligence Services, prohibits: **"Remove any metadata, digital signatures, or watermarks to identify AI-generated content"** and **"Represent that output is human-generated without reliance on AI"**. Section 5: **"If we reasonably believe you or your users are violating this Policy, we may restrict, suspend, or terminate your access to Services immediately upon notice to you."** **Two clauses, and the product does both by design.** **Scope, stated precisely:** section 3 is scoped to AI Services, so plain hosting under section 2 does not carry the watermark clause. **But section 5 makes a violation a material breach of the Agreement and speaks of terminating access to "Services" without qualification, and un-claude.com is hosted on Vercel too.** So the realistic worst case is not just the rewrite failing, it is the rewrite and the site going together. **This is the only policy found in an entire sweep of platforms, processors, app stores, ad networks and four countries' statutes that names watermark removal explicitly, and it is the one the engine currently calls.** **Marketing amplifies it:** a campaign describing the product as watermark removal is exactly what brings it to the provider's attention | **Before the TikTok campaign runs, and ideally this week.** It is upstream of marketing rather than downstream: **the channel that makes the product visible is the channel that surfaces this.** Two steps: point `WATERMARKS_REWRITE_BASE_URL` at the provider directly rather than at the gateway, and confirm which provider layer B is actually routed to (git history says Mistral-small, verified live at 2.9 seconds). **Belongs on `IMPLEMENTATION-BOARD.md` at the top, not buried in this file** |
 
 
 ---
@@ -832,3 +836,101 @@ frozen), so no customer is overcharged by it.
 back reworded where the customer's source was a `.txt` or an email; or any
 work on file upload, where wrapped text is the norm rather than the
 exception. **File: `apps/web/engine/uc_spans.py`, the `_QUOTE` constant.**
+
+## The site advertises 8,000 words and the engine still accepts 10,000
+
+**Raised 25 August 2026, `tell-the-truth-about-runs.md` §5.2. Half-closed
+deliberately: the copy half is done and the engine half is another lane's.**
+
+`MAX_WORDS` in `_components/workbench/credits.ts` is now 8,000, the pricing FAQ
+states it, and the workbench refuses above it. **`UC_MAX_WORDS` in the Python
+engine is still 10,000.**
+
+**It is worse than a stale constant, because the browser defers to the server.**
+`workbench.tsx:503` reads `scan?.billing?.over_limit ?? wordsNow > MAX_WORDS`.
+The server's answer comes first and `MAX_WORDS` is only the fallback, so:
+
+```
+8,500 words, before a scan   -> refused, "The rewrite takes 8,000 at a time"
+8,500 words, after a scan    -> allowed, because the server's ceiling is 10,000
+```
+
+**Working position: ship it as it stands.** The direction is safe — the browser
+is stricter than the server, so nothing is charged for a job that is then
+refused, and no job that starts is at any new risk. **An advertised limit that
+is occasionally more generous than advertised harms nobody**, where the reverse
+would.
+
+**Why it is not free to leave:** it is two implementations of one number, which
+this project has been bitten by three times, and it means the site cannot
+honestly say 8,000 is enforced. **`lib/engine/client.ts:64` is deliberately
+still worded for 10,000** and becomes wrong the moment the engine moves, so the
+two must change together.
+
+**Trigger for revisiting: any Lane A session.** It is one number in
+`api/_shared.py` plus that one string. **Until then, do not "fix" `client.ts` on
+its own — it would then fire at 10,001 words claiming the limit is 8,000.**
+
+## What replaces "over 90% of three-word sequences broken", if anything
+
+**Raised 25 August 2026, `tell-the-truth-about-runs.md` §3. Removed from the
+site; no replacement written, because `04` entry 77 makes statistics Jon's.**
+
+The claim holds on **18 of 63 runs** on the shipped engine, measured with the
+engine lane's own `overlap_unfrozen` — the share of the customer's three-word
+runs still standing in the text that WAS rewritten. Median 0.185, so 81.5%
+broken rather than over 90%. **On deepseek, now the settled model, 3 of 21.**
+
+**It fails by document size, and that is the whole difficulty:**
+
+```
+  words   median % broken   meets "over 90% broken"
+    463             95.3%   9 of 9
+    919             94.9%   6 of 9
+   1942             81.5%   0 of 9
+   4958             68.0%   1 of 9
+   9946             64.0%   0 of 9
+```
+
+**Working position: name no averaged figure at all**, and let the per-job
+receipt carry it. The moat line now reads *"Every figure there is measured on
+your own document, not averaged from ours."* **A number the visitor can check on
+their own document beats a test-set average they cannot, and it cannot go stale
+when the model changes.**
+
+**Why it is not free to leave:** it was the site's only hard number about how
+deep the rewrite goes, and taking it down is commercially expensive as well as
+honest. **The moat and FAQ now argue the mechanism without quantifying it.**
+
+**Trigger for revisiting:** Jon asking for a figure back, or the rewrite getting
+materially deeper. **The only version the data supports is a floor with its
+condition attached** — *"on documents under a thousand words, over 90% of your
+three-word runs broken; longer documents are lower and the receipt shows you
+yours."* It is not written anywhere.
+
+## D4's pre-flight promises a full rewrite the engine does not always deliver
+
+**Raised 25 August 2026, `tell-the-truth-about-runs.md` §8. Flagged and NOT
+changed: the wording is fixed on the board and D4 is Jon's.**
+
+D4's approved text ends *"The other 58% gets the full rewrite."* **It is false in
+about half of runs.** D3's fallback hands a chunk back unrewritten — roughly 350
+words — and the freeze note §5.2 measured that in about half of all runs; the 25
+August ladder shows `fallbacks: 1` on every `ladder_5000` deepseek run. **A
+visitor reads that sentence, clicks Continue, pays, and can receive 350 words of
+that 58% exactly as they sent it.**
+
+**Separately, "full rewrite" overstates even the successful case:** the median
+run leaves 18% to 36% of the customer's three-word runs standing inside the text
+it did rewrite.
+
+**And it carries an em dash into visitor-facing copy**, against Jon's own rule
+in `docs/05` section 2. **Whoever builds W-10 is told not to improvise the
+wording, so they must either break the style rule or break the board.**
+
+**Working position: change only the last sentence, keep the rest byte for byte —
+"The other 58% is rewritten."** No new number, same shape, same Continue/Cancel,
+and it stops promising a completeness the engine does not reach.
+
+**Trigger for revisiting: before W-10 is built.** It is unbuilt today, so this
+costs nothing to settle now and costs a rebuild later.
