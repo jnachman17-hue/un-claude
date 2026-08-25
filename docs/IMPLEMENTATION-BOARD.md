@@ -6,6 +6,74 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★★ 25 AUGUST — THE COPY SESSION LANDED. IT IS **NOT** LIVE, AND ONE THING BLOCKS THE DEPLOY.
+
+## ★ CORRECTION: nothing from the copy session is on the site
+
+**Jon believes it went live. It did not.** `main...origin/main [ahead 10]` —
+committed locally, never pushed. **Verified on production just now:**
+
+```
+the three-word claim   /              8 occurrences   STILL LIVE
+                       /how-it-works  5 occurrences   STILL LIVE
+"10,000" on /pricing                  3 occurrences   STILL LIVE
+```
+
+## ★★ BLOCKING THE DEPLOY — the favicon has been deleted from the working tree
+
+```
+ D apps/web/public/favicon.ico          <- deleted on disk, NOT staged
+?? apps/web/public/favicon copy.png     <- 928 bytes, and its magic bytes are
+                                           00 00 01 00 — an ICO with a .png name
+apps/web/public/ now contains:  "favicon copy.png", images/     (no favicon.ico)
+```
+
+**Production still serves `/favicon.ico` 200**, because the deletion is not
+committed and git-triggered deploys build from the commit. **A `git push` is
+therefore safe. A `vercel --prod` CLI deploy from this machine is NOT** — that
+ships the working tree and would 404 the favicon again.
+
+**Why this matters more than it looks: `/favicon.ico` 404ing was 97% of the
+entire production error log, and it is the reason Google shows a grey box.**
+Jon has just requested re-indexing. **Breaking it now resets that clock.**
+
+**Not touched by the conductor — it is Jon's file and he was mid-way through
+something. Put to him.**
+
+## What the session did, verified
+
+| Claim | My check | Result |
+|---|---|---|
+| Four components are dead code | grep for real imports | **CONFIRMED.** `moat-section`, `stakes-section`, `fact-cards`, `how-it-works-section` — the only hits are a MENTION IN A COMMENT in `claude-band.tsx`, not imports |
+| The site/engine word limit now disagrees | read both constants | **CONFIRMED.** `credits.ts` MAX_WORDS = 8,000; `uc_policy.py` UC_MAX_WORDS = 10,000; `client.ts:64` still says 10,000 |
+
+**It also found something the brief did not ask for and that outranks it:** the
+brief's proposed rescue — *"over 90% of three-word sequences broken"* — **does
+not hold either.** Against the engine lane's own 63-run ladder committed hours
+earlier, **it is true on 18 of 63 runs; median 81.5%; on deepseek, 3 of 21.**
+*"True of a 500-word paste and false of a term paper."* **It removed the figure
+and wrote nothing in its place**, because `04` entry 77 makes statistics Jon's.
+
+## ★ FOLLOW-UPS DUE, worst first
+
+| # | Item | Owner |
+|---|---|---|
+| **1** | **The favicon.** Resolve before ANY deploy | **Jon** |
+| **2** | **Push.** Ten commits, none of it live | **Jon** |
+| **3** | **`UC_MAX_WORDS` 10,000 → 8,000.** The site now advertises 8,000 and the engine still allows 10,000 — and because `workbench.tsx:503` trusts the server's `over_limit` FIRST, **a scanned 9,000-word document still runs.** One number, plus `client.ts:64` in the same change. The session calls this the most useful next thing and I agree | **a Lane A session** |
+| **4** | **D4's pre-flight wording is now FALSE.** *"The other 58% gets the full rewrite"* is wrong about half the time, because chunk fallbacks hand text back unrewritten. **The wording is fixed on the board so nobody could touch it.** It also carries an em dash into visitor copy, against Jon's own rule | **Jon** |
+| **5** | **The replacement for "over 90%."** Removed, nothing in its place. `04` entry 77 makes the figure Jon's | **Jon** |
+| **6** | **Nobody has LOOKED at the changed pages.** The browser pane returned blank images on every attempt, so there are no screenshots — **and the receipt panel, the surface changed most, was never rendered at all.** Geometry was measured instead | **the conductor, after the deploy** |
+| **7** | **Delete the four dead components.** A dead file revived carrying a false claim is how this returns | a small session |
+| **8** | **"Zero figures lost" is still live in two places** — the F1 audit measured a live run dropping a figure. Board **C-1** | a copy session |
+| **9** | `/capabilities` still says nothing about the freeze; `ENGINE.md` §3 documents seven prompt rules and not the freeze at all | Lane A / copy |
+
+**The session committed `docs/04-decision-log.md` and `docs/06` while a
+marketing session had uncommitted work in both. It said so itself.** Nothing
+lost; same cosmetic shape as before.
+
+---
+
 # ★★★ 25 AUGUST — DEEPSEEK CONFIRMED ON A SECOND DAY. D5 IS SETTLED.
 
 **The conductor re-ran deepseek's full ladder, which was the one thing standing
