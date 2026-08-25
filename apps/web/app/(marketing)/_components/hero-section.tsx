@@ -82,7 +82,40 @@ export function HeroSection() {
         */}
         <div
           className={
-            'flex flex-col gap-7 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 lg:gap-y-7'
+            /*
+             * `lg:grid-rows-[auto_1fr]` IS FIX 2 AND IT IS THE WHOLE OF IT.
+             * Jon's instruction, 25 August 2026, six-ui-fixes: after a run,
+             * "WORDS CLEANED WITH UN-CLAUDE" was pushed down out of view.
+             *
+             * MEASURED BEFORE CHANGING ANYTHING, because the brief rightly
+             * said the class list is the facts and not the cause. At 1280x760,
+             * scanning and then sanitising a 55-word paste grew the workbench
+             * from 511px to 868px, and the counter went from top 464 / bottom
+             * 613, fully visible, to top 642 / bottom 791 — 31px below the
+             * fold on a normal laptop.
+             *
+             * THE CAUSE. The workbench is `lg:row-span-2`. Both rows were
+             * `auto`, so the grid met the spanning item's height by growing
+             * BOTH of them, splitting the 357px of new workbench evenly: row 1
+             * took about 178px it had no content for, and the counter, which
+             * starts at the top of row 2, was carried down by exactly that.
+             * The counter was never the thing that changed. It was pushed by a
+             * row that grew underneath the headline.
+             *
+             * THE FIX. Row 1 is pinned to `auto`, which is the headline and
+             * nothing else, and row 2 takes `1fr`, so every pixel the
+             * workbench gains is absorbed by the row BELOW the counter's
+             * starting edge rather than shared with the row above it. With
+             * `lg:items-start` already in place the counter stays welded to
+             * the headline's baseline gap and does not move when a result
+             * arrives.
+             *
+             * Nothing about the DOM moved, which matters: the `<Suspense>`
+             * boundary around `LiveCounter` is the reason this page is in
+             * Google's index at all, and it is untouched. See the note at that
+             * boundary below.
+             */
+            'flex flex-col gap-7 lg:grid lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-12 lg:gap-y-7'
           }
         >
           <div
