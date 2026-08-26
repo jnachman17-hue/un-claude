@@ -1,12 +1,52 @@
 import { ImageResponse } from 'next/og';
 
 /**
- * The share card, generated rather than drawn in a design tool so it always
- * matches the site's real headline and palette. 1200x630, the standard card.
+ * The share card. 1200x630, the standard size every messaging app expects.
+ *
+ * REDRAWN 25 August 2026, Jon's direction: "make it look like the box where
+ * you paste everything into, like how the mobile version would load."
+ *
+ * WHY THE TOOL RATHER THAN A HEADLINE. The card this replaced was the site's
+ * headline set large on a cream field. It read well at full size and badly
+ * where it actually appears: in iMessage a card renders around 250px wide, at
+ * which point a sub-heading and a footer are grey smudges and half the canvas
+ * is empty. A picture of the input box survives that scaling, because a
+ * bordered rectangle with a button under it is legible as "a thing you paste
+ * into" at any size, in a thread full of photos.
+ *
+ * WHY THE TYPE IS OVERSIZED against the real page. Everything here is set
+ * larger, relative to its container, than the site sets it. The card is only
+ * ever seen shrunk, so matching the site's true proportions would make it
+ * unreadable exactly where it is used.
+ *
+ * THE LOGOS ARE INLINE base64 rather than fetched. This route runs on every
+ * cache miss, and a remote image fetch would put four network calls on the
+ * path of a card that a messaging app gives up on quickly. The sources are
+ * `public/images/vendors/*.svg`, unmodified. Gemini's carries a gradient,
+ * which Satori rasterises correctly when the SVG arrives as an image src.
+ *
+ * SATORI CONSTRAINTS, learned the hard way and kept from the previous version:
+ * flexbox only, every element with more than one child needs an explicit
+ * `display`, and `transform` is unreliable, so the strike through "Claude" is
+ * a fixed pixel offset rather than a centred percentage.
  */
-export const alt = 'Un-Claude: if Claude wrote it, it is marked.';
+export const alt =
+  'Un-Claude: paste your text in and it sanitises every kind of AI watermark.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+
+const INK = '#292524';
+const MARK = '#C15F3C';
+const PAPER = '#faf9f5';
+const BORDER = '#e2ded6';
+
+/** The four marks the site shows inside the paste box, in the same order. */
+const LOGOS: { alt: string; src: string }[] = [
+  { alt: 'Claude', src: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjU2cHgiIGhlaWdodD0iMjU3cHgiIHZpZXdCb3g9IjAgMCAyNTYgMjU3IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPgogICAgPHRpdGxlPkNsYXVkZTwvdGl0bGU+CiAgICA8Zz4KICAgICAgICA8cGF0aCBkPSJNNTAuMjI3ODQ4MSwxNzAuMzIxMDEzIEwxMDAuNTg1MzE2LDE0Mi4wNjM3OTcgTDEwMS40Mjc4NDgsMTM5LjYwMTAxMyBMMTAwLjU4NTMxNiwxMzguMjQgTDk4LjEyMjUzMTYsMTM4LjI0IEw4OS42OTcyMTUyLDEzNy43MjE1MTkgTDYwLjkyMTUxOSwxMzYuOTQzNzk3IEwzNS45Njk2MjAzLDEzNS45MDY4MzUgTDExLjc5NTQ0MywxMzQuNjEwNjMzIEw1LjcwMzI5MTE0LDEzMy4zMTQ0MyBMMCwxMjUuNzk2NDU2IEwwLjU4MzI5MTEzOSwxMjIuMDM3NDY4IEw1LjcwMzI5MTE0LDExOC42MDI1MzIgTDEzLjAyNjgzNTQsMTE5LjI1MDYzMyBMMjkuMjI5MzY3MSwxMjAuMzUyNDA1IEw1My41MzMxNjQ2LDEyMi4wMzc0NjggTDcxLjE2MTUxOSwxMjMuMDc0NDMgTDk3LjI4LDEyNS43OTY0NTYgTDEwMS40Mjc4NDgsMTI1Ljc5NjQ1NiBMMTAyLjAxMTEzOSwxMjQuMTExMzkyIEwxMDAuNTg1MzE2LDEyMy4wNzQ0MyBMOTkuNDgzNTQ0MywxMjIuMDM3NDY4IEw3NC4zMzcyMTUyLDEwNC45OTI0MDUgTDQ3LjExNjk2Miw4Ni45NzUxODk5IEwzMi44NTg3MzQyLDc2LjYwNTU2OTYgTDI1LjE0NjMyOTEsNzEuMzU1OTQ5NCBMMjEuMjU3NzIxNSw2Ni40MzAzNzk3IEwxOS41NzI2NTgyLDU1LjY3MTg5ODcgTDI2LjU3MjE1MTksNDcuOTU5NDkzNyBMMzUuOTY5NjIwMyw0OC42MDc1OTQ5IEwzOC4zNjc1OTQ5LDQ5LjI1NTY5NjIgTDQ3Ljg5NDY4MzUsNTYuNTc5MjQwNSBMNjguMjQ1MDYzMyw3Mi4zMjgxMDEzIEw5NC44MTcyMTUyLDkxLjkwMDc1OTUgTDk4LjcwNTgyMjgsOTUuMTQxMjY1OCBMMTAwLjI2MTI2Niw5NC4wMzk0OTM3IEwxMDAuNDU1Njk2LDkzLjI2MTc3MjIgTDk4LjcwNTgyMjgsOTAuMzQ1MzE2NSBMODQuMjUzMTY0Niw2NC4yMjY4MzU0IEw2OC44MjgzNTQ0LDM3LjY1NDY4MzUgTDYxLjk1ODQ4MSwyNi42MzY5NjIgTDYwLjE0Mzc5NzUsMjAuMDI2MzI5MSBDNTkuNDk1Njk2MiwxNy4zMDQzMDM4IDU5LjA0MjAyNTMsMTUuMDM1OTQ5NCA1OS4wNDIwMjUzLDEyLjI0OTExMzkgTDY3LjAxMzY3MDksMS40MjU4MjI3OCBMNzEuNDIwNzU5NSwtMS40MjEwODU0N2UtMTQgTDgyLjA0OTYyMDMsMS40MjU4MjI3OCBMODYuNTIxNTE5LDUuMzE0NDMwMzggTDkzLjEzMjE1MTksMjAuNDE1MTg5OSBMMTAzLjgyNTgyMyw0NC4yMDA1MDYzIEwxMjAuNDE3MjE1LDc2LjU0MDc1OTUgTDEyNS4yNzc5NzUsODYuMTMyNjU4MiBMMTI3Ljg3MDM4LDk1LjAxMTY0NTYgTDEyOC44NDI1MzIsOTcuNzMzNjcwOSBMMTMwLjUyNzU5NSw5Ny43MzM2NzA5IEwxMzAuNTI3NTk1LDk2LjE3ODIyNzggTDEzMS44ODg2MDgsNzcuOTY2NTgyMyBMMTM0LjQxNjIwMyw1NS42MDcwODg2IEwxMzYuODc4OTg3LDI2LjgzMTM5MjQgTDEzNy43MjE1MTksMTguNzMwMTI2NiBMMTQxLjczOTc0Nyw5LjAwODYwNzU5IEwxNDkuNzExMzkyLDMuNzU4OTg3MzQgTDE1NS45MzMxNjUsNi43NDAyNTMxNiBMMTYxLjA1MzE2NSwxNC4wNjM3OTc1IEwxNjAuMzQwMjUzLDE4Ljc5NDkzNjcgTDE1Ny4yOTQxNzcsMzguNTYyMDI1MyBMMTUxLjMzMTY0Niw2OS41NDEyNjU4IEwxNDcuNDQzMDM4LDkwLjI4MDUwNjMgTDE0OS43MTEzOTIsOTAuMjgwNTA2MyBMMTUyLjMwMzc5Nyw4Ny42ODgxMDEzIEwxNjIuODAzMDM4LDczLjc1MzkyNDEgTDE4MC40MzEzOTIsNTEuNzE4NDgxIEwxODguMjA4NjA4LDQyLjk2OTExMzkgTDE5Ny4yODIwMjUsMzMuMzEyNDA1MSBMMjAzLjExNDkzNywyOC43MTA4ODYxIEwyMTQuMTMyNjU4LDI4LjcxMDg4NjEgTDIyMi4yMzM5MjQsNDAuNzY1NTY5NiBMMjE4LjYwNDU1Nyw1My4yMDkxMTM5IEwyMDcuMjYyNzg1LDY3LjU5Njk2MiBMMTk3Ljg2NTMxNiw3OS43ODEyNjU4IEwxODQuMzg0ODEsOTcuOTI4MTAxMyBMMTc1Ljk1OTQ5NCwxMTIuNDQ1NTcgTDE3Ni43MzcyMTUsMTEzLjYxMjE1MiBMMTc4Ljc0NjMyOSwxMTMuNDE3NzIyIEwyMDkuMjA3MDg5LDEwNi45MzY3MDkgTDIyNS42Njg4NjEsMTAzLjk1NTQ0MyBMMjQ1LjMwNjMyOSwxMDAuNTg1MzE2IEwyNTQuMTg1MzE2LDEwNC43MzMxNjUgTDI1NS4xNTc0NjgsMTA4Ljk0NTgyMyBMMjUxLjY1NzcyMiwxMTcuNTY1NTcgTDIzMC42NTkyNDEsMTIyLjc1MDM4IEwyMDYuMDMxMzkyLDEyNy42NzU5NDkgTDE2OS4zNDg4NjEsMTM2LjM2MDUwNiBMMTY4Ljg5NTE5LDEzNi42ODQ1NTcgTDE2OS40MTM2NzEsMTM3LjMzMjY1OCBMMTg1Ljk0MDI1MywxMzguODg4MTAxIEwxOTMuMDA0NTU3LDEzOS4yNzY5NjIgTDIxMC4zMDg4NjEsMTM5LjI3Njk2MiBMMjQyLjUxOTQ5NCwxNDEuNjc0OTM3IEwyNTAuOTQ0ODEsMTQ3LjI0ODYwOCBMMjU2LDE1NC4wNTM2NzEgTDI1NS4xNTc0NjgsMTU5LjIzODQ4MSBMMjQyLjE5NTQ0MywxNjUuODQ5MTE0IEwyMjQuNjk2NzA5LDE2MS43MDEyNjYgTDE4My44NjYzMjksMTUxLjk3OTc0NyBMMTY5Ljg2NzM0MiwxNDguNDggTDE2Ny45MjMwMzgsMTQ4LjQ4IEwxNjcuOTIzMDM4LDE0OS42NDY1ODIgTDE3OS41ODg4NjEsMTYxLjA1MzE2NSBMMjAwLjk3NjIwMywxODAuMzY2NTgyIEwyMjcuNzQyNzg1LDIwNS4yNTM2NzEgTDIyOS4xMDM3OTcsMjExLjQxMDYzMyBMMjI1LjY2ODg2MSwyMTYuMjcxMzkyIEwyMjIuMDM5NDk0LDIxNS43NTI5MTEgTDE5OC41MTM0MTgsMTk4LjA1OTc0NyBMMTg5LjQ0LDE5MC4wODgxMDEgTDE2OC44OTUxOSwxNzIuNzgzNzk3IEwxNjcuNTM0MTc3LDE3Mi43ODM3OTcgTDE2Ny41MzQxNzcsMTc0LjU5ODQ4MSBMMTcyLjI2NTMxNiwxODEuNTMzMTY1IEwxOTcuMjgyMDI1LDIxOS4xMjMwMzggTDE5OC41NzgyMjgsMjMwLjY1OTI0MSBMMTk2Ljc2MzU0NCwyMzQuNDE4MjI4IEwxOTAuMjgyNTMyLDIzNi42ODY1ODIgTDE4My4xNTM0MTgsMjM1LjM5MDM4IEwxNjguNTA2MzI5LDIxNC44NDU1NyBMMTUzLjQwNTU3LDE5MS43MDgzNTQgTDE0MS4yMjEyNjYsMTcwLjk2OTExNCBMMTM5LjczMDYzMywxNzEuODExNjQ2IEwxMzIuNTM2NzA5LDI0OS4yNTk3NDcgTDEyOS4xNjY1ODIsMjUzLjIxMzE2NSBMMTIxLjM4OTM2NywyNTYuMTk0NDMgTDExNC45MDgzNTQsMjUxLjI2ODg2MSBMMTExLjQ3MzQxOCwyNDMuMjk3MjE1IEwxMTQuOTA4MzU0LDIyNy41NDgzNTQgTDExOS4wNTYyMDMsMjA3LjAwMzU0NCBMMTIyLjQyNjMyOSwxOTAuNjcxMzkyIEwxMjUuNDcyNDA1LDE3MC4zODU4MjMgTDEyNy4yODcwODksMTYzLjY0NTU3IEwxMjcuMTU3NDY4LDE2My4xOTE4OTkgTDEyNS42NjY4MzUsMTYzLjM4NjMyOSBMMTEwLjM3MTY0NiwxODQuMzg0ODEgTDg3LjEwNDgxMDEsMjE1LjgxNzcyMiBMNjguNjk4NzM0MiwyMzUuNTIgTDY0LjI5MTY0NTYsMjM3LjI2OTg3MyBMNTYuNjQ0MDUwNiwyMzMuMzE2NDU2IEw1Ny4zNTY5NjIsMjI2LjI1MjE1MiBMNjEuNjM0NDMwNCwyMTkuOTY1NTcgTDg3LjEwNDgxMDEsMTg3LjU2MDUwNiBMMTAyLjQ2NDgxLDE2Ny40NjkzNjcgTDExMi4zODA3NTksMTU1Ljg2ODM1NCBMMTEyLjMxNTk0OSwxNTQuMTgzMjkxIEwxMTEuNzMyNjU4LDE1NC4xODMyOTEgTDQ0LjA3MDg4NjEsMTk4LjEyNDU1NyBMMzIuMDE2MjAyNSwxOTkuNjggTDI2LjgzMTM5MjQsMTk0LjgxOTI0MSBMMjcuNDc5NDkzNywxODYuODQ3NTk1IEwyOS45NDIyNzg1LDE4NC4yNTUxOSBMNTAuMjkyNjU4MiwxNzAuMjU2MjAzIEw1MC4yMjc4NDgxLDE3MC4zMjEwMTMgWiIgZmlsbD0iI0Q5Nzc1NyI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4K' },
+  { alt: 'ChatGPT', src: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjU2cHgiIGhlaWdodD0iMjYwcHgiIHZpZXdCb3g9IjAgMCAyNTYgMjYwIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIj4KICAgIDx0aXRsZT5PcGVuQUk8L3RpdGxlPgogICAgPGc+CiAgICAgICAgPHBhdGggZD0iTTIzOS4xODM5MTQsMTA2LjIwMjc4MyBDMjQ1LjA1NDMwNCw4OC41MjQyMDk2IDI0My4wMjIyOCw2OS4xNzMzODA1IDIzMy42MDc1OTksNTMuMDk5ODg2NCBDMjE5LjQ1MTY3OCwyOC40NTg4MDIxIDE5MC45OTk3MDMsMTUuNzgzNjEyOSAxNjMuMjEzMDA3LDIxLjczOTUwNSBDMTQ3LjU1NDA3Nyw0LjMyMTQ1ODgzIDEyMy43OTQ5MDksLTMuNDIzOTg1NTQgMTAwLjg3OTAxLDEuNDE4NzM4OTggQzc3Ljk2MzExMDUsNi4yNjE0NjM0OSA1OS4zNjkwMDkzLDIyLjk1NzI1MzYgNTIuMDk1OTYyMSw0NS4yMjE0MjE5IEMzMy44NDM2NDk0LDQ4Ljk2NDQ4NjcgMTguMDkwMTcyMSw2MC4zOTI3NDkgOC44NjY3MjUxMyw3Ni41ODE4MDMzIEMtNS40NDM0OTEsMTAxLjE4Mjk2MiAtMi4xOTU0NDQzMSwxMzIuMjE1MjU1IDE2Ljg5ODY2NjIsMTUzLjMyMDA5NCBDMTEuMDA2MDg2NSwxNzAuOTkwNjU2IDEzLjAxOTcyODMsMTkwLjM0Mzk5MSAyMi40MjM4MjMxLDIwNi40MjI5OTEgQzM2LjU5NzU1NTMsMjMxLjA3MjM0NCA2NS4wNjgwMzQyLDI0My43NDY1NjYgOTIuODY5NTczOCwyMzcuNzgzMzcyIEMxMDUuMjM1NjM5LDI1MS43MDgyNDkgMTIzLjAwMTExMywyNTkuNjMwOTQyIDE0MS42MjM5NjgsMjU5LjUyNjkyIEMxNzAuMTA1MzU5LDI1OS41NTIxNjkgMTk1LjMzNzYxMSwyNDEuMTY1NzE4IDIwNC4wMzc3NzcsMjE0LjA0NTY2MSBDMjIyLjI4NzM0LDIxMC4yOTYzNTYgMjM4LjAzODQ4OSwxOTguODY5NzgzIDI0Ny4yNjcwMTQsMTgyLjY4NTI4IEMyNjEuNDA0NDUzLDE1OC4xMjc1MTUgMjU4LjE0MjQ5NCwxMjcuMjYyNzc1IDIzOS4xODM5MTQsMTA2LjIwMjc4MyBMMjM5LjE4MzkxNCwxMDYuMjAyNzgzIFogTTE0MS42MjM5NjgsMjQyLjU0MTIwNyBDMTMwLjI1NTY4MiwyNDIuNTU5MTc3IDExOS4yNDM4NzYsMjM4LjU3NDY0MiAxMTAuNTE5MzgxLDIzMS4yODYxOTcgTDExMi4wNTQxNDYsMjMwLjQxNjQ5NiBMMTYzLjcyNDU5NSwyMDAuNTkwODgxIEMxNjYuMzQwNjQ4LDE5OS4wNTY0NDQgMTY3Ljk1NDMyMSwxOTYuMjU2ODE4IDE2Ny45NzA3ODEsMTkzLjIyNDAwNSBMMTY3Ljk3MDc4MSwxMjAuMzczNzg4IEwxODkuODE1NjE0LDEzMy4wMTAwMjYgQzE5MC4wMzQxMzIsMTMzLjEyMTQyMyAxOTAuMTg2MjM1LDEzMy4zMzA1NjQgMTkwLjIyNDg4NSwxMzMuNTcyNzc0IEwxOTAuMjI0ODg1LDE5My45NDAyMjkgQzE5MC4xNjg2MDMsMjIwLjc1ODQyNyAxNjguNDQyMTY2LDI0Mi40ODQ4NjQgMTQxLjYyMzk2OCwyNDIuNTQxMjA3IFogTTM3LjE1NzU3NDksMTk3LjkzMDYyIEMzMS40NTY0OTgsMTg4LjA4NjM1OSAyOS40MDk0ODE4LDE3Ni41NDY5ODQgMzEuMzc2NjIzNywxNjUuMzQyNDI2IEwzMi45MTEzODk1LDE2Ni4yNjMyODUgTDg0LjYzMjk5NzMsMTk2LjA4ODkwMSBDODcuMjM4OTM0OSwxOTcuNjE4MjA3IDkwLjQ2ODI3MTcsMTk3LjYxODIwNyA5My4wNzQyMDkzLDE5Ni4wODg5MDEgTDE1Ni4yNTU0MDIsMTU5LjY2Mzc5MyBMMTU2LjI1NTQwMiwxODQuODg1MTExIEMxNTYuMjQzNTU3LDE4NS4xNDk3NzEgMTU2LjExMTcyNSwxODUuMzk0NjAyIDE1NS44OTcyOSwxODUuNTUwMTc2IEwxMDMuNTYxNzc2LDIxNS43MzM5MDMgQzgwLjMwNTQ5NTMsMjI5LjEzMTYzMiA1MC41OTI0OTU0LDIyMS4xNjU0MzUgMzcuMTU3NTc0OSwxOTcuOTMwNjIgWiBNMjMuNTQ5MzE4MSw4NS4zODExMjczIEMyOS4yODk5ODYxLDc1LjQ3MzMwOTcgMzguMzUxMTkxMSw2Ny45MTYyNjQ4IDQ5LjEyODc0ODIsNjQuMDQ3ODgyNSBMNDkuMTI4NzQ4MiwxMjUuNDM4NTE1IEM0OS4wODkxNDkyLDEyOC40NTk0MjUgNTAuNjk2NTM4NiwxMzEuMjYyNTU2IDUzLjMyMzc3NDgsMTMyLjc1NDIzMiBMMTE2LjE5ODAxNCwxNjkuMDI1ODY0IEw5NC4zNTMxODA4LDE4MS42NjIxMDIgQzk0LjExMzIzMjUsMTgxLjc4OTQzNCA5My44MjU3NDYxLDE4MS43ODk0MzQgOTMuNTg1Nzk3OSwxODEuNjYyMTAyIEw0MS4zNTI2MDE1LDE1MS41Mjk1MzQgQzE4LjE0MTk0MjYsMTM4LjA3NjA5OCAxMC4xODE3NjgxLDEwOC4zODU1NjIgMjMuNTQ5MzE4MSw4NS4xMjUzMzMgTDIzLjU0OTMxODEsODUuMzgxMTI3MyBaIE0yMDMuMDE0NiwxMjcuMDc1NTk4IEwxMzkuOTM1NzI1LDkwLjQ0NTg1NDUgTDE2MS43Mjk0LDc3Ljg2MDc3NDggQzE2MS45NjkzNDgsNzcuNzMzNDQzNCAxNjIuMjU2ODM0LDc3LjczMzQ0MzQgMTYyLjQ5Njc4Myw3Ny44NjA3NzQ4IEwyMTQuNzI5OTc5LDEwOC4wNDQ1MDIgQzIzMS4wMzIzMjksMTE3LjQ1MTc0NyAyNDAuNDM3Mjk0LDEzNS40MjYxMDkgMjM4Ljg3MTUwNCwxNTQuMTgyNzM5IEMyMzcuMzA1NzE0LDE3Mi45MzkzNjggMjI1LjA1MDcxOSwxODkuMTA1NTcyIDIwNy40MTQyNjIsMTk1LjY3OTYzIEwyMDcuNDE0MjYyLDEzNC4yODg5OTggQzIwNy4zMjI1MjEsMTMxLjI3Njg2NyAyMDUuNjUwNjk3LDEyOC41MzU4NTMgMjAzLjAxNDYsMTI3LjA3NTU5OCBaIE0yMjQuNzU3MTE2LDk0LjM4NTA4NjcgTDIyMy4yMjIzNSw5My40NjQyMjcyIEwxNzEuNjAzMDYsNjMuMzgyODE3MyBDMTY4Ljk4MTI5Myw2MS44NDQzNzUxIDE2NS43MzI0NTYsNjEuODQ0Mzc1MSAxNjMuMTEwNjg5LDYzLjM4MjgxNzMgTDk5Ljk4MDY1NTQsOTkuODA3OTI1OSBMOTkuOTgwNjU1NCw3NC41ODY2MDc3IEM5OS45NTMzMDA0LDc0LjMyNTQwODggMTAwLjA3MTA5NSw3NC4wNzAxODY5IDEwMC4yODc2MDksNzMuOTIxNTQyNiBMMTUyLjUyMDgwNSw0My43ODg5NzM4IEMxNjguODYzMDk4LDM0LjM3NDM1MTggMTg5LjE3NDI1NiwzNS4yNTI5MDQzIDIwNC42NDI1NzksNDYuMDQzNDg0MSBDMjIwLjExMDkwMyw1Ni44MzQwNjM4IDIyNy45NDkyNjksNzUuNTkyMzk1OSAyMjQuNzU3MTE2LDk0LjE4MDQ1MTMgTDIyNC43NTcxMTYsOTQuMzg1MDg2NyBaIE04OC4wNjA2NDA5LDEzOS4wOTc5MzEgTDY2LjIxNTgwNzYsMTI2LjUxMjg1MSBDNjUuOTk1MDM5OSwxMjYuMzc5MDkxIDY1Ljg0NTA5NjUsMTI2LjE1NDE3NiA2NS44MDY1MzY3LDEyNS44OTg5NDUgTDY1LjgwNjUzNjcsNjUuNjg0OTY2IEM2NS44MzE0NDk1LDQ2LjgyODUzNjcgNzYuNzUwMDYwNSwyOS42ODQ2MDMyIDkzLjgyNzA4NTIsMjEuNjg4MzA1NSBDMTEwLjkwNDExLDEzLjY5MjAwNzkgMTMxLjA2MzgzMywxNi4yODM1NDYyIDE0NS41NjMyLDI4LjMzODk5OCBMMTQ0LjAyODQzNCwyOS4yMDg2OTg2IEw5Mi4zNTc5ODUyLDU5LjAzNDMxNDIgQzg5Ljc0MTkzMjcsNjAuNTY4NzUxMyA4OC4xMjgyNTk3LDYzLjM2ODM3NjcgODguMTExNzk5OCw2Ni40MDExOTAxIEw4OC4wNjA2NDA5LDEzOS4wOTc5MzEgWiBNOTkuOTI5NDk2NSwxMTMuNTE4NSBMMTI4LjA2Njg3LDk3LjMwMTE0MTcgTDE1Ni4yNTU0MDIsMTEzLjUxODUgTDE1Ni4yNTU0MDIsMTQ1Ljk1MzIxOCBMMTI4LjE2OTE4NywxNjIuMTcwNTc3IEw5OS45ODA2NTU0LDE0NS45NTMyMTggTDk5LjkyOTQ5NjUsMTEzLjUxODUgWiIgZmlsbD0iIzAwMDAwMCI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4K' },
+  { alt: 'Gemini', src: 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjFlbSIgc3R5bGU9ImZsZXg6bm9uZTtsaW5lLWhlaWdodDoxIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxZW0iIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHRpdGxlPkdlbWluaTwvdGl0bGU+PHBhdGggZD0iTTIwLjYxNiAxMC44MzVhMTQuMTQ3IDE0LjE0NyAwIDAxLTQuNDUtMy4wMDEgMTQuMTExIDE0LjExMSAwIDAxLTMuNjc4LTYuNDUyLjUwMy41MDMgMCAwMC0uOTc1IDAgMTQuMTM0IDE0LjEzNCAwIDAxLTMuNjc5IDYuNDUyIDE0LjE1NSAxNC4xNTUgMCAwMS00LjQ1IDMuMDAxYy0uNjUuMjgtMS4zMTguNTA1LTIuMDAyLjY3OGEuNTAyLjUwMiAwIDAwMCAuOTc1Yy42ODQuMTcyIDEuMzUuMzk3IDIuMDAyLjY3N2ExNC4xNDcgMTQuMTQ3IDAgMDE0LjQ1IDMuMDAxIDE0LjExMiAxNC4xMTIgMCAwMTMuNjc5IDYuNDUzLjUwMi41MDIgMCAwMC45NzUgMGMuMTcyLS42ODUuMzk3LTEuMzUxLjY3Ny0yLjAwM2ExNC4xNDUgMTQuMTQ1IDAgMDEzLjAwMS00LjQ1IDE0LjExMyAxNC4xMTMgMCAwMTYuNDUzLTMuNjc4LjUwMy41MDMgMCAwMDAtLjk3NSAxMy4yNDUgMTMuMjQ1IDAgMDEtMi4wMDMtLjY3OHoiIGZpbGw9IiMzMTg2RkYiPjwvcGF0aD48cGF0aCBkPSJNMjAuNjE2IDEwLjgzNWExNC4xNDcgMTQuMTQ3IDAgMDEtNC40NS0zLjAwMSAxNC4xMTEgMTQuMTExIDAgMDEtMy42NzgtNi40NTIuNTAzLjUwMyAwIDAwLS45NzUgMCAxNC4xMzQgMTQuMTM0IDAgMDEtMy42NzkgNi40NTIgMTQuMTU1IDE0LjE1NSAwIDAxLTQuNDUgMy4wMDFjLS42NS4yOC0xLjMxOC41MDUtMi4wMDIuNjc4YS41MDIuNTAyIDAgMDAwIC45NzVjLjY4NC4xNzIgMS4zNS4zOTcgMi4wMDIuNjc3YTE0LjE0NyAxNC4xNDcgMCAwMTQuNDUgMy4wMDEgMTQuMTEyIDE0LjExMiAwIDAxMy42NzkgNi40NTMuNTAyLjUwMiAwIDAwLjk3NSAwYy4xNzItLjY4NS4zOTctMS4zNTEuNjc3LTIuMDAzYTE0LjE0NSAxNC4xNDUgMCAwMTMuMDAxLTQuNDUgMTQuMTEzIDE0LjExMyAwIDAxNi40NTMtMy42NzguNTAzLjUwMyAwIDAwMC0uOTc1IDEzLjI0NSAxMy4yNDUgMCAwMS0yLjAwMy0uNjc4eiIgZmlsbD0idXJsKCNsb2JlLWljb25zLWdlbWluaS0wLV9SXzBfKSI+PC9wYXRoPjxwYXRoIGQ9Ik0yMC42MTYgMTAuODM1YTE0LjE0NyAxNC4xNDcgMCAwMS00LjQ1LTMuMDAxIDE0LjExMSAxNC4xMTEgMCAwMS0zLjY3OC02LjQ1Mi41MDMuNTAzIDAgMDAtLjk3NSAwIDE0LjEzNCAxNC4xMzQgMCAwMS0zLjY3OSA2LjQ1MiAxNC4xNTUgMTQuMTU1IDAgMDEtNC40NSAzLjAwMWMtLjY1LjI4LTEuMzE4LjUwNS0yLjAwMi42NzhhLjUwMi41MDIgMCAwMDAgLjk3NWMuNjg0LjE3MiAxLjM1LjM5NyAyLjAwMi42NzdhMTQuMTQ3IDE0LjE0NyAwIDAxNC40NSAzLjAwMSAxNC4xMTIgMTQuMTEyIDAgMDEzLjY3OSA2LjQ1My41MDIuNTAyIDAgMDAuOTc1IDBjLjE3Mi0uNjg1LjM5Ny0xLjM1MS42NzctMi4wMDNhMTQuMTQ1IDE0LjE0NSAwIDAxMy4wMDEtNC40NSAxNC4xMTMgMTQuMTEzIDAgMDE2LjQ1My0zLjY3OC41MDMuNTAzIDAgMDAwLS45NzUgMTMuMjQ1IDEzLjI0NSAwIDAxLTIuMDAzLS42Nzh6IiBmaWxsPSJ1cmwoI2xvYmUtaWNvbnMtZ2VtaW5pLTEtX1JfMF8pIj48L3BhdGg+PHBhdGggZD0iTTIwLjYxNiAxMC44MzVhMTQuMTQ3IDE0LjE0NyAwIDAxLTQuNDUtMy4wMDEgMTQuMTExIDE0LjExMSAwIDAxLTMuNjc4LTYuNDUyLjUwMy41MDMgMCAwMC0uOTc1IDAgMTQuMTM0IDE0LjEzNCAwIDAxLTMuNjc5IDYuNDUyIDE0LjE1NSAxNC4xNTUgMCAwMS00LjQ1IDMuMDAxYy0uNjUuMjgtMS4zMTguNTA1LTIuMDAyLjY3OGEuNTAyLjUwMiAwIDAwMCAuOTc1Yy42ODQuMTcyIDEuMzUuMzk3IDIuMDAyLjY3N2ExNC4xNDcgMTQuMTQ3IDAgMDE0LjQ1IDMuMDAxIDE0LjExMiAxNC4xMTIgMCAwMTMuNjc5IDYuNDUzLjUwMi41MDIgMCAwMC45NzUgMGMuMTcyLS42ODUuMzk3LTEuMzUxLjY3Ny0yLjAwM2ExNC4xNDUgMTQuMTQ1IDAgMDEzLjAwMS00LjQ1IDE0LjExMyAxNC4xMTMgMCAwMTYuNDUzLTMuNjc4LjUwMy41MDMgMCAwMDAtLjk3NSAxMy4yNDUgMTMuMjQ1IDAgMDEtMi4wMDMtLjY3OHoiIGZpbGw9InVybCgjbG9iZS1pY29ucy1nZW1pbmktMi1fUl8wXykiPjwvcGF0aD48ZGVmcz48bGluZWFyR3JhZGllbnQgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIGlkPSJsb2JlLWljb25zLWdlbWluaS0wLV9SXzBfIiB4MT0iNyIgeDI9IjExIiB5MT0iMTUuNSIgeTI9IjEyIj48c3RvcCBzdG9wLWNvbG9yPSIjMDhCOTYyIj48L3N0b3A+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDhCOTYyIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgaWQ9ImxvYmUtaWNvbnMtZ2VtaW5pLTEtX1JfMF8iIHgxPSI4IiB4Mj0iMTEuNSIgeTE9IjUuNSIgeTI9IjExIj48c3RvcCBzdG9wLWNvbG9yPSIjRjk0NTQzIj48L3N0b3A+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjRjk0NTQzIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgaWQ9ImxvYmUtaWNvbnMtZ2VtaW5pLTItX1JfMF8iIHgxPSIzLjUiIHgyPSIxNy41IiB5MT0iMTMuNSIgeTI9IjEyIj48c3RvcCBzdG9wLWNvbG9yPSIjRkFCQzEyIj48L3N0b3A+PHN0b3Agb2Zmc2V0PSIuNDYiIHN0b3AtY29sb3I9IiNGQUJDMTIiIHN0b3Atb3BhY2l0eT0iMCI+PC9zdG9wPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjwvc3ZnPg==' },
+  { alt: 'Grok', src: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjU2cHgiIGhlaWdodD0iMjkxcHgiIHZpZXdCb3g9IjAgMCAyNTYgMjkxIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIj4KICAgIDx0aXRsZT54QUk8L3RpdGxlPgogICAgPGc+CiAgICAgICAgPHBhdGggZD0iTTAuMDczMTkyNjY5NiwxMDIuNTUyOTUzIEwxMjguNjE0NDIzLDI5MC4xMzMxMDUgTDE4NS43NTA4NjMsMjkwLjEzMzEwNSBMNTcuMTk0NTk4MywxMDIuNTUyOTUzIEwwLjA3MzE5MjY2OTYsMTAyLjU1Mjk1MyBaIE01Ny4xNTA2ODI3LDIwNi43MzU2NjMgTDAsMjkwLjEzMzEwNSBMNTcuMTc5OTU5OCwyOTAuMTMzMTA1IEw4NS43MzMyNzc0LDI0OC40NDIyOTYgTDU3LjE1MDY4MjcsMjA2LjczNTY2MyBaIE0xOTguODIwMDQsMi44NDIxNzA5NGUtMTQgTDEwMC4wMzE5NiwxNDQuMTUzOTUyIEwxMjguNjE0NDIzLDE4NS44NzUwOTIgTDI1NiwyLjg0MjE3MDk0ZS0xNCBMMTk4LjgyMDA0LDIuODQyMTcwOTRlLTE0IFogTTIwOS4xNjcyNDIsODkuMTk5MzEzIEwyMDkuMTY3MjQyLDI5MC4xMzMxMDUgTDI1NiwyOTAuMTMzMTA1IEwyNTYsMjAuODYwNTcwMiBMMjA5LjE2NzI0Miw4OS4xOTkzMTMgWiIgZmlsbD0iIzAwMDAwMCI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4K' },
+];
 
 export default function OpenGraphImage() {
   return new ImageResponse(
@@ -17,102 +57,107 @@ export default function OpenGraphImage() {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: 72,
-          backgroundColor: '#faf9f5',
+          padding: '48px 56px',
+          backgroundColor: PAPER,
           fontFamily: 'sans-serif',
         }}
       >
-        {/* The wordmark, `04` entry 87: no icon, "Un" in the accent colour,
-            "Claude" struck through once in the same colour. Built from divs
-            rather than the header's spans because Satori's layout engine
-            wants block-level children for absolute positioning to behave. */}
+        {/* The wordmark: "Un" in the accent, "Claude" struck through once. */}
         <div
           style={{
             display: 'flex',
             alignItems: 'baseline',
-            fontSize: 40,
+            fontSize: 42,
             fontWeight: 700,
             letterSpacing: '-0.03em',
           }}
         >
-          <div style={{ color: '#C15F3C' }}>Un</div>
-          <div style={{ color: '#292524' }}>-</div>
-          {/* Satori (next/og's renderer) requires an explicit display on
-              any element with more than one child; this one has the text
-              node plus the strike bar and was missing it, which is what
-              actually broke image generation. */}
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              color: '#292524',
-            }}
-          >
+          <div style={{ color: MARK }}>Un</div>
+          <div style={{ color: INK }}>-</div>
+          <div style={{ position: 'relative', display: 'flex', color: INK }}>
             Claude
-            {/* A fixed pixel offset rather than a centred percentage plus
-                transform: Satori's transform support is inconsistent, and
-                at this one fixed font size a computed offset is exact. */}
             <div
               style={{
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: 20,
+                top: 25,
                 height: 3,
-                background: '#C15F3C',
+                background: MARK,
               }}
             />
           </div>
         </div>
 
+        {/* THE PASTE BOX. The whole point of the card. */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 24,
+            justifyContent: 'space-between',
+            marginTop: 26,
+            padding: '34px 38px',
+            borderRadius: 20,
+            border: `2px solid ${BORDER}`,
+            backgroundColor: '#ffffff',
+            height: 388,
           }}
         >
           <div
             style={{
-              fontSize: 88,
-              fontWeight: 700,
-              color: '#292524',
-              letterSpacing: '-0.035em',
-              lineHeight: 1.05,
+              fontSize: 44,
+              color: '#a8a29b',
+              letterSpacing: '-0.015em',
+              lineHeight: 1.25,
             }}
           >
-            If Claude wrote it, it&rsquo;s marked.
+            Paste your text here, or drop a file anywhere in this box.
           </div>
-          <div
-            style={{
-              fontSize: 34,
-              color: '#6b6660',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Scan free. Sanitise every kind of AI watermark in seconds.
+
+          {/* The logo strip and the promise, exactly as the site pairs them. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+              {LOGOS.map((logo) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={logo.alt} src={logo.src} alt={logo.alt} width={40} height={40} />
+              ))}
+            </div>
+            <div
+              style={{
+                fontSize: 31,
+                fontWeight: 700,
+                color: INK,
+                letterSpacing: '-0.015em',
+              }}
+            >
+              Sanitises Claude, ChatGPT, Gemini, Grok and every other model
+            </div>
           </div>
         </div>
 
+        {/* The button, and the one line worth reading at thumbnail size. */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: 28,
+            marginTop: 26,
           }}
         >
-          <div style={{ fontSize: 26, color: '#6b6660' }}>un-claude.com</div>
           <div
             style={{
               display: 'flex',
-              gap: 10,
-              alignItems: 'center',
-              fontSize: 26,
-              color: '#C15F3C',
+              padding: '16px 38px',
+              borderRadius: 999,
+              backgroundColor: INK,
+              color: '#ffffff',
+              fontSize: 30,
               fontWeight: 700,
             }}
           >
+            Scan it
+          </div>
+          <div style={{ fontSize: 29, color: MARK, fontWeight: 700 }}>
             Free. No account needed.
           </div>
         </div>
