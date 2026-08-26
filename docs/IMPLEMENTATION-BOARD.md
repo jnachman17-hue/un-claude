@@ -6,6 +6,102 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★★★ 25 AUGUST — THE PRE-FLIGHT SESSION LANDED. VERIFIED, AND IT CORRECTED THE CONDUCTOR TWICE.
+
+**Everything below is committed, pushed and live. The session did not touch this
+board. I re-ran its load-bearing claims rather than reading them.**
+
+## Verified by the conductor
+
+| Claim | My check | Result |
+|---|---|---|
+| Engine suite | ran pytest | **842 passed, 1 skipped** |
+| The site now reads `billing.freeze` | grep | **CONFIRMED — `workbench.tsx:581`. It read NOTHING before** |
+| The threshold is one named constant | grep | **CONFIRMED — `preflight.tsx:59  FREEZE_WARNING_ABOVE = 0.4`**, reasoning beside it |
+| The prompt now explains placeholders | grep `rewrite_text.py` | **CONFIRMED — rule 1a, 6 mentions where there were ZERO** |
+| FAQ heading is just "FAQ" | production | **CONFIRMED — 0 hits for the old two lines** |
+| The pre-flight fires correctly | production free scan | **quote-dense paste 81.1% → fires · plain essay 0.0% → quiet** |
+
+## ★★ THE ENGINE FINDING IS THE BIGGEST WIN OF THE DAY, and I reproduced it exactly
+
+**`rewrite_text.py` never told the model what `[[11]]` was.** No mention of
+placeholder, mask or bracket anywhere — while rule 5a shouted NEVER CHANGE A
+NUMBER'S VALUE. **The model was handed a number-shaped token and eight rules
+about numbers.**
+
+**Recounted by me from the raw ladders:**
+
+```
+PRE-FIX  (ladder_25aug_campaign1)  63 runs   fallbacks in 26 runs (41.3%)   31 chunks   210 retries   0 failures
+POST-FIX (the appended campaign)   63 runs   fallbacks in  1 run  ( 1.6%)    1 chunk     56 retries   0 failures
+```
+
+**A 97% reduction, and it closes the one real cost of Jon's every-quotation
+ruling.** I told him "in about half of runs the customer now receives at least
+one chunk unrewritten." **That is now 1.6%.** The rewrite also got deeper —
+median surviving overlap in non-frozen text 18.5% → 12.9%.
+
+## ★ CORRECTION 1 — my "empty band" was an artefact of my own sampling
+
+**I recommended a 35% pre-flight threshold on the strength of an "empty band"
+between 29.7% and 52.3%. That band does not exist.** I measured **14 whole
+documents at seven fixed lengths.** The session measured **103**, including
+section pastes of the same academic prose, and the range runs **continuously
+30% to 66%**, with the quote-dense documents sitting **inside** the ordinary
+range rather than above it.
+
+**THE THRESHOLD IS 40%, not 35.** Over 103 documents 40% catches exactly what 35%
+catches and interrupts **7 ordinary documents instead of 11**. `04` entry 149.
+
+**The lesson, and it is mine: seven fixed document lengths is not a
+distribution.** A gap between two clusters may be a gap in the sampling.
+
+## ★ CORRECTION 2 — I created a duplicate dataset and it corrupted their numbers
+
+**`_ladder_prev.jsonl` was byte-identical to `ladder_25aug_campaign1.jsonl`** —
+same MD5 `a4d74f23`. **I made it**, preserving a campaign with a `cp` followed by
+a `mv`, and left two names for one file. **Their first fallback figures were
+wrong because a total counting both double-counted a whole campaign.**
+
+**Cleaned up by me now:**
+- `_ladder_prev.jsonl` **deleted** (untracked, referenced only as documentation)
+- **`ladder.jsonl` held two campaigns appended** — my 21-run deepseek confirm
+  plus their 63-run post-fix campaign. Split into
+  `ladder_25aug_deepseek_confirm.jsonl` and `ladder_25aug_postfix.jsonl`.
+
+**The harness appends. Anyone preserving a campaign must MOVE the file, never
+copy it, and must never leave two names for one dataset.**
+
+## Six UI fixes — all done, live, and one correction to my brief
+
+**My brief quoted the wrong element's class for fix 1** — the pill class I gave
+belongs to the standalone badges, not the inline figure that actually needed
+changing. The session found the right one.
+
+**Fix 2's cause:** `lg:row-span-2` across two auto rows split the workbench's
+growth between them. Fixed with `lg:grid-rows-[auto_1fr]`. **Prerender
+re-checked: 1,265 words and one `<h1>`** — the SEO fix holds.
+
+**Fix 3 found three faults that would have shipped looking correct:**
+IntersectionObserver never firing, `position:fixed` trapped by `animate-rise`,
+and `behavior:'smooth'` silently doing nothing while feature detection said it
+was supported. **That is what testing an interface rather than reading it buys.**
+
+## OPEN — Jon's
+
+| `04` | Item |
+|---|---|
+| **150** | Whether the pre-flight should describe the remainder at all |
+| **151** | Jon reinstated "over 90%" and "zero figures lost" after seeing the measurements. **Do not remove again without asking.** The figure moved with the engine fix: now **21 of 63 runs, median 87.1% broken** |
+| **154** | **NEW DEFECT.** The engine reports `layer_b.freeze.chunks_fallback` and **nothing in `apps/web` reads it**, so a customer whose chunk came back unrewritten is never told. **Same class as D4's pre-flight and E-7's `structure_kept`: the engine knows and says nothing.** The display half needs `lib/engine/receipt.ts`, which Jon ruled off-limits |
+
+**W-10's other half — the short-paste skip reason — was NOT done and stays open.**
+
+**Housekeeping:** `.claude/launch.json` gained an `engine` entry for starting the
+local Python engine through the harness. Additive.
+
+---
+
 # ★★★ 25 AUGUST — D4'S PRE-FLIGHT WAS NEVER BUILT. The conductor had this wrong.
 
 **I told Jon D4's pre-flight sentence was false and needed his ruling. It is not
