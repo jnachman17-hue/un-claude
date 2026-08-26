@@ -20,7 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT.parent / "apps" / "web" / "engine"
 sys.path.insert(0, str(SCRIPTS))
 
-from uc_filename import TOOL_NAMES, strip_tool_name  # noqa: E402
+from uc_filename import (  # noqa: E402
+    TOOL_NAMES,
+    TYPE_WORD_REQUIRED,
+    strip_tool_name,
+)
 
 
 def name_of(filename: str) -> str:
@@ -209,6 +213,77 @@ def test_the_tool_name_must_be_at_the_FRONT():
 def test_only_one_name_is_stripped_once():
     """No looping. Jon's ruling is one tool name off the front, and no more."""
     assert name_of("ChatGPT Gemini thing.png") == "Gemini thing.png"
+
+
+# ---------------------------------------------------------------------------
+# Grok, Meta AI and Claude. Added on Jon's instruction, 26 August 2026, and
+# the three of them behave differently for three different reasons.
+# ---------------------------------------------------------------------------
+
+def test_grok_names_found_in_the_wild():
+    """Both are real Wikimedia Commons uploads, both marked "own work".
+
+    Two id shapes under one prefix, which is what makes it xAI's name and not
+    a person's: nobody types `Grok image 1772320123570` by hand.
+    """
+    assert name_of("Grok_image_1772320123570.jpg") == "image_1772320123570.jpg"
+    assert name_of("Grok_image_7x449i.jpg") == "image_7x449i.jpg"
+    assert name_of("Grok image 7x449i.jpg") == "image 7x449i.jpg"
+
+
+def test_meta_ai_is_two_words_and_never_one():
+    """`Meta AI` is safe unproven. `Meta` alone would not be, and is absent."""
+    assert name_of("Meta AI Image 2026.png") == "Image 2026.png"
+    assert name_of("Meta_AI_image_9f3.jpg") == "image_9f3.jpg"
+    assert name_of("MetaAI-cat.png") == "cat.png"
+    assert "Meta" not in TOOL_NAMES
+    # The files `Meta` alone would have damaged.
+    assert name_of("Meta description.docx") == "Meta description.docx"
+    assert name_of("Metadata notes.txt") == "Metadata notes.txt"
+
+
+def test_claude_fires_only_when_the_next_word_could_not_be_a_surname():
+    """The guard, and it is the whole reason `Claude` can be in the list.
+
+    Every shape below is one a peer already uses in that exact position:
+    OpenAI writes `ChatGPT Image ...`, Google writes `Gemini_Generated_Image_`,
+    xAI writes `Grok_image_`.
+    """
+    assert name_of("Claude Image Aug 25, 2026.png") == "Image Aug 25, 2026.png"
+    assert name_of("Claude_Generated_Image_a1b2.png") == "Generated_Image_a1b2.png"
+    assert name_of("Claude-image-7f2.jpg") == "image-7f2.jpg"
+    assert name_of("Claude artifact report.docx") == "artifact report.docx"
+    assert name_of("Claude export.txt") == "export.txt"
+
+
+def test_claude_never_touches_a_person_named_claude():
+    """Thirty of the first thirty Commons files beginning `Claude` are people.
+
+    An unguarded entry would rename a real customer's document to remove a
+    mark nobody has shown exists. These five are real Commons filenames.
+    """
+    for filename in (
+        "Claude Monet study.docx",
+        "Claude-Alix Bertrand.jpg",
+        "Claude, empereur romain.tif",
+        "Claude Debussy prelude.txt",
+        "Claude&Ethel1926.jpg",
+    ):
+        assert name_of(filename) == filename, filename
+
+
+def test_a_bare_claude_is_a_person_until_proven_otherwise():
+    """`Firefly.jpg` strips because Adobe really does that. `Claude.png` does
+    not, because nothing says Anthropic does and a photograph of somebody
+    called Claude is by far the likelier file."""
+    assert name_of("Claude.png") == "Claude.png"
+    assert name_of("Claude.docx") == "Claude.docx"
+
+
+def test_the_guard_is_the_exception_and_not_the_rule():
+    """Only Claude is guarded. Every other entry strips on any first word."""
+    assert set(TYPE_WORD_REQUIRED) == {"Claude"}
+    assert name_of("ChatGPT Monet study.docx") == "Monet study.docx"
 
 
 # ---------------------------------------------------------------------------

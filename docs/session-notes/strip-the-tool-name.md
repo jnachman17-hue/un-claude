@@ -107,6 +107,17 @@ carries the full name in its `title`; the full name is also in the report
 underneath. **Noted for Jon rather than fixed: on a phone the visitor sees
 "Downloads as Image Aug 2…" rather than the whole name.**
 
+**THE BROWSER PASS WAS NOT REPEATED FOR THE THREE TOOLS ADDED LATER, and the
+reason is a known defect rather than a shortcut.** After the second round of
+changes the local dev server stopped hydrating: the page server-renders the tool
+correctly, and in the browser React never runs, so pressing "Try an example" does
+nothing at all. **That is `06` row 77 exactly:** intermittent, no console error,
+and its recorded remedy is a dev-server restart. **The dev server on port 3000
+belongs to another session and I did not restart it**, because nothing about the
+rendering changed between the two rounds: the second round changed the CONTENTS
+of a list in Python, and the interface code that was screenshotted above is
+byte-identical. The five new names are proven through the real route instead.
+
 ---
 
 ## 3. Where the logic lives, and why there is only one of it
@@ -136,8 +147,11 @@ confirmed against real files. The rest are not.
 |---|---|---|
 | **ChatGPT** | **CONFIRMED** against real files | Wikimedia Commons carries hundreds of `ChatGPT Image <date>.png` uploads |
 | **Gemini** | **CONFIRMED** against real files | Wikimedia Commons carries `Gemini_Generated_Image_<id>.png` uploads |
+| **Grok** | **CONFIRMED** against real files | Added on Jon's instruction. `Grok_image_1772320123570.jpg` and `Grok_image_7x449i.jpg`, both Commons uploads marked "own work" |
 | **DALL·E / DALL-E / DALL_E / DALLE** | **On trust** | The brief, plus general reporting. No real download inspected |
 | **Firefly** | **On trust** | Adobe's own community forum, a first-hand user report of downloads named `Firefly.jpg`. Adobe staff dispute it in the same thread |
+| **Meta AI / Meta_AI / MetaAI** | **UNPROVEN, and safe anyway** | Added on Jon's instruction. Nothing found. Carried because it is two words: nobody's own file begins "Meta AI" |
+| **Claude** | **UNPROVEN, and GUARDED** | Added on Jon's instruction. Fires only in front of a lab's type word. See below |
 
 **Nobody handed me a genuine fresh download from any of these tools.** I have no
 ChatGPT, Gemini, Adobe or OpenAI account in this session, and the project
@@ -177,13 +191,83 @@ of Inspector General, so `OIG-report-2026.docx` is a real filename a real
 customer could upload, and stripping it would damage their document to remove
 nothing.
 
-**Claude, Grok and Meta AI: I could not find out.** The brief said UNKNOWN and
-told me to find out. I searched, and there is no naming convention I can point
-at for any of the three. Every real `Grok ...` file I found was named by a human
-writing about Grok, not produced by it. **They are not in the list.** Adding
-`Claude` in particular would have been the worst possible guess: Claude is a
-common first name, so `Claude Monet study.docx` would have lost its first word to
-remove a mark that may not exist.
+### Claude, Grok and Meta AI: Jon sent me back for them, and the three came back different
+
+**They were absent from the first cut of this list.** Jon's instruction, 26
+August 2026: *"Please do get Claude, Grok, Meta AI."* All three are now in, and
+what I found for each one is not the same thing.
+
+**GROK: a real find, and the instruction is what produced it.** A prefix listing
+of every file on Wikimedia Commons beginning `Grok` turned up two real uploads,
+both marked "own work" by their uploader:
+
+```
+https://upload.wikimedia.org/wikipedia/commons/3/36/Grok_image_1772320123570.jpg
+https://upload.wikimedia.org/wikipedia/commons/5/57/Grok_image_7x449i.jpg
+```
+
+**Two different id shapes under one prefix**, which is what makes it xAI's name
+rather than a person's: nobody types `Grok image 1772320123570` by hand. This is
+now as well evidenced as ChatGPT and Gemini. **It would not be in the list if Jon
+had not sent me back for it.**
+
+**META AI: nothing found, and it goes in anyway because being wrong is free.**
+Meta's own help pages say only "tap Save", no real file surfaced, and the six
+Commons files beginning "Meta AI" are all logos and screenshots. **The entry is
+two words, and that is what makes it safe to carry unproven:** no customer's own
+file begins "Meta AI", so if the guess is wrong it fires on nothing and harms
+nobody. **`Meta` alone is deliberately absent and must stay absent.** It would
+take the first word off `Meta description.docx`. There is a test asserting it.
+
+**CLAUDE: nothing found, and the evidence against a plain entry is not close.**
+Three separate checks, all negative:
+
+  * **Artifacts download under the artifact's own title**, not under Claude's
+    name. Documented by the tooling built around them.
+  * **A document Claude writes is named from what is in it.** Anthropic's own
+    help page on creating files says nothing about a prefix.
+  * **Every file on Commons beginning `Claude Image` or `Claude Generated`:
+    none. Zero, both queries.**
+
+And the collision is worse than I said the first time. **The first thirty files
+on Commons beginning with the word `Claude` are thirty human beings:**
+
+```
+Claude&Ethel1926.jpg              Claude-Achille Debussy - Noël des enfants...
+Claude, empereur romain.tif       Claude-Alix Bertrand.JPG
+Claude, chef de la police...      Claude-Alexandre de Villeneuve...
+```
+
+**Thirty out of thirty.** A plain entry would rename a real customer's document
+to remove a mark nobody has shown exists.
+
+**So Claude is in the list and it is guarded, and the guard is one sentence: it
+fires only when the word after it is one a lab uses and a parent does not.**
+
+```
+Claude Image Aug 25, 2026.png    ->  Image Aug 25, 2026.png      stripped
+Claude_Generated_Image_a1b2.png  ->  Generated_Image_a1b2.png    stripped
+Claude artifact report.docx      ->  artifact report.docx        stripped
+Claude Monet study.docx          ->  Claude Monet study.docx     untouched
+Claude-Alix Bertrand.jpg         ->  Claude-Alix Bertrand.jpg    untouched
+Claude Debussy prelude.txt       ->  Claude Debussy prelude.txt  untouched
+```
+
+**The six words are not invented.** `image`, `images`, `generated`, `artifact`,
+`artifacts`, `export`. Each is what a peer already puts in exactly that position:
+OpenAI writes `ChatGPT Image ...`, Google writes `Gemini_Generated_Image_...`,
+xAI writes `Grok_image_...`. **If Anthropic ships any of those shapes, this fires
+on the first day.**
+
+**Today it fires on nothing, and that is the honest statement.** It is the one
+entry in the list that is a prepared position rather than a measured one, and it
+is in because Jon asked for it after being told the risk. **The guard is what
+makes that safe rather than reckless**, and removing it is one line if he wants
+the blunt version instead.
+
+**`Claude.png` on its own is deliberately NOT stripped.** `Firefly.jpg` is,
+because Adobe really does that; a bare `Claude.png` is far more likely a
+photograph of somebody called Claude, and nothing says Anthropic produces it.
 
 ### The rule I wrote into the constant, so the next person has one
 
@@ -271,12 +355,27 @@ belongs in a separate job. Logged as an open question in `06`.
 
 ## 7. Proof
 
-**Engine suite: `870 passed, 1 skipped`.** Baseline was `842 passed, 1 skipped`.
-The 28 new ones are `engine/tests/test_filename.py`. **No existing test was
+**Engine suite: `876 passed, 1 skipped`.** Baseline was `842 passed, 1 skipped`.
+The 34 new ones are `engine/tests/test_filename.py`. **No existing test was
 changed, skipped or deleted.**
 
 ```
-870 passed, 1 skipped in 17.83s
+876 passed, 1 skipped in 21.40s
+```
+
+**The three tools Jon sent me back for, round tripped through the site's own
+route into the real engine:**
+
+```
+UPLOADED                         DOWNLOADS AS                     STRIPPED
+----------------------------------------------------------------------------
+Grok_image_7x449i.jpg            image_7x449i.jpg                 Grok
+Grok_image_1772320123570.jpg     image_1772320123570.jpg          Grok
+Meta AI Image 2026.png           Image 2026.png                   Meta AI
+Claude Image Aug 25, 2026.png    Image Aug 25, 2026.png           Claude
+Claude Monet study.docx          Claude Monet study.docx          nothing, name untouched
+Claude-Alix Bertrand.jpg         Claude-Alix Bertrand.jpg         nothing, name untouched
+Claude Debussy prelude.txt       Claude Debussy prelude.txt       nothing, name untouched
 ```
 
 **`tsc --noEmit`: exit 0, no output.**
@@ -304,12 +403,17 @@ downloaded a file from any of these four tools.** If the coverage matters
 commercially, one person with four accounts and ten minutes can settle it
 completely, and that is worth more than any amount of further searching.
 
-**2. That the list is anywhere near complete.** It names four tools. There are
-dozens. Claude, Grok and Meta AI are the three the brief specifically asked about
-and all three are absent, because I could not establish what they name their
-files. **A list that looks complete and is not is the failure mode this whole
-approach carries**, and the honest statement of where the coverage ends is: four
-tools, two of them evidenced.
+**2. That the list is anywhere near complete.** It names seven tools and there
+are dozens. **Three of the seven are evidenced against real files** (ChatGPT,
+Gemini, Grok), two are on second-hand reports (DALL·E, Firefly), and two fire on
+nothing at all today (Meta AI, Claude). **A list that looks complete and is not
+is the failure mode this whole approach carries**, so the honest statement of
+where the coverage ends is that sentence rather than the number seven.
+
+**2a. That Meta AI or Claude will ever fire.** Both are prepared positions. Meta
+AI costs nothing to carry because no customer's file begins "Meta AI", and Claude
+costs nothing because of its guard. **Neither is coverage and neither should be
+counted as coverage.** They become real the day somebody shows me a download.
 
 **3. That a tell in the MIDDLE of a name is handled. It is not.**
 `Artificial planet by ChatGPT Image May 3, 2025.png` is a real file and keeps its
@@ -317,8 +421,9 @@ tell. This only looks at the front. Matching anywhere in a name would damage far
 more customer filenames than it would clean, so this is a deliberate limit and
 there is a test asserting it.
 
-**4. That the collisions never fire.** `Gemini 4 spacewalk.jpg` and
-`Firefly-shoes.jpg` will lose their first word. The file still opens, because the
+**4. That the collisions never fire.** `Gemini 4 spacewalk.jpg`,
+`Grok chatbot screenshot.png` and `Firefly-shoes.jpg` will lose their first
+word. The file still opens, because the
 extension is preserved exactly and there is a test for that, but the name is not
 what the customer chose. **This is the cost of Jon's ruling and it was recorded
 as the conductor's objection before the ruling was made.**

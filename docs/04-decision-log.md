@@ -6109,3 +6109,64 @@ at all.
 
 **Engine tests: 870 passed, 1 skipped**, from a baseline of 842 and 1. Full
 evidence in `docs/session-notes/strip-the-tool-name.md`.
+
+### 157. Claude, Grok and Meta AI go in the list. Jon's instruction, and it found one real convention and forced one guard. Amends entry 156.
+
+**Jon, 26 August 2026, after reading entry 156's list of what was absent:
+"Please do get Claude, Grok, Meta AI."** All three are in. **They did not come
+back the same, and the difference is worth recording rather than flattening.**
+
+**GROK WAS A REAL FIND, AND THE INSTRUCTION IS WHAT PRODUCED IT.** Entry 156 said
+no naming convention could be established. Going back and listing every file on
+Wikimedia Commons beginning `Grok` turned up two real uploads, both marked "own
+work":
+
+```
+Grok_image_1772320123570.jpg
+Grok_image_7x449i.jpg
+```
+
+**Two different id shapes under one prefix, which is what makes it xAI's name and
+not a person's.** Nobody types `Grok image 1772320123570` by hand. Grok is now as
+well evidenced as ChatGPT and Gemini, and entry 156 was wrong to leave it out.
+**The first search was not thorough enough and the instruction corrected it.**
+
+**META AI IS UNPROVEN AND GOES IN BECAUSE BEING WRONG IS FREE.** Nothing found.
+It is carried because the entry is TWO WORDS: no customer's own file begins
+"Meta AI", so a wrong guess fires on nothing and harms nobody. **`Meta` alone is
+forbidden** and there is a test enforcing its absence, because it would take the
+first word off `Meta description.docx`.
+
+**CLAUDE IS UNPROVEN, GOES IN, AND IS GUARDED.** Three checks all say Anthropic
+does not put its name on a file: artifacts download under the artifact's own
+title, a document Claude writes is named from its contents, and Commons holds no
+file at all beginning `Claude Image` or `Claude Generated`. **Meanwhile the first
+thirty Commons files beginning with the word `Claude` are thirty human beings**,
+Debussy among them.
+
+**So the entry fires only when the word after it is one a lab uses and a parent
+does not:** `image`, `images`, `generated`, `artifact`, `artifacts`, `export`.
+
+```
+Claude Image Aug 25, 2026.png   ->  Image Aug 25, 2026.png      stripped
+Claude Monet study.docx         ->  Claude Monet study.docx     untouched
+```
+
+**None of those six words is invented.** Each is what a peer already puts in
+exactly that position: `ChatGPT Image ...`, `Gemini_Generated_Image_...`,
+`Grok_image_...`. **If Anthropic ships any of those shapes this fires on day
+one, and today it fires on nothing.** It is the one entry in the list that is a
+prepared position rather than a measured one.
+
+**THE PRINCIPLE THIS SETTLES, because it will come up again.** Entry 156's rule
+was that an entry earns its place when its convention is evidenced, or when being
+wrong about it is harmless. **Jon's instruction did not overturn that rule, it
+exercised the second half of it.** Meta AI and Claude are in on harmlessness, and
+harmlessness had to be engineered for Claude because the bare word is not
+harmless. **An entry that cannot be made harmless and cannot be evidenced still
+does not go in**, which is why `Meta` alone, `OIG`, Midjourney and Copilot remain
+out.
+
+**Engine tests: 876 passed, 1 skipped.** Round tripped through the site's own
+route: all three strip, and `Claude Monet study.docx`, `Claude-Alix Bertrand.jpg`
+and `Claude Debussy prelude.txt` come back untouched.

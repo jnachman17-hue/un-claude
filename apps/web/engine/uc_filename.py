@@ -51,6 +51,13 @@ is the failure mode this whole approach carries:
     files `<user>_<prompt>_<uuid>.png` and Microsoft Copilot names them
     `OIG.<id>.jpeg`. Neither contains the tool's name, so neither is in the
     list and neither ever will be by this route.
+
+THERE IS EXACTLY ONE EXCEPTION TO THE UNIFORM RULE, and it is `Claude`, which
+is also a common human first name. It is stripped only in front of a word a lab
+uses and a parent does not, so `Claude Image ...` loses its first word and
+`Claude Monet study.docx` does not. See TYPE_WORD_REQUIRED, which explains why
+and holds the whole of it. **Nothing else is special-cased, and nothing else
+should be** without the same weight of evidence behind it.
 """
 from __future__ import annotations
 
@@ -108,7 +115,67 @@ TOOL_NAMES: tuple[str, ...] = (
     # Firefly is also an aircraft, a tank, a rocket company and a television
     # series. This is the first line to delete if it ever causes trouble.
     "Firefly",
+    # xAI. CONFIRMED against real files, and this one was found by going and
+    # looking after Jon asked for it on 26 August 2026. Two Wikimedia Commons
+    # uploads, both "own work", carrying two different id shapes under one
+    # prefix:
+    #     Grok_image_1772320123570.jpg
+    #     Grok_image_7x449i.jpg
+    # Nobody names a file `Grok image 1772320123570` by hand, so that is xAI's
+    # own name for it.
+    "Grok",
+    # Meta. NOT confirmed: nothing in the wild, and Meta's help pages say only
+    # "tap Save". It is here on Jon's instruction of 26 August 2026, and it is
+    # safe to carry while unproven because it is TWO WORDS. Nobody's own file
+    # begins "Meta AI", so being wrong about it costs a customer nothing.
+    #
+    # `Meta` ALONE IS DELIBERATELY NOT HERE and must never be added: it would
+    # strip the first word off `Meta description.docx` and every other ordinary
+    # file that begins with the word.
+    "Meta AI",
+    "Meta_AI",
+    "MetaAI",
+    # Anthropic. Here on Jon's instruction of 26 August 2026, and GUARDED —
+    # see TYPE_WORD_REQUIRED directly below, which is the only reason it can
+    # be here at all.
+    "Claude",
 )
+
+# ---------------------------------------------------------------------------
+# THE ONE EXCEPTION, AND WHY IT EXISTS
+# ---------------------------------------------------------------------------
+#
+# A tool name in this list is normally stripped whenever it is the first word.
+# `Claude` cannot be treated that way, and the evidence is not close:
+#
+#   * NOTHING SAYS CLAUDE PUTS ITS NAME ON A FILE. Three separate checks found
+#     no such convention. Artifacts download under the artifact's own title, a
+#     document Claude writes is named from what is in it, and a search of every
+#     file on Wikimedia Commons beginning `Claude Image` or `Claude Generated`
+#     returned nothing at all.
+#   * `Claude` IS A PERSON'S NAME, and overwhelmingly so. The first thirty
+#     files on Commons beginning with the word are thirty human beings:
+#     Claude Debussy, Claude Grahame-White, `Claude-Alix Bertrand.JPG`,
+#     `Claude, empereur romain.tif`. Thirty out of thirty.
+#
+# So an unguarded entry would rename a real customer's document to remove a
+# mark that has never been shown to exist. THE GUARD IS WHAT MAKES IT SAFE:
+# `Claude` is stripped only when the word after it is one a LAB uses and a
+# PARENT does not.
+#
+#     Claude Image Aug 25, 2026.png   ->  Image Aug 25, 2026.png    stripped
+#     Claude_Generated_Image_a1.png   ->  Generated_Image_a1.png    stripped
+#     Claude Monet study.docx         ->  Claude Monet study.docx   untouched
+#     Claude-Alix Bertrand.jpg        ->  Claude-Alix Bertrand.jpg  untouched
+#
+# THE WORDS BELOW ARE NOT INVENTED. Each one is what a peer already puts in
+# that exact position: OpenAI writes `ChatGPT Image ...`, Google writes
+# `Gemini_Generated_Image_...`, xAI writes `Grok_image_...`. If Anthropic ever
+# ships any of those shapes, this fires on the first day and nobody has to
+# notice. **Today it fires on nothing, and that is recorded rather than hidden.**
+TYPE_WORD_REQUIRED: dict[str, tuple[str, ...]] = {
+    "Claude": ("image", "images", "generated", "artifact", "artifacts", "export"),
+}
 
 #: What a name becomes when the tool's name was ALL there was.
 #
@@ -177,6 +244,17 @@ def strip_tool_name(name: str) -> dict:
             continue
 
         rest = stem[len(tool):].strip(_STRANDED)
+
+        # The guarded case. See TYPE_WORD_REQUIRED: a tool name that is also a
+        # person's name is stripped only when what follows could not be a
+        # surname. `rest` has already had its stranded punctuation trimmed, so
+        # the first word of it is the word immediately after the tool's name.
+        required = TYPE_WORD_REQUIRED.get(tool)
+        if required is not None:
+            first = rest.replace("_", " ").replace("-", " ").split(" ", 1)[0]
+            if first.casefold() not in required:
+                continue
+
         if not rest:
             rest = FALLBACK_STEMS.get(suffix.lower(), FALLBACK_DEFAULT)
         # 255 is the filename ceiling every filesystem this product meets
