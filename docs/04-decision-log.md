@@ -6032,3 +6032,80 @@ production environment variable rather than code. **Held, and it can be switched
 on at any time without a deploy if the rate ever climbs.**
 
 **Engine tests: 842 passed, 1 skipped.**
+
+---
+
+## 26 August 2026. The filename
+
+### 156. The tool's name comes off the filename, and `cleaned-` comes off everything. Jon's ruling.
+
+**Found by Jon while using the product, 25 August 2026.** He downloaded an image
+from ChatGPT, uploaded it, and got back
+`cleaned-ChatGPT Image Aug 25, 2026, 03_14_22 PM.png`.
+
+**Two faults, and the second one was ours.**
+
+1. **The tool's name survived the clean.** un-claude removed the C2PA record and
+   the EXIF block, which nobody can see, and handed back a file still wearing the
+   mark anybody reads first. A document called `ChatGPT Image ...` given to a
+   marker makes the invisible work irrelevant.
+2. **We were adding a tell of our own.** The `cleaned-` prefix announced that the
+   file had been through a watermark remover. **It was on every file this product
+   has ever returned**, and it was worse than the defect Jon reported.
+
+**THE RULING: strip the tool name, keep the rest.**
+
+```
+ChatGPT Image Aug 25, 2026, 03_14_22 PM.png
+   ->  Image Aug 25, 2026, 03_14_22 PM.png
+```
+
+Not the date, not the prompt, not the id. Only the name of the tool. `cleaned-`
+is deleted outright and is not replaced by anything.
+
+**THE CONDUCTOR'S OBJECTION, recorded so nobody re-derives it.** This makes the
+product depend on a list of naming conventions that changes whenever a lab ships
+a new export button, and even one tool has several. **Jon weighed it and ruled.**
+
+**IT IS WORSE THAN THE OBJECTION SAID, and that changed the build rather than the
+ruling.** Real ChatGPT filenames found in the wild:
+
+```
+ChatGPT Image Aug 14, 2025, 01:01:35 PM.png      US English
+ChatGPT Image Sep 29, 2025 at 09:31:03 AM.png    a newer build, note "at"
+ChatGPT Image 7 mrt 2026, 11:19:57.png           Dutch
+ChatGPT Image 8. sep. 2025, 18.32.11.png         Danish
+```
+
+**One tool, four date formats, differing by the user's own locale.** So the
+implementation matches no date patterns at all. It strips the tool's name when it
+is the first word of the name and the character after it is not a letter or a
+digit, and touches nothing else. One rule handles all four, and the next locale
+too.
+
+**WHERE IT LIVES: the engine, and only the engine.** `uc_filename.py` decides;
+`_clean_payload` returns the name in the response; the browser renders what it is
+handed. `_clean_payload` is the single point both ways into this engine pass
+through, so there is one implementation rather than the split-brain that
+`uc_policy.py` exists to prevent.
+
+**WHAT IS IN THE LIST, AND WHY IT IS SHORT.** ChatGPT and Gemini are confirmed
+against real files. DALL·E and Firefly are taken on trust. **Claude, Grok and
+Meta AI are absent because nobody could establish what they name their files**,
+and Midjourney and Copilot are absent because their conventions never contain the
+tool's name at all. **An entry that never fires is worse than no entry, because
+it looks like coverage.** `Claude` specifically was rejected as a guess: it is a
+common first name, so it would have cost `Claude Monet study.docx` its first word
+to remove a mark that may not exist.
+
+**THE PRICE OF THE RULING, stated rather than hidden.** `Gemini` and `Firefly`
+are ordinary English words. `Gemini 4 spacewalk.jpg` and `Firefly-shoes.jpg` will
+lose their first word. The file still opens, because the extension is preserved
+exactly, and the customer can rename it. That is the trade Jon accepted.
+
+**A name with no tool in it is returned byte for byte identical.** Verified end
+to end: `my essay.docx` comes back as `my essay.docx` and carries no rename block
+at all.
+
+**Engine tests: 870 passed, 1 skipped**, from a baseline of 842 and 1. Full
+evidence in `docs/session-notes/strip-the-tool-name.md`.

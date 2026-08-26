@@ -169,11 +169,41 @@ export interface UsageSummary {
   layer_b_model?: string | null;
 }
 
+/**
+ * The file's NAME, after the tool that made it has been taken off the front.
+ *
+ * `ChatGPT Image Aug 25, 2026, 03_14_22 PM.png` arrives carrying the one mark a
+ * person can read without any tools, and stripping the signed record inside it
+ * while handing the name straight back makes that work irrelevant. Jon's
+ * ruling, 25 August 2026: take the tool's name off and keep the rest.
+ *
+ * DECIDED IN THE ENGINE AND ONLY THERE. See apps/web/engine/uc_filename.py for
+ * the list of tool names and the reasoning. The browser renders what it is
+ * handed and never forms its own opinion about a filename, so there is one
+ * implementation of this rather than two that drift apart.
+ *
+ * ABSENT when nothing was stripped, which is almost every upload.
+ */
+export interface FilenameChange {
+  /** Exactly what the customer uploaded. */
+  original: string;
+  /** What the download is called instead. */
+  name: string;
+  /** The tool whose name came off, e.g. "ChatGPT". */
+  tool: string | null;
+  changed: boolean;
+}
+
 export interface CleanResult {
   ok: true;
   kind: string;
   /** The cleaned file's bytes, base64 encoded. */
   cleaned: string;
+  /**
+   * What to call the download. Always present, and equal to the uploaded name
+   * whenever there was no tool name in it. See FilenameChange.
+   */
+  download_name?: string;
   report: {
     stats?: {
       input_length?: number;
@@ -184,6 +214,8 @@ export interface CleanResult {
       replaced_count?: number;
     };
     layer_b?: LayerBReport;
+    /** Present ONLY when a tool's name was stripped off the filename. */
+    filename?: FilenameChange;
     [key: string]: unknown;
   };
   usage?: UsageSummary;

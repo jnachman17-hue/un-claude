@@ -990,11 +990,30 @@ def _clean_payload(data: bytes, name: str, options: dict[str, Any]) -> dict[str,
         report.pop("input", None)
         report.pop("output", None)
 
+    # THE NAME IS A WATERMARK TOO, and it is the one a person reads first.
+    #
+    # `ChatGPT Image Aug 25, 2026, 03_14_22 PM.png` came back from this engine
+    # with its C2PA record gone and its name intact, which makes the invisible
+    # work irrelevant to anybody who hands the file to a marker. Jon's ruling,
+    # 25 August 2026: take the tool's name off the front and keep the rest.
+    #
+    # IT IS DECIDED HERE AND NOWHERE ELSE. The browser only renders the name it
+    # is given, so there is one implementation of it rather than two that drift
+    # — the trap this project has walked into three times. See uc_filename.py
+    # for the list and the reasoning, and note that this renames NOTHING on
+    # disk: it is the name the answer suggests, and the bytes are untouched.
+    from uc_filename import strip_tool_name
+
+    rename = strip_tool_name(name)
+    if rename["changed"]:
+        report["filename"] = rename
+
     return {
         "ok": True,
         "kind": kind,
         "cleaned": base64.b64encode(cleaned_bytes).decode("ascii"),
         "report": report,
+        "download_name": rename["name"],
     }
 
 

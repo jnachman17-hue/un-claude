@@ -934,3 +934,40 @@ and it stops promising a completeness the engine does not reach.
 
 **Trigger for revisiting: before W-10 is built.** It is unbuilt today, so this
 costs nothing to settle now and costs a rebuild later.
+
+---
+
+## A Word document's own title property keeps the tool's name, on purpose
+
+**Raised 26 August 2026, `strip-the-tool-name.md` §6. Checked and NOT changed,
+because the brief said to report it and not fix it here.**
+
+A `.docx` carries a title inside `docProps/core.xml`, separate from its filename.
+**The metadata strip does not empty it.** Measured on a document carrying
+`<dc:title>ChatGPT Image Aug 25, 2026</dc:title>`: `dc:creator`,
+`cp:lastModifiedBy`, `Application` and `Company` all came out empty and the title
+came through verbatim.
+
+**It is a decision rather than an oversight.** `container_meta.py` line 749 says
+so: *"dc:title is deliberately not listed: it is the document's own heading, not
+provenance."*
+
+**The reasoning is right in general and wrong in one case.** A title the author
+wrote is their content and emptying it would be vandalism. But Word fills the
+title in from the filename often enough that a document downloaded as
+`ChatGPT ....docx` arrives carrying `ChatGPT ...` in its title too, where nobody
+looks and no interface shows it. **We now take the tool's name off the outside of
+that file and leave it on the inside.**
+
+**Working position: leave it alone until Jon rules.** Emptying somebody's
+document title is a bigger act than renaming a download, it is a metadata
+question rather than a filename one, and getting it wrong silently damages a
+document rather than annoying somebody.
+
+**The narrow version worth considering** is to apply the same rule the filename
+gets rather than emptying the field: strip a leading tool name from `dc:title`
+and keep the rest. Same list, same one implementation, and it never destroys a
+title the author wrote.
+
+**Trigger for revisiting: the next time anything touches `container_meta.py`'s
+OOXML path, or any complaint about a Word document still naming its maker.**

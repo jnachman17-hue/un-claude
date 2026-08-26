@@ -915,6 +915,34 @@ export function Workbench() {
       : 0;
   const actuallyRemoved = Math.max(0, foundCount - stillPresent);
   const fileReport = (cleaned?.report ?? {}) as Record<string, unknown>;
+  /**
+   * WHAT THE DOWNLOAD IS CALLED, decided by the engine and merely rendered here.
+   *
+   * `apps/web/engine/uc_filename.py` takes the tool's name off the front of a
+   * filename, so `ChatGPT Image Aug 25, 2026, 03_14_22 PM.png` comes back as
+   * `Image Aug 25, 2026, 03_14_22 PM.png`. Nothing in this file has an opinion
+   * about filenames: two implementations of one number is the trap this project
+   * has walked into three times, so the browser renders what it is handed.
+   *
+   * `renamed` is present only when a tool name really came off, which is almost
+   * never: a file the customer named comes back byte for byte identical.
+   */
+  const downloadName = cleaned?.download_name ?? loaded.name;
+  const renamed = cleaned?.report?.filename;
+  /**
+   * WHY THE NAME CHANGED, in the sentence that already explains this row.
+   *
+   * A name that changes silently reads as a download that went wrong, so this
+   * is never left to the browser to reveal. It names the tool and the new
+   * filename and stops: it describes what happened rather than claiming
+   * anything new about what was removed.
+   *
+   * The empty string is deliberate. It appends to the sentence above it, and a
+   * file that was not renamed appends nothing at all.
+   */
+  const renameNote = renamed
+    ? ` Its name also said ${renamed.tool}, which anyone can read at a glance, so your download is called ${renamed.name} instead.`
+    : '';
   const actions = Array.isArray(fileReport.actions)
     ? (fileReport.actions as string[])
     : [];
@@ -1187,8 +1215,8 @@ export function Workbench() {
           ? 'Metadata lives in a file’s wrapper. Pasted text has no wrapper, so there is nothing here to read. Upload a file and this one runs.'
           : done
             ? stillMarked
-              ? 'Some metadata could not be removed from this file. It is still marked.'
-              : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and nothing you can see was changed.`
+              ? `Some metadata could not be removed from this file. It is still marked.${renameNote}`
+              : `Stripped, and the file was re-read afterwards to confirm nothing was left. ${fileReport.bytes_in ?? 0} bytes in, ${fileReport.bytes_out ?? 0} out, and nothing you can see was changed.${renameNote}`
             : provenanceFound
               ? producer
                 ? `This file names ${producer} as its maker, in a signed record anyone can read with a free tool.`
@@ -1197,11 +1225,29 @@ export function Workbench() {
         items:
           !busy && isFile
             ? done
-              ? actions.map((action, index) => ({
-                  key: `action-${index}`,
-                  head: 'Removed',
-                  body: action,
-                }))
+              ? [
+                  /*
+                    THE NAME LEADS, because it is the only finding on this row
+                    the customer will see with their own eyes the moment they
+                    open their downloads folder. Everything under it is a
+                    record inside the file; this one was written on the
+                    outside. Same one-line-per-finding grammar as the rest.
+                  */
+                  ...(renamed
+                    ? [
+                        {
+                          key: 'filename',
+                          head: 'File name',
+                          body: `${renamed.original} is saved as ${renamed.name}`,
+                        },
+                      ]
+                    : []),
+                  ...actions.map((action, index) => ({
+                    key: `action-${index}`,
+                    head: 'Removed',
+                    body: action,
+                  })),
+                ]
               : // THE PRODUCER LEADS, and in one line. Jon's note on testing
                 // with a ChatGPT image: opening the found row should say what
                 // made the file first, then the marks, and all of it readable
@@ -1480,6 +1526,14 @@ export function Workbench() {
             <div className={'px-4 py-3.5'}>
               <FileSummary
                 name={loaded.name}
+                /*
+                  The uploaded name stays on the card, because that is the
+                  file the visitor recognises. What the DOWNLOAD is called
+                  goes underneath it, and only when the two differ, so
+                  nobody meets a new filename for the first time in their
+                  downloads folder and thinks something broke.
+                */
+                downloadName={renamed ? downloadName : null}
                 price={costFor({
                   isFile,
                   name: loaded.name,
@@ -1735,7 +1789,27 @@ export function Workbench() {
             isFile && downloadUrl ? (
               <a
                 href={downloadUrl}
-                download={`cleaned-${loaded.name}`}
+                /*
+                  THE NAME THE ENGINE DECIDED, AND TWO DEFECTS IN ONE LINE.
+                  25 August 2026, found by Jon while using the product.
+
+                  This read `cleaned-${loaded.name}`, so every file this
+                  product has ever returned carried BOTH of these:
+
+                    1. The tool's name survived. We removed the signed record
+                       nobody can see and handed back a file still called
+                       `ChatGPT Image Aug 25, 2026, 03_14_22 PM.png`, which is
+                       the one mark a person reads without any tools at all.
+                    2. WE ADDED A TELL OF OUR OWN. `cleaned-` announces that
+                       the file went through a watermark remover. That one was
+                       entirely ours and it was on every single download.
+
+                  The name now comes from the engine, which is the only place
+                  that decides it. See apps/web/engine/uc_filename.py. The
+                  fallback is the uploaded name, which is also what the engine
+                  returns whenever there was no tool name to take off.
+                */
+                download={downloadName}
                 onClick={() => track.resultDownloaded({ name: loaded.name })}
                 className={
                   'bg-foreground text-background inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-transform active:scale-[0.98]'
@@ -2196,12 +2270,18 @@ export function Workbench() {
  */
 function FileSummary({
   name,
+  downloadName,
   price,
   scanning,
   downloadUrl,
   onClear,
 }: {
   name: string;
+  /**
+   * What the download is called, when the engine took a tool's name off the
+   * front of it. Null whenever the name is unchanged, which is almost always.
+   */
+  downloadName: string | null;
   /** What this file will actually cost, computed by the caller. */
   price: number;
   scanning: boolean;
@@ -2284,6 +2364,23 @@ function FileSummary({
               </>
             )}
           </span>
+
+          {/*
+            THE NEW NAME, WHERE THE OLD ONE IS. Only when they differ, and
+            only once there is something to download. `truncate` and the
+            title attribute match the name above it, because a generated
+            filename is long and a phone is 375px wide.
+          */}
+          {downloadName && downloadUrl ? (
+            <span
+              className={
+                'text-muted-foreground block truncate text-[12px]'
+              }
+              title={downloadName}
+            >
+              Downloads as {downloadName}
+            </span>
+          ) : null}
         </span>
 
         {!scanning ? (
