@@ -42,11 +42,38 @@ const LAST_RESORT =
 export type AuthErrorCase =
   | 'emailNotConfirmed'
   | 'captchaUnavailable'
+  | 'notActivated'
   | 'other';
 
+/**
+ * `notActivated` is the SHARED CHAPTER ACCOUNTS, added 26 August 2026.
+ *
+ * A chapter is sent working credentials and 250 credits by email, and the
+ * account is locked (a ban on the auth user) until the chapter sends back a
+ * screenshot proving the login reached the house. Almost everyone tries the
+ * login the moment they read the email, BEFORE sending anything.
+ *
+ * Without this case they read "Something went wrong and the sign in did not
+ * complete", conclude the credentials are broken, and never reply — which
+ * kills the one step the whole outreach depends on. Measured on a real locked
+ * account before this existed.
+ *
+ * The wording is deliberately true for any locked account, not only a chapter,
+ * because a ban is also what an abusive account would get. It states the fact
+ * first and makes the chapter instruction conditional.
+ */
 const CASES: ReadonlyArray<readonly [RegExp, AuthErrorCase]> = [
   [/email not confirmed|email_not_confirmed/i, 'emailNotConfirmed'],
   [/captcha/i, 'captchaUnavailable'],
+  // BROAD ON PURPOSE. The exact upstream sentence was never captured: sign-in
+  // is behind Turnstile, so a locked account cannot be reached from a script or
+  // a headless browser to read the string back. Supabase's code is `user_banned`
+  // and its message is "User is banned", but a variant such as "User is
+  // temporarily banned" would slip past a narrower pattern and land the visitor
+  // back in the general bucket. No other auth failure contains the word, so the
+  // wide match costs nothing and the narrow one risks the whole fix silently
+  // not working.
+  [/banned/i, 'notActivated'],
 ];
 
 /**
@@ -76,6 +103,7 @@ export function classifyAuthError(
 const CASE_HEADINGS: Record<AuthErrorCase, string> = {
   emailNotConfirmed: 'auth.emailNotConfirmedHeading',
   captchaUnavailable: 'auth.captchaUnavailableHeading',
+  notActivated: 'auth.notActivatedHeading',
   other: 'auth.errorAlertHeading',
 };
 

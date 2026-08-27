@@ -44,6 +44,11 @@ const CASES: Array<{
     error: 'captcha protection: request disallowed (invalid-input-response)',
   },
   {
+    title: 'A chapter account that has not been activated yet',
+    note: 'Shared fraternity logins are created locked. They try the credentials the moment they read the email, before sending the screenshot. Without its own case this read "something went wrong" and they concluded the login was broken.',
+    error: 'User is banned',
+  },
+  {
     title: 'The password was wrong',
     note: 'Unchanged. It already had a sentence of its own and still does.',
     error: 'Invalid login credentials',
