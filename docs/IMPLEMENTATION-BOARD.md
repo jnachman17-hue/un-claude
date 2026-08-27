@@ -6,6 +6,17 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★ 25 AUGUST — TWO OPEN DECISIONS CLOSED BY JON
+
+| Was | Jon's ruling |
+|---|---|
+| **`04` entry 154** — the engine reports `layer_b.freeze.chunks_fallback` and nothing displays it, so a customer whose chunk came back unrewritten is never told | **DO NOT TELL THEM. Closed.** No display work needed; `receipt.ts` stays untouched |
+| **The block-quote question** — the freeze session extended "any quotation" to all indented text, so an address block or a poem now freezes | **LEAVE IT. "Such a niche edge case we don't need to worry about."** The two-line revert is not to be made |
+
+**Both closed. Do not reopen either.**
+
+---
+
 # ★★★★ 25 AUGUST — THE PRE-FLIGHT SESSION LANDED. VERIFIED, AND IT CORRECTED THE CONDUCTOR TWICE.
 
 **Everything below is committed, pushed and live. The session did not touch this
