@@ -2211,3 +2211,53 @@ copy that has to rank.
 `new Date().getFullYear()` and prerenders fine, because a cached function is
 handed a fixed timestamp. That is why the footer's words were in the HTML on
 every page including the broken one.
+
+---
+
+## "The homepage is broken on desktop" is browser zoom, four times out of five
+
+**26 August 2026. Jon reported the landing page loading as one full-width column
+on a 2560-pixel MacBook, with the word counter and the three bullets missing.
+Cause: Chrome at 150% zoom. Nothing was wrong with the site.**
+
+**CHECK THE ZOOM BEFORE READING ANY CODE. Cmd+0 resets it.** The arithmetic that
+makes this so easy to hit:
+
+```
+13-inch MacBook, 2560 x 1600 physical  ->  1440 x 900 CSS points at default scaling
+1440 at 100% zoom = 1440 CSS px    two columns
+1440 at 125% zoom = 1152 CSS px    two columns
+1440 at 150% zoom =  960 CSS px    ONE COLUMN
+```
+
+**The hero's two-column layout, the three bullets and the live counter are all
+gated on Tailwind's `lg` breakpoint, which is 1024px** (`hero-section.tsx`, and
+the counter and bullets are `hidden lg:block`, so below the line they are removed
+from the page rather than merely hidden). One zoom step is the whole difference.
+
+**THREE FINGERPRINTS THAT SAY "SUB-1024" WITHOUT NEEDING THE MACHINE.** Any
+screenshot showing all three is a narrow viewport and not a regression:
+
+1. no bullets under the promise line,
+2. no `WORDS CLEANED WITH UN-CLAUDE` counter,
+3. the headline on ONE line. At 1024 and above it wraps to two, because it is
+   44px inside a five-twelfths column.
+
+**AND CHECK WHICH SITE IS BEING LOOKED AT.** Local and live can be different
+builds. Both were checked this time and behaved identically, which is what ruled
+out a regression: correct at 1440 on `un-claude.com` and on `localhost:3000`,
+stacked at 1000 on both.
+
+**One red herring, so nobody chases it twice.** `document.scrollWidth` exceeds
+`clientWidth` on this page at narrow widths. **That is the press-logo marquee**
+(`animate-drift flex w-max`), which is deliberately wider than the screen and
+scrolls. It is not overflow and it is gone by 1440.
+
+**THE UNDERLYING SHARPNESS IS REAL AND IS JON'S CALL.** `04` entry 84 ruling 3
+says desktop extras "simply drop off on mobile". The implementation draws that
+line at 1024, so a desktop browser at 150% zoom, or a window that is not
+maximised, is treated as a phone and loses the counter, the bullets and the whole
+left-hand argument. **The proposed fix is to stop deleting those two blocks below
+1024 and let them stack under the tool instead** (the counter block already
+carries `order-3`, a stacked-layout instruction). Not done, because the ruling is
+Jon's.
