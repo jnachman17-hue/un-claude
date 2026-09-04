@@ -971,3 +971,129 @@ title the author wrote.
 
 **Trigger for revisiting: the next time anything touches `container_meta.py`'s
 OOXML path, or any complaint about a Word document still naming its maker.**
+
+---
+
+## The money leak is at the moment somebody runs out, and 87% of them are shown another free offer instead of a price
+
+**Measured 4 September 2026, after Jon asked whether to cut the free allowance to
+one credit and drop the signup bonus. The numbers say his diagnosis is wrong and
+his instinct about TIMING is right, so the question is recorded here rather than
+answered.**
+
+### The funnel, thirty days, live site, internal IPs excluded
+
+```
+884  visited
+215  scanned their own document
+129  pressed Sanitise
+123  got a finished result
+ 85  ran out of credits
+ 17  saw the paywall
+  6  clicked the out-of-credits offer
+  3  pressed a pack button
+```
+
+**Stripe, all time: 3 payments, 1 refunded.** So roughly two net customers ever.
+
+### What people actually use, which is far less than anyone assumed
+
+```
+99 of 123 people sanitised exactly ONCE. 19 did two. Five did more.
+92% of every job ever run cost exactly 1 credit (242 of 263 ledger spends).
+Median job: 201 words. 90th percentile: 973 words, still inside one credit.
+```
+
+**So "one free credit" already equals "one free job" for almost everybody, and
+almost everybody already only does one.** Cutting the allowance to one would
+change the experience of about 24 people a month.
+
+### THE FINDING: the wall does not sell, because for most people it is not a wall
+
+Of the 85 who ran out, **74 were guests and 11 had accounts.** The two see
+completely different panels (`credit-offer.tsx`, `OutOfCredits`):
+
+| Who | What they are shown |
+|---|---|
+| **Guest, 74 of 85** | "Sign up to receive **3 more** free credits. Claim them" |
+| **Account holder, 11 of 85** | "Your balance is empty. Get credits" then `/pricing` |
+
+**87% of everyone who reaches the only sales moment in the product is offered
+more free credits rather than a price.** The route to money is: run out, sign up,
+receive three more free, run out again, and only then meet a price. **Only 11
+people a month reach that second rung.** That is two free rungs in front of the
+till, and it is the direct explanation for Jon's own observation that email
+signups are at an all-time high while purchases are nil. The machine is doing
+exactly what it was built to do.
+
+### AND THE OFFER ITSELF IS NOT LANDING, WHICH DECIDES WHAT TO FIX FIRST
+
+**Six of the 85 clicked anything at all.** That is a free offer, one click, no
+risk, and 92% walked past it. **When a free offer at that moment converts at 8%,
+replacing it with a paid one converts worse, not better.** So the panel, its
+moment and its placement are the first problem, and the size of the free
+allowance is not.
+
+### Working position
+
+**Do not cut the free credits yet, and keep the signup bonus.** Cutting hits the
+99 people out of 123 who do one job and leave, who are the likeliest to tell
+somebody else, and it sends perhaps twenty extra people per month to a step that
+has produced three sales in its lifetime. The signup bonus costs almost nothing
+(only 11 of the 85 who ran out were account holders) and email addresses are the
+one asset currently accumulating.
+
+**Fix the moment instead.** The offer is a banner above the tool, met cold on a
+later page load, competing with an entire landing page. It should arrive where
+the finished document is, at the instant the balance reaches nought, while the
+proof that the tool works is still on screen. And a guest should be able to reach
+a price without first being routed through a second free offer.
+
+**Trigger for revisiting: two weeks after the moment is fixed and `just_ran_out`
+is reporting truthfully.** If the in-session population still does not convert,
+Jon's experiment becomes the right next move and should be run properly, with a
+before-and-after read rather than a guess.
+
+---
+
+## `just_ran_out` could never be true, so the two populations it exists to separate were never separated
+
+**Found and fixed 4 September 2026. The interface was never affected. This was a
+measurement defect only, and it is recorded because it invalidated a month of one
+property and will be easy to reintroduce.**
+
+**The symptom: `just_ran_out` was false on 85 of 85 events in thirty days, with
+no exceptions.** A hard 100% is the signature of a code defect rather than of
+behaviour.
+
+**The cause, in `workbench.tsx`.** Two effects run in the same commit, in
+declaration order:
+
+1. the watch sees the balance go from something to nought and calls
+   `setJustRanOut(true)`, which SCHEDULES a state update,
+2. the reporter runs immediately afterwards, in the same commit, still holding
+   the previous render's `justRanOut`, sends `false`, and sets
+   `reportedEmpty.current = true` so it can never fire again.
+
+By the time the state is actually true, the only line that reads it has already
+run and locked itself.
+
+**The fix is a ref alongside the state**, because a ref updates the instant it is
+assigned while state does not. The state stays, because the panel's animation
+reads it at render time and that always worked.
+
+**What it cost: the one question worth asking of this data could not be asked.**
+"Does somebody whose last credit was just spent behave differently from somebody
+arriving on an empty balance" is the entire reason the property exists, and both
+populations were recorded identically. The 6-clicks-in-85 figure above is a blend
+of two groups that cannot be separated.
+
+**NOT VERIFIED AT RUNTIME.** The local dev server would not hydrate across two
+restarts, which is `06` row 77, so the corrected event was never watched firing.
+The defect itself is proven by reading, and by the 85 out of 85. **The fix is
+proven only by React's own guarantees**, that effects run in declaration order
+within a commit and that a ref assignment is synchronous.
+
+**How it will be confirmed, and it costs nothing: the live site.** After the next
+deploy, the first person who runs out mid-session produces `just_ran_out=true`.
+**If a fortnight passes and every event is still false, the fix did not work.**

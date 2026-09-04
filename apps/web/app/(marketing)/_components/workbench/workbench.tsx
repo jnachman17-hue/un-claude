@@ -393,6 +393,30 @@ export function Workbench() {
   }, []);
 
   /**
+   * THE SAME FACT IN A REF, AND IT IS NOT A DUPLICATE OF THE STATE ABOVE.
+   *
+   * `justRanOut` is React state, so it does not change until the NEXT render.
+   * The reporter below runs in the SAME commit as the watch, immediately after
+   * it, and would therefore read the previous render's value every single time.
+   * A ref updates the instant it is assigned, so the reporter reads what just
+   * happened rather than what was true a moment ago.
+   *
+   * WHY THIS IS HERE AT ALL. Measured 4 September 2026: `just_ran_out` was
+   * false on 85 out of 85 events in thirty days, with no exceptions. A hard
+   * 100% is the signature of a code defect and not of behaviour, and this was
+   * the defect. The consequence was that the two populations the property
+   * exists to separate — somebody whose last credit was just spent, and
+   * somebody arriving on an already empty balance — were recorded identically,
+   * so the question "does the moment of running out convert better than a cold
+   * return visit" could not be asked of the data at all.
+   *
+   * THE INTERFACE WAS NEVER AFFECTED. The state flips on the next render and
+   * the panel reads it at render time, so the animation always played. This
+   * was a measurement defect only.
+   */
+  const justRanOutNow = useRef(false);
+
+  /**
    * The watch itself. It runs on every balance the server hands back, so it
    * catches the drop to nought whether it came from a finished sanitise or
    * from a refetch after a 402.
@@ -404,12 +428,18 @@ export function Workbench() {
     previousBalance.current = now;
 
     if (now !== 0) {
-      if (now !== null && now > 0) setJustRanOut(false);
+      if (now !== null && now > 0) {
+        setJustRanOut(false);
+        justRanOutNow.current = false;
+      }
       return;
     }
 
     // Nought, and it was something else a moment ago: that is the event.
-    if (before !== null && before > 0) setJustRanOut(true);
+    if (before !== null && before > 0) {
+      setJustRanOut(true);
+      justRanOutNow.current = true;
+    }
   }, [credits.balance]);
 
   /** One event per arrival at the empty balance, not one per render. */
@@ -425,9 +455,10 @@ export function Workbench() {
     reportedEmpty.current = true;
     track.outOfCreditsShown({
       isGuest: credits.isAnonymous,
-      justRanOut,
+      // The ref, never the state. See justRanOutNow above.
+      justRanOut: justRanOutNow.current,
     });
-  }, [credits.balance, credits.isAnonymous, justRanOut]);
+  }, [credits.balance, credits.isAnonymous]);
 
   const scanText = () => {
     if (text.trim().length === 0) {
