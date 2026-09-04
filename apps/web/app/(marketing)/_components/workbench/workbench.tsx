@@ -1363,6 +1363,43 @@ export function Workbench() {
       : row,
   );
 
+  /**
+   * THE OFFER AT NOUGHT, BUILT ONCE AND PLACED TWICE. Entry 159.
+   *
+   * It used to live in exactly one spot: under the balance chip in the
+   * findings panel, which is where somebody ARRIVING on an empty balance
+   * meets it. Measured 4 September 2026: 85 people reached nought in thirty
+   * days and six of them clicked anything at all.
+   *
+   * The moment was the problem rather than the words. Somebody who has just
+   * watched the tool finish their document is looking at the result, not at a
+   * chip further down the page, so the same panel is now rendered directly
+   * under the button that handed them that document, and only there, while a
+   * result is on screen. Arriving cold still meets it in the old place.
+   *
+   * ONE ELEMENT, TWO POSITIONS, so the two can never drift into saying
+   * different things.
+   */
+  const offerAtNought =
+    credits.balance === 0 && phase !== 'locked' ? (
+      <OutOfCredits
+        isGuest={credits.isAnonymous}
+        justRanOut={justRanOut}
+        onSignUpClick={() =>
+          track.outOfCreditsClicked({
+            isGuest: credits.isAnonymous,
+            road: 'free',
+          })
+        }
+        onBuyClick={() =>
+          track.outOfCreditsClicked({
+            isGuest: credits.isAnonymous,
+            road: 'buy',
+          })
+        }
+      />
+    ) : null;
+
   return (
     <div
       onDragOver={(event) => {
@@ -2153,6 +2190,16 @@ export function Workbench() {
             ) : null}
           </p>
         </div>
+
+        {/*
+          THE MOMENT. Entry 159, and it is the placement half of the change.
+          Directly beneath the control that just handed the visitor their
+          document, at the instant their balance reached nought, while the
+          proof that this works is still in front of them.
+        */}
+        {done && offerAtNought ? (
+          <div className={'mt-3'}>{offerAtNought}</div>
+        ) : null}
       </div>
 
       {/* The findings. A separate surface, with its own heading, because it
@@ -2256,16 +2303,14 @@ export function Workbench() {
           </div>
         ) : null}
 
-        {credits.balance === 0 && phase !== 'locked' ? (
-          <div className={'mb-3'}>
-            <OutOfCredits
-              isGuest={credits.isAnonymous}
-              justRanOut={justRanOut}
-              onSignUpClick={() =>
-                track.outOfCreditsClicked({ isGuest: credits.isAnonymous })
-              }
-            />
-          </div>
+        {/*
+          ARRIVING COLD. A visitor who comes back on an empty balance has no
+          result on screen, so this is where they meet the offer. While a
+          result IS on screen it renders beside that result instead, up in the
+          box. See offerAtNought.
+        */}
+        {!done && offerAtNought ? (
+          <div className={'mb-3'}>{offerAtNought}</div>
         ) : null}
 
         {/*

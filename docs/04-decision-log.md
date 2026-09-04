@@ -6170,3 +6170,75 @@ out.
 **Engine tests: 876 passed, 1 skipped.** Round tripped through the site's own
 route: all three strip, and `Claude Monet study.docx`, `Claude-Alix Bertrand.jpg`
 and `Claude Debussy prelude.txt` come back untouched.
+
+---
+
+## 4 September 2026. The moment somebody runs out
+
+### 159. A guest at nought is shown a price as well as the free grant, and the offer moves to the moment. Overrides entry 97 point 5.
+
+**Jon's instruction, 4 September 2026, after the funnel was measured.** He asked
+whether to cut the free allowance to one credit and drop the signup bonus,
+because visitors and email signups were at a record and purchases were nil.
+
+**THE MEASUREMENT SAID HIS DIAGNOSIS WAS WRONG AND HIS INSTINCT WAS RIGHT.**
+Thirty days, live site, internal traffic excluded:
+
+```
+884 visited -> 215 scanned their own document -> 129 pressed Sanitise
+    -> 123 got a result -> 85 ran out -> 17 saw the paywall
+    -> 3 pressed a pack button.        Stripe, all time: 3 paid, 1 refunded.
+```
+
+**His theory was that nobody reaches the wall. 85 people did.** And the free
+allowance is not the constraint: 99 of 123 people sanitised exactly once, and
+92% of every job ever run cost exactly one credit, so "one free credit" already
+equals "one free job" for almost everybody. Cutting it would have changed the
+experience of about 24 people a month and sent perhaps twenty more to a step
+that has produced three sales in its lifetime.
+
+**THE REAL DEFECT: 74 of those 85 were guests, and a guest at nought was shown
+only the free grant.** "Sign up to receive 3 more free credits", with no price
+anywhere on it, because `04` entry 97 point 5 put the email at that rung and
+`paywall.tsx` states the rule outright: *"Nothing here says buy."* **So 87% of
+every sales moment in this product could not produce a sale, by design.** That
+is the whole explanation for record signups beside nil revenue: the machine was
+built to harvest emails at the point of maximum intent, and it did.
+
+**JON'S RULING: override it. A guest gets the price too.**
+
+**AND THE SECOND HALF, WHICH THE SAME MEASUREMENT ARGUES FOR MORE STRONGLY:
+six of the 85 clicked anything at all.** That is a free offer, one click, no
+risk, and 92% walked past it. **When a free offer at that moment converts at 8%,
+replacing it with a paid one converts worse rather than better**, so the moment
+and the placement had to change as well as the content.
+
+**WHAT SHIPPED, IN THREE PARTS:**
+
+1. **The offer moved to the moment.** It used to render only under the balance
+   chip in the findings panel, which is where somebody ARRIVING empty meets it.
+   It now renders directly beneath the control that just handed the visitor
+   their finished document, while the proof that the tool works is still on
+   screen. Arriving cold still meets it in the old place. **One element, two
+   positions, so the two cannot drift.**
+2. **The guest panel carries a second road**, quieter than the first, reading
+   "Need more? Packs start at $4.99 for 10 credits. Buy credits". **The price is
+   ON it rather than behind it:** a button reading "buy credits" makes a visitor
+   navigate to find out whether they can afford it, and the number costs nothing
+   to show. It is read from `pricing-data.ts` and never retyped.
+3. **`out_of_credits_clicked` now carries `road`**, free or buy, because which
+   road people take is the entire question this override was made to answer.
+
+**WHAT DID NOT CHANGE, deliberately.** The free allowance is still 2 and 3. The
+prices, the packs and every claim on the page are untouched. **And the line Jon
+removed on 21 August ("your free credits are spent") stays removed:** this adds
+a road, not an explanation. Changing the allowance at the same time would have
+made the result unreadable, and that experiment is now recorded in `06` as the
+next one to run if this does not move the number.
+
+**WHAT IS NOT PROVEN.** The guest panel was rendered and photographed at 1000px
+and at 375px. **The placement change was not**, because the local dev server
+would not render the workbench across three restarts (`06` row 77). It is
+type-checked and reasoned, not seen. It is verified against production
+immediately after the deploy, which is the only environment where that page
+currently renders.

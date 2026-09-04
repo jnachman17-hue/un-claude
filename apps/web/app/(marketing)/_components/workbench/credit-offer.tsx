@@ -2,10 +2,21 @@
 
 import Link from 'next/link';
 
-import { UserPlusIcon, XIcon } from 'lucide-react';
+import { ArrowRightIcon, UserPlusIcon, XIcon } from 'lucide-react';
 
+import { PACKS } from '../../pricing/_components/pricing-data';
 import { SIGNUP_CREDITS } from './credits';
 import { CreditCoin } from './credit-chip';
+
+/**
+ * THE CHEAPEST PACK, READ FROM THE PRICING DATA AND NEVER RETYPED.
+ *
+ * `pricing-data.ts` is where a price lives. Writing "$4.99" into this file
+ * would be a second implementation of one number, which is the trap this
+ * project has walked into three times: the day a pack changes, the pricing
+ * page and this panel would disagree, and only one of them would be right.
+ */
+const CHEAPEST = PACKS.reduce((low, pack) => (pack.price < low.price ? pack : low));
 
 /**
  * THE OFFER, IN ONE PLACE. Added 21 August 2026, session 10.
@@ -158,21 +169,24 @@ export function OutOfCredits({
   isGuest,
   justRanOut,
   onSignUpClick,
+  onBuyClick,
 }: {
   isGuest: boolean;
   /** True when the balance hit nought during this visit, rather than before it. */
   justRanOut: boolean;
   onSignUpClick?: () => void;
+  /** They took the paid road rather than the free one. Entry 159. */
+  onBuyClick?: () => void;
 }) {
   if (isGuest) {
     return (
-      <Link
+      <div className={justRanOut ? 'animate-rise' : ''}>
+        <Link
         href={'/auth/sign-up'}
         onClick={onSignUpClick}
-        className={[
-          'border-mark/30 bg-mark/[0.055] hover:bg-mark/[0.085] group flex items-center gap-3 rounded-[13px] border p-3 transition-colors sm:gap-4 sm:p-3.5',
-          justRanOut ? 'animate-rise' : '',
-        ].join(' ')}
+        className={
+          'border-mark/30 bg-mark/[0.055] hover:bg-mark/[0.085] group flex items-center gap-3 rounded-[13px] border p-3 transition-colors sm:gap-4 sm:p-3.5'
+        }
       >
         <span
           className={
@@ -212,7 +226,60 @@ export function OutOfCredits({
         >
           Claim them
         </span>
-      </Link>
+        </Link>
+
+        {/*
+          THE SECOND ROAD, AND IT IS THE WHOLE OF JON'S OVERRIDE OF 4 SEPTEMBER
+          2026. Measured that day: of 85 people who reached nought in thirty
+          days, 74 were guests, and a guest was shown ONLY the free offer. So
+          87% of every sales moment in this product could not produce a sale,
+          by design. `04` entry 97 point 5 and this file's own rule that
+          nothing at this rung says "buy" are overridden by entry 159.
+
+          IT IS DELIBERATELY THE QUIETER OF THE TWO. The free grant is still
+          the better deal for almost everybody, and it is still the first
+          thing read. This exists so that somebody who wants more than three
+          credits has somewhere to go other than away.
+
+          THE PRICE IS ON IT RATHER THAN BEHIND IT. A button reading "buy
+          credits" asks a visitor to navigate to find out whether they can
+          afford it. The number costs nothing to show and answers that before
+          the click.
+
+          The line above it is untouched. Jon removed the "your free credits
+          are spent" text on 21 August and it stays removed: this adds a road,
+          not an explanation.
+        */}
+        <Link
+          href={'/pricing'}
+          onClick={onBuyClick}
+          className={
+            'border-border/70 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] group/buy mt-2 flex items-center gap-2 rounded-[10px] border border-dashed px-3 py-2 text-[12.5px] transition-colors'
+          }
+        >
+          <span className={'min-w-0 flex-1'}>
+            Need more? Packs start at{' '}
+            <span className={'text-foreground font-semibold'}>
+              ${CHEAPEST.price} for {CHEAPEST.credits} credits
+            </span>
+            .
+          </span>
+          <span
+            className={
+              'text-foreground inline-flex shrink-0 items-center gap-1 font-semibold'
+            }
+          >
+            Buy credits
+            <ArrowRightIcon
+              className={
+                'size-[13px] transition-transform group-hover/buy:translate-x-0.5'
+              }
+              strokeWidth={2.4}
+              aria-hidden
+            />
+          </span>
+        </Link>
+      </div>
     );
   }
 

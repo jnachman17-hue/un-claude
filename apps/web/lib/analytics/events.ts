@@ -351,9 +351,22 @@ export function outOfCreditsShown(properties: {
   });
 }
 
-/** They took the offer from the empty balance rather than from the wall. */
-export function outOfCreditsClicked(properties: { isGuest: boolean }): void {
-  send('out_of_credits_clicked', { is_guest: properties.isGuest });
+/**
+ * They took the offer from the empty balance rather than from the wall.
+ *
+ * `road` separates the two the panel now offers. Added 4 September 2026 with
+ * entry 159: a guest used to be shown only the free grant, so there was one
+ * road and nothing to distinguish. There are two now, and which one people
+ * take is the whole question that override was made to answer.
+ */
+export function outOfCreditsClicked(properties: {
+  isGuest: boolean;
+  road: 'free' | 'buy';
+}): void {
+  send('out_of_credits_clicked', {
+    is_guest: properties.isGuest,
+    road: properties.road,
+  });
 }
 
 // ---------------------------------------------------------------------------
