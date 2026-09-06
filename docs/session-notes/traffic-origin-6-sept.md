@@ -76,10 +76,24 @@ gpt-watermark-remover.com   cudekai.com            overchat.ai
 **Almost all are exact-match domains.** They are winning the query this product
 is built for.
 
-**AND GOOGLE SEARCH CONSOLE IS NOT VERIFIED.** No verification file, no meta
-tag. `robots.txt` and `sitemap.xml` are both correct and serving, so the site is
-crawlable; nobody can see what it ranks for. **That is the single biggest
-instrument gap: the question Jon asked cannot be answered properly without it.**
+**CORRECTION, made the same day. An earlier version of this note said Google
+Search Console was not verified. THAT WAS WRONG, and Jon caught it by opening
+it.** The property exists, is verified as a DOMAIN property, and has been
+collecting since about 18 August.
+
+**How the mistake was made, because it is a repeatable one:** verification was
+checked by looking for a verification FILE in `public/` and a META TAG on the
+homepage. A domain property uses neither. It verifies by DNS TXT record, and the
+three `google-site-verification` TXT records on `un-claude.com` had already been
+seen in this same session and were written off as Google Workspace. **Check the
+TXT records before concluding a property does not exist.**
+
+**AND SEARCH CONSOLE CONFIRMS THE 24 AUGUST STEP FROM GOOGLE'S OWN SIDE.** Web
+search clicks were flat at zero until 22 August, then 2, then **12 on 24
+August**, the day the SEO fix shipped, with a second peak of 10 on 26 August.
+**58 total clicks** in the window, which matches the 68 people PostHog counted
+from search over a longer one. The SEO fix worked and the timing is no longer a
+hypothesis.
 
 ---
 
@@ -130,8 +144,11 @@ identified, `r/Startup_Ideas`, and it sent 2 people.
 
 **Recommended instruments, in order of value:**
 
-1. **Verify Google Search Console.** Free, ten minutes, and it is the only thing
-   that answers "what are we ranking for" permanently.
-2. **A "how did you hear about us" question on signup.** The direct traffic is
-   the majority and no analytics product can attribute it. Ask them.
-3. **UTM tags on every link ever shared again.**
+1. **Read Search Console's Queries report.** It is already verified and already
+   holding the answer to "what are we ranking for". Nothing needs building.
+2. **NOT a "how did you hear about us" question.** Jon refused it as friction and
+   he is right, because the data already exists without it. PostHog's first-touch
+   referrer attributes signups with nothing asked of anybody: of 14 signups, 10
+   first arrived direct, 3 from Google, 1 internal. Of everyone who reached
+   checkout, 3 first arrived direct and 1 from a Google account.
+3. **UTM tags on every link ever shared again.** 949 of 951 people carried none.
