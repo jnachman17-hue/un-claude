@@ -152,3 +152,74 @@ identified, `r/Startup_Ideas`, and it sent 2 people.
    first arrived direct, 3 from Google, 1 internal. Of everyone who reached
    checkout, 3 first arrived direct and 1 from a Google account.
 3. **UTM tags on every link ever shared again.** 949 of 951 people carried none.
+
+
+---
+
+## 8. SETTLED: the channel is TikTok, and the proof is in the misspellings
+
+**6 September, from Jon's own Search Console export (last 3 months, web).**
+Jon's read was that residual TikToks name the account but never link it, so
+people hear the name and search for it. **The query list confirms it outright.**
+
+```
+Top queries               Clicks  Impr    CTR      Position
+unclaude                    21     62    33.87%     3.37
+un claude                    9     15    60%        2.33
+un-claude.com                2      7    28.57%     8.57
+unclaud                      0      5     0%        3.2
+unclaidai                    0      4     0%        4.5
+unclade                      0      2     0%        2
+outclaude                    0      2     0%        7.5
+un clous                     0      1     0%        2
+un coude                     0      1     0%        6
+unclaid                      0      1     0%       58
+claude unc                   0      1     0%       76
+--- and the entire non-branded showing: ---
+unwatermark claude           0      2     0%       13.5
+claude watermark             0      1     0%       30
+claude ai watermark          0      1     0%      143
+best way to get rid of it    0      1     0%        8
+```
+
+**EVERY CLICK IS BRANDED.** And the misspellings are the evidence that decides
+it: `un clous`, `un coude`, `unclaidai`, `unclade`, `unclaid`. **Those are
+phonetic attempts. Nobody types "un clous" having seen a link.** They are what a
+person types after HEARING a name in a video.
+
+### Three things that follow, all measured
+
+**1. WE ARE LOSING OUR OWN BRAND NAME.** Average position **3.37** on
+`unclaude`, so 62 impressions produced only 21 clicks. **Two developer tools
+hold that word:** a PyPI package called `unclaude` and an npm package
+`@buffbirb/unclaude`, both unrelated AI coding tools. Roughly 40 people a
+quarter search this brand and do not reach the site.
+
+**2. NON-BRANDED SEARCH IS NOT "CLOSE", IT IS ABSENT.** `claude ai watermark` at
+position **143**. `claude watermark` at **30**. `unwatermark claude` at **13.5**.
+The nine exact-match competitor domains own that space and we do not appear in
+it at all.
+
+**3. TWO PAGES EARN IMPRESSIONS AND NO CLICKS.** `/how-it-works` has **70
+impressions, 0 clicks** at position 9.16, and `/pricing` **18 impressions, 0
+clicks**. That is a title and description problem, and it is free to fix.
+
+### What it means for paid search
+
+**The evidence now supports a paid test, but not the one anybody would have
+guessed.** Bid the BRAND and its misspellings, not the generic keywords:
+
+* the intent is the highest available, because they are searching for us by name
+* brand terms are cheap, and a PyPI package is not going to outbid anybody
+* an ad sits above the organic results, so it beats the two packages regardless
+  of where we rank organically
+* it plugs a leak that is already measured rather than buying a new audience
+
+**Generic keywords are the opposite trade:** nine exact-match domains, expensive
+clicks, and a visitor currently worth **$0.077**.
+
+### And the cheapest fix of all is in the TikTok itself
+
+People are misspelling the name because they only ever HEAR it. **Putting
+`un-claude.com` on screen as text in the video** should convert a chunk of those
+zero-click misspellings into direct traffic. No spend required.
