@@ -6,6 +6,62 @@ writer** — worker sessions write `docs/session-notes/<topic>.md`.
 
 ---
 
+# ★★ 6 SEPTEMBER — /how-it-works IS BEING RETHOUGHT. Jon's four rulings.
+
+**The complaint, and it is measured rather than felt:**
+
+```
+Hidden characters       520px    one idea, one diagram
+Metadata                567px    one idea, one diagram
+Statistical watermark 1,189px    2.3x the first, and 442px of that is a
+                                 full-width band hanging BELOW the two columns
+```
+
+**The third panel is 524 words and structurally unlike its siblings**, which is
+why the layout reads as broken. Panels 1 and 2 are one beat each. Panel 3 is a
+whole engine explainer wearing the same frame.
+
+## ★ THE REAL DIAGNOSIS — thematic where it should be sequential
+
+The panel is organised by topic: what the mark is, why casual rewording fails,
+"what makes it hard", an Anthropic quote, a diagram, four named rules, a
+receipt line. **The four rules are PROPERTIES, not a process** — *Break the
+runs · Never rewritten by Claude · Facts held · Length held* is a spec sheet.
+**It never tells a reader what happens to their document.**
+
+**Jon's own Reddit post does the opposite and is the model:** entropy →
+therefore the mark can only live in high-freedom spans → therefore you only
+rewrite those → here is what happens to your 1,000 words, in order. Each step
+earns the next.
+
+**And the best idea in the product is absent from the page.** It says several
+options "read equally well" but never draws the conclusion — that a low-freedom
+span cannot carry a mark, which is why freezing quotations costs nothing. That
+argument is the reason the design makes sense and it exists only on Reddit.
+
+## Jon's rulings, 6 September
+
+| # | Ruling |
+|---|---|
+| **1** | **The rewrite gets its OWN SECTION on the same page**, under the three marks. Not a separate page — the nav is already five items and a "why this matters" tab is coming |
+| **2** | **Real motion.** Claude Design mockups exist and are to be drawn on for inspiration. **The conductor CANNOT reach them** — only three artifacts exist on the account and none is a design canvas. **Jon is sending stills** |
+| **3** | **DO NOT lead with the limitation.** The Reddit post opens with "we can only positively claim two of three". **That framing does not come to the site.** The honesty stays; the page does not open on it |
+| **4** | **Visuals serve digestibility, not decoration.** Use a picture where it carries the idea better than the words would — not because a panel looks bare |
+
+## Standing constraint the brief must carry
+
+**This page has almost no animation today, and a heavy client-side sequence is
+exactly what destroyed the homepage's Google indexing in August** — one
+`Date.now()` during render abandoned the prerender and took 1,159 words and the
+`<h1>` with it. Motion here is fine and must be built so the page still
+prerenders. **The prerender check is not optional.**
+
+**Also: mobile is currently PATCHED, not solved** — each panel's prose hides
+behind a "+" below `sm` because the page ran to eight phone screens. Whatever
+replaces it must not need that trick.
+
+---
+
 # ★ 25 AUGUST — TWO OPEN DECISIONS CLOSED BY JON
 
 | Was | Jon's ruling |
