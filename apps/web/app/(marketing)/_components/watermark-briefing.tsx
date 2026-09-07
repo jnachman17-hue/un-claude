@@ -97,68 +97,166 @@ function markSeen(): void {
 /* ────────────────────────────────────────────────────────────────────────── */
 
 /**
- * THE SENTENCE THE VISUAL HAS TO CARRY, and the one it must not.
+ * ════════════════════════════════════════════════════════════════════════════
+ * ★ THE SEQUENCE IS A REBUILD OF JON'S CLAUDE DESIGN VIDEO, WATCHED FRAME BY
+ *   FRAME. IT IS NOT A LAYOUT THAT FADES IN.
  *
- * It shows the mark GOING IN as Claude writes, which is what actually happens:
- * at each word where several options read equally well, a secret key makes the
- * pick, and the pattern of picks is the mark.
+ * The first attempt at this was built from a written description of the video
+ * instead of the video, and it was wrong in the one way that mattered: it put
+ * everything on screen at once and faded the pieces up. **The video is a
+ * sequence of full scenes that REPLACE each other**, each built around a single
+ * piece of display type, with a Claude chat card as the recurring object.
  *
- * ★ IT DELIBERATELY DOES NOT DRAW A DETECTOR FINDING ANYTHING. Scene 3 of Jon's
- * motion canvas shows boxed signals and a count of "13 signals", and that is
- * Anthropic's asset showing Anthropic's own detector. Drawing it here would
- * imply two things this product must never claim: that we know which words
- * carry the mark, and that a readout like that exists for us to run. `04` entry
- * 78 ruling 2, and the claims boundary in
- * .claude/skills/unclaude-messaging. **The detector is a sentence below, not a
- * dashboard.**
+ * The frame by frame inventory is in
+ * `docs/session-notes/briefing-top-half-animated.md` section 1. Read it before
+ * changing any of this, because the video is a rendered file with no code to
+ * lift and re-watching it means driving a cross-origin player by hand.
+ *
+ * WHAT THE VIDEO DOES IN 27 SECONDS AND THIS DOES IN 9.6:
+ *
+ *   video 0:00  "Since August 2nd," + the Claude card typing an essay   -> SCENE A
+ *   video 0:06  cards streaking past diagonally at speed                -> the transition
+ *   video 0:15  "The model is nudged at every pick." + rust words
+ *               swapping in running prose                               -> SCENE B
+ *   video 0:11  the scan line, the rust highlights, "14 signals",
+ *               "The watermark is the words."                           -> SCENE C
+ *   video 0:18  a single line held over the marked card                 -> SCENE D
+ *
+ * Cut, and why, in the note: "No.", "Your essay sounds Fine/Normal/Human"
+ * (a second word-cycling scene when there is already one), and the closing
+ * "Your writing already carries it." scene, because this modal has a permanent
+ * CTA pinned to its own footer and does not need to build to one.
+ * ════════════════════════════════════════════════════════════════════════════
  */
-const LINE = [
-  { text: 'The results', marked: false },
-  { text: 'were', marked: false },
-  { text: 'striking', marked: true },
-  { text: 'and', marked: false },
-  { text: 'the effect', marked: false },
-  { text: 'held', marked: true },
-  { text: 'across', marked: false },
-  { text: 'every', marked: false },
-  { text: 'trial', marked: true },
+
+/** Jon's essay sample, from the video's own Claude card. */
+const PROMPT = 'Write my final essay on the Industrial Revolution';
+
+const ESSAY =
+  'The Industrial Revolution fundamentally transformed the rhythm of everyday life. Cities expanded as workers pursued new opportunities, and the pace of innovation accelerated across every sector of society.';
+
+/**
+ * The running prose of scenes B and C, which is the same sentence as the essay
+ * above, set larger and out of the card. Six words carry alternatives that
+ * would have read just as well; the video swaps them in place, rust for the
+ * word showing.
+ *
+ * `sector` and `part` are the pair the video was caught mid-swap on.
+ */
+const PROSE = [
+  { text: 'The Industrial Revolution' },
+  { text: 'fundamentally', alts: ['profoundly', 'utterly'] },
+  { text: 'transformed', alts: ['reshaped', 'changed'] },
+  { text: 'daily life. Cities' },
+  { text: 'expanded', alts: ['grew', 'swelled'] },
+  { text: 'as workers' },
+  { text: 'pursued', alts: ['chased', 'sought'] },
+  { text: 'new opportunities, and innovation' },
+  { text: 'accelerated', alts: ['quickened', 'sped up'] },
+  { text: 'across every' },
+  { text: 'sector', alts: ['part', 'corner'] },
+  { text: 'of society.' },
 ] as const;
 
-const WORD_MS = 190;
-/** Words, then a beat, then the picks light up. */
-const STEPS = LINE.length + 3;
+/** How many words the scan lights, which is what the badge counts up to. */
+const SIGNALS = 14;
 
+/**
+ * ★ THE TEN SECOND CEILING IS JON'S NUMBER AND THIS TABLE IS HOW IT IS KEPT.
+ *
+ * The sequence is driven by one counter that ticks in fixed steps, so every
+ * moment below is an arithmetic offset rather than an estimate and the note can
+ * state the total as a fact. **The ceiling is asserted, so a future session that
+ * stretches a beat gets a build error instead of a briefing people close.**
+ */
+const STEP = 100;
+
+const T = {
+  TYPE_FROM: 400,
+  TYPE_TO: 2200,
+  STREAK_FROM: 2100,
+  STREAK_TO: 3000,
+  B_FROM: 2900,
+  SWAP_EVERY: 260,
+  B_LANDS: 5900,
+  SCAN_FROM: 6100,
+  SCAN_TO: 7700,
+  D_FROM: 8000,
+  TOTAL: 9600,
+} as const;
+
+if (T.TOTAL > 10_000)
+  throw new Error('The briefing must not exceed 10 seconds.');
+
+const ANTHROPIC_ANNOUNCEMENT =
+  'https://www.anthropic.com/news/claude-text-watermark';
+
+/**
+ * THE BOTTOM HALF, AND IT IS THE POINT OF THE BRIEFING.
+ *
+ * ★ THE FIRST BLOCK CHANGED FROM A FORECAST TO A FACT, AND THE FACT IS WORSE.
+ *
+ * It used to read "Anthropic has committed to releasing a public watermark
+ * detector imminently. Universities, corporations, and individuals will be able
+ * to use this." True, and a promise about the future.
+ *
+ * **Detection is not a promise any more.** Verified 6 September 2026 against
+ * Anthropic's own two pages:
+ *
+ *   - "Watermark detection is currently in private preview"
+ *   - eligible today: "regulators, law enforcement, media, fact-checkers,
+ *     independent researchers, educational organizations, and EU civil society
+ *     groups"
+ *   - "We plan to expand access to the detection API over time."
+ *
+ * **"educational organizations" is quoted rather than paraphrased, in
+ * Anthropic's own spelling, because it is the single most alarming word in this
+ * dialog and it is theirs, not ours.**
+ *
+ * ★ WHY JON'S OWN PHRASE COULD NOT COME WITH IT. "Universities, corporations,
+ * and individuals will be able to use this" was true as a forecast. Moved into
+ * the present tense it becomes false: corporations and individuals are not on
+ * the eligibility list. So the block is present tense for what is running and
+ * future tense for the widening.
+ *
+ * ★ AND THE PRECISION GUARD. There are TWO detectors. The public one,
+ * `claude.com/check-content`, reads C2PA credentials in FILES and **cannot see
+ * text at all**. The one this dialog is about is the TEXT detector, in private
+ * preview. Nothing here may imply the file checker can verify a rewrite.
+ */
 const BEATS = [
   {
     icon: ClockIcon,
-    head: 'The detector is close',
-    /*
-     * ★ JON'S OWN WORDING, 6 September 2026, and it replaced mine for a reason
-     * worth keeping.
-     *
-     * Mine read "Anthropic's checker for files is already live and free. The
-     * one for text is in private preview." Both halves are true, and it was
-     * still the wrong sentence for this dialog: **this dialog is about the
-     * mark in TEXT, and the live checker reads C2PA credentials in FILES.**
-     * Reaching for it here mixes two layers in the one place a stranger is
-     * being taught the difference, which `CLAUDE.md` section 7 names as the
-     * single most common defect in this project's copy.
-     *
-     * "Committed... imminently" is also the exact register the claims file
-     * prescribes: say imminent, never say it does not exist, never say it will
-     * not come. And "WILL BE ABLE TO use this" is the future tense that keeps
-     * it honest. **"Universities can check your work today" is false and is
-     * explicitly forbidden. One word separates this sentence from that one.**
-     *
-     * It also now agrees with `claude-band.tsx`, which says the same thing
-     * three sections further down the page.
-     */
-    body: 'Anthropic has committed to releasing a public watermark detector imminently. Universities, corporations, and individuals will be able to use this.',
+    head: 'Detection is already running',
+    body: (
+      <>
+        The text detector is in{' '}
+        <span className={'text-foreground font-medium'}>private preview</span>{' '}
+        now, not a promise for later. Anthropic names{' '}
+        <span
+          className={
+            'text-mark-strong bg-mark/[0.13] rounded-[4px] px-1 font-semibold'
+          }
+        >
+          &ldquo;educational organizations&rdquo;
+        </span>{' '}
+        among those who can request access, and says it plans to widen that
+        access over time.
+      </>
+    ),
   },
   {
     icon: InfinityIcon,
+    /* Jon: "that's good." The head is his and stays. The body moved off "the
+       day the detector opens", which was written when the detector had not
+       opened for anybody. It has, for some. */
     head: 'Marks don’t expire',
-    body: 'What you have already handed in stays marked. The day the detector opens, it can be checked.',
+    body: (
+      <>
+        What you have already handed in stays marked. It does not fade, and it
+        can be checked long after you handed it in.
+      </>
+    ),
   },
 ] as const;
 
@@ -169,16 +267,25 @@ export function WatermarkBriefing() {
    * whole SEO protection. Do not seed it true.
    */
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
+  /**
+   * Milliseconds into the sequence, counted in fixed `STEP` ticks rather than
+   * read off the clock. Every scene below is derived from it, so the whole
+   * sequence is one number and its order cannot drift even if a throttled tab
+   * slows the ticks down.
+   */
+  const [ms, setMs] = useState(0);
 
   const openedAt = useRef(0);
   const timers = useRef<number[]>([]);
+  const intervals = useRef<number[]>([]);
   const panel = useRef<HTMLDivElement | null>(null);
   const restoreFocusTo = useRef<Element | null>(null);
 
   const clearTimers = useCallback(() => {
     for (const id of timers.current) window.clearTimeout(id);
+    for (const id of intervals.current) window.clearInterval(id);
     timers.current = [];
+    intervals.current = [];
   }, []);
 
   const close = useCallback(
@@ -223,23 +330,34 @@ export function WatermarkBriefing() {
       setOpen(true);
       briefingShown();
 
-      // A visitor who asked for less motion gets the settled picture, never a
-      // blank stage or a half-built one.
+      // A visitor who asked for less motion is put at the end of the sequence,
+      // which is scene D held: the sentence that does the work, over the marked
+      // card. Never a blank stage and never a half-built one.
       if (reduced) {
-        setStep(STEPS - 1);
+        setMs(T.TOTAL);
         return;
       }
 
-      for (let i = 1; i < STEPS; i += 1) {
-        timers.current.push(window.setTimeout(() => setStep(i), i * WORD_MS));
-      }
+      const tick = window.setInterval(() => {
+        setMs((at) => {
+          if (at >= T.TOTAL) {
+            window.clearInterval(tick);
+            return at;
+          }
+          return at + STEP;
+        });
+      }, STEP);
+
+      intervals.current.push(tick);
     }, 550);
 
     timers.current.push(id);
 
     return () => {
       for (const t of timers.current) window.clearTimeout(t);
+      for (const i of intervals.current) window.clearInterval(i);
       timers.current = [];
+      intervals.current = [];
     };
   }, []);
 
@@ -289,7 +407,37 @@ export function WatermarkBriefing() {
 
   if (!open) return null;
 
-  const settled = step >= STEPS - 1;
+  /* ── Everything the stage draws, derived from the one counter. ────────── */
+
+  const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
+  /** Scene A: the essay types itself into the Claude card, word by word. */
+  const essayWords = ESSAY.split(' ');
+  const typed = Math.round(
+    clamp01((ms - T.TYPE_FROM) / (T.TYPE_TO - T.TYPE_FROM)) * essayWords.length,
+  );
+
+  /** The cards that streak past between scene A and scene B. */
+  const streaking = ms >= T.STREAK_FROM && ms < T.STREAK_TO;
+
+  const sceneA = ms < T.B_FROM;
+  const sceneD = ms >= T.D_FROM;
+  const sceneBC = !sceneA && !sceneD;
+
+  /** Scene B: which alternative each open word is showing right now. */
+  const swap = Math.floor((ms - T.B_FROM) / T.SWAP_EVERY);
+  /** They stop cycling and settle on what was actually written. */
+  const landed = ms >= T.B_LANDS;
+
+  /** Scene C: the scan line's progress down the prose, 0 to 1. */
+  const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
+  const scanning = ms >= T.SCAN_FROM;
+  const found = Math.round(scan * SIGNALS);
+
+  /** The headline over the prose swaps once, the way the video's does. */
+  const headline = scanning
+    ? 'The watermark is the words.'
+    : 'The model is nudged at every pick.';
 
   return (
     <div
@@ -300,11 +448,15 @@ export function WatermarkBriefing() {
         if (event.target === event.currentTarget) close('backdrop');
       }}
     >
+      {/* ★ `aria-label`, NOT `aria-labelledby`. The heading it used to point at
+          is inside scene A, and scene A is removed from the layout the moment
+          the sequence cuts to scene B. A dialog whose accessible name
+          disappears two seconds in is worse than one that never had it. */}
       <div
         ref={panel}
         role={'dialog'}
         aria-modal={'true'}
-        aria-labelledby={'briefing-title'}
+        aria-label={'Claude marks the text it writes'}
         tabIndex={-1}
         className={
           'bg-card ring-border/70 animate-rise relative flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-[20px] shadow-2xl ring-1 outline-none sm:max-w-[560px] sm:rounded-[20px]'
@@ -337,127 +489,329 @@ export function WatermarkBriefing() {
         <div
           className={'flex-1 overflow-y-auto px-6 pt-6 pb-4 sm:px-9 sm:pt-7'}
         >
-          <p
-            className={
-              'text-mark-strong text-[11.5px] font-semibold tracking-wide uppercase'
-            }
-          >
-            Since 2 August 2026
-          </p>
+          {/*
+            ★ THE STAGE. Fixed height, scenes stacked on top of one another, so
+            nothing below it ever moves. A modal that grows re-centres itself
+            and throws the line a reader is in the middle of.
 
-          <h2
-            id={'briefing-title'}
-            className={
-              'text-foreground mt-2 text-[25px] leading-[1.12] font-semibold tracking-[-0.026em] text-balance sm:text-[29px]'
-            }
-          >
-            Claude marks the text it writes.
-          </h2>
+            ★ THE SCENES CUT. THEY DO NOT CROSS-FADE, and that was a real defect
+            rather than a preference. Two absolutely positioned scenes fading
+            through each other draw both blocks of text at once: "The model is
+            nudged at every pick." was rendering straight over "August 2nd,"
+            and its Claude card. It reads as a rendering fault, and it is what
+            Jon saw. **The video cuts between scenes, so this cuts.** Only one
+            scene is ever in the layout; motion lives INSIDE a scene, never
+            between two.
+          */}
+          <div className={'relative h-[300px] sm:h-[316px]'}>
+            {/* ── SCENE A. "Since August 2nd," over a Claude card typing. ── */}
+            <div className={['absolute inset-0'].join(' ')} hidden={!sceneA}>
+              <p className={'text-muted-foreground text-[14px] font-medium'}>
+                Since
+              </p>
+              <h2
+                className={
+                  'text-foreground text-[34px] leading-[1.02] font-semibold tracking-[-0.03em] sm:text-[38px]'
+                }
+              >
+                August 2nd,
+              </h2>
+              <p
+                className={
+                  'text-foreground mt-1.5 text-[15.5px] leading-[1.35] font-medium'
+                }
+              >
+                AI models watermark the text they write.{' '}
+                <span className={'text-mark-strong'}>Invisibly.</span>
+              </p>
 
-          <p
-            className={
-              'text-muted-foreground mt-2.5 text-[15px] leading-[1.55]'
-            }
-          >
-            Every model Anthropic has released since then puts a hidden mark in
-            its output. Nothing is added to the page. The mark is in{' '}
-            <span className={'text-foreground font-medium'}>
-              which words the model chose
-            </span>
-            .
-          </p>
+              {/* The Claude card, with the prompt and the essay typing in. */}
+              <div
+                className={
+                  'border-border/70 bg-card mt-3.5 rounded-[12px] border p-3 shadow-sm'
+                }
+              >
+                <p
+                  className={
+                    'text-muted-foreground text-[10.5px] font-semibold tracking-wide'
+                  }
+                >
+                  Claude
+                </p>
+                <p
+                  className={
+                    'bg-mark/[0.09] text-foreground/80 mt-1.5 ml-auto w-fit max-w-[80%] rounded-[9px] px-2.5 py-1.5 text-[11.5px] leading-snug'
+                  }
+                >
+                  {PROMPT}
+                </p>
+                <p
+                  className={
+                    'text-foreground/70 mt-2 min-h-[52px] text-[11.5px] leading-[1.5]'
+                  }
+                >
+                  {essayWords.slice(0, typed).join(' ')}
+                  <span className={'motion-reduce:hidden'}>
+                    {typed < essayWords.length ? ' |' : ''}
+                  </span>
+                </p>
+              </div>
+            </div>
 
-          {/* The mark going in, as it is written. */}
-          <div
-            className={
-              'border-border/70 bg-foreground/[0.016] mt-4 rounded-[13px] border px-4 py-3.5'
-            }
-          >
-            <p className={'text-[15px] leading-[1.9]'}>
-              {LINE.map((token, index) => {
-                const arrived = step > index;
-                const lit = token.marked && step >= LINE.length + 2;
-
+            {/*
+              ── THE TRANSITION. Cards streaking past from both sides.
+              In the video this is about fourteen white cards motion blurred
+              into diagonal lines, and it is texture rather than something to
+              read: it says "this is everywhere" and then it clears.
+            */}
+            <div
+              hidden={!streaking}
+              className={
+                'pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden'
+              }
+            >
+              {Array.from({ length: 12 }).map((_, index) => {
+                const fromLeft = index % 2 === 0;
+                const top = 6 + index * 8;
                 return (
                   <span
                     key={index}
                     className={[
-                      // `motion-reduce` is a SECOND guarantee, not decoration.
-                      // The effect above already skips the sequence for a
-                      // visitor who asked for less motion, but that is a
-                      // JavaScript branch and this is a media query. If
-                      // either one fails, the settled sentence is still what
-                      // they read.
-                      'transition-all duration-300 motion-reduce:opacity-100',
-                      arrived ? 'opacity-100' : 'opacity-0',
-                      lit
-                        ? 'text-mark-strong bg-mark/[0.13] rounded-[4px] px-1 font-medium'
-                        : 'text-foreground/80',
+                      'bg-card ring-border/70 absolute h-[16px] w-[150px] rounded-[5px] shadow-sm ring-1 transition-transform duration-500 ease-out',
+                      streaking
+                        ? 'translate-x-0'
+                        : fromLeft
+                          ? '-translate-x-[420px]'
+                          : 'translate-x-[420px]',
                     ].join(' ')}
-                  >
-                    {index === 0 ? '' : ' '}
-                    {token.text}
-                  </span>
+                    style={{
+                      top: `${top}%`,
+                      left: fromLeft ? '2%' : 'auto',
+                      right: fromLeft ? 'auto' : '2%',
+                      transitionDelay: `${index * 35}ms`,
+                      rotate: fromLeft ? '-2deg' : '2deg',
+                    }}
+                  />
                 );
               })}
-            </p>
+            </div>
 
-            <p
-              className={[
-                'text-muted-foreground mt-2.5 text-[12px] leading-snug transition-opacity duration-500 motion-reduce:opacity-100',
-                settled ? 'opacity-100' : 'opacity-0',
-              ].join(' ')}
+            {/* ── SCENES B AND C. One prose block, two headlines. ────────── */}
+            <div className={['absolute inset-0'].join(' ')} hidden={!sceneBC}>
+              <h3
+                className={
+                  'text-foreground text-[23px] leading-[1.08] font-semibold tracking-[-0.024em] text-balance sm:text-[25px]'
+                }
+              >
+                {headline}
+              </h3>
+
+              <div className={'relative mt-3.5'}>
+                <p className={'text-[16px] leading-[1.62] sm:text-[16.5px]'}>
+                  {PROSE.map((token, index) => {
+                    if (!('alts' in token)) {
+                      return (
+                        <span key={index} className={'text-foreground/80'}>
+                          {index === 0 ? '' : ' '}
+                          {token.text}
+                        </span>
+                      );
+                    }
+
+                    /*
+                     * ★ NO WIDTH IS RESERVED AND THAT IS DELIBERATE. Holding
+                     * each open word at the width of its longest alternative
+                     * stops the line reflowing, and it leaves a ragged hole
+                     * beside every short word: "Revolution utterly<gap>
+                     * transformed". It read as broken text rather than as a
+                     * word being chosen. **The video lets the prose reflow**,
+                     * so this does too.
+                     */
+                    const pool = [token.text, ...token.alts];
+                    const shown = landed
+                      ? token.text
+                      : pool[Math.abs(swap + index) % pool.length]!;
+                    /* The scan lights the marked words as it passes them. */
+                    const lit = scanning && scan > (index + 1) / PROSE.length;
+
+                    return (
+                      <span key={index}>
+                        {' '}
+                        <span
+                          className={[
+                            'inline-block text-left transition-colors duration-200 motion-reduce:transition-none',
+                            lit
+                              ? 'bg-mark-strong rounded-[3px] px-1 font-medium text-white'
+                              : 'text-mark-strong font-medium',
+                          ].join(' ')}
+                        >
+                          {shown}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </p>
+
+                {/* The scan line itself, a single rust rule travelling down. */}
+                <span
+                  className={[
+                    'bg-mark-strong pointer-events-none absolute inset-x-0 h-[2px] motion-reduce:hidden',
+                    scanning && scan < 1 ? 'opacity-90' : 'opacity-0',
+                  ].join(' ')}
+                  style={{ top: `${scan * 100}%` }}
+                  aria-hidden
+                />
+              </div>
+
+              <div className={'mt-3 flex items-center gap-2.5'}>
+                <span
+                  className={[
+                    'bg-foreground text-background rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity duration-300',
+                    scanning ? 'opacity-100' : 'opacity-0',
+                  ].join(' ')}
+                >
+                  {found} signals
+                </span>
+                <p
+                  className={'text-muted-foreground text-[12.5px] leading-snug'}
+                >
+                  Enough picks make a pattern a detector can test.
+                </p>
+              </div>
+            </div>
+
+            {/*
+              ── SCENE D. The sentence that does the work, held.
+
+              The brief is explicit that this is the most persuasive line in the
+              briefing, because it turns the audience from people who cheated
+              into anyone who has ever used Claude at all. It is also the thing
+              most easily lost to motion, so it arrives last, alone, and nothing
+              moves again after it. The marked card underneath is the video's
+              own ending shape: one statement over the evidence.
+            */}
+            <div
+              className={['absolute inset-0 flex flex-col justify-center'].join(
+                ' ',
+              )}
+              hidden={!sceneD}
             >
-              A secret key makes the pick between words that read equally well.
-              The pattern of picks is the mark.
-            </p>
+              <p
+                className={
+                  'text-foreground text-[20px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance sm:text-[22px]'
+                }
+              >
+                A mark does not mean Claude wrote it.{' '}
+                <span className={'text-mark-strong'}>
+                  It means Claude touched it.
+                </span>
+              </p>
+              <p
+                className={
+                  'text-muted-foreground mt-2.5 text-[14.5px] leading-[1.45]'
+                }
+              >
+                Ask it to tidy a paragraph you wrote yourself, and the mark goes
+                in with the tidy.
+              </p>
+
+              <div
+                className={
+                  'border-border/70 bg-card mt-4 rounded-[12px] border p-3 shadow-sm'
+                }
+              >
+                <div className={'flex items-center justify-between'}>
+                  <p
+                    className={
+                      'text-muted-foreground text-[10.5px] font-semibold tracking-wide'
+                    }
+                  >
+                    Claude
+                  </p>
+                  <span
+                    className={
+                      'bg-foreground text-background rounded-full px-2 py-[3px] text-[10px] font-semibold'
+                    }
+                  >
+                    {SIGNALS} signals
+                  </span>
+                </div>
+                <p className={'mt-2 text-[11.5px] leading-[1.55]'}>
+                  {PROSE.map((token, index) => (
+                    <span
+                      key={index}
+                      className={
+                        'alts' in token
+                          ? 'bg-mark-strong rounded-[2px] px-[3px] font-medium text-white'
+                          : 'text-foreground/70'
+                      }
+                    >
+                      {index === 0 ? '' : ' '}
+                      {token.text}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/*
-          ★ THE EMOTIONAL CENTRE, AND IT IS TRUE. The claims file names this as
-          the sentence to say plainly and without adjectives: a detected mark
-          means Claude PROCESSED the content, not that Claude wrote it. It is
-          the line that turns this from somebody else's problem into the
-          reader's, and it does that by being accurate rather than by being
-          frightening.
-        */}
-          <p
+            ★ THE BOTTOM HALF CARRIES THE ARGUMENT, SO IT STOPS LOOKING LIKE
+            SMALL PRINT. Two lines of 13.5px grey under an animation is the
+            shape of a footnote. The animation teaches; this is the part that is
+            meant to make somebody act.
+
+            ONE emphasised phrase, not three. A modal with several red
+            highlights stops reading as a warning and starts reading as a cookie
+            banner, so the rust is spent on the single most alarming true thing
+            in the dialog and nothing else competes with it.
+          */}
+          <div
             className={
-              'border-mark-strong/40 text-foreground mt-4 border-l-2 pl-3.5 text-[15px] leading-[1.55] font-medium'
+              'border-border/70 bg-foreground/[0.022] mt-4 space-y-4 rounded-[13px] border p-4'
             }
           >
-            A mark does not mean Claude wrote it. It means Claude touched it.
-            Ask it to tidy a paragraph you wrote yourself, and the mark goes in
-            with the tidy.
-          </p>
-
-          <ul className={'mt-4 space-y-3'}>
             {BEATS.map((beat) => (
-              <li key={beat.head} className={'flex gap-3'}>
+              <div key={beat.head} className={'flex gap-3'}>
                 <beat.icon
-                  className={'text-mark-strong mt-[3px] size-[17px] shrink-0'}
-                  strokeWidth={2}
+                  className={'text-mark-strong mt-[2px] size-[18px] shrink-0'}
+                  strokeWidth={2.2}
                   aria-hidden
                 />
                 <div className={'min-w-0'}>
                   <h3
                     className={
-                      'text-foreground text-[14px] font-semibold tracking-[-0.012em]'
+                      'text-foreground text-[15px] font-semibold tracking-[-0.014em]'
                     }
                   >
                     {beat.head}
                   </h3>
                   <p
                     className={
-                      'text-muted-foreground mt-0.5 text-[13.5px] leading-[1.5]'
+                      'text-muted-foreground mt-1 text-[14px] leading-[1.55]'
                     }
                   >
                     {beat.body}
                   </p>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+
+            <p className={'text-muted-foreground/80 pt-0.5 text-[11.5px]'}>
+              Both from{' '}
+              <a
+                href={ANTHROPIC_ANNOUNCEMENT}
+                target={'_blank'}
+                rel={'noreferrer'}
+                className={
+                  'text-muted-foreground underline decoration-1 underline-offset-2'
+                }
+              >
+                Anthropic&rsquo;s own announcement
+              </a>
+              .
+            </p>
+          </div>
         </div>
 
         <div
@@ -466,26 +820,49 @@ export function WatermarkBriefing() {
           }
         >
           {/*
-          THE REASSURANCE SITS ABOVE THE BUTTON, NOT UNDER IT, and that is a
-          measurement rather than a preference. Underneath, on a 660px tall
-          window, it fell 11px below the fold: the visitor saw a black button
-          and none of the three words that make it safe to press. Above it, the
-          button is the last element in the sheet and "free, no account" is
-          read before the press on every screen size measured.
-        */}
-          <p className={'text-muted-foreground mt-5 text-center text-[12.5px]'}>
-            Free, takes seconds, and needs no account.
-          </p>
+            ★ THE VERB CHANGED AND IT CROSSES A RULING. SURFACED, NOT HIDDEN.
 
+            Jon asked for this button and `CLAUDE.md` section 2 makes his
+            instruction in a session the highest authority there is, so it is
+            built as asked. What follows is what section 2 also requires:
+            naming the document it overrides rather than resolving the conflict
+            quietly.
+
+            **`04` entry 70 ruled the opposite, and the reasoning was Jon's
+            own:** *"'Sanitise' stays. 'Remove watermark' would be untrue,
+            because for layer B nobody can say the watermark was removed.
+            Sanitise claims the work, not the outcome."*
+
+            The conflict is sharper here than anywhere else on the site because
+            this dialog is ABOUT layer B: ten seconds teach the mark in the
+            words, and then the button offers to remove it. `04` entry 78 ruling
+            3 says a claim in a whole-service slot must be true of the whole
+            service, and removal is provable for hidden characters and metadata
+            and is NOT provable for the rewrite.
+
+            What keeps it defensible: the site already sells itself as an AI
+            watermark remover in its own title tag, the tool really does remove
+            two of the three layers provably, and no sentence in this dialog
+            claims the rewrite is verified.
+
+            **The one-word fix if Jon wants entry 70 back: "Sanitise" for
+            "Remove".** His call, and it is in `06`.
+
+            The wording and the sub-line are the video's own ending frame.
+          */}
           <button
             type={'button'}
             onClick={() => close('cta')}
             className={
-              'bg-foreground text-background hover:bg-foreground/90 mt-2 w-full rounded-[11px] px-5 py-3 text-[15px] font-semibold transition-colors'
+              'bg-foreground text-background hover:bg-foreground/90 w-full rounded-[11px] px-5 py-3.5 text-[15.5px] font-semibold transition-colors'
             }
           >
-            See what your own text is carrying
+            Remove AI Watermarks Free
           </button>
+
+          <p className={'text-muted-foreground mt-2 text-center text-[12.5px]'}>
+            No account needed.
+          </p>
         </div>
       </div>
     </div>

@@ -2357,3 +2357,57 @@ badges never lit across 4.6 seconds. **It looked exactly like a broken observer
 and it was a backgrounded window.** The control returned
 `visibility "hidden", hasFocus false, fired null` and settled it in one call.
 **Without it, a working feature gets "fixed".**
+
+---
+
+## ★ HOW TO ACTUALLY WATCH A CLAUDE DESIGN ARTIFACT, AND WHY A BRIEF IS NOT A SUBSTITUTE
+
+**6 September 2026.** A brief said "Open it and watch it" twice. Both times the
+session built from the brief's written description of the video instead, and the
+result was wrong in a way no amount of care in the build could have fixed:
+
+- **"Headline cards" was read as PRESS headlines**, and a session was spent
+  verifying real news headlines. **The video's headlines were its own display
+  type**: "Since August 2nd,", "The watermark is the words.", "The model is
+  nudged at every pick."
+- **The video is a sequence of full scenes that REPLACE each other.** What was
+  built was a static layout that faded in. That is a different thing, and it was
+  the structural point of the whole task.
+
+**A rendered video cannot be described accurately enough to build from. Watch
+it.**
+
+### It is not as simple as opening the URL
+
+**The artifact renders the player inside a CROSS-ORIGIN iframe.** So:
+
+```js
+document.querySelectorAll('video')   // -> [] , always
+```
+
+**There is no `<video>` to control, and no `currentTime` to set.** Reaching into
+the frame throws. The player's own controls are also inside it, so they are not
+queryable either: `document.querySelectorAll('input[type=range]')` returns
+nothing.
+
+**The only way in is coordinates.** What worked, in order:
+
+1. **Open it in the connected Chrome**, not the in-app pane. The pane would not
+   paint the video.
+2. **Dismiss the "Made with Claude Design" badge** (its ✕), because it sits on
+   top of the right-hand half of the scrubber.
+3. **Click the pause button** at the bottom left of the player.
+4. **Drag the scrubber handle** rather than clicking the track. **Clicking the
+   track seeks somewhere unrelated** — clicks at x=210 and x=440 both landed at
+   about the same timestamp. `left_click_drag` from the handle's current
+   position to a target x is reliable, and the handle is wherever the last drag
+   left it.
+5. **Screenshot after each drag.** The elapsed time is printed beside the
+   controls, so every frame can be labelled.
+
+**Calibrate before trusting a seek:** note the handle's x at two known
+timestamps and derive px per second. On a 500px-wide player the track ran from
+about x=141 at 0s to x=320 at 19.75s, so about 9 px per second.
+
+**Budget for it.** Reconstructing a 27 second video took about fifteen
+screenshots. **That is far cheaper than building the wrong thing twice.**
