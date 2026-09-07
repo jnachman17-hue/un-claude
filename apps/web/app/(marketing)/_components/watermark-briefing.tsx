@@ -311,9 +311,116 @@ const SIGNALS = PROSE.filter((t) => 'mark' in t).length;
 const SWAPPERS = PROSE.filter((t) => 'alts' in t).length;
 
 /**
- * ★ THE TEN SECOND CEILING IS JON'S NUMBER AND THIS TABLE IS HOW IT IS KEPT.
- * The sequence runs off one counter ticking in fixed steps, so every moment is
- * arithmetic. The ceiling is asserted rather than remembered.
+ * ★ THE SENTENCE FLATTENED TO WORDS, CARRYING WHETHER EACH ONE IS A PICK.
+ *
+ * The rewrite beat wipes the sentence position by position, so it needs one
+ * entry per WORD. `PROSE` is one entry per token and one of its tokens holds
+ * two words ("and the"), so it cannot be indexed against a rewrite directly.
+ * Splitting here rather than writing a second copy of the sentence means the
+ * two can never drift, which is the same discipline `SIGNALS` is under.
+ */
+const ORIGINAL = PROSE.filter((t) => !('glue' in t)).flatMap((t) =>
+  t.text.split(' ').map((word) => ({ word, mark: 'mark' in t })),
+);
+
+const ORIGINAL_WORDS = ORIGINAL.map((o) => o.word);
+
+/**
+ * ★ THE REWRITE IS A RESTRUCTURE, AND THAT IS NOT A DETAIL.
+ *
+ * The obvious way to animate a rewrite is to swap words in place. **It is also
+ * the exact thing this site spends its whole argument saying does not work.**
+ * A casual reword leaves long runs of the original standing and every surviving
+ * run still carries the signature. Animating word-level swaps here would put
+ * the failure mode on screen and label it the product.
+ *
+ * So the sentence is genuinely rebuilt: the clauses change places, the verbs
+ * change, and the picks the scan just lit are no longer sitting in the order it
+ * found them.
+ *
+ *   before  The results were striking and the effect held across every trial
+ *           that followed.
+ *   after   Across every trial, the effect stayed and the results were hard to
+ *           miss.
+ *
+ * **Thirteen words in and thirteen words out**, which is what lets the beat
+ * wipe position by position instead of reflowing, and which is also true of the
+ * real engine: length holds to within about a tenth.
+ */
+const REWRITTEN_WORDS = [
+  'Across',
+  'every',
+  'trial,',
+  'the',
+  'effect',
+  'stayed',
+  'and',
+  'the',
+  'results',
+  'were',
+  'hard',
+  'to',
+  'miss',
+] as const;
+
+/**
+ * The longest run of consecutive words the two sentences share.
+ *
+ * ★ COUNTED, NEVER TYPED, FOR THE REASON `SIGNALS` IS COUNTED. Jon caught a
+ * hand-written 11 sitting beside three highlighted words. The caption in this
+ * beat states a number about the two sentences on screen, so the number is
+ * measured from those two sentences and cannot disagree with them.
+ *
+ * Compared on letters only, so "trial," and "trial" are the same word. That is
+ * the strict reading: it counts a run as surviving even when the punctuation
+ * moved, which can only ever make the number we report larger.
+ */
+function longestSharedRun(a: readonly string[], b: readonly string[]): number {
+  const bare = (w: string) => w.toLowerCase().replace(/[^a-z]/g, '');
+  let best = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      let n = 0;
+      /* Indexed reads are bound and checked rather than asserted, because
+         `noUncheckedIndexedAccess` is on and a `!` here would be a lie about
+         the loop bounds rather than a fact about them. */
+      for (;;) {
+        const left = a[i + n];
+        const right = b[j + n];
+        if (left === undefined || right === undefined) break;
+        if (bare(left) !== bare(right)) break;
+        n++;
+      }
+      if (n > best) best = n;
+    }
+  }
+
+  return best;
+}
+
+/** 3, and it is "The results were". Proved in the session note. */
+const LONGEST_RUN = longestSharedRun(ORIGINAL_WORDS, [...REWRITTEN_WORDS]);
+
+/**
+ * The bar under the sentence, drawn as runs.
+ *
+ * Always these same segments. Before the rewrite the gap between them is zero,
+ * so they read as ONE unbroken bar, which is the channel the mark travels in.
+ * As the rewrite sweeps through, the gap opens and the same bar becomes a row
+ * of short fragments. One number animating does the entire demonstration, and
+ * because the segments never change count there is nothing to reflow.
+ */
+const RUN_SEGMENTS = Array.from(
+  { length: Math.ceil(ORIGINAL_WORDS.length / LONGEST_RUN) },
+  (_, i) => Math.min(LONGEST_RUN, ORIGINAL_WORDS.length - i * LONGEST_RUN),
+);
+
+/**
+ * ★ THE CEILING IS JON'S NUMBER AND THIS TABLE IS HOW IT IS KEPT. It was ten
+ * seconds; he raised it himself to make room for the rebuild beat. The sequence
+ * runs off one counter ticking in fixed steps, so every moment is arithmetic,
+ * and the ceiling is asserted below rather than remembered.
  */
 const STEP = 100;
 
@@ -330,13 +437,36 @@ const T = {
   NUDGE_LANDS: 5800,
   SCAN_FROM: 6100,
   SCAN_TO: 7700,
+  /* ── THE REBUILD, AND IT IS NOW THE LONGEST BEAT ON PURPOSE. ──────────
+     Jon: "the we rebuild the wording sequence is so short and compressed...
+     We can literally see nothing in that frame. You can add a few seconds."
+     It had 1.1s and no motion in it, which for the one beat that shows the
+     PRODUCT rather than the problem was the wrong 1.1 seconds to save.
+     It now has 3.4s, in four moments:
+       FIX_FROM    the marked sentence carries over from the scan, still lit
+       RUNS_AT     the highlights clear and the unbroken run bar appears
+       REBUILD_AT  the rewrite sweeps through and the bar breaks apart
+       REBUILT_BY  settled, with the surviving run named */
   FIX_FROM: 8000,
-  END_FROM: 9100,
-  TOTAL: 9900,
+  RUNS_AT: 8700,
+  REBUILD_AT: 9500,
+  REBUILT_BY: 10700,
+  END_FROM: 11400,
+  TOTAL: 12200,
 } as const;
 
-if (T.TOTAL > 10_000)
-  throw new Error('The briefing must not exceed 10 seconds.');
+/*
+ * ★ THE CEILING WAS 10 SECONDS AND JON LIFTED IT HIMSELF. "I told you we can
+ * go slightly over if needed." Every one of the added 2.3 seconds went to the
+ * rebuild beat; no earlier beat moved by a millisecond, because he has already
+ * approved their pacing.
+ *
+ * The assertion stays, at the new number, because the reason for having one has
+ * not changed: a briefing that outstays its welcome is a thing people close.
+ * **Do not raise this again without asking him.**
+ */
+if (T.TOTAL > 13_000)
+  throw new Error('The briefing must not exceed 13 seconds.');
 
 const ANTHROPIC_ANNOUNCEMENT =
   'https://www.anthropic.com/news/claude-text-watermark';
@@ -649,6 +779,22 @@ export function WatermarkBriefing() {
   const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
   const found = Math.round(scan * SIGNALS);
 
+  /*
+   * Scene 4: the rewrite sweeping left to right.
+   *
+   * `rebuilt` is how far through the sentence it has got, 0 to 1, and it is the
+   * ONLY number the beat animates. The words it has passed show the rewrite,
+   * the words ahead of it still show the original, and the gap in the run bar
+   * opens by the same fraction. One value, three things moving together, which
+   * is why they cannot fall out of step.
+   */
+  const showsRuns = ms >= T.RUNS_AT;
+  const rebuilt = clamp01(
+    (ms - T.REBUILD_AT) / (T.REBUILT_BY - T.REBUILD_AT),
+  );
+  const rebuiltWords = Math.round(rebuilt * ORIGINAL_WORDS.length);
+  const settled = ms >= T.REBUILT_BY;
+
   return (
     <div
       className={
@@ -920,19 +1066,36 @@ export function WatermarkBriefing() {
             </div>
 
             {/*
-              ── 4. THE FIX, WHICH THE BRIEFING DID NOT HAVE.
+              ── 4. THE FIX, AND IT IS THE ONLY BEAT THAT SHOWS THE PRODUCT.
 
               Jon: "you need to make them know... you fix this by an engineered
-              structural rewrite to break the watermarks." Everything before
-              this beat is the problem, and a dialog that only states a problem
-              has not earned its button.
+              structural rewrite to break the watermarks." Then, of the first
+              attempt: "so short and compressed... we can literally see nothing
+              in that frame."
 
-              ★ IT DESCRIBES THE ENGINEERING AND STOPS THERE. The claims file
-              is explicit: confident about the engineering, stop short of
-              proving the outcome. So the highlights clear and the wording
-              visibly changes, and **there is no counter falling to zero**,
-              because a verified removal is the one thing this product may
-              never show.
+              He was right about the cause. It had 1.1 seconds and it drew a
+              finished sentence, so there was nothing to watch, and the sentence
+              it drew was the ORIGINAL WITH SYNONYMS SWAPPED IN, which is the
+              failure mode this site exists to explain rather than the thing it
+              sells.
+
+              So the beat now demonstrates the actual mechanism, in three moves
+              a phone reader can follow:
+
+                1. the sentence the scan just lit, still lit, so it is plainly
+                   the same artefact and not a new screen
+                2. the highlights clear and a single unbroken bar appears under
+                   it, which is the run the mark rides in
+                3. the rewrite sweeps through the sentence left to right and the
+                   bar breaks into fragments as it goes
+
+              ★ IT DESCRIBES THE ENGINEERING AND STOPS THERE. The claims file is
+              explicit: confident about the engineering, stop short of proving
+              the outcome. **There is no counter falling to zero and no clean
+              verdict**, because a verified layer B removal is the one thing
+              this product may never show. What it does show is countable and
+              true of the two sentences on screen: the longest run of words that
+              survives is three.
             */}
             <div
               className={
@@ -948,29 +1111,102 @@ export function WatermarkBriefing() {
                 So we{' '}
                 <span className={'text-mark-strong'}>rebuild the wording.</span>
               </h3>
+
+              {/* One line, and it changes once, at the moment the sweep starts.
+                  Before: what the bar the reader is about to see MEANS. After:
+                  what they are watching happen to it. */}
               <p
                 className={
                   'text-muted-foreground mt-1.5 text-[12.5px] leading-[1.45]'
                 }
               >
-                An engineered rewrite breaks up the runs the mark travels in.
+                {rebuilt > 0
+                  ? 'Not a few swapped words. The sentence is rebuilt.'
+                  : 'The mark only survives in long runs of consecutive words.'}
               </p>
 
               <ClaudeWindow>
-                <p className={'mt-2 text-[13px] leading-[2]'}>
-                  {PROSE.map((token, index) => (
+                <p className={'relative mt-2 text-[13px] leading-[2]'}>
+                  {ORIGINAL.map(({ word, mark }, index) => {
+                    const done = index < rebuiltWords;
+
+                    return (
+                      <span key={index}>
+                        {index === 0 ? '' : ' '}
+                        {mark && !showsRuns ? (
+                          /* Carried over from the scan, chip and all, so the
+                             cut into this scene changes the words above the
+                             sentence and nothing else. */
+                          <span
+                            className={
+                              'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white'
+                            }
+                          >
+                            {word}
+                          </span>
+                        ) : (
+                          <span
+                            className={
+                              done ? 'text-foreground' : 'text-foreground/55'
+                            }
+                          >
+                            {done ? REWRITTEN_WORDS[index] : word}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                  .
+                  {/* The sweep line, deliberately the same object as the scan
+                      line one scene earlier. Same tool, opposite direction of
+                      travel: that one was finding, this one is rebuilding. */}
+                  <span
+                    className={[
+                      'bg-mark-strong pointer-events-none absolute inset-y-0 w-[2px] motion-reduce:hidden',
+                      rebuilt > 0 && rebuilt < 1 ? 'opacity-90' : 'opacity-0',
+                    ].join(' ')}
+                    style={{ left: `${rebuilt * 100}%` }}
+                    aria-hidden
+                  />
+                </p>
+
+                {/*
+                  ★ THE WHOLE ARGUMENT, DRAWN. Identical segments throughout;
+                  only the gap between them moves. At gap zero they touch and
+                  read as one unbroken run. As the sweep passes, the gap opens
+                  and the same bar is a row of short fragments.
+
+                  It is reserved from the start of the scene at zero opacity
+                  rather than mounted when it is needed, so the sentence above
+                  it never jumps.
+                */}
+                <div
+                  className={[
+                    'mt-2.5 flex h-[5px] transition-opacity duration-300',
+                    showsRuns ? 'opacity-100' : 'opacity-0',
+                  ].join(' ')}
+                  style={{ gap: `${rebuilt * 5}px` }}
+                  aria-hidden
+                >
+                  {RUN_SEGMENTS.map((length, index) => (
                     <span
                       key={index}
-                      className={
-                        'alts' in token
-                          ? 'text-foreground/70 underline decoration-mark-strong/50 decoration-2 underline-offset-4'
-                          : 'text-foreground/70'
-                      }
-                    >
-                      {index === 0 || 'glue' in token ? '' : ' '}
-                      {'alts' in token ? token.alts[0] : token.text}
-                    </span>
+                      className={'bg-mark-strong/75'}
+                      style={{
+                        flexGrow: length,
+                        borderRadius: `${rebuilt * 3}px`,
+                      }}
+                    />
                   ))}
+                </div>
+
+                <p
+                  className={[
+                    'text-muted-foreground mt-1.5 text-[10.5px] tabular-nums transition-opacity duration-300',
+                    settled ? 'opacity-100' : 'opacity-0',
+                  ].join(' ')}
+                >
+                  Longest run left standing: {LONGEST_RUN} words
                 </p>
               </ClaudeWindow>
             </div>
@@ -1085,7 +1321,7 @@ export function WatermarkBriefing() {
             Sanitise claims the work, not the outcome."*
 
             The conflict is sharper here than anywhere else on the site because
-            this dialog is ABOUT layer B: ten seconds teach the mark in the
+            this dialog is ABOUT layer B: the video teaches the mark in the
             words, and then the button offers to remove it. `04` entry 78 ruling
             3 says a claim in a whole-service slot must be true of the whole
             service, and removal is provable for hidden characters and metadata

@@ -2780,3 +2780,46 @@ for the weaker option for no reason. Broad is the right default for exclusions.
 image metadata. On a $150 test that trade is correct, since the wrong traffic
 massively outnumbers the right traffic on that word. **On a scaled campaign it is
 not, and this is the first thing to revisit.**
+
+---
+
+## Catching one frame of an animation in a BACKGROUNDED Browser pane
+
+**Learned 7 September 2026, verifying the briefing's rebuild beat. It cost about
+six minutes of guessing before the obvious fix.**
+
+**A hidden or backgrounded document clamps `setInterval` to roughly once per
+second.** The briefing ticks every 100ms, so **a 12.2 second sequence takes about
+two real minutes to play, and the review loop cycles every two and a half.**
+
+**Do not try to hit a frame by sleeping for a computed number of seconds.** The
+clamp is approximate, the estimate drifts within one cycle, and each miss costs
+another full cycle. Three attempts in a row landed on the wrong scene.
+
+**Poll from inside the page instead, then screenshot immediately.** One
+`javascript_tool` call with a top-level `await` loop that returns the instant the
+DOM matches the frame you want:
+
+```js
+const t0 = performance.now();
+while (performance.now() - t0 < 100000) {
+  const txt = liveScene()?.innerText.replace(/\s+/g, ' ') ?? '';
+  if (txt.startsWith('So we rebuild') && /that followed/.test(txt)) break;
+  await new Promise((r) => setTimeout(r, 200));
+}
+```
+
+It returned in 44s and the screenshot that followed landed inside the 12 second
+window. **The tool call blocks, which is the point: it costs one round trip
+instead of one per guess.**
+
+**Two related facts worth keeping.**
+
+- **`scrollHeight` on a non-overflowing element returns its own padding box, not
+  its content.** Measuring five scenes this way returned `302` for every one of
+  them, including a scene holding only a logo, which looked like a real result
+  and was not. **To measure real content, take `getBoundingClientRect()` of the
+  children and compare their span against the container.**
+- **A scene removed from the layout with the `hidden` attribute can still be
+  measured**: strip the attribute, read the rect, put it back. React restores it
+  on the next tick anyway.

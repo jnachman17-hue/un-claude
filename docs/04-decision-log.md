@@ -6539,3 +6539,50 @@ from the keyword-matching headlines.
 **The stop rule, agreed before any money moves.** Check at $50 spent: if fewer
 than 20% of ad clickers have scanned a document, stop. The traffic is wrong and
 more of it will not help. At $150: fewer than 3 purchases and it is off.
+
+---
+
+### 163. The briefing's ten second ceiling is lifted to 12.2s, and the rebuild beat is rebuilt around breaking runs rather than swapping words. Jon's ruling, executed 7 September.
+
+**Jon lifted his own cap.** *"The 'we rebuild the wording' sequence is so short
+and compressed. I think you did this to keep us under the 10 sec cap. But I told
+you we can go slightly over if needed. We can literally see nothing in that
+frame. You can add a few seconds to demonstrate what is needed there."*
+
+**He was right about the cause and about my reason.** That scene ran 8,000ms to
+9,100ms. **1.1 seconds**, drawing a finished sentence with no motion in it, and
+I had compressed it to stay under a `throw` I wrote myself. **The sequence is
+now 12,200ms and every added millisecond went to that one beat, which is now
+3.4s.** No earlier beat moved, because he has already approved their pacing.
+
+**★ THE DEFECT WAS NOT THE LENGTH, AND THIS IS THE PART THAT MATTERS FOR THE
+NEXT SESSION.** The old frame showed the original sentence **with synonyms
+swapped in**, reusing the alternates from the nudge scene. **That is the failure
+mode this site exists to explain, drawn as though it were the product.** The
+messaging skill is explicit that the mark survives through runs of consecutive
+words and that the engine's job is to break them; a casual reword leaves long
+runs standing and every one still carries the signature. **Three more seconds of
+that frame would have been three more seconds of showing the wrong idea.**
+
+**So the beat now demonstrates the mechanism.** The sentence is genuinely
+restructured, thirteen words in and thirteen words out, and a bar under it
+animates from one unbroken run into short fragments as the rewrite sweeps
+through. **One number moves: the gap between segments that never change.**
+
+**The caption is counted, not typed.** `longestSharedRun()` measures the two
+sentences on screen and reports 3. This is the same discipline Jon forced in
+entry 162's round when he caught a hand-written `11` beside three highlighted
+words: **a caption that states a number about something on screen must measure
+that thing.** The surviving three-word run is visible if you look for it, and
+that is the claim rather than an embarrassment. Words carrying over is normal;
+long runs of them carrying over is what the engine prevents.
+
+**What it still refuses to show, and this was the temptation.** No counter falls
+to zero and no verdict says clean. **A verified layer B removal is the one thing
+this product may never show, and this beat is the most tempting place on the
+entire site to show it.** Confident about the engineering, stop short of proving
+the outcome.
+
+**The ceiling assertion stays, at 13,000ms.** The reason for having one has not
+changed: a briefing that outstays its welcome is a thing people close. **It
+should not be raised again without asking him.**

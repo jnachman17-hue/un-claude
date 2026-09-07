@@ -79,7 +79,177 @@ the video: texture that says "this is everywhere", not something to read.
 
 ---
 
-# ★ 0. THE CURRENT BUILD. FIVE SCENES, 9,900ms. Everything below is history.
+# ★ 0. THE CURRENT BUILD. FIVE SCENES, 12,200ms. Everything below is history.
+
+**7 September 2026, fifth round of Jon's notes, and only one note this time.**
+
+> *"The 'we rebuild the wording' sequence is so short and compressed. I think
+> you did this to keep us under the 10 sec cap. But I told you we can go
+> slightly over if needed. We can literally see nothing in that frame. You can
+> add a few seconds to demonstrate what is needed there."*
+
+**He was right about the cause, and right about my reason.** Scene 4 ran from
+8,000ms to 9,100ms. **1.1 seconds**, and it drew a finished sentence with no
+motion in it, so there was nothing to watch. I compressed it to keep `TOTAL`
+under a `throw` I had written myself.
+
+| Scene | From | To | Length | What it shows |
+|---|---|---|---|---|
+| **1** | 0ms | 3,100 | 3.1s | `Since 2 August 2026`, then **`AI models watermark the text they write.`** with **`Invisibly.`** in rust. From 1,500ms the news screenshots land ON the words |
+| **2** | 3,100 | 6,100 | 3.0s | **`The model is nudged at every pick.`** Three picks visibly moving inside a Claude window |
+| **3** | 6,100 | 8,000 | 1.9s | **`The watermark is the words.`** The same window scanned, 8 picks lighting, badge counting to 8 |
+| **4** | 8,000 | 11,400 | **3.4s** | **`So we rebuild the wording.`** ← **rebuilt this round, was 1.1s** |
+| **5** | 11,400 | 12,200 | 0.8s | **The Un-Claude end card.** Held |
+
+**No earlier beat moved by a millisecond.** He has already approved their pacing,
+so the entire 2.3s went to scene 4.
+
+## ★ THE REAL DEFECT WAS NOT THE LENGTH. IT WAS WHAT THE FRAME CONTAINED
+
+Lengthening the old scene 4 would not have fixed it, and this is the part worth
+recording. **The old frame showed the original sentence with synonyms swapped
+in** (`striking`→`notable`, `held`→`lasted`, `trial`→`test`), reusing the `alts`
+from the nudge scene.
+
+**That is the failure mode this site exists to explain, drawn as though it were
+the product.** A casual reword leaves long runs of the original standing and
+every surviving run still carries the signature. The messaging skill is explicit:
+*"a targeted structural rewrite that breaks the verbatim word sequences the
+watermark rides on... the engine holds runs to three."* **Swapping a few words
+is the thing that does not work.** Giving that frame three more seconds would
+have meant three more seconds of showing the wrong idea.
+
+## WHAT IT SHOWS NOW, IN THREE MOVES
+
+| At | Move |
+|---|---|
+| **8,000** | The sentence the scan just lit, **still lit, chips and all**, so the cut changes the words above it and nothing else. It is plainly the same artefact |
+| **8,700** | The highlights clear and **one unbroken bar** appears under the sentence, while the line above reads *"The mark only survives in long runs of consecutive words."* That is the teach, and it lands before anything moves |
+| **9,500** | The rewrite **sweeps left to right**, word by word, and **the bar breaks into fragments as it passes**. The line above changes to *"Not a few swapped words. The sentence is rebuilt."* |
+| **10,700** | Settled, and the caption names what survived |
+
+**The sentence is genuinely restructured, not reworded:**
+
+> **before**  The results were striking and the effect held across every trial that followed.
+> **after**  Across every trial, the effect stayed and the results were hard to miss.
+
+**Thirteen words in, thirteen words out.** That is what lets the beat wipe
+position by position instead of reflowing, and it is also true of the engine:
+length holds to within about a tenth.
+
+## ★ THE BAR IS THE ARGUMENT, AND IT IS ONE NUMBER MOVING
+
+The segments never change and never remount. **Only the `gap` between them
+animates, from 0 to 5px.** At zero they touch and read as one unbroken run,
+which is the channel the mark travels in. As the sweep passes, the same bar
+becomes a row of short fragments. Nothing reflows, because nothing was added or
+removed.
+
+The sweep line is **deliberately the same object as the scan line one scene
+earlier**: same tool, opposite job. That one was finding, this one is rebuilding.
+
+## ★ THE NUMBER IN THE CAPTION IS COUNTED, NOT TYPED
+
+> Longest run left standing: **3** words
+
+**`LONGEST_RUN` is computed from the two sentences on screen** by
+`longestSharedRun()`, comparing letters only so `trial,` and `trial` count as the
+same word. That is the strict reading: it counts a run as surviving even when
+the punctuation moved, which can only make the number we report larger.
+
+**This is the same discipline Jon forced last round** when he caught a
+hand-written `11` sitting beside three highlighted words. A caption that states a
+number about two sentences must measure those two sentences.
+
+```
+$ node --experimental-strip-types runs.mjs
+original   13 words : The results were striking and the effect held across every trial that followed.
+rewritten  13 words : Across every trial, the effect stayed and the results were hard to miss.
+marked picks       : 8
+LONGEST SHARED RUN : 3 -> "The results were"
+run segments       : 3 + 3 + 3 + 3 + 1 = 13
+no run of 4 survives: true
+```
+
+**The surviving run is visible on screen if you look for it**: `The results
+were` appears in both sentences. That is not an embarrassment, it is the claim.
+Words carrying over is normal. **Long runs of them carrying over is the thing
+the engine prevents.**
+
+## ★ WHAT IT STILL REFUSES TO SHOW
+
+**No counter falls to zero. No verdict says clean.** The claims boundary:
+confident about the engineering, stop short of proving the outcome. A verified
+layer B removal is the one thing this product may never show, and this beat is
+the single most tempting place on the entire site to show it.
+
+## THE CEILING
+
+`if (T.TOTAL > 13_000) throw` — **it was 10,000 and Jon lifted it himself.** The
+assertion stays, at the new number, because the reason for having one has not
+changed: a briefing that outstays its welcome is a thing people close. **It
+should not be raised again without asking him.**
+
+## Measured
+
+**The rebuild beat, sampled frame by frame out of the live DOM** (every distinct
+render recorded, `gap` read from the computed style):
+
+```
+gap 0px         The results were striking and the effect held across every trial that followed.
+gap 0.416667px  Across results were striking and the effect held across every trial that followed.
+gap 0.833333px  Across every were striking and the effect held across every trial that followed.
+gap 1.25px      Across every trial, striking and the effect held across every trial that followed.
+gap 1.66667px   Across every trial, the and the effect held across every trial that followed.
+gap 2.08333px   Across every trial, the effect the effect held across every trial that followed.
+gap 2.5px       Across every trial, the effect stayed and held across every trial that followed.
+gap 2.91667px   Across every trial, the effect stayed and the across every trial that followed.
+gap 3.33333px   Across every trial, the effect stayed and the results every trial that followed.
+gap 3.75px      Across every trial, the effect stayed and the results were trial that followed.
+gap 4.16667px   Across every trial, the effect stayed and the results were hard that followed.
+gap 5px         Across every trial, the effect stayed and the results were hard to miss.
+```
+
+**14 distinct frames where the old scene had one.** The gap and the words advance
+in lockstep because they are the same number.
+
+**The sub-line changes exactly once**, confirmed from the same sample:
+
+```
+"The mark only survives in long runs of consecutive words."
+"Not a few swapped words. The sentence is rebuilt."
+```
+
+**Nothing is clipped and the panel does not scroll, at both widths.** Content
+height against the video box, measured per scene:
+
+```
+                 1280px wide (box 286)        375px wide (box 304)
+scene 2          204, gaps 41/41              268, gaps 18/18
+scene 3          203, gaps 41/41              200, gaps 52/52
+scene 4          235, gaps 25/25              276, gaps 14/14
+scene 5          109, gaps 88/88               94, gaps 105/105
+panel scrolls    no                           no
+```
+
+Scene 1 overflows on purpose: the press shots are placed to tile past the edges
+and are clipped by `overflow-hidden`.
+
+`tsc --noEmit` exit 0.
+
+## What I could not prove
+
+- **That 12.2 seconds is the right length.** Jon set 10 and lifted it; 12.2 is my
+  number, not his, and the only test that matters is him watching it.
+- **That the mid-sweep frames read as a rewrite rather than as a glitch.** Word
+  by word, the sentence is briefly neither version (`the effect the effect
+  held`). Words ahead of the sweep are dimmed and words behind are full strength,
+  which is what should carry it, but at 10 frames a second this is a judgment
+  call I can only put in front of him.
+
+---
+
+# 0b. SUPERSEDED. FIVE SCENES, 9,900ms.
 
 **7 September 2026, fourth round of Jon's notes.**
 
@@ -145,7 +315,7 @@ marked picks: 8   badge counts to: 8 (derived)   words that visibly move: 3
 
 ---
 
-# ★ 0a. THE CURRENT BUILD. FIVE SCENES, 9,900ms.
+# 0c. SUPERSEDED. FIVE SCENES, 9,900ms, before the fix beat existed.
 
 **7 September 2026, after three of Jon's notes.** Everything below this section
 is the record of how it got here and includes two versions he rejected.
