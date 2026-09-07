@@ -157,9 +157,10 @@ function markSeen(): void {
  *
  * WHAT THE THREE SCENES ARE:
  *
- *   1  AI models watermark the text they write. INVISIBLY.  + snippets popping
- *   2  The model is nudged at every pick.                   + words swapping
- *   3  The watermark is the words.                          + the scan, held
+ *   1  AI models watermark the text they write. INVISIBLY.
+ *   2  the real news screenshots, popping in scattered, hero landing last
+ *   3  The model is nudged at every pick.                   + words swapping
+ *   4  Not hidden code. Not metadata. The watermark is the words.  + the scan
  *
  * The Claude Design artifact remains the directional reference and NOT a thing
  * to copy wholesale. Jon: *"it was to take inspiration from, pull directly from
@@ -169,54 +170,103 @@ function markSeen(): void {
  */
 
 /**
- * ★ THE SNIPPETS. REAL OUTLETS, REAL HEADLINES, READ OFF THE LIVE PAGES.
+ * ★ THE PRESS SHOTS. THE REAL SCREENSHOTS FROM JON'S DESIGN HANDOFF.
  *
- * `CLAUDE.md` section 4: a fabricated headline is the one thing this project
- * must never ship. `coverage-marquee.tsx` holds the verified outlets and their
- * URLs but stores no headline text, so each of these was read from the
- * article's own `<h1>` on 6 September 2026 and is stored verbatim, including
- * punctuation the site's own style rules would forbid in our own voice.
+ * Handed over 7 September 2026 as `design_handoff_pin1_watermark_video`, which
+ * is the source for the pinned campaign video. Its README calls the headline
+ * scene "11 news-screenshot cutouts... pop in one-by-one, 0.22s apart, each
+ * rotated -8 to +7 degrees, drop shadows, scattered to fill the frame".
  *
- * Wired is on the verified list and is deliberately unused: its headline is
- * "Coders Say They Already Found Workarounds to Claude's Invisible Watermarks",
- * which is real, fair, and the one headline that tells a visitor they might not
- * need to pay for anything.
+ * ★ THIS IS THE THING THE EARLIER VERSIONS GOT WRONG. They composed cards out
+ * of an outlet logo and a line of headline text, which is not what the design
+ * is: **the snippets are photographs of real articles.** Jon: "those news
+ * headline snippets don't appear anywhere... that contains the exact visual
+ * assets of all the headline snippets popping up. You could literally copy that
+ * directly."
+ *
+ * ★ EVERY ONE WAS OPENED AND READ BEFORE IT WENT ON THE HOME PAGE, because
+ * these are screenshots and a screenshot cannot be checked by reading a
+ * filename. The `alt` on each is what the headline actually says.
+ *
+ * ★ AND EVERY ONE WAS RESIZED. The originals are phone screenshots totalling
+ * 1,816KB, which is an absurd thing to put in front of somebody arriving from
+ * TikTok before they have seen the tool. At 560px wide and JPEG quality 62 the
+ * seven together are 288KB, and a card renders about 260px wide, so 560 is
+ * still 2x on a retina screen.
  */
-type Snippet = {
-  outlet: string;
-  headline: string;
-  href: string;
-  logo: { src: string; plate?: boolean; mono?: boolean };
+type PressShot = {
+  src: string;
+  /** What the headline actually says. Read off the image, not the filename. */
+  alt: string;
+  /** Placed as a percentage of the box, so the scatter survives any width. */
+  left: number;
+  top: number;
+  width: number;
+  rotate: number;
 };
 
-const SNIPPETS: Snippet[] = [
+const PRESS_SHOTS: PressShot[] = [
   {
-    outlet: 'Forbes',
-    headline: 'Claude Is Now Putting Invisible Watermarks In AI-Generated Text',
-    href: 'https://www.forbes.com/sites/anishasircar/2026/08/13/claude-will-now-leave-a-watermark-on-everything-it-writes-what-does-that-mean/',
-    logo: { src: '/images/outlets/forbes.svg', plate: true },
+    src: '/images/press-shots/IMG_3580.jpg',
+    alt: 'Forbes: Claude Is Now Putting Invisible Watermarks In AI-Generated Text',
+    left: 1,
+    top: 4,
+    width: 36,
+    rotate: -6,
   },
   {
-    outlet: 'Fortune',
-    headline:
-      'Anthropic to start embedding invisible watermarks in Claude’s AI-generated text',
-    href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/',
-    logo: { src: '/images/outlets/fortune.svg', mono: true },
+    src: '/images/press-shots/IMG_3578.jpg',
+    alt: 'Anthropic: How Claude’s text watermark works',
+    left: 33,
+    top: -8,
+    width: 35,
+    rotate: 4,
   },
   {
-    outlet: 'The Guardian',
-    headline: 'Claude to start watermarking AI-generated text',
-    href: 'https://www.theguardian.com/technology/2026/aug/17/claude-watermark-ai-text-quality-worse',
-    logo: { src: '/images/outlets/guardian.svg', mono: true },
+    src: '/images/press-shots/IMG_3583.jpg',
+    alt: 'New Atlas: Claude will now watermark all content generated using its tools',
+    left: 66,
+    top: 2,
+    width: 34,
+    rotate: 6,
   },
   {
-    outlet: 'CNET',
-    headline:
-      'What to Know About Anthropic’s New Claude Watermarking on AI-Generated Text',
-    href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/',
-    logo: { src: '/images/outlets/cnet.png', mono: true },
+    src: '/images/press-shots/IMG_3585.jpg',
+    alt: 'The Guardian: Claude to start watermarking AI-generated text, but will it make quality worse?',
+    left: 4,
+    top: 48,
+    width: 35,
+    rotate: 5,
+  },
+  {
+    src: '/images/press-shots/IMG_3577.jpg',
+    alt: 'Business Insider: Why Anthropic’s AI watermark is going further than its rivals',
+    left: 63,
+    top: 52,
+    width: 35,
+    rotate: -5,
+  },
+  {
+    src: '/images/press-shots/IMG_3581.jpg',
+    alt: 'Mashable: What Claude’s AI text watermark actually does',
+    left: 34,
+    top: 58,
+    width: 33,
+    rotate: 3,
   },
 ];
+
+/**
+ * The hero, landing last and over the top, exactly as the handoff does it:
+ * "at +2.75s the hero card lands with a pop".
+ *
+ * It is the California Post story and it is the single best headline in the set
+ * for the person this dialog is for: **"Sorry, students."**
+ */
+const HERO_SHOT = {
+  src: '/images/press-shots/IMG_3479.jpg',
+  alt: 'California Post: Sorry, students: Anthropic adding watermarks to AI-generated content, potentially making cheating harder',
+};
 
 /**
  * The sentence scenes 2 and 3 work on. **Short on purpose.** The version before
@@ -246,16 +296,17 @@ const SIGNALS = 11;
 const STEP = 100;
 
 const T = {
-  LINE_TWO: 700,
-  INVISIBLY: 1300,
-  SNIPPET_FIRST: 1900,
-  SNIPPET_GAP: 420,
-  TWO_FROM: 3800,
-  SWAP_EVERY: 300,
-  TWO_LANDS: 6400,
-  SCAN_FROM: 6800,
-  SCAN_TO: 8600,
-  TOTAL: 9600,
+  LINE_TWO: 500,
+  INVISIBLY: 1100,
+  SHOTS_FROM: 2400,
+  SHOT_GAP: 180,
+  HERO_AT: 4000,
+  NUDGE_FROM: 5200,
+  SWAP_EVERY: 260,
+  NUDGE_LANDS: 7100,
+  SCAN_FROM: 7400,
+  SCAN_TO: 9100,
+  TOTAL: 9800,
 } as const;
 
 if (T.TOTAL > 10_000)
@@ -471,23 +522,24 @@ export function WatermarkBriefing() {
 
   const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-  const scene1 = ms < T.TWO_FROM;
-  const scene3 = ms >= T.SCAN_FROM;
-  const scene2 = !scene1 && !scene3;
+  const scene1 = ms < T.SHOTS_FROM;
+  const scene2 = !scene1 && ms < T.NUDGE_FROM;
+  const scene4 = ms >= T.SCAN_FROM;
+  const scene3 = !scene1 && !scene2 && !scene4;
 
-  /** Scene 1 arrives a line at a time, then the snippets pop in one by one. */
+  /** Scene 1 arrives a line at a time. */
   const showsLineTwo = ms >= T.LINE_TWO;
   const showsInvisibly = ms >= T.INVISIBLY;
-  const snippetsIn = Math.max(
-    0,
-    Math.floor((ms - T.SNIPPET_FIRST) / T.SNIPPET_GAP) + 1,
-  );
 
-  /** Scene 2: which alternative each open word is showing. */
-  const swap = Math.floor((ms - T.TWO_FROM) / T.SWAP_EVERY);
-  const landed = ms >= T.TWO_LANDS;
+  /** Scene 2: the shots pop in one after another, then the hero lands on top. */
+  const shotsIn = Math.max(0, Math.floor((ms - T.SHOTS_FROM) / T.SHOT_GAP) + 1);
+  const heroIn = ms >= T.HERO_AT;
 
-  /** Scene 3: the scan's progress across the sentence, and what it has found. */
+  /** Scene 3: which alternative each open word is showing. */
+  const swap = Math.floor((ms - T.NUDGE_FROM) / T.SWAP_EVERY);
+  const landed = ms >= T.NUDGE_LANDS;
+
+  /** Scene 4: the scan's progress, and what it has found so far. */
   const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
   const found = Math.round(scan * SIGNALS);
 
@@ -586,63 +638,65 @@ export function WatermarkBriefing() {
                   Invisibly.
                 </span>
               </p>
-
-              {/*
-                ★ THE NEWS SNIPPETS, WHICH IS WHAT SCENE 1 SHOWS RATHER THAN
-                TELLS. They replace the Claude chat card that used to sit here:
-                Jon's note is that the essay "shows us or teaches us nothing and
-                just adds to the complexity of what is digested".
-
-                They POP IN one at a time rather than streaking past as blurred
-                bars, which is the version he could not find on screen at all.
-              */}
-              <ul className={'mt-3.5 space-y-1.5'}>
-                {SNIPPETS.map((item, index) => (
-                  <li key={item.outlet}>
-                    <a
-                      href={item.href}
-                      target={'_blank'}
-                      rel={'noreferrer'}
-                      title={`${item.outlet}: ${item.headline}`}
-                      className={[
-                        'border-border/70 bg-card hover:border-border flex items-center gap-2.5 rounded-[8px] border px-2.5 py-1.5 shadow-sm',
-                        'transition-all duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100',
-                        snippetsIn > index
-                          ? 'translate-y-0 opacity-100'
-                          : 'translate-y-2 opacity-0',
-                      ].join(' ')}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.logo.src}
-                        alt={item.outlet}
-                        loading={'lazy'}
-                        decoding={'async'}
-                        className={[
-                          'h-[11px] w-[52px] shrink-0 object-contain',
-                          item.logo.plate ? 'rounded-[2px]' : '',
-                          item.logo.mono ? 'dark:invert' : '',
-                        ].join(' ')}
-                      />
-                      <span
-                        className={
-                          'text-foreground/75 line-clamp-1 text-[11px] leading-[1.3]'
-                        }
-                      >
-                        {item.headline}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            {/* ── 2. How it gets in. ──────────────────────────────────────── */}
+            {/*
+              ── 2. THE NEWS. Real screenshots, popping in scattered, the hero
+                 landing on top last.
+
+              Straight from the handoff's headline scene: "pop in one-by-one,
+              0.22s apart, each rotated -8 to +7 degrees, drop shadows,
+              scattered to fill the frame", then "the hero card lands with a
+              pop". Positions are percentages rather than the handoff's pixels
+              because that frame is 1080 wide and portrait and this box is 520
+              and landscape, so the scatter is re-laid rather than copied.
+            */}
+            <div className={'absolute inset-0'} hidden={!scene2}>
+              {PRESS_SHOTS.map((shot, index) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  key={shot.src}
+                  src={shot.src}
+                  alt={shot.alt}
+                  loading={'lazy'}
+                  decoding={'async'}
+                  className={[
+                    'ring-border/70 absolute rounded-[7px] object-cover shadow-[0_10px_26px_rgba(33,31,28,0.20)] ring-1',
+                    'transition-all duration-300 ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
+                    shotsIn > index
+                      ? 'scale-100 opacity-100'
+                      : 'scale-[0.82] opacity-0',
+                  ].join(' ')}
+                  style={{
+                    left: `${shot.left}%`,
+                    top: `${shot.top}%`,
+                    width: `${shot.width}%`,
+                    rotate: `${shot.rotate}deg`,
+                  }}
+                />
+              ))}
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={HERO_SHOT.src}
+                alt={HERO_SHOT.alt}
+                loading={'lazy'}
+                decoding={'async'}
+                className={[
+                  'ring-border/70 absolute top-1/2 left-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2 rounded-[8px] object-cover shadow-[0_18px_40px_rgba(33,31,28,0.30)] ring-1',
+                  'transition-all duration-300 ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
+                  heroIn ? 'scale-100 opacity-100' : 'scale-[0.7] opacity-0',
+                ].join(' ')}
+                style={{ rotate: '-2deg' }}
+              />
+            </div>
+
+            {/* ── 3. How it gets in. ──────────────────────────────────────── */}
             <div
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene2}
+              hidden={!scene3}
             >
               <h3
                 className={
@@ -692,16 +746,34 @@ export function WatermarkBriefing() {
               </p>
             </div>
 
-            {/* ── 3. What that adds up to. ────────────────────────────────── */}
+            {/* ── 4. What that adds up to. ────────────────────────────────── */}
             <div
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene3}
+              hidden={!scene4}
             >
+              {/*
+                ★ THE TWO RULE-OUTS ARE FROM THE HANDOFF AND THEY EARN THEIR
+                LINE. Its scan scene asks "Is it hidden code?" then "Is it
+                metadata?" and answers "No." to both before the reveal.
+
+                They cost about a dozen words and they do the hardest teaching
+                job this site has: a visitor cannot tell the three layers apart,
+                and this dialog is about the one that is NEITHER of the two they
+                would guess. `CLAUDE.md` section 7.
+              */}
+              <p
+                className={
+                  'text-muted-foreground text-[13px] leading-[1.5] font-medium'
+                }
+              >
+                Not hidden code. Not metadata.
+              </p>
+
               <h3
                 className={
-                  'text-foreground text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
+                  'text-foreground mt-1 text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
                 }
               >
                 The watermark{' '}

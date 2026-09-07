@@ -79,6 +79,88 @@ the video: texture that says "this is everywhere", not something to read.
 
 ---
 
+# ★ 1a. THE DESIGN HANDOFF, AND THE ONE THING IT SETTLED
+
+**7 September 2026.** Jon handed over
+`~/Downloads/design_handoff_pin1_watermark_video`, the source bundle for the
+pinned campaign video: a README, `pin1-scene.jsx` with every scene's copy,
+position and timing, the Un-Claude logo, and **twelve real news-headline
+screenshots**.
+
+**Read with Jon's explicit instruction, which overrides `CLAUDE.md` section 3's
+"nothing outside `~/un-claude`" rule.** `CLAUDE.md` section 2 makes his
+instruction in a session the highest authority; the folder is this project's own
+design handoff and contains no personal data. Noted rather than assumed.
+
+## ★ WHAT IT SETTLED, AND IT IS THE THING TWO ATTEMPTS GOT WRONG
+
+**The "news headline snippets" are photographs.** The README's headline scene:
+
+> 11 news-screenshot cutouts (in `uploads/`) pop in one-by-one, 0.22s apart,
+> each rotated -8 to +7 degrees, drop shadows, 14px radius, scattered to fill
+> the frame... At +2.75s the hero card lands with a pop.
+
+**Both earlier attempts composed cards out of an outlet logo and a line of
+headline text.** That is not what the design is, which is why Jon said the
+snippets "don't appear anywhere" and "you could literally copy that directly".
+**There was nothing to find, because I had been building the wrong object.**
+
+## WHAT WAS TAKEN, AND WHAT WAS NOT
+
+**Taken directly:** the screenshots themselves, the scatter-and-pop behaviour,
+the hero landing last and centred, and **the two rule-outs from its scan scene**
+("Is it hidden code?" / "Is it metadata?" / "No.") which are now one line above
+the reveal and do this site's hardest teaching job for about a dozen words.
+
+**Not taken:** the pixel positions, because the video frame is 1080 wide and
+portrait and this box is about 490 and landscape. The scatter is re-laid to fit.
+Also left behind: the Claude chat window (Jon cut it), the slot-machine roll
+scene, and the closing CTA scene, because this dialog has a permanent CTA of its
+own and a ten second ceiling against the video's 27.5.
+
+## ★ EVERY SCREENSHOT WAS OPENED AND READ BEFORE IT WENT ON THE HOME PAGE
+
+A screenshot cannot be checked by reading its filename, and these go on a live
+commercial page. Seven were chosen and each one's `alt` is what it actually
+says:
+
+| File | What it is |
+|---|---|
+| `IMG_3479` | **California Post: "Sorry, students: Anthropic adding watermarks to AI-generated content, potentially making cheating harder"** — the hero, and the best headline in the set for the person this dialog is for |
+| `IMG_3578` | Anthropic: "How Claude's text watermark works" |
+| `IMG_3580` | Forbes: "Claude Is Now Putting Invisible Watermarks In AI-Generated Text" |
+| `IMG_3585` | The Guardian: "Claude to start watermarking AI-generated text, but will it make quality worse?" |
+| `IMG_3577` | Business Insider: "Why Anthropic's AI watermark is going further than its rivals" |
+| `IMG_3581` | Mashable: "What Claude's AI text watermark actually does" |
+| `IMG_3583` | New Atlas: "Claude will now watermark all content generated using its tools" |
+
+**And every one was resized.** The originals are phone screenshots totalling
+**1,816KB**, which is an absurd thing to put in front of somebody arriving from
+TikTok before they have seen the tool. At 560px wide and JPEG quality 62 the
+seven together are **288KB**, and a card renders about 190px wide, so 560 is
+still comfortably 2x on a retina screen.
+
+## THE SEQUENCE NOW, FOUR SCENES IN 9,800ms
+
+```
+SCENE                                   FROM      TO   LASTS
+----------------------------------------------------------------------
+1  AI models watermark... Invisibly.       0ms   2400ms   2400ms
+2  the news screenshots pop in          2400ms   5200ms   2800ms
+3  nudged at every pick, words swap     5200ms   7400ms   2200ms
+4  not code, not metadata: the words    7400ms   9800ms   2400ms
+   (6 shots 180ms apart, hero lands 4000ms)
+----------------------------------------------------------------------
+TOTAL                                                       9800ms
+CEILING (Jon's number)                                     10000ms
+PASS. Scenes in order, hero lands inside its scene, total under the ceiling.
+```
+
+**Measured: no scene is clipped by the box, the panel does not scroll, and the
+CTA is visible.**
+
+---
+
 # ★ 2a. SUPERSEDED. SECTIONS 3 TO 6 BELOW DESCRIBE A VERSION JON REJECTED.
 
 **7 September 2026.** The four-scene build documented from section 3 onwards was
