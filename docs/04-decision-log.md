@@ -6242,3 +6242,88 @@ would not render the workbench across three restarts (`06` row 77). It is
 type-checked and reasoned, not seen. It is verified against production
 immediately after the deploy, which is the only environment where that page
 currently renders.
+
+---
+
+## 6 September 2026. /how-it-works, split in two
+
+### 160. The page becomes three symmetric panels plus a sequential "how the rewrite works" section. The four ENGINE_RULES cards dissolve into it. Jon's ruling, executed 6 September.
+
+**Jon's words: "a UI rethink, a messaging rethink, a visuals rethink, to make it
+more digestible and easier to follow in less space."** Brief:
+`docs/briefs/how-it-works-rethink.md`. Session note:
+`docs/session-notes/how-it-works-rethink.md`.
+
+**THE DIAGNOSIS, MEASURED.** The three panels were 520px, 567px and 1,189px.
+Panel 3 was 2.3 times the first, and 442px of it was a full-width band hanging
+below the columns. **Panels 1 and 2 were one beat each; panel 3 was a 524 word
+engine explainer wearing the same frame**, which is why the page read as broken.
+
+**THE DEEPER FAULT, AND IT IS THE REASON FOR THE WHOLE JOB.** Panel 3 was
+organised thematically where it should have been sequential, and the four rules
+underneath it — *Break the runs · Never rewritten by Claude · Facts held ·
+Length held* — **are PROPERTIES, not a process. They say what the engine IS and
+they never once say what happens to a reader's document.**
+
+**WHAT SHIPPED.**
+
+1. **Panel 3 shortened to one beat**, 1,189px to 610px. It says what the
+   statistical mark is and that it comes off by rewriting, and stops.
+2. **A new section, "How the rewrite works"**, on the same page rather than a
+   sixth nav item, running seven beats in a fixed order: where the mark can
+   live, therefore the job is narrower, split, freeze, rewrite, restore and
+   check, and how it is measured. **Each beat earns the next and the order is
+   not a preference.**
+3. **The four rules dissolved into the sequence**, all of them, nothing lost.
+   The session note has the item by item table.
+4. **Two animations, built with CSS and React state and no new dependency**:
+   running prose whose words cycle between alternatives while a fixed span
+   never moves, and one document strip that is cut, masked, rebuilt and
+   restored in front of the reader.
+5. **The mobile "+" disclosure came off this page.** The brief ruled it out;
+   the prose was cut instead so it is not needed. `/capabilities` and
+   `/pricing` still use it.
+
+**THE ARGUMENT THAT WAS MISSING AND IS NOW THE OPENING BEAT.** The page said
+several words "read equally well" and never drew the conclusion: **a span where
+the model had no choice cannot carry a mark, which is why freezing quotations
+costs nothing.** That is the reason the whole design makes sense and it was not
+on the site.
+
+**THE THREE RULED CLAIMS ALL SURVIVED.** "Across our test set it breaks over 90%
+of three-word sequences with zero figures lost" moved byte for byte into beat 6
+(entry 151 stands). "Working to a three-word limit" is unchanged in beat 3. The
+limitation is still not in the doorway; it lands at beat 6 and at "Where proof
+stands".
+
+**★ WHAT IT COST, AND JON SHOULD OVERRULE IT IF HE WANTS TO.** "Less space" was
+part of the ask and **the page is taller: 4,140px to 4,828px on desktop, and
+5,553px to 8,103px on a phone.** The page gained a section it did not have,
+covering the thing most visitors came for, and the rewrite went from a 230 word
+spec sheet to a 430 word sequence with two animations. **Everything the brief
+called broken got smaller; the total did not.** The cut that would take about
+200px desktop and 350px phone is folding beat 6 into "Where proof stands", and
+it costs the sequence its ending. Not done.
+
+**THE INDEXING CONSTRAINT HELD, AND IT WAS THE REAL RISK.** One `Date.now()`
+during render cost this site its Google indexing in August (entry 71 and
+`07`), and animation is that shape of change. **Nothing in the new components
+reads a clock, a random number, a search param or a cookie**, every piece of
+state starts at a constant, and that constant is the settled final state.
+Measured on a real build: **1,456 prerendered words against a 1,247 baseline,
+`<h1>` intact, route still `○`, and every word inside the animated components
+present in the static HTML.**
+
+**NOT PROVEN, AND IT IS ONE THING RATHER THAN THE WHOLE PAGE.** The in-app
+Browser pane in that session was hidden and would not draw anything, which is
+the same failure the 25 August session hit; `07` now has it written up. **The
+page was photographed in the end through the connected Chrome, at 1296px and at
+500px, including the pipeline animation caught mid-sequence with its `[[17]]`
+and `[[24]]` placeholders showing.** What is still unproven is **autoplay on
+entry**: that Chrome window is not frontmost, so its document reports itself
+hidden, and **a freshly created IntersectionObserver watching an element sitting
+in the middle of the viewport fired nothing in two seconds.** The failure is the
+environment and that was isolated rather than assumed; pressing Replay runs the
+identical code path and was proved twice. **The gap is one function call wide.
+Somebody should scroll to the section in a frontmost window and watch whether
+the four badges light on their own.**

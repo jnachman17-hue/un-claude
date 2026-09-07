@@ -1,142 +1,207 @@
 /**
- * How the statistical watermark is put in.
+ * What the statistical watermark actually is: nothing added, and two words
+ * picked differently.
  *
- * REDRAWN TO JON'S OWN SPEC, 20 August 2026, and it is the better drawing:
- * the sentence stops at a blank, a line drops from the blank through a secret
- * key pill, and splits into three fingers, one per candidate word. The fingers
- * to the rejected words are red, the finger to the chosen word is green. The
- * old version put the key in a floating badge with an arrow, which made the
- * key look like an annotation; here the key sits ON the line between the
- * sentence and the choice, which is where it actually is.
+ * ★ REDRAWN 6 September 2026, and the reason is a duplicate rather than a
+ * fault in the old drawing.
  *
- * Sourced from ENGINE.md section 2. Anthropic uses a variant of SynthID-Text:
- * the preceding few words plus a secret key seed a function, candidates are
- * sampled from the model's real distribution, and a tournament picks the
- * winner. The signal survives only in unbroken stretches of the original
- * words, which is why the attack is breaking the sequence, not the vocabulary.
+ * The old version was Jon's own spec from 20 August: a sentence stopping at a
+ * blank, a line dropping through a secret key pill and splitting into three
+ * candidate words. It was a good drawing. What changed is that "how the rewrite
+ * works" now opens with beat 0, which teaches exactly that idea in running
+ * prose, in motion, using the same "The sky was ___" example. Two makings of
+ * one idea on one page is the defect the rethink brief asked to remove, and the
+ * motion version is the better of the two.
+ *
+ * So this panel keeps the point that is ITS OWN and that nothing else on the
+ * page makes: the mark is invisible because nothing is inserted anywhere. The
+ * same sentence from a plain model and from a watermarking one is the same
+ * length, the same shape and equally natural. Two words differ. That is the
+ * whole of it.
+ *
+ * The slot layout is deliberate: both rows use the width of the WIDER word at
+ * every position, so the two sentences line up column for column and the eye
+ * finds the two differences without being told where to look.
+ *
+ * Sourced from ENGINE.md section 2: candidates are sampled from the model's
+ * true distribution and a tournament seeded by a secret key picks the winner,
+ * so a watermarked sentence is a sentence the model could have written anyway.
  */
-export function StatisticalWatermarkDiagram({ className }: { className?: string }) {
-  // Pill row geometry, shared by the fingers and the pills themselves.
-  const pills = [
-    { word: 'grey', x: 24, chosen: false },
-    { word: 'overcast', x: 168, chosen: true },
-    { word: 'gloomy', x: 312, chosen: false },
-  ];
-  const pillWidth = 128;
-  const pillTop = 150;
-  const blankCenterX = 159;
-  const branchY = 124;
 
+const PLAIN = [
+  'the',
+  'results',
+  'were',
+  'striking',
+  'and',
+  'the',
+  'effect',
+  'held',
+];
+const MARKED = [
+  'the',
+  'results',
+  'were',
+  'notable',
+  'and',
+  'the',
+  'effect',
+  'lasted',
+];
+
+/** Monospace advance at the 13px used below, plus the gap between slots. */
+const CHAR = 7.8;
+const GAP = 12;
+const START_X = 24;
+
+const SLOTS = PLAIN.map((word, index) => {
+  const widest = Math.max(word.length, MARKED[index]!.length);
+  return widest * CHAR + GAP;
+});
+
+const OFFSETS = SLOTS.reduce<number[]>((acc, width, index) => {
+  acc.push(index === 0 ? START_X : acc[index - 1]! + SLOTS[index - 1]!);
+  return acc;
+}, []);
+
+const PLAIN_Y = 76;
+const MARKED_Y = 138;
+
+export function StatisticalWatermarkDiagram({
+  className,
+}: {
+  className?: string;
+}) {
   return (
     <svg
-      viewBox={'0 0 460 282'}
+      viewBox={'0 0 460 170'}
       className={className}
       role={'img'}
       aria-label={
-        'A sentence stopping at a blank, with a line running from the blank through a secret key and splitting toward three candidate words, green to the chosen word and red to the rejected ones'
+        'The same sentence written twice, once by a plain model and once by a watermarking one, identical except for two words'
       }
     >
       <g fontFamily={'var(--font-sans), sans-serif'}>
-        <text x={24} y={24} fontSize={11} className={'fill-muted-foreground'}>
-          At many words, several choices read equally well
-        </text>
-
-        {/* The sentence, stopping at a blank where the next word goes. */}
         <text
-          x={24}
-          y={58}
-          fontSize={15}
-          fontFamily={'var(--font-mono), monospace'}
-          className={'fill-foreground'}
+          x={START_X}
+          y={20}
+          fontSize={11}
+          className={'fill-muted-foreground'}
         >
-          The sky was
+          The same sentence, from two models
         </text>
-        <path
-          d={'M 132 63 L 186 63'}
-          className={'stroke-foreground/60'}
-          strokeWidth={1.5}
-          strokeLinecap={'round'}
-          fill={'none'}
-        />
 
-        {/* The trunk, dropping from the blank, with the key pill sitting ON it. */}
-        <path
-          d={`M ${blankCenterX} 70 L ${blankCenterX} ${branchY}`}
-          className={'stroke-foreground/40'}
-          strokeWidth={1.4}
-          fill={'none'}
-        />
+        <text
+          x={START_X}
+          y={52}
+          fontSize={10.5}
+          className={'fill-muted-foreground'}
+        >
+          No watermark
+        </text>
+        <text
+          x={START_X}
+          y={114}
+          fontSize={10.5}
+          className={'fill-muted-foreground'}
+        >
+          Watermarked
+        </text>
 
-        {/* Three fingers, one per candidate. Red to the rejected words, green
-            to the one the key picks. */}
-        {pills.map((pill) => (
-          <path
-            key={`finger-${pill.word}`}
-            d={`M ${blankCenterX} ${branchY} L ${pill.x + pillWidth / 2} ${pillTop}`}
-            className={pill.chosen ? 'stroke-emerald-600' : 'stroke-rose-500/70'}
-            strokeWidth={pill.chosen ? 1.8 : 1.4}
-            strokeLinecap={'round'}
-            fill={'none'}
-          />
-        ))}
+        <g fontFamily={'var(--font-mono), monospace'} fontSize={13}>
+          {PLAIN.map((word, index) => {
+            const changed = word !== MARKED[index];
 
-        {/* The key pill, overlapping the trunk. */}
-        <rect x={111} y={84} width={96} height={26} rx={13} className={'fill-foreground'} />
-        <g className={'stroke-background'} strokeWidth={1.8} fill={'none'} strokeLinecap={'round'}>
-          <circle cx={126} cy={97} r={4.5} />
-          <path d={'M 130.5 97 L 141 97 M 136 97 L 136 101.5 M 141 97 L 141 102'} />
+            return (
+              <g key={`plain-${index}`}>
+                {changed ? (
+                  <rect
+                    x={OFFSETS[index]! - 5}
+                    y={PLAIN_Y - 14}
+                    width={SLOTS[index]! - 2}
+                    height={20}
+                    rx={5}
+                    className={'fill-foreground/[0.055]'}
+                  />
+                ) : null}
+                <text
+                  x={OFFSETS[index]}
+                  y={PLAIN_Y}
+                  className={'fill-foreground/70'}
+                >
+                  {word}
+                </text>
+              </g>
+            );
+          })}
+
+          {MARKED.map((word, index) => {
+            const changed = word !== PLAIN[index];
+
+            return (
+              <g key={`marked-${index}`}>
+                {changed ? (
+                  <rect
+                    x={OFFSETS[index]! - 5}
+                    y={MARKED_Y - 14}
+                    width={SLOTS[index]! - 2}
+                    height={20}
+                    rx={5}
+                    className={'fill-mark/[0.16]'}
+                  />
+                ) : null}
+                <text
+                  x={OFFSETS[index]}
+                  y={MARKED_Y}
+                  className={
+                    changed
+                      ? 'fill-mark-strong font-medium'
+                      : 'fill-foreground/70'
+                  }
+                >
+                  {word}
+                </text>
+              </g>
+            );
+          })}
         </g>
-        <text x={147} y={101} fontSize={10.5} className={'fill-background font-medium'}>
-          secret key
-        </text>
 
-        {pills.map((pill) => (
-          <g key={pill.word}>
-            <rect
-              x={pill.x}
-              y={pillTop}
-              width={pillWidth}
-              height={38}
-              rx={9}
-              className={pill.chosen ? 'fill-emerald-600 animate-chosen' : 'fill-foreground/[0.045]'}
+        {/* A hairline from each unchanged word to the one below it, so the two
+            rows read as one sentence twice rather than as two sentences. */}
+        {PLAIN.map((word, index) =>
+          word === MARKED[index] ? (
+            <path
+              key={`tie-${index}`}
+              d={`M ${OFFSETS[index]! + 4} ${PLAIN_Y + 10} L ${OFFSETS[index]! + 4} ${MARKED_Y - 22}`}
+              className={'stroke-foreground/12'}
+              strokeWidth={1}
+              fill={'none'}
             />
-            <text
-              x={pill.x + pillWidth / 2}
-              y={pillTop + 24}
-              textAnchor={'middle'}
-              fontSize={14}
-              fontFamily={'var(--font-mono), monospace'}
-              className={pill.chosen ? 'fill-white font-medium' : 'fill-foreground/55'}
-            >
-              {pill.word}
-            </text>
-          </g>
-        ))}
+          ) : null,
+        )}
 
-        <text x={24} y={216} fontSize={11} className={'fill-muted-foreground'}>
-          The key makes the pick. The sentence reads normally either way
-        </text>
-
-        <text x={24} y={242} fontSize={11} className={'fill-muted-foreground'}>
-          Repeated across a passage, the pattern of picks becomes the signature
-        </text>
-
-        <g transform={'translate(24, 252)'}>
-          {Array.from({ length: 14 }).map((_, index) => (
-            <rect
-              key={index}
-              x={index * 30}
-              y={0}
-              width={22}
-              height={12}
-              rx={3}
-              style={index % 3 === 1 ? { animationDelay: `${index * 110}ms` } : undefined}
-              className={
-                index % 3 === 1 ? 'fill-mark animate-chain' : 'fill-foreground/[0.09]'
-              }
+        {/* And a rust one between the two that differ. */}
+        {PLAIN.map((word, index) =>
+          word !== MARKED[index] ? (
+            <path
+              key={`swap-${index}`}
+              d={`M ${OFFSETS[index]! + 4} ${PLAIN_Y + 10} L ${OFFSETS[index]! + 4} ${MARKED_Y - 22}`}
+              className={'stroke-mark-strong/60'}
+              strokeWidth={1.4}
+              strokeDasharray={'3 3'}
+              fill={'none'}
             />
-          ))}
-        </g>
+          ) : null,
+        )}
+
+        <text
+          x={START_X}
+          y={164}
+          fontSize={11}
+          className={'fill-muted-foreground'}
+        >
+          Nothing added. Nothing removed. Two picks changed.
+        </text>
       </g>
     </svg>
   );

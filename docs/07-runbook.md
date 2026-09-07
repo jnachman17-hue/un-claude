@@ -2261,3 +2261,82 @@ left-hand argument. **The proposed fix is to stop deleting those two blocks belo
 1024 and let them stack under the tool instead** (the counter block already
 carries `order-3`, a stacked-layout instruction). Not done, because the ruling is
 Jon's.
+
+---
+
+## A HIDDEN BROWSER PANE DOES NOT RENDER THE PAGE, AND IT LOOKS EXACTLY LIKE A BROKEN BUILD
+
+**6 September 2026, `/how-it-works` rethink. The 25 August copy session hit the
+same thing and could not name it, so it is written down now.**
+
+**The symptom.** Screenshots come back blank or as a flat cream rectangle. Every
+element reports `height: 0`. `document.documentElement.scrollHeight` equals the
+viewport height and nothing else. The `<h1>` is findable by `textContent` while
+its bounding box is zero. **A page that renders perfectly reads as a page that
+failed to build.**
+
+**The cause is one line of JavaScript away:**
+
+```
+document.visibilityState  ->  "hidden"
+```
+
+**The Browser pane is open but not displayed.** The tool says so itself if you
+give it something that has to wait for a paint:
+
+```
+computer timed out after 30s. The Browser pane is currently hidden. The page
+is not rendered while it is not displayed, so actions that wait for it to
+draw (scrolling, hovering, dragging) cannot complete.
+```
+
+**CHECK `document.visibilityState` FIRST, before believing any geometry.**
+A zero height on a page whose text you can read is this, not a CSS fault.
+
+**What still works while it is hidden**, and it is more than it looks:
+
+- `get_page_text`, `find` and `read_page`, which read the DOM directly.
+- `javascript_tool`, including `window.scrollTo` and `scrollIntoView`.
+- **Layout measurement, but ONLY after a paint.** One paint happens after a
+  real cross-page navigation. So: navigate to another route, wait, navigate
+  back, wait, **take one screenshot to force the paint**, and then measure.
+  That sequence produced correct geometry every time in this session.
+- `pnpm build`, which is where the prerender proof comes from and which does
+  not involve the pane at all.
+
+**What does NOT work, and cannot be worked around:**
+
+- **Any screenshot after the first paint.** Scroll then shoot returns blank.
+- **`requestAnimationFrame`.** It never fires in a hidden document, so any
+  animation that starts from one is frozen where it stands. A probe can
+  reassign `window.requestAnimationFrame` to a timer to observe the state
+  machine, which is honest as long as the note says the component was not
+  changed.
+- **`IntersectionObserver`.** Its callbacks are tied to rendering, so
+  autoplay-on-entry cannot be watched to fire. **Scrolling an element into
+  view and seeing nothing happen is NOT evidence that the observer is
+  broken.**
+- **Background timers are clamped to about one per second**, so any sequence
+  timed faster than that will be observed stretched.
+
+**★ THE WAY ROUND IT, AND IT WORKED: USE THE CONNECTED CHROME INSTEAD.**
+`mcp__claude-in-chrome__list_connected_browsers` returned a local browser, and
+navigating that to `http://localhost:3001/...` rendered the page properly and
+took real screenshots. **Try this BEFORE concluding a session cannot see its own
+work.** Two of its own limits, both hit on 6 September:
+
+- **It will not resize below about 500 CSS pixels**, and a resize snaps back to
+  full width within a second or two. 500px is still under the `sm` breakpoint,
+  so the phone layout is visible; a true 375px picture is not available this
+  way.
+- **If that Chrome window is not frontmost, its document is hidden too**, so
+  `IntersectionObserver` still fires nothing. **Proved rather than assumed: a
+  freshly created observer, watching an element at `top: 95px` in a 757px
+  viewport, returned no callback in two seconds while
+  `document.visibilityState` was `"hidden"` and `document.hasFocus()` was
+  false.** So scroll-triggered behaviour cannot be verified from either browser
+  unless somebody brings a window to the front.
+
+**Before concluding that a scroll-triggered component is broken, run that
+control:** create a throwaway `IntersectionObserver` on an element you can see
+is in the viewport. If it fires nothing either, the environment is the fault.

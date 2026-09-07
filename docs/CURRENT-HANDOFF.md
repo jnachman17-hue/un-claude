@@ -1,5 +1,58 @@
 # CURRENT HANDOFF
 
+**Added at the top 6 September 2026, at the end of the `/how-it-works` rethink.**
+
+**I did not rewrite this file, deliberately.** Everything below the rule is the
+E-16 session's handoff from 24 August, it belongs to Lane A, and it still names
+a blocking item (the AI Gateway key's budget) that I have no way to check from a
+copy and layout session. **Wiping another lane's resumption context to make room
+for mine is not a trade worth making.** If the gateway item is closed, whoever
+closed it should delete that half.
+
+---
+
+## 6 SEPTEMBER: /how-it-works, split in two. Committed locally. NOT pushed.
+
+**Full detail: `docs/session-notes/how-it-works-rethink.md`. The ruling is `04`
+entry 160. The open questions are in `06`.**
+
+**What landed.** The page is now three symmetric panels plus a new sequential
+section, "How the rewrite works", carrying seven beats and two animations built
+from CSS and React state with no new dependency. Panel 3 went from 1,189px to
+610px. The four ENGINE_RULES cards dissolved into the sequence and nothing in
+them was lost. The mobile "+" disclosure came off this page.
+
+**★ THE ONE THING LEFT IS TEN SECONDS OF ATTENTION.** Bring a browser window to
+the front, open `/how-it-works`, scroll to "How the rewrite works", and watch
+whether the four numbered badges light 1, 2, 3, 4 on their own. **Autoplay on
+entry is the only claim in this work that rests on reading rather than on
+running**, and the reason is proven to be the environment: every browser
+available to that session reported `document.visibilityState === "hidden"`, and
+in that state **a freshly created IntersectionObserver on an element sitting in
+the middle of the viewport fires nothing.** Pressing Replay runs the identical
+code path and was proved twice.
+
+**The page itself has been looked at**, through the connected Chrome, at 1296px
+and at 500px, including the pipeline animation caught mid-sequence. The in-app
+Browser pane never drew anything; `07-runbook.md` now has that whole failure
+written up, including the workaround for measuring through it.
+
+**★ THE SECOND THING, AND IT IS JON'S: THE PAGE IS TALLER.** 4,140px to 4,828px
+on desktop and 5,553px to 8,103px on a phone, against an explicit "in less
+space". Everything the brief called broken got smaller; the total did not,
+because the page gained a section it did not have. **The cut I would make is
+folding beat 6 into "Where proof stands"**, worth about 200px desktop and 350px
+phone, and it costs the sequence its ending. `06` has the argument.
+
+**Proved, from a real build:** route still `○ /how-it-works`, 1,456 prerendered
+words against a 1,247 baseline, `<h1>` intact, and every word inside the
+animated components present in the static HTML. `tsc --noEmit` exit 0. **The
+August indexing failure did not repeat.**
+
+---
+
+## THE E-16 HANDOFF, 24 AUGUST 2026, LANE A. Left as it was.
+
 **Rewritten 24 August 2026 at the end of the E-16 session.** Full detail:
 `docs/session-notes/e16-detector-and-ceiling.md`.
 

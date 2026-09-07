@@ -1097,3 +1097,57 @@ within a commit and that a ref assignment is synchronous.
 **How it will be confirmed, and it costs nothing: the live site.** After the next
 deploy, the first person who runs out mid-session produces `just_ran_out=true`.
 **If a fortnight passes and every event is still false, the fix did not work.**
+
+---
+
+## /how-it-works after the 6 September rethink
+
+**Three things left open. All three are Jon's, and the session note
+`docs/session-notes/how-it-works-rethink.md` has the measurements behind each.**
+
+### The page is taller and "less space" was part of the ask
+
+**Working position: keep it.** 4,140px to 4,828px on desktop, 5,553px to
+8,103px on a phone. The page gained a whole section covering the thing most
+visitors came for, and the rewrite went from a 230 word spec sheet to a 430
+word sequence with two animations. **Everything the brief called broken got
+smaller** — panel 3 down 49%, the three panels symmetric, three mobile
+disclosures gone — but the total went up.
+
+**Why it is unresolved: the two halves of Jon's own sentence pull apart.**
+"More digestible and easier to follow" and "in less space" cannot both be had
+once a seven-beat sequence is added to a page that did not have one.
+
+**The trigger for revisiting: Jon looking at it on a phone.** The cut I would
+make is folding beat 6 into "Where proof stands", which says a version of the
+same thing 400px below it. Worth about 200px desktop and 350px phone, and it
+costs the sequence its ending.
+
+### "Three-word sequences" inside the reinstated claim
+
+**Working position: leave the word alone.** Everything else on the page now
+says "runs", per `04` entry 76. The claim *"Across our test set it breaks over
+90% of three-word sequences with zero figures lost"* still says "sequences",
+because it is inside a claim Jon reinstated on 25 August after being shown the
+measurements against it (`04` entry 151).
+
+**Why it is unresolved: editing a word inside a reaffirmed claim is not a
+formatting decision.** It reads slightly against its own page.
+
+**Trigger: the next time the claim is touched for any reason.** It is one word.
+
+### Panel 3's diagram is a new drawing over Jon's own
+
+**Working position: the new one stays.** The old drawing was Jon's spec of 20
+August, a sentence stopping at a blank with a secret key picking between grey,
+overcast and gloomy. **Beat 0 now teaches that idea in running prose, in
+motion, with the same example**, and the brief flagged the duplicate. Dropping
+the drawing entirely would have broken the panel symmetry the rethink exists to
+create, so it was replaced rather than cut: the same sentence from a plain
+model and a watermarking one, identical except at two words.
+
+**Why it is unresolved: the secret key is no longer drawn anywhere**, only
+described in panel 3's prose one sentence above.
+
+**Trigger: Jon looking at the replacement.** The old file is in git at `1ae6f2e`
+and restoring it is one file.
