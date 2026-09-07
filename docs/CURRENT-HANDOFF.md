@@ -11,6 +11,45 @@ closed it should delete that half.
 
 ---
 
+## 6 SEPTEMBER, LATER: the arrival briefing. Committed locally. NOT pushed.
+
+**Ruling: `04` entry 161. The research it rests on: `06`, "Anthropic's checker
+is LIVE".**
+
+A watermark briefing now meets every visitor to the home page who did not
+arrive from a search engine. Four beats, one small animation, dismissible four
+ways, once per visitor. **It does not push a purchase, it pushes a scan**, and
+the CTA scrolls to the tool.
+
+**★ THE THING TO UNDERSTAND BEFORE TOUCHING IT.** Google treats a mobile
+interstitial shown on arrival from search as an intrusive interstitial, and it
+is a ranking signal. **Two things keep this safe and both are load-bearing: it
+never renders for a search referrer, and it renders nothing on the server.**
+The search rule is in its own file, `search-referrer.ts`, purely so it can be
+run: `node --experimental-strip-types` against it, 22 cases, all passing. **If
+that file is ever inlined back into the component, the rule stops being
+provable.**
+
+**Proved:** homepage prerender unchanged at 1,264 words, `<h1>` intact, route
+still `○`, and none of the briefing's copy in the crawlable HTML.
+
+**★ TWO THINGS FOR JON.**
+
+1. **`claude-band.tsx` now understates the case.** It says Anthropic's checker
+   is "imminent". The file checker is live and free, and the text detector is
+   in private preview. The briefing says the sharper version. **They should
+   agree, and the band is the one that is wrong.**
+2. **The messaging skill still says the detection API is "not callable yet".**
+   That is a claims file and the rewording is his. `06`.
+
+**Measurement is built in and it matters more than usual.** `briefing_shown`
+and `briefing_dismissed` (with how it was closed and a bucketed dwell) exist
+because this feature could plausibly halve conversions or double them. **The
+search-suppressed traffic is a free control group.** If almost every dismissal
+is a backdrop tap under two seconds, the honest response is to delete it.
+
+---
+
 ## 6 SEPTEMBER: /how-it-works, split in two. Committed locally. NOT pushed.
 
 **Full detail: `docs/session-notes/how-it-works-rethink.md`. The ruling is `04`

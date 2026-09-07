@@ -127,9 +127,13 @@ const KNOWN_TYPES = [
 export function fileType(name: string): string {
   if (name === 'paste.txt') return 'none';
 
-  const extension = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+  const extension = name.includes('.')
+    ? name.split('.').pop()!.toLowerCase()
+    : '';
 
-  return (KNOWN_TYPES as readonly string[]).includes(extension) ? extension : 'other';
+  return (KNOWN_TYPES as readonly string[]).includes(extension)
+    ? extension
+    : 'other';
 }
 
 /**
@@ -176,7 +180,11 @@ export function ownTextEntered(): void {
 }
 
 /** A file was chosen or dropped. The name is reduced to a type and discarded. */
-export function fileUploaded(name: string, bytes: number, method: 'picker' | 'drop'): void {
+export function fileUploaded(
+  name: string,
+  bytes: number,
+  method: 'picker' | 'drop',
+): void {
   send('file_uploaded', {
     file_type: fileType(name),
     size: bytesBucket(bytes),
@@ -219,7 +227,10 @@ export function scanCompleted(properties: {
   });
 }
 
-export function scanFailed(properties: { inputKind: InputKind; name: string }): void {
+export function scanFailed(properties: {
+  inputKind: InputKind;
+  name: string;
+}): void {
   send('scan_failed', {
     input_kind: properties.inputKind,
     file_type: fileType(properties.name),
@@ -265,7 +276,9 @@ export function sanitiseCompleted(properties: {
     marks_found: properties.marksFound,
     marks_removed: properties.marksRemoved,
     marks_left: Math.max(0, properties.marksFound - properties.marksRemoved),
-    fully_clean: properties.marksFound === properties.marksRemoved && !properties.stillMarked,
+    fully_clean:
+      properties.marksFound === properties.marksRemoved &&
+      !properties.stillMarked,
     provenance_actions: properties.provenanceActions,
     still_marked: properties.stillMarked,
   });
@@ -306,7 +319,10 @@ export function resultDownloaded(properties: { name: string }): void {
  * The wall appeared. Nothing was sent to the engine to produce this screen, so
  * this event is also the record of a run that cost nothing and earned nothing.
  */
-export function paywallShown(properties: { inputKind: InputKind; name: string }): void {
+export function paywallShown(properties: {
+  inputKind: InputKind;
+  name: string;
+}): void {
   send('paywall_shown', {
     input_kind: properties.inputKind,
     file_type: fileType(properties.name),
@@ -381,11 +397,15 @@ export function outOfCreditsClicked(properties: {
  * browser off this site and the identity does not come back. See the note at the
  * top of this file about why there is no `signup_completed`.
  */
-export function signUpStarted(properties: { method: 'password' | 'google' }): void {
+export function signUpStarted(properties: {
+  method: 'password' | 'google';
+}): void {
   send('signup_started', { method: properties.method });
 }
 
-export function signInStarted(properties: { method: 'password' | 'google' }): void {
+export function signInStarted(properties: {
+  method: 'password' | 'google';
+}): void {
   send('signin_started', { method: properties.method });
 }
 
@@ -513,4 +533,66 @@ export function purchaseCompleted(properties: { creditsReady: boolean }): void {
  */
 export function purchaseCancelled(): void {
   send('purchase_cancelled');
+}
+
+// ---------------------------------------------------------------------------
+// The arrival briefing
+// ---------------------------------------------------------------------------
+
+/**
+ * The watermark briefing was put in front of somebody.
+ *
+ * ★ THIS PAIR EXISTS BECAUSE THE FEATURE COULD PLAUSIBLY HALVE CONVERSIONS OR
+ * DOUBLE THEM AND NOBODY CAN TELL BY LOOKING. An interstitial in front of the
+ * tool is the single most consequential change this site can make to its own
+ * funnel: it either supplies the context a TikTok arrival is completely missing,
+ * or it is a wall between a stranger and the thing they came to use.
+ *
+ * `04` entry 159 is the cautionary tale. Record signups sat beside nil revenue
+ * for weeks because the thing that would have explained it was never measured.
+ * The question this answers is one join away in PostHog: of the people shown
+ * this, what share went on to `scan_completed`, against the share who were not
+ * shown it because they arrived from a search engine. That comparison is the
+ * whole point and it is free, because the suppressed group is a natural control.
+ *
+ * Nothing about the visitor's content is here, and there is nothing that could
+ * be: the briefing renders before anybody has given us anything.
+ */
+export function briefingShown(): void {
+  send('briefing_shown');
+}
+
+/**
+ * They closed it, and HOW they closed it is the finding.
+ *
+ * `cta` is somebody who read it and went to the tool. `close`, `backdrop` and
+ * `escape` are three grades of dismissal and they are not the same person:
+ * `escape` is a keyboard user who wanted it gone, `backdrop` is usually a
+ * tap-anywhere reflex, and `close` is a deliberate press on the X. If almost
+ * everything is `backdrop` within a second, the briefing is furniture and the
+ * honest response is to remove it rather than to make it harder to shut.
+ *
+ * `seconds` is bucketed rather than exact for the same reason every size on this
+ * file is bucketed: it answers "did anybody read it" without becoming a
+ * fingerprint. It is time on a modal, not content, but the rule here is that
+ * precision is only ever bought when a question needs it.
+ */
+export function briefingDismissed(properties: {
+  via: 'cta' | 'close' | 'backdrop' | 'escape';
+  /** How long it was open. Bucketed before it is sent. */
+  seconds: number;
+}): void {
+  send('briefing_dismissed', {
+    via: properties.via,
+    dwell: dwellBucket(properties.seconds),
+  });
+}
+
+/** Buckets chosen around the question: did they read it, skim it, or bounce? */
+function dwellBucket(seconds: number): string {
+  if (seconds < 2) return 'under_2s';
+  if (seconds < 5) return '2_5s';
+  if (seconds < 15) return '5_15s';
+  if (seconds < 45) return '15_45s';
+  return 'over_45s';
 }

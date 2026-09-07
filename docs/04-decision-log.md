@@ -6327,3 +6327,72 @@ environment and that was isolated rather than assumed; pressing Replay runs the
 identical code path and was proved twice. **The gap is one function call wide.
 Somebody should scroll to the section in a frontmost window and watch whether
 the four badges light on their own.**
+
+---
+
+## 6 September 2026. The arrival briefing
+
+### 161. A watermark briefing meets every visitor who did not arrive from a search engine. Jon's instruction.
+
+**Jon: "When you arrive at the landing page I want you to understand this more,
+so you have more of a sense of urgency. It should pop up as soon as you get to
+the website so you understand the issue. It should be really informational, you
+should be forced to see it, you should be able to click out if you want."**
+
+**★ WHAT THIS IS NOT: NEW ARGUMENT.** `claude-band.tsx` already makes all three
+of these points, three sections down the page. **The problem was never that the
+argument was missing. It was buried under the tool**, and a visitor arriving
+from TikTok with no context scrolls past it or never reaches it. This promotes
+the same argument to the first thing a stranger reads. The band stays where it
+is for anyone who dismisses.
+
+**WHAT IT SAYS**, and every line was checked against the claims boundary:
+
+1. **Since 2 August 2026, Claude marks the text it writes.** Nothing is added to
+   the page; the mark is in which words the model chose. `ENGINE.md` section 5.
+2. **The emotional centre, and it is true: a mark does not mean Claude wrote it,
+   it means Claude touched it.** Tidy your own paragraph with it and the mark
+   goes in with the tidy. The claims file names this as the sentence to say
+   plainly and without adjectives.
+3. **The detector is close.** Anthropic's file checker is live and free; the one
+   for text is in private preview. **This is a sharper and more honest urgency
+   than the site had**, and it comes from the research recorded in `06` the same
+   day. **`claude-band.tsx` still says "imminent" and now understates it.**
+4. **Marks do not expire.** What is already handed in stays marked.
+
+**Nothing anywhere in it says a university can check today**, which remains
+forbidden and remains false.
+
+**★ TWO RULINGS I MADE THAT ARE REVERSIBLE AND SHOULD BE READ AS MINE.**
+
+**It does not push a purchase, it pushes a scan.** Jon asked for urgency to
+buy. Nobody buys before they have scanned anything, and a buy button in front of
+a stranger who has given us nothing converts at nil and reads as a scam. The CTA
+closes the dialog and scrolls to the tool. The ladder does the rest.
+
+**It is once per visitor, not once per visit.** A wall that reappears every time
+trains people to dismiss it unread. The storage key is versioned so a materially
+different briefing can be shown again on purpose.
+
+**★ THE SEO CONSTRAINT, AND IT IS THE SAME SHAPE AS THE `Date.now()` THAT COST
+THIS SITE ITS INDEXING.** Google treats an interstitial covering the main content
+on a phone, immediately after arrival FROM SEARCH, as an intrusive interstitial,
+and it is a ranking signal. **So the briefing never renders for a visitor who
+arrived from a search engine, and it renders nothing at all on the server.**
+
+**Both are proved rather than asserted.** The homepage prerender is unchanged at
+1,264 words with its `<h1>` intact and the route still `○`, and none of the
+briefing's copy appears in the crawlable HTML. The search rule lives in its own
+importable file precisely so it can be RUN, and it passes 22 cases including the
+three that would have broken it quietly: a host merely containing "google", a
+referrer with `google.com` in the path rather than the host, and an unparseable
+referrer.
+
+**A side effect worth keeping: the suppressed search traffic is a free control
+group.** `briefing_shown` against `scan_completed`, for shown and not-shown,
+answers whether this helps or hurts. **`04` entry 159 is the cautionary tale:
+record signups sat beside nil revenue for weeks because the thing that would
+have explained it was never measured.** `briefing_dismissed` carries how it was
+closed and a bucketed dwell, so "everybody taps the backdrop in under two
+seconds" is a finding rather than a guess, and the honest response to that
+finding would be to remove it.

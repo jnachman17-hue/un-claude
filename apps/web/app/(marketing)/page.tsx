@@ -5,6 +5,7 @@ import { CoverageMarquee } from './_components/coverage-marquee';
 import { CoverageSection } from './_components/coverage-section';
 import { FaqSection } from './_components/faq-section';
 import { HeroSection } from './_components/hero-section';
+import { WatermarkBriefing } from './_components/watermark-briefing';
 
 import { shareTags } from '~/lib/share-tags';
 
@@ -98,6 +99,19 @@ function Home() {
           __html: JSON.stringify(ORGANIZATION_JSON_LD),
         }}
       />
+
+      {/*
+        THE ARRIVAL BRIEFING, 6 September 2026. Jon: "It should pop up as soon
+        as you get to the website so you understand the issue."
+
+        It renders NOTHING on the server and nothing for a visitor who arrived
+        from a search engine, so the prerendered HTML a crawler reads is
+        unchanged and no searcher ever meets an interstitial. Both of those are
+        load-bearing rather than tidy; the docblock in the component says why,
+        and it is the same shape of risk as the one that cost this site its
+        indexing in August.
+      */}
+      <WatermarkBriefing />
 
       <HeroSection />
       <CoverageMarquee />

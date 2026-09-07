@@ -317,9 +317,15 @@ export function HeroSection() {
             </div>
           </div>
 
+          {/* `id` is the arrival briefing's scroll target. Its CTA closes the
+              dialog and brings the visitor here rather than just getting out
+              of the way, because the paste box is the top of the ladder and
+              sending somebody to it is the whole reason that dialog exists.
+              See watermark-briefing.tsx. */}
           <div
+            id={'workbench'}
             className={
-              'animate-rise order-2 lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1 lg:order-none'
+              'animate-rise order-2 scroll-mt-24 lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1 lg:order-none'
             }
             style={{ animationDelay: '110ms' }}
           >
