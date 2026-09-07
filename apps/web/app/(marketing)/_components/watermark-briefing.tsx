@@ -285,6 +285,13 @@ const PROSE = [
   { text: 'trial', alts: ['test', 'run'] },
 ] as const;
 
+/**
+ * The prompt above Claude's answer, so scene 3 reads as a thing Claude wrote
+ * rather than as a sentence on a page. It is the handoff's own prompt, shortened
+ * to fit a 490px box.
+ */
+const PROMPT = 'Write my final essay';
+
 /** How many picks the scan lights, which is what the badge counts to. */
 const SIGNALS = 11;
 
@@ -298,15 +305,16 @@ const STEP = 100;
 const T = {
   LINE_TWO: 500,
   INVISIBLY: 1100,
-  SHOTS_FROM: 2400,
-  SHOT_GAP: 180,
-  HERO_AT: 4000,
-  NUDGE_FROM: 5200,
-  SWAP_EVERY: 260,
-  NUDGE_LANDS: 7100,
-  SCAN_FROM: 7400,
-  SCAN_TO: 9100,
-  TOTAL: 9800,
+  SHOTS_FROM: 2200,
+  SHOT_GAP: 170,
+  HERO_AT: 3600,
+  NUDGE_FROM: 4800,
+  SWAP_EVERY: 250,
+  NUDGE_LANDS: 6700,
+  SCAN_FROM: 7000,
+  SCAN_TO: 8600,
+  END_FROM: 8900,
+  TOTAL: 9900,
 } as const;
 
 if (T.TOTAL > 10_000)
@@ -335,6 +343,18 @@ const ANTHROPIC_ANNOUNCEMENT =
  * belongs. Do not change that clause to the present tense.
  *
  * Sourced from Anthropic's own announcement, linked under the blocks.
+ *
+ * ★ THE HIGHLIGHT IS THE HOMEPAGE'S, IN THE SAME COLOUR, BUILT DIFFERENTLY.
+ * Jon asked for it to be marked "just like 'it's marked' is highlighted on the
+ * homepage". That one is a bar positioned absolutely behind a single phrase,
+ * sized in `em`, because an inline background follows the font's ascent and
+ * descent rather than the ink (`hero-section.tsx` has the whole account).
+ *
+ * **That technique cannot cross a line break, and this phrase wraps to two
+ * lines.** So this one is a real inline background with `box-decoration-clone`
+ * so it paints once per line, and its own `leading` so the box hugs the text
+ * instead of the line box. Same `bg-destructive/[0.16]`, so the two read as one
+ * treatment.
  */
 const BEATS = [
   {
@@ -343,7 +363,11 @@ const BEATS = [
     body: (
       <>
         Anthropic has publicly released a watermark detector.{' '}
-        <span className={'text-foreground font-medium'}>
+        <span
+          className={
+            'bg-destructive/[0.16] text-foreground box-decoration-clone rounded-[4px] px-1 py-[3px] leading-[1.35] font-medium'
+          }
+        >
           Soon universities, companies and individuals will have access to it.
         </span>
       </>
@@ -524,8 +548,9 @@ export function WatermarkBriefing() {
 
   const scene1 = ms < T.SHOTS_FROM;
   const scene2 = !scene1 && ms < T.NUDGE_FROM;
-  const scene4 = ms >= T.SCAN_FROM;
-  const scene3 = !scene1 && !scene2 && !scene4;
+  const scene5 = ms >= T.END_FROM;
+  const scene4 = !scene5 && ms >= T.SCAN_FROM;
+  const scene3 = !scene1 && !scene2 && !scene4 && !scene5;
 
   /** Scene 1 arrives a line at a time. */
   const showsLineTwo = ms >= T.LINE_TWO;
@@ -691,7 +716,22 @@ export function WatermarkBriefing() {
               />
             </div>
 
-            {/* ── 3. How it gets in. ──────────────────────────────────────── */}
+            {/*
+              ── 3. HOW IT GETS IN, INSIDE THE CLAUDE WINDOW.
+
+              Jon: "can that look like it's in the Claude chat textbox UI, like
+              Claude wrote it and nudged it." **That is the right instinct and it
+              is what the handoff does**: the essay lives in a Claude window for
+              the whole video, so the swapping words are visibly Claude's own
+              choices rather than a sentence sitting on a page.
+
+              The chrome is the handoff's: white card, hairline border, soft
+              shadow, a header with the Claude mark and the word "Claude", and a
+              right-aligned prompt bubble. Scaled down from a 1080px frame.
+
+              The Claude mark is Anthropic's, used here to depict Claude's own
+              interface. Supplied by Jon in the handoff bundle.
+            */}
             <div
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
@@ -700,48 +740,79 @@ export function WatermarkBriefing() {
             >
               <h3
                 className={
-                  'text-foreground text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
+                  'text-foreground text-[19px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[21px]'
                 }
               >
                 The model is nudged at every pick.
               </h3>
 
-              <p
+              <div
                 className={
-                  'mt-4 text-[19px] leading-[1.75] font-medium sm:text-[20px]'
+                  'border-border/70 bg-card mt-3 rounded-[12px] border p-3 shadow-[0_10px_28px_rgba(33,31,28,0.10)]'
                 }
               >
-                {PROSE.map((token, index) => {
-                  if (!('alts' in token)) {
+                <div className={'flex items-center gap-1.5'}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={'/images/briefing/claude-mark.svg'}
+                    alt={''}
+                    aria-hidden
+                    className={'size-[13px] dark:invert'}
+                  />
+                  <span
+                    className={
+                      'text-foreground/70 text-[11px] font-semibold tracking-wide'
+                    }
+                  >
+                    Claude
+                  </span>
+                </div>
+
+                <p
+                  className={
+                    'bg-mark/[0.10] text-foreground/75 mt-2 ml-auto w-fit rounded-[9px] px-2.5 py-1 text-[11.5px]'
+                  }
+                >
+                  {PROMPT}
+                </p>
+
+                <p
+                  className={
+                    'mt-2.5 text-[16px] leading-[1.7] font-medium sm:text-[17px]'
+                  }
+                >
+                  {PROSE.map((token, index) => {
+                    if (!('alts' in token)) {
+                      return (
+                        <span key={index} className={'text-foreground/75'}>
+                          {index === 0 ? '' : ' '}
+                          {token.text}
+                        </span>
+                      );
+                    }
+
+                    const pool = [token.text, ...token.alts];
+                    const shown = landed
+                      ? token.text
+                      : pool[Math.abs(swap + index) % pool.length]!;
+
                     return (
-                      <span key={index} className={'text-foreground/75'}>
-                        {index === 0 ? '' : ' '}
-                        {token.text}
+                      <span key={index}>
+                        {' '}
+                        <span
+                          className={
+                            'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
+                          }
+                        >
+                          {shown}
+                        </span>
                       </span>
                     );
-                  }
+                  })}
+                </p>
+              </div>
 
-                  const pool = [token.text, ...token.alts];
-                  const shown = landed
-                    ? token.text
-                    : pool[Math.abs(swap + index) % pool.length]!;
-
-                  return (
-                    <span key={index}>
-                      {' '}
-                      <span
-                        className={
-                          'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
-                        }
-                      >
-                        {shown}
-                      </span>
-                    </span>
-                  );
-                })}
-              </p>
-
-              <p className={'text-muted-foreground mt-4 text-[12.5px]'}>
+              <p className={'text-muted-foreground mt-2.5 text-[12px]'}>
                 Every pick reads perfectly well. A key chooses which one.
               </p>
             </div>
@@ -846,6 +917,38 @@ export function WatermarkBriefing() {
                   Enough picks make a pattern a detector can test.
                 </p>
               </div>
+            </div>
+
+            {/*
+              ── 5. THE END CARD, AND IT HOLDS.
+
+              Jon: "at end of visual finish with an Un-Claude screen and have it
+              pause there." It is the handoff's own closing frame, minus its
+              button and sub-line, because this dialog already has a permanent
+              CTA pinned to its own footer and does not need two.
+
+              Nothing moves after this. It is also where a reduced-motion
+              visitor lands, and where the loop rests before starting over.
+            */}
+            <div
+              className={
+                'absolute inset-0 flex flex-col items-center justify-center gap-4 p-5 sm:p-6'
+              }
+              hidden={!scene5}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={'/images/briefing/unclaude-logo.png'}
+                alt={'Un-Claude'}
+                className={'h-auto w-[224px] max-w-[64%] dark:invert'}
+              />
+              <p
+                className={
+                  'text-foreground text-center text-[19px] leading-[1.25] font-semibold tracking-[-0.02em] text-balance sm:text-[21px]'
+                }
+              >
+                Your writing already carries it.
+              </p>
             </div>
           </div>
 

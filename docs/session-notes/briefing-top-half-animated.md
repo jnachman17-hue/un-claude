@@ -79,6 +79,59 @@ the video: texture that says "this is everywhere", not something to read.
 
 ---
 
+# ★ 0a. THE CURRENT BUILD. FIVE SCENES, 9,900ms.
+
+**7 September 2026, after three of Jon's notes.** Everything below this section
+is the record of how it got here and includes two versions he rejected.
+
+| Scene | From | To | What it shows |
+|---|---|---|---|
+| **1** | 0ms | 2,200 | `Since 2 August 2026` as a small label, **`AI models watermark the text they write.`** as the display type, **`Invisibly.`** in rust and underlined |
+| **2** | 2,200 | 4,800 | **Six real news screenshots** popping in scattered and rotated, 170ms apart, then the **California Post "Sorry, students" hero** landing centred |
+| **3** | 4,800 | 7,000 | **`The model is nudged at every pick.`** over a **Claude chat window** with its mark, its label and a prompt bubble, and three words swapping inside Claude's own answer |
+| **4** | 7,000 | 8,900 | `Not hidden code. Not metadata.` then **`The watermark is the words.`** A rust rule crosses the sentence, each pick takes a filled highlight, a pill counts the signals |
+| **5** | 8,900 | 9,900 | **The Un-Claude end card**, logo over *"Your writing already carries it."* **Held. Nothing moves again.** |
+
+## The three notes this round, and what each changed
+
+**1. *"Can that look like it's in the Claude chat textbox UI, like Claude wrote
+it and nudged it."*** Scene 3 is now a Claude window: the mark from the handoff
+bundle, the "Claude" label, a right-aligned prompt bubble, and the swapping
+words inside the answer. **It is the right instinct and it is what the handoff
+does** — the essay lives in a Claude window for the whole video, so the picks
+are visibly Claude's rather than a sentence on a page.
+
+**2. *"At end of visual finish with an Un-Claude screen and have it pause
+there."*** Scene 5, which is the handoff's own closing frame minus its button
+and sub-line, **because this dialog already has a permanent CTA in its footer
+and does not need two.** It is also where a reduced-motion visitor lands and
+where the review loop rests before starting over.
+
+**3. *"Highlight 'Soon universities, companies and individuals will have access
+to it' just like 'it's marked' is highlighted on the homepage."*** Done, in the
+same `bg-destructive/[0.16]`.
+
+**★ BUILT DIFFERENTLY FROM THE HOMEPAGE'S, ON PURPOSE.** The homepage version is
+a bar positioned absolutely behind the phrase and sized in `em`, because an
+inline background follows the font's ascent and descent rather than the ink;
+`hero-section.tsx` has the whole account of getting that wrong twice. **That
+technique cannot cross a line break, and this phrase wraps to two lines.** So
+this one is a real inline background with `box-decoration-clone` so it paints
+once per line, and its own `leading` so the box hugs the text. **Measured: two
+line boxes, both painted, same colour.**
+
+## Measured
+
+```
+PASS. Five scenes in order, each finishing inside the next, total under the ceiling.
+TOTAL 9900ms   CEILING 10000ms
+```
+
+**No scene is clipped by the box, the panel does not scroll, and the CTA is
+visible.** `tsc --noEmit` exit 0.
+
+---
+
 # ★ 1a. THE DESIGN HANDOFF, AND THE ONE THING IT SETTLED
 
 **7 September 2026.** Jon handed over
