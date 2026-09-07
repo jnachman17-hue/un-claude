@@ -30,12 +30,26 @@ import { shareTags } from '~/lib/share-tags';
 const DESCRIPTION =
   'Three kinds of AI watermark, where each hides, and what Un-Claude does to each: found and counted, stripped and byte verified, or sanitised by rewrite.';
 
+/**
+ * THE TITLE IS WHAT A SEARCHER READS, AND "How it works" TOLD THEM NOTHING.
+ *
+ * Measured 6 September 2026 in Search Console: this page earned **70
+ * impressions and ZERO clicks** at an average position of 9.16. It is being
+ * shown and skipped, and the only thing a person sees before deciding is the
+ * title. "How it works" carries no subject at all, so a reader scanning a
+ * results page has no idea what it works ON.
+ *
+ * The new one names the subject and the two things the page is actually about,
+ * and makes no claim: it says where the marks hide, not what we do to them.
+ * `04` entry 70's verb rule is therefore not engaged, and nothing here has to
+ * be true of all three layers.
+ */
 export const metadata = {
-  title: 'How it works',
+  title: 'Where AI watermarks hide in your text and files',
   description: DESCRIPTION,
   alternates: { canonical: '/how-it-works' },
   ...shareTags({
-    title: 'How it works',
+    title: 'Where AI watermarks hide in your text and files',
     description: DESCRIPTION,
     path: '/how-it-works',
   }),

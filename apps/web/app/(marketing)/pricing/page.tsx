@@ -108,12 +108,21 @@ import { shareTags } from '~/lib/share-tags';
 const DESCRIPTION =
   'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, up to 3.2 MB. Credits never expire.';
 
+/**
+ * SAME DEFECT AS /how-it-works, SAME MEASUREMENT. 6 September 2026: **18
+ * impressions and ZERO clicks** at position 12.06. "Pricing" is a category, not
+ * a reason to click, and a searcher comparing results has nothing to weigh.
+ *
+ * The number does the work. Both figures are read off `pricing-data.ts` in
+ * spirit and are true today: five free credits (2 welcome + 3 on signup) and a
+ * Starter pack at $4.99. **If the packs change, this line changes with them.**
+ */
 export const metadata = {
-  title: 'Pricing',
+  title: 'Pricing: 5 credits free, packs from $4.99',
   description: DESCRIPTION,
   alternates: { canonical: '/pricing' },
   ...shareTags({
-    title: 'Pricing',
+    title: 'Pricing: 5 credits free, packs from $4.99',
     description: DESCRIPTION,
     path: '/pricing',
   }),
