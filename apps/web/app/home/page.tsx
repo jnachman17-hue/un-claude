@@ -105,7 +105,7 @@ export default async function HomePage(props: {
     db.rpc('credit_balance'),
     db
       .from('credit_ledger')
-      .select('id, delta, reason, endpoint, input_kind, words_in, created_at')
+      .select('id, delta, reason, endpoint, input_kind, words_in, price_cents, created_at')
       .order('created_at', { ascending: false })
       .range(from, from + PAGE_SIZE),
   ]);
@@ -135,6 +135,28 @@ export default async function HomePage(props: {
     !!latestPurchase &&
     Date.now() - new Date(latestPurchase.created_at).getTime() < RECENT_MS;
 
+  /**
+   * WHAT THE SALE WAS WORTH, for the advertising conversion. 6 September 2026.
+   *
+   * Google's own snippet hardcodes `'value': 1.0` and an empty
+   * `transaction_id`. Pasted as written it would report every purchase as one
+   * dollar, so a $24.99 Pro pack and a $4.99 Starter would look identical, and
+   * cost-per-sale would be meaningless the moment there is more than one pack.
+   *
+   * The real figure is on the ledger row that was just written, so it is read
+   * here, server side, where the row already is. `id` rides along as the
+   * transaction id: refreshing `/home?purchase=success` renders this page
+   * again, and without something to deduplicate on, one sale would be counted
+   * every time somebody pressed reload.
+   */
+  const purchase =
+    purchaseLanded && latestPurchase
+      ? {
+          id: String(latestPurchase.id),
+          value: (latestPurchase.price_cents ?? 0) / 100,
+        }
+      : null;
+
   return (
     <Main>
       <PageHeader description={'Your credits'} />
@@ -149,7 +171,7 @@ export default async function HomePage(props: {
             ordinary visit this boundary costs nothing.
           */}
           <Suspense fallback={null}>
-            <PurchaseBanner purchaseLanded={purchaseLanded} />
+            <PurchaseBanner purchaseLanded={purchaseLanded} purchase={purchase} />
           </Suspense>
 
           <div

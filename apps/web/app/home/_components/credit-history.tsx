@@ -54,6 +54,8 @@ export interface LedgerRow {
   id: number;
   delta: number;
   reason: string;
+  /** Only ever set on a purchase row. What the customer actually paid. */
+  price_cents: number | null;
   endpoint: string | null;
   input_kind: string | null;
   words_in: number | null;

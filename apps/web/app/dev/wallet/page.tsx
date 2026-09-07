@@ -56,6 +56,9 @@ function rowsFor(page: number, size: number, total: number): LedgerRow[] {
       endpoint: kind.endpoint,
       input_kind: kind.reason === 'spend' ? 'text' : null,
       words_in: kind.reason === 'spend' ? 1_140 + nth * 37 : null,
+      // Only a purchase row carries a price. Pro pack, so the sample shows a
+      // real figure rather than a round one.
+      price_cents: kind.reason === 'purchase' ? 2_499 : null,
       created_at: at.toISOString(),
     };
   });

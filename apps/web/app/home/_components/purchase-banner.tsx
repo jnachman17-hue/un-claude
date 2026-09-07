@@ -54,7 +54,67 @@ const MAX_ATTEMPTS = 10;
 /** Gap between attempts. 10 x 1.5s covers about 15 seconds. */
 const INTERVAL_MS = 1_500;
 
-export function PurchaseBanner({ purchaseLanded }: { purchaseLanded: boolean }) {
+/**
+ * THE ADVERTISING CONVERSION, REPORTED ONCE AND WITH THE REAL NUMBER.
+ * 6 September 2026, with the Google Ads tag.
+ *
+ * `send_to` is the account plus the conversion action's own label, and it is
+ * the one string in this file that cannot be derived: Google issues it when the
+ * conversion action is created.
+ *
+ * ★ IT IS DEDUPLICATED ON THE LEDGER ROW ID. `/home?purchase=success` is an
+ * ordinary URL. It can be reloaded, bookmarked, or opened twice, and every one
+ * of those renders this component again. Without a guard, one sale would be
+ * reported to Google every time somebody pressed reload, and cost-per-sale
+ * would quietly improve for no reason. The row id is the transaction id, so
+ * Google can also discard a repeat if this guard is ever bypassed.
+ *
+ * ★ IT DOES NOT CHECK CONSENT, ON PURPOSE. gtag already knows the consent
+ * state, because `google-tag.tsx` set it before this ever runs. A visitor who
+ * declined has `ad_storage` denied and Google records the event without
+ * storage. Re-implementing that check here would be a second opinion about
+ * consent, and two implementations of one rule is the trap this project keeps
+ * walking into.
+ */
+const SEND_TO = 'AW-18434780777/9T6fCOGUg_AcEOncsdZE';
+
+function reportConversion(purchase: { id: string; value: number }) {
+  const key = `uc.conversion.${purchase.id}`;
+
+  try {
+    if (window.localStorage.getItem(key)) return;
+  } catch {
+    // A browser refusing storage cannot be deduplicated. Reporting once per
+    // page view is the lesser error against never reporting at all.
+  }
+
+  const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void })
+    .gtag;
+
+  if (typeof gtag !== 'function') return;
+
+  gtag('event', 'conversion', {
+    send_to: SEND_TO,
+    value: purchase.value,
+    currency: 'USD',
+    transaction_id: purchase.id,
+  });
+
+  try {
+    window.localStorage.setItem(key, '1');
+  } catch {
+    // See above.
+  }
+}
+
+export function PurchaseBanner({
+  purchaseLanded,
+  purchase,
+}: {
+  purchaseLanded: boolean;
+  /** Set only when a purchase really landed. See the wallet page. */
+  purchase: { id: string; value: number } | null;
+}) {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -107,6 +167,10 @@ export function PurchaseBanner({ purchaseLanded }: { purchaseLanded: boolean }) 
       track.purchaseCancelled();
     } else {
       track.purchaseCompleted({ creditsReady: purchaseLanded });
+
+      // And the same fact to Google Ads, which is the only way a campaign can
+      // be judged on money rather than on clicks.
+      if (purchase) reportConversion(purchase);
     }
     // `purchaseLanded` is deliberately not a dependency: this reads it once, at
     // the moment the buyer arrives, and the ref stops any later render firing

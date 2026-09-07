@@ -77,7 +77,16 @@ async function Fixture(props: {
       </div>
 
       <Suspense fallback={null}>
-        <PurchaseBanner purchaseLanded={purchaseLanded} />
+        {/*
+          A sample sale, so the banner can be read here without inventing one.
+          It never reaches Google: `google-tag.tsx` renders nothing outside
+          production, so `window.gtag` does not exist on this page and the
+          conversion call returns immediately.
+        */}
+        <PurchaseBanner
+          purchaseLanded={purchaseLanded}
+          purchase={{ id: 'dev-preview', value: 24.99 }}
+        />
       </Suspense>
     </main>
   );
