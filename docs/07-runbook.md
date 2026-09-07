@@ -2823,3 +2823,40 @@ instead of one per guess.**
 - **A scene removed from the layout with the `hidden` attribute can still be
   measured**: strip the attribute, read the rect, put it back. React restores it
   on the next tick anyway.
+
+---
+
+## A wrapped highlight overlaps its own next line. The arithmetic, once and for all
+
+**Bitten twice now: the scan highlights on 6 September, and the detector block's
+red highlight on 7 September.** Jon spotted both by looking, which is the only
+way either was ever going to be found.
+
+**A highlight that wraps paints one box per line (`box-decoration-clone`), and
+each box is as tall as the span's own line-height plus its vertical padding. If
+that total exceeds the paragraph's line pitch, consecutive boxes overlap.**
+
+```
+box height  = font-size x SPAN leading + 2 x vertical padding
+line pitch  = font-size x PARAGRAPH leading
+box height MUST be < line pitch, with a few px to spare
+```
+
+**The case that shipped:** `14 x 1.35 + 3 + 3 = 24px` inside a `14 x 1.55 =
+21.7px` pitch. **Overlapping by 2.3px on every wrap.** Fixed to `14 x 1.2 + 2 +
+2 = 20.8px` inside `14 x 1.8 = 25.2px`, leaving 4.4px of air.
+
+**Change either leading and you must re-check the other.** They are not
+independent, and nothing in the build will tell you.
+
+**Measure it, do not eyeball it.** `span.getClientRects()` returns one rect per
+wrapped line; the gap between consecutive rects is the answer, and a negative
+number is the bug:
+
+```js
+const r = [...span.getClientRects()];
+r.slice(1).map((x, i) => x.top - r[i].bottom);   // negative = overlapping
+```
+
+**Check at 375px as well as desktop.** The phone width wrapped the same phrase
+into three fragments rather than two, so it has one more seam to get wrong.

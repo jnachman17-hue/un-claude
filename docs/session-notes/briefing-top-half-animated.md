@@ -237,6 +237,30 @@ and are clipped by `overflow-hidden`.
 
 `tsc --noEmit` exit 0.
 
+## ★ ONE FIX AFTER SIGN-OFF: THE RED HIGHLIGHT OVERLAPPED ITS OWN NEXT LINE
+
+Jon, with a screenshot: *"the red highlight in Soon and the line below overlap
+and it looks a little weird."*
+
+**It did, by 2.3px, and it was arithmetic rather than taste.** A wrapped
+highlight paints one box per line and each box is `span leading + padding` tall.
+That was `14 x 1.35 + 3 + 3 = 24px`, sitting in a paragraph whose lines are
+`14 x 1.55 = 21.7px` apart, **so every wrap overlapped.**
+
+Now `14 x 1.2 + 2 + 2 = 20.8px` in a `14 x 1.8 = 25.2px` pitch.
+
+```
+                      before      after
+box height            24.0px      22.0px
+line pitch            21.7px      25.2px
+gap between halves    -2.3px      +3.2px      (negative = overlapping)
+```
+
+**Checked at phone width too, where the same phrase wraps into three fragments
+rather than two**: both seams +3.2px, panel still does not scroll, CTA still
+visible. **`07` now carries the rule, because this is the second highlight in
+this file to be built too tall for its line.**
+
 ## What I could not prove
 
 - **That 12.2 seconds is the right length.** Jon set 10 and lifted it; 12.2 is my

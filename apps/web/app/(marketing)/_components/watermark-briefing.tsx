@@ -503,6 +503,19 @@ const ANTHROPIC_ANNOUNCEMENT =
  * so it paints once per line, and its own `leading` so the box hugs the text
  * instead of the line box. Same `bg-destructive/[0.16]`, so the two read as one
  * treatment.
+ *
+ * ★ THE BOX MUST BE SHORTER THAN THE LINE PITCH OR THE TWO HALVES COLLIDE.
+ * Jon, on the shipped version: "the red highlight in Soon and the line below
+ * overlap and it looks a little weird." **They did, by 2.3px, and it is
+ * arithmetic rather than taste.** A cloned box is `leading` plus vertical
+ * padding tall; the paragraph's `leading` is how far apart the lines sit. The
+ * first was 18.9 + 3 + 3 = 24px and the second was 21.7px, so every wrapped
+ * highlight in the site overlapped its own next line.
+ *
+ * **The rule, and it is the same one that bit the scan highlights last week:
+ * font-size x span leading + 2 x padding MUST be less than font-size x
+ * paragraph leading.** Here 14 x 1.2 + 4 = 20.8 against 14 x 1.8 = 25.2, which
+ * leaves 4.4px of air. **Change either number and check the other.**
  */
 const BEATS = [
   {
@@ -513,7 +526,7 @@ const BEATS = [
         Anthropic has publicly released a watermark detector.{' '}
         <span
           className={
-            'bg-destructive/[0.16] text-foreground box-decoration-clone rounded-[4px] px-1 py-[3px] leading-[1.35] font-medium'
+            'bg-destructive/[0.16] text-foreground box-decoration-clone rounded-[4px] px-1 py-[2px] leading-[1.2] font-medium'
           }
         >
           Soon universities, companies and individuals will have access to it.
@@ -1275,7 +1288,7 @@ export function WatermarkBriefing() {
                   </h3>
                   <p
                     className={
-                      'text-muted-foreground mt-1 text-[14px] leading-[1.55]'
+                      'text-muted-foreground mt-1 text-[14px] leading-[1.8]'
                     }
                   >
                     {beat.body}
