@@ -11,7 +11,7 @@ import { shareTags } from '~/lib/share-tags';
  * not be able to drift apart.
  */
 const DESCRIPTION =
-  'Un-Claude sets no advertising and no tracking cookies, so there is no consent banner. What is actually set, what it does, and how long it lasts.';
+  'One advertising cookie, only if you accept it, and nothing about what you submit. What is set, what it does, and how long it lasts.';
 
 export async function generateMetadata() {
   const t = await getTranslations();
@@ -36,6 +36,20 @@ export async function generateMetadata() {
 }
 
 /**
+ * ★ REWRITTEN 6 September 2026, AND THE HEADLINE PROPERTY IS GONE. Until this
+ * commit this page opened by saying Un-Claude sets no advertising cookies and
+ * therefore needs no consent banner. The Google Ads tag shipped in the same
+ * commit as this rewrite, so both halves of that sentence stopped being true at
+ * once and a banner now exists (`components/cookie-consent.tsx`).
+ *
+ * Jon's decision, taken three times over and recorded here because the previous
+ * posture was defended hard in this file: measuring whether an advertisement
+ * ever produces a sale is worth one cookie a visitor can refuse in one click.
+ *
+ * WHAT MUST STAY TRUE, and it is now the sentence carrying this page: no cookie
+ * on this site sees the text or the file somebody submits, whichever way they
+ * answer, and declining changes nothing about how the tool behaves.
+ *
  * The whole value of this page is the sentence at the top, and it is the first
  * thing analytics would make false.
  *
@@ -74,19 +88,26 @@ async function CookiePolicyPage() {
       />
 
       <Prose>
-        <Updated date={'21 August 2026'} />
+        <Updated date={'6 September 2026'} />
 
         <P>
-          Un-Claude sets no advertising cookies and no tracking cookies. We do
-          measure how many people visit, using a tool that stores nothing on your
-          device at all, which is why there is no consent banner on this site.
+          Un-Claude sets one advertising cookie, from Google, and only if you
+          accept it. That is what the bar at the bottom of the page is asking.
+          Everything else on this page is either needed to run the tool you
+          asked for or stores nothing on your device at all.
         </P>
 
-        <H2>What we do use</H2>
         <P>
-          Three things stored on your device, all of them needed to run the tool
-          you asked for, and two measurement and security tools that store
-          nothing.
+          Nothing you paste or upload is ever part of this. No cookie on this
+          site sees your text, your file, or its name, whichever way you answer,
+          and the tool behaves identically if you decline.
+        </P>
+
+        <H2>What we use</H2>
+        <P>
+          Three things stored on your device to run the tool, one advertising
+          cookie you can refuse, and two measurement and security tools that
+          store nothing.
         </P>
 
         <Table
@@ -116,6 +137,11 @@ async function CookiePolicyPage() {
               'Nothing is stored, so there is nothing to expire',
             ],
             [
+              'Google Ads',
+              'Tells us whether an advertisement brought you here, and whether that visit led to a purchase. It is set only after you press Accept, and refusing it changes nothing about how the tool works. It never sees your text, your file, or its name',
+              'Up to 90 days, or until you clear your browser data',
+            ],
+            [
               'Cloudflare Turnstile',
               'A background check that tells people apart from automated scripts, so free credits cannot be farmed by a program. It runs on every page and sees your IP address and ordinary details about your browser',
               'Nothing is stored on your device by this site',
@@ -126,8 +152,16 @@ async function CookiePolicyPage() {
         <P>
           The first three are what the industry calls strictly necessary: they
           exist to deliver the thing you asked for, they carry no advertising,
-          and they are not shared with anyone. That is why there is no consent
-          banner and nothing to opt out of.
+          and they are not shared with anyone. Those need no permission and
+          there is nothing to opt out of.
+        </P>
+
+        <P>
+          The Google Ads cookie is the only one that does need your permission,
+          and it is the only reason this site now asks. Until you press Accept
+          it is not set, and Google is told to store nothing. Press No thanks
+          and it stays that way. You can change your mind by clearing your
+          browser data for this site, which resets the question.
         </P>
 
         <P>

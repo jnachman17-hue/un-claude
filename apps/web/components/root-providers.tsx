@@ -11,6 +11,8 @@ import { If } from '@kit/ui/if';
 import { VersionUpdater } from '@kit/ui/version-updater';
 
 import { AnalyticsProvider } from '~/components/analytics-provider';
+import { CookieConsent } from '~/components/cookie-consent';
+import { GoogleTag } from '~/components/google-tag';
 import { AuthProvider } from '~/components/auth-provider';
 import authConfig from '~/config/auth.config';
 import featuresFlagConfig from '~/config/feature-flags.config';
@@ -48,6 +50,8 @@ export function RootProviders({
           <CaptchaTokenSetter siteKey={captchaSiteKey} />
 
           <AnalyticsProvider />
+          <GoogleTag />
+          <CookieConsent />
 
           <AuthProvider>
             {/* Dark mode retired, 20 August 2026: Jon's instruction was

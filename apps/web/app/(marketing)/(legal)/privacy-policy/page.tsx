@@ -310,11 +310,10 @@ async function PrivacyPolicyPage() {
         </P>
         <P>
           We do measure visits, using PostHog. It is configured to store nothing
-          at all on your device: no cookies, no local storage. That is why this
-          site has no cookie consent banner. It means we cannot recognise you
-          between visits, which we accept as the price of not tracking you. If
-          your browser sends a Do Not Track signal, we do not measure you at
-          all.
+          at all on your device: no cookies, no local storage. It means we
+          cannot recognise you between visits, which we accept as the price of
+          not tracking you. If your browser sends a Do Not Track signal, we do
+          not measure you at all.
         </P>
         <P>
           We also record which steps of the tool you use, so we can see where it
@@ -324,6 +323,15 @@ async function PrivacyPolicyPage() {
           about the tool, never about you and never about what you submitted.
           File names are reduced to a file type before anything is recorded, and
           lengths and timings are recorded as ranges rather than exact figures.
+        </P>
+        <P>
+          We advertise on Google, and we use a Google advertising cookie to tell
+          whether an advertisement brought you here and whether that visit led
+          to a purchase. That is the one thing on this site that needs your
+          permission, which is why a bar at the bottom of the page asks for it.
+          Until you accept, it is not set and Google is told to store nothing.
+          It never sees your text, your file, or its name, and refusing it
+          changes nothing about how the tool works.
         </P>
         <P>
           Every page also runs a background check from Cloudflare that tells
@@ -367,6 +375,11 @@ async function PrivacyPolicyPage() {
               'Google',
               'Runs the inbox you write to, and sign-in if you choose it',
               'Any email you send us, and that you signed in to our site',
+            ],
+            [
+              'Google Ads',
+              'Tells us whether an advertisement brought you here, and whether that visit led to a purchase. Only if you accept it',
+              'That a visit followed one of our advertisements, and that a purchase happened. Never your text, your file, or its name',
             ],
           ]}
         />
