@@ -1151,3 +1151,68 @@ described in panel 3's prose one sentence above.
 
 **Trigger: Jon looking at the replacement.** The old file is in git at `1ae6f2e`
 and restoring it is one file.
+
+---
+
+## ★ Anthropic's checker is LIVE, and it checks the metadata layer, not the rewrite
+
+**Researched 6 September 2026**, prompted by Jon asking to wire
+`claude.com/check-content` into the homepage after a scan. **This moves a fact
+the whole site's argument sits on, so it is written down before anything is
+built on it.**
+
+**What the page actually is**, from the page itself and corroborated by
+reporting:
+
+| | |
+|---|---|
+| **Input** | **Files only.** Drag and drop. No text box at all |
+| **What it reads** | **C2PA content credentials.** Our METADATA layer |
+| **Where it runs** | **Entirely in the visitor's browser.** The file never leaves the device; it reads the embedded credential and nothing else |
+| **Formats** | JPG, PNG, GIF, WEBP, TIFF, HEIC, AVIF, SVG, DNG, JXL, MP4, MOV, AVI, WAV, MP3, M4A, FLAC, to 100MB. **No Word document, no PDF, no .txt** |
+| **An API** | **None published.** Nothing to call from a server |
+| **The TEXT watermark** | Separate, and **"a Detection API, which is currently in private preview"** |
+
+**WHAT THIS DOES NOT CHANGE, checked line by line: the site's layer B copy is
+still accurate.** `/how-it-works` beat 6 says the detector "is coming rather
+than callable, and nobody outside the labs can check a text for the mark
+today", and that remains true, because **the live checker cannot see text at
+all** and the text API is private. **"Where proof stands" is likewise
+unaffected.** No copy needed correcting on the day this was found.
+
+**WHAT IT DOES CHANGE, and it is two things.**
+
+1. **`.claude/skills/unclaude-messaging` says "Anthropic has publicly committed
+   to a detection API that anyone can use. Not callable yet."** That is now
+   imprecise in the product's favour and against it at once: **a public file
+   checker IS live and free**, and the text API has moved from "committed" to
+   **private preview**, which is one step from the thing this company is
+   waiting for. **The skill should be updated. It is a claims file, so that is
+   Jon's.**
+2. **For the first time this product can point at THIRD PARTY verification of
+   one of its layers.** Anthropic's own tool reads exactly the credential we
+   strip, it is free, and it runs on the visitor's own machine. **Our own green
+   tick is worth nothing because we are the seller. Theirs is worth
+   everything.**
+
+**Working position on building it: a HANDOFF, not a badge.** Send the visitor
+to Anthropic's checker with their cleaned file, rather than rendering a tick of
+our own. There is no API to call, so a server round trip is not available
+anyway, and driving somebody else's browser tool from our server would upload a
+file their tool deliberately never uploads.
+
+**Why it is unresolved: Jon asked for the badge**, and the difference between
+"we checked and it is clean" and "check it yourself, here is where" is a
+positioning decision rather than an engineering one.
+
+**★ THE TRAP, WRITTEN DOWN SO NOBODY WALKS INTO IT.** A tick that says
+"Anthropic verified: clean" after a REWRITE would be false. The checker cannot
+see text. **It is honest for metadata, silent on hidden characters, and a lie
+about layer B**, which `CLAUDE.md` section 4 names as the single easiest way to
+make this project dishonest. Any build of this must gate on
+`has_c2pa === true`, on a file, in one of the seventeen formats above.
+
+**Trigger for revisiting: the text Detection API leaving private preview.** That
+is a different and much larger feature, and somebody should be checking for it.
+**Applying for the preview is a Jon action and is probably the highest value
+item on this list.**
