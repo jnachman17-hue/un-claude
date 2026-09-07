@@ -2214,6 +2214,249 @@ every page including the broken one.
 
 ---
 
+## Cold email from jon@un-claude.com: what is real and what is not
+
+**26 August 2026.** The first UA IFC outreach run. Recorded because two days of
+this were spent chasing the wrong causes, and the next session will otherwise
+repeat them.
+
+### `docs/03-pricing.md` section 6b is STALE. Do not quote it
+
+**It still says 1 credit = 100 words, with packs named Small / Standard / Large
+at $9 / $24 / $60.** None of that is shipped. The live site is
+`WORDS_PER_CREDIT = 1_000`, stated twice and deliberately duplicated:
+
+- `apps/web/app/(marketing)/pricing/_components/pricing-data.ts`
+- `apps/web/app/(marketing)/_components/workbench/credits.ts`
+
+**The ratified packs are 04 entry 67: Starter $4.99 / 10cr, Plus $9.99 / 25cr,
+Pro $24.99 / 100cr.** So 100 credits = 100,000 words, and the cheapest real
+basket for 250 credits is 2 Pro + 2 Plus = **$69.96**, which is where the
+campaign's "about $70" comes from and it is correct to the cent.
+
+**Read the code, not section 6b, for any number a customer will see.**
+
+### The domain is configured correctly. Stop re-checking it
+
+Verified 26 August by `dig`, all four clean:
+
+| Record | Value |
+|---|---|
+| MX | `1 smtp.google.com` — real Workspace, domain verified (3 site-verification tokens) |
+| SPF | `v=spf1 include:_spf.google.com ~all` |
+| DKIM | `google._domainkey` published, 2048-bit, **verified `dkim=pass` at a live receiver** |
+| DMARC | `p=reject`, and **`rua=`/`ruf=` added 26 Aug** — before that there was no reporting at all |
+
+**Not on any blocklist**: `dbl.spamhaus.org`, `multi.surbl.org`,
+`multi.uribl.com` all return not-listed.
+
+**Admin console Email Log Search is unavailable, and that is an EDITION limit,
+not a verification problem.** It needs Business Plus or Enterprise. The error
+message conflates the two and sent one session chasing verification that was
+already fine. **Use the DMARC `rua` reports instead.**
+
+**Google Postmaster Tools is close to useless for this audience.** It only
+reports Gmail-hosted recipients. Of the 129 UA IFC addresses, **125 are
+Microsoft and 4 are Gmail.**
+
+### The real problem is reputation, and both providers agree
+
+**`crimson.ua.edu` MX is `crimson-ua-edu.mail.protection.outlook.com`.** All 125
+UA recipients sit behind one Microsoft Defender tenant.
+
+A **plain, one-sentence, link-free** test to a Defender-protected .edu was
+junked with:
+
+```
+X-MS-Exchange-Organization-SCL: 5
+X-Forefront-Antispam-Report: SFV:SPM ... CAT:SPM
+X-Microsoft-Antispam: BCL:0
+```
+
+**`BCL:0` is the number to read. Bulk Complaint Level zero means Microsoft has
+no complaint history and does NOT classify the domain as bulk.** The 65 sends
+that went out that morning did not damage the domain. `CAT:SPM` on a plain test
+means the filter is scoring an unknown sender, not the copy.
+
+Gmail behaves the same way: a plain reply from jon@ landed in **Spam**, not
+dropped. **Nothing is blocked. Both providers spam-file a three-week-old domain
+doing cold outreach, which is the default outcome and not a fault.**
+
+### Two diagnostic traps that cost real time
+
+1. **`dkim=fail (body hash did not verify)` at Microsoft is a RELAY ARTIFACT
+   when a gateway sits in front.** The UT Austin test passed through Cisco
+   IronPort, which altered the body and broke the hash. The first hop's
+   `Authentication-Results-Original` showed `dkim=pass (signature verified)`.
+   **Always read the FIRST hop's auth line, not the last.** `crimson.ua.edu` has
+   no such gateway, so this will not occur for the real recipients.
+2. **"Accepted but nowhere in the mailbox" is almost never a silent drop for
+   Gmail-to-Gmail.** That is internal delivery; worst case is Spam. Search the
+   RECEIVING account with `in:anywhere from:jon@un-claude.com`, which covers
+   Spam, Trash, All Mail and every tab — browsing Primary and Spam by hand does
+   not. Promotions is the other place campaign HTML lands.
+
+### What makes it worse, in order
+
+1. **A hyperlink in a cold first contact from an unknown domain.** Heaviest
+   single `CAT:SPM` driver.
+2. **Byte-identical bodies.** Defender fingerprints repeated content per tenant.
+   125 identical messages into ONE tenant is the strongest bulk signal available
+   and is what would take `BCL:0` away.
+3. **Hard bounces.** Two of the first 65 bounced "address not found"
+   (`acrintamaaa@`, `lukewkilgore@`). Validate before sending.
+
+**HTML and bold formatting score worse than plain text on cold first contact.**
+Jon asked for bold; it is his call, but it is a real trade and it must be named
+rather than assumed.
+
+### The tactic that beats sending more
+
+**Defender aggregates reputation per tenant.** Getting two or three of the 65
+already-delivered UA recipients to find the message in Junk, mark it not-junk,
+and reply is worth more than sending the remaining 64 — a reply from inside the
+tenant is the strongest positive signal there is. **Sending more into Junk only
+builds the bulk signal that is currently absent.**
+
+### CORRECTION, same day: never measure deliverability with a test email
+
+**The section above concluded that a plain one-sentence test being junked meant
+"the filter is scoring an unknown sender, not the copy." THAT INFERENCE WAS
+WRONG, and it cost several hours.**
+
+A controlled four-way test to a **brand-new Gmail account with zero interaction
+history**, all four sent plain-text, back to back:
+
+| Test | Content | Landed |
+|---|---|---|
+| 1 | `un-claude.com`, one line, nothing else | **Spam** |
+| 4 | One sentence, no link | **Spam** |
+| 2 | Full campaign copy, link removed | **Inbox** |
+| 3 | Full campaign copy, **link included** | **Inbox** |
+
+**Tests 2 and 3 differ by four words. Both inboxed. The link is not the
+problem, and the domain is not flagged** — a message containing `un-claude.com`
+reached Primary on a virgin account.
+
+**What is actually being scored is length and substance.** A bare URL is a
+textbook spam shape. A contentless "checking whether this lands" is the shape of
+a deliverability probe, which is what spammers send while warming a domain.
+**Both of the short tests were junked; both of the real ones were not.**
+
+**The operational rule, and it is the whole lesson: TEST WITH THE REAL MESSAGE.**
+A short test email measures how filters treat short test emails and nothing
+else. The Microsoft `SCL:5 / CAT:SPM` verdict recorded above was measured on a
+one-sentence probe, so **it says nothing about how Defender treats the campaign
+copy.** That remains untested and matters most, because 125 of 129 recipients
+are behind one Defender tenant.
+
+**Also retracted from the section above: the advice to remove the hyperlink and
+send plain text.** The evidence contradicts both.
+
+**What still stands:** the DNS facts, the blocklist results, the relay-artifact
+DKIM trap, the `in:anywhere` search trap, the two hard bounces, and the warning
+that 125 byte-identical messages into a single tenant is a genuine bulk signal.
+
+### The mail setup, measured 26 August 2026. MX moved off ImprovMX
+
+**Recorded because two separate sessions have now given confident advice about
+this domain's mail based on a description rather than a measurement, and both
+were wrong in the same direction — stale.**
+
+**Current, from the authoritative nameserver, not a resolver cache:**
+
+```
+$ dig @nsc1.squarespacedns.com un-claude.com MX +noall +answer
+un-claude.com.  1800  IN  MX  1 smtp.google.com.
+```
+
+**Google Workspace. There is no ImprovMX**, in DNS or anywhere in this repo —
+`grep -ri improvmx .` returns nothing. SPF is `v=spf1 include:_spf.google.com
+~all`, with no forwarder include.
+
+**It used to be ImprovMX** (`10 mx1.improvmx.com`, `20 mx2.improvmx.com`) and
+Jon moved it to Workspace. A session reading the old state will warn that
+switching MX breaks `support@un-claude.com`, which is promised on `/contact`,
+`/pricing` and the three legal pages plus `purchase-banner.tsx`. **That warning
+is spent. The switch already happened and support@ survived it**, proven in the
+mailbox: 18:26 on 26 Aug an external message to `support@un-claude.com` landed
+in the INBOX and was replied to at 18:29.
+
+**No forwarder subscription is needed to send as `jon@un-claude.com`.** It is a
+real Workspace mailbox and has been sending all along.
+
+**THE RULE THIS EXISTS TO SET.** When a claim about live infrastructure matters,
+**the tiebreak is a measurement, not a document and not an assistant's
+recollection.** Every wrong turn in the 26 August deliverability investigation
+came from reasoning about a description of the system instead of the system:
+`docs/03-pricing.md` on credit values, a stale MX reading, and twice from the
+Gmail API returning render-time artefacts as if they were stored data. `dig`,
+the sent folder, and the authoritative nameserver settled every real question.
+
+### The university syllabus study: a negative result, on 298 documents
+
+**26 August 2026.** Hypothesis, mine not Jon's: the documents that tell students
+not to use AI would themselves carry AI generation markers, and that would be a
+story worth press attention. **It does not hold. Recorded so nobody runs it again.**
+
+**The sample.** 298 documents (296 PDF, 2 DOCX) pulled from the University of
+Florida's public syllabus archives — mostly College of Health & Human
+Performance, spanning 2021 to 2026 — with full provenance in `corpus-manifest.json`.
+**5,966,676 characters** of text extracted.
+
+**Metadata layer, `audit_dir.py` over the PDFs:**
+
+```
+With C2PA: 0        With AI metadata: 0        Actionable files: 0
+Findings: 254 x [informational] "XMP packet present"
+```
+
+**Text layer, `audit_dir.py` over the extracted .txt:**
+
+```
+files with any layer-A finding: 30 of 296
+characters found:  16 x U+F04A   13 x U+F0B7   2 x U+F0E0   2 x U+00A0
+```
+
+**Every one of those is a Microsoft Word artefact.** `U+F0B7` is the Symbol-font
+bullet, `U+F04A` a Wingdings glyph, `U+F0E0` an arrow — Word maps Wingdings and
+Symbol into the private-use area. `U+00A0` is a non-breaking space. **Zero
+zero-width characters across six million characters.** ZWSP, ZWNJ, ZWJ and word
+joiners — the actual watermark signature — appear nowhere.
+
+**WHY IT WAS NEVER LIKELY, understood too late.** C2PA is in practice an
+image/media standard and is barely deployed for text documents. Word-to-PDF
+export does not record what drafted the prose. And a zero-width watermark
+arrives by pasting chat output — which survives into Word and into a PDF's text
+layer (proven here: `U+202F` and `U+00A0` both came through extraction intact,
+so the null is a real null and not a measurement failure) — but simply was not
+present.
+
+**THREE TRAPS THIS RUN WALKED INTO, all of which would have produced a false
+published claim:**
+
+1. **`audit_lib.scan_file` branches on kind. A PDF is a CONTAINER and gets
+   metadata inspection ONLY — its prose is never read.** The first run reported
+   "suspicious text: 0" without having looked at any text. `extract_text.py`
+   exists solely to close that.
+2. **The manifest was written inside the corpus and scanned as a document.**
+   Measuring your own output.
+3. **`U+F0xx` private-use hits read as "probable" and look like a finding.**
+   They are bullet points. **Any published number must exclude the private-use
+   range and normal typographic spaces**, or the correction is that you
+   discovered Wingdings.
+
+**`extract_text.py`'s own counter over-reports** — it counted 2,601 "invisible"
+characters where the engine flagged a handful, because it counts every `Zs`/`Cf`
+including non-breaking spaces. **Trust `audit_dir.py`, not the helper.**
+
+**The tooling is sound and is kept** (`research/policy-scan/`). If a future
+session wants this question answered for DOCX-native corpora, or for a
+provider that does mark text, everything needed is built and the traps are
+mapped. The hypothesis is what failed, not the instrument.
+
+---
+
 ## "The homepage is broken on desktop" is browser zoom, four times out of five
 
 **26 August 2026. Jon reported the landing page loading as one full-width column
@@ -2411,3 +2654,52 @@ about x=141 at 0s to x=320 at 19.75s, so about 9 px per second.
 
 **Budget for it.** Reconstructing a 27 second video took about fifteen
 screenshots. **That is far cheaper than building the wrong thing twice.**
+
+---
+
+## The Google Ads location picker re-ranks its own list, and a click aimed at a screenshot lands on the wrong country
+
+**6 September 2026. Cost: three wrong countries added and removed, across two
+sessions.** Symptom: you type "United States", screenshot, see `United States
+country` as the first row, click its **Include** link, and the campaign ends up
+targeting **U.S. Virgin Islands**. Type "Canada" and you get **Canada, Kentucky,
+United States**.
+
+**Cause: the suggestion list keeps re-sorting after it first renders.** Google
+fires more than one request per query and re-ranks as the later ones land. A
+screenshot is a photograph of a list that is still moving. Every coordinate you
+read off it is stale by the time the click arrives, and the rows are 13 pixels
+apart, so being one row late puts you on a different country.
+
+**Three things that do NOT fix it:**
+
+- Waiting longer before the screenshot. The list settles at an unpredictable
+  time, and 8 seconds was not always enough.
+- Clicking the row itself rather than the **Include** link. The row is not the
+  control.
+- `find` for the Include button and clicking the returned `ref`. The ref is
+  correct, but clicking it **scrolls the element into view first**, and the
+  scroll moves the page under the click. This silently does nothing.
+
+**What actually works, and it is two calls not one:**
+
+1. Type the country name, wait, screenshot. **Discard this screenshot as a
+   click target.** Its only job is to prove the dropdown is open.
+2. In a *separate* tool call, screenshot again and click the **Include** link
+   at the coordinates in *that* screenshot.
+
+The second render is stable because the re-ranking has finished. The rule
+generalises: **in this dropdown, never click on the same call that opened it.**
+
+**Always verify afterwards.** The picker shows a `Locations (n)` list under the
+search box with each entry's type spelled out: `United States country` versus
+`Canada, Kentucky, United States city`. **Read the type word, not the name.**
+The wrong entry looks almost right, and "Limited reach" with a warning triangle
+is the tell that you have picked a village.
+
+**The Review step lies about two things and it is not worth chasing.** It
+rendered `Ads: None` while the ad existed with 10 headlines, and it still says
+`Text customization and Final URL expansion turned on` when the AI Max toggle is
+off and both boxes are unticked. **Trust the settings pages, not the summary.**
+The row that actually tells you AI Max is off is `Search term matching: Using
+only your keywords and match types`.

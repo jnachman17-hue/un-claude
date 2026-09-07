@@ -6173,6 +6173,64 @@ and `Claude Debussy prelude.txt` come back untouched.
 
 ---
 
+### 158. Chapter accounts are a shared login plus a ledger grant, and nothing new
+
+**26 August 2026.** Jon: "Let's start building the infrastructure for frats where
+we can turn this on when a frat wants an account and give them a login and a
+password with 250 credits."
+
+**Ruling. There is no chapter feature, no team account, and no new table.** A
+chapter is an ordinary account whose password is deliberately shared, holding a
+credit grant. Three files, none of which touch the application:
+
+| File | What it is |
+|---|---|
+| `supabase/migrations/20260826233000_chapter_grant.sql` | Teaches the ledger one new `reason` |
+| `scripts/make-chapter-account.mjs` | Creates the account, grants the credits, prints the login |
+| `scripts/list-chapter-accounts.mjs` | Read-only: who has one, what is left, who never opened it |
+
+**Reasoning. The offer is "one login the whole house shares", so a shared login
+is the literal product.** Multi-seat accounts, invitations, roles and an admin
+surface are all things a chapter did not ask for and Jon would have to maintain.
+The existing account model already does everything required, and the credit
+ledger already answers "how much have we given away" the moment the grant has
+its own name.
+
+**Four decisions inside it, each with a live alternative that was rejected.**
+
+1. **`chapter_grant` is a new `reason`, not `adjustment`.** `adjustment` is
+   permitted today and would have needed no migration. It is the catch-all that
+   corrections land in, so reusing it would make "what did this campaign cost,
+   and did any of it convert" unanswerable in SQL later. One word now against a
+   forensic exercise in six months.
+2. **No unique index on the grant**, unlike `signup_grant` and `anon_grant`. A
+   chapter that spends its 250 and comes back next semester should be topped up,
+   and a top-up is a second honest row rather than an edit of the first. The
+   double-grant guard therefore lives in the script (`--topup` required), which
+   is weaker than an index and is the right trade.
+3. **The balance reads 253, not 250, and that is deliberate.** Creating an
+   account with an email fires `mint_signup_grant` (3 credits) and first use
+   pays the 2-credit welcome. Netting back to exactly 250 would mean writing a
+   NEGATIVE ledger row to claw back credits the account is entitled to — the one
+   thing this ledger exists to make impossible to do quietly. **They get slightly
+   more than the email promised.**
+4. **The login is `chapter-<slug>@un-claude.com` and receives no mail.** It is a
+   username, not an inbox. A lost password is reissued with `--reset-password`
+   rather than by a reset email that would bounce. **Recorded because it is the
+   thing most likely to be mistaken for a bug later.**
+
+**Passwords are readable on purpose** — two words and four digits, e.g.
+`Crimson-Falcon-4827`. This gets typed off a screenshot into a phone in a group
+chat. Ambiguous characters cost more than the entropy is worth against an
+account that holds credits, holds nothing sensitive, and is designed to be
+shared.
+
+**NOT YET APPLIED OR RUN.** The migration needs to reach the live database and
+neither script has been executed against it. Section 4: a step that was skipped
+is a step that failed, and this one was skipped rather than passed.
+
+---
+
 ## 4 September 2026. The moment somebody runs out
 
 ### 159. A guest at nought is shown a price as well as the free grant, and the offer moves to the moment. Overrides entry 97 point 5.
@@ -6415,3 +6473,69 @@ have explained it was never measured.** `briefing_dismissed` carries how it was
 closed and a bucketed dwell, so "everybody taps the backdrop in under two
 seconds" is a finding rather than a guess, and the honest response to that
 finding would be to remove it.
+
+---
+
+### 162. Campaign 2, "Generic test", is built and unpublished: generic head terms, $10 a day, a hard stop on 20 September. Jon's instruction, executed 6 September.
+
+**Jon's words: "Ok I give you permission to start campaign 2. Do everything
+short of making it go live."** So the campaign exists as a draft sitting on the
+Review step with a **Publish campaign** button nobody has pressed. No money can
+move until Jon presses it.
+
+**Why a second campaign at all, and why it is a test rather than a bet.**
+Campaign 1 (Brand) bids on the word *unclaude* and its misspellings. It captures
+people who already know the name, which entry 159's traffic work showed is a
+real and growing group arriving from residual TikTok. It cannot grow the
+audience, only convert it. **Campaign 2 asks the opposite question: will a
+stranger who has never heard of us, searching "ai watermark remover", click and
+convert?** That question is worth $150 and not a dollar more, because the site
+average revenue is **$0.077 per visitor** and a $0.60 click has to beat that by
+a factor of eight before paid search is a business rather than a hobby.
+
+**The settings, and the reasoning for the ones that are not obvious.**
+
+| Setting | Value | Why |
+|---|---|---|
+| Bidding | Clicks, max CPC **$0.60** | Not Maximize conversions. There is no conversion history to optimise against, so an automated strategy would be guessing with Jon's money. A hard CPC ceiling is the only thing that makes the arithmetic predictable |
+| Networks | Search only | Search Partners and Display both unticked. Display is where budgets go to die on accidental clicks |
+| Locations | US, UK, Canada, Australia | **Presence**, not "presence or interest". Interest targeting shows ads to people merely reading about a country |
+| Languages | English | French was offered and declined |
+| AI Max | **Off**, both boxes unticked | See below |
+| Keywords | 12, all phrase match | Phrase, not broad. Broad match on "watermark" collects photographers and video editors, who are the wrong people and will never convert |
+| Budget | $10.00 a day | |
+| Dates | 6 September to **20 September 2026** | 15 days inclusive. **The end date is the spend cap.** $10 x 15 = $150, enforced by Google rather than by anyone remembering to switch it off |
+| Ad | 1 responsive search ad, 10 headlines, 4 descriptions, 4 sitelinks | Ad strength: Average |
+
+**AI Max is off, and that is a deliberate refusal of Google's advice.** Google
+promises "14% more conversions" from it. AI Max lets Google rewrite the ad copy
+from the landing page and send traffic to URLs it picks. **Both of those break
+the one thing this test is for.** The point is to learn whether a specific
+promise, made in specific words, converts a stranger. If Google is free to
+rewrite the words and change the destination, a null result teaches nothing and
+a positive result is unattributable. It also collides with `CLAUDE.md` §7: copy
+generated by Google is copy nobody checked against the claims boundary, and the
+layer B honesty rule is exactly the sort of thing an optimiser would sand off.
+**Revisit once there is conversion data worth optimising against, not before.**
+
+**No headline is pinned in this campaign, and that differs from Brand
+deliberately.** Brand pins `Un-Claude` to position 1 because a person searching
+the brand name needs to see the brand name. **A stranger searching "ai watermark
+remover" has no idea what Un-Claude is, and putting an unknown word first wastes
+the most valuable line on the page.** So position 1 is left to Google to fill
+from the keyword-matching headlines.
+
+**Two things Jon must decide or do, recorded because they are not done:**
+
+1. **Negative keywords are not on this campaign.** Google's new-campaign wizard
+   has no step for them, so they can only be added after the campaign exists.
+   The critical list is `"photo" "logo" "video" "shutterstock" "getty" "tiktok
+   watermark" "instagram" "capcut" "app" "apk" "free download" "python" "api"`.
+   **Without these the campaign will pay for photographers and video editors.**
+   This is the single most expensive omission if it is forgotten.
+2. **The dates assume a launch on 6 September.** Publish later and the window
+   shrinks, because the end date is absolute. Push both dates out to keep 15 days.
+
+**The stop rule, agreed before any money moves.** Check at $50 spent: if fewer
+than 20% of ad clickers have scanned a document, stop. The traffic is wrong and
+more of it will not help. At $150: fewer than 3 purchases and it is off.
