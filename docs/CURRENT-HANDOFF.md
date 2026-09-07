@@ -35,10 +35,13 @@ still `○`, and none of the briefing's copy in the crawlable HTML.
 
 **★ TWO THINGS FOR JON.**
 
-1. **`claude-band.tsx` now understates the case.** It says Anthropic's checker
-   is "imminent". The file checker is live and free, and the text detector is
-   in private preview. The briefing says the sharper version. **They should
-   agree, and the band is the one that is wrong.**
+1. **The live file checker is not mentioned anywhere a visitor reads, and that
+   is deliberate rather than an oversight.** Jon's ruling on beat 3 keeps the
+   briefing on "committed to releasing imminently", which agrees with
+   `claude-band.tsx`. **The reason is layers: the live checker reads C2PA
+   credentials in FILES, and both the briefing and the band are about the mark
+   in TEXT.** Where it genuinely belongs is the metadata story, and `06` has the
+   research. Somebody should place it there rather than here.
 2. **The messaging skill still says the detection API is "not callable yet".**
    That is a claims file and the rewording is his. `06`.
 

@@ -6354,10 +6354,22 @@ is for anyone who dismisses.
    it means Claude touched it.** Tidy your own paragraph with it and the mark
    goes in with the tidy. The claims file names this as the sentence to say
    plainly and without adjectives.
-3. **The detector is close.** Anthropic's file checker is live and free; the one
-   for text is in private preview. **This is a sharper and more honest urgency
-   than the site had**, and it comes from the research recorded in `06` the same
-   day. **`claude-band.tsx` still says "imminent" and now understates it.**
+3. **The detector is close.** *"Anthropic has committed to releasing a public
+   watermark detector imminently. Universities, corporations, and individuals
+   will be able to use this."* **Jon's own wording, and it replaced mine.**
+
+   **Mine named the live file checker and the text detector's private preview.
+   Both halves are true and it was still the wrong sentence here: this dialog
+   teaches the mark in TEXT, and the live checker reads credentials in FILES.**
+   Mixing two layers in the one place a stranger is being taught the difference
+   is the defect `CLAUDE.md` section 7 names as this project's most common.
+   **Jon's version is the cleaner one on the question that catches most of them,
+   and it agrees with `claude-band.tsx` rather than contradicting it.**
+
+   "Committed... imminently" is the register the claims file prescribes, and
+   **"will be able to use this" is the future tense that keeps it legal. One
+   word separates it from "universities can check your work today", which is
+   false and forbidden.**
 4. **Marks do not expire.** What is already handed in stays marked.
 
 **Nothing anywhere in it says a university can check today**, which remains

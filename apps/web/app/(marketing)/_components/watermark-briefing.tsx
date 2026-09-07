@@ -132,7 +132,28 @@ const BEATS = [
   {
     icon: ClockIcon,
     head: 'The detector is close',
-    body: 'Anthropic’s checker for files is already live and free. The one for text is in private preview.',
+    /*
+     * ★ JON'S OWN WORDING, 6 September 2026, and it replaced mine for a reason
+     * worth keeping.
+     *
+     * Mine read "Anthropic's checker for files is already live and free. The
+     * one for text is in private preview." Both halves are true, and it was
+     * still the wrong sentence for this dialog: **this dialog is about the
+     * mark in TEXT, and the live checker reads C2PA credentials in FILES.**
+     * Reaching for it here mixes two layers in the one place a stranger is
+     * being taught the difference, which `CLAUDE.md` section 7 names as the
+     * single most common defect in this project's copy.
+     *
+     * "Committed... imminently" is also the exact register the claims file
+     * prescribes: say imminent, never say it does not exist, never say it will
+     * not come. And "WILL BE ABLE TO use this" is the future tense that keeps
+     * it honest. **"Universities can check your work today" is false and is
+     * explicitly forbidden. One word separates this sentence from that one.**
+     *
+     * It also now agrees with `claude-band.tsx`, which says the same thing
+     * three sections further down the page.
+     */
+    body: 'Anthropic has committed to releasing a public watermark detector imminently. Universities, corporations, and individuals will be able to use this.',
   },
   {
     icon: InfinityIcon,
