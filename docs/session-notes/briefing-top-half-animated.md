@@ -79,6 +79,83 @@ the video: texture that says "this is everywhere", not something to read.
 
 ---
 
+# ★ 2a. SUPERSEDED. SECTIONS 3 TO 6 BELOW DESCRIBE A VERSION JON REJECTED.
+
+**7 September 2026.** The four-scene build documented from section 3 onwards was
+shown to Jon and rejected. **Read this section instead; the rest is kept because
+the reasons are still the record of how the design got here.**
+
+**What he said, and what each note changed:**
+
+| His note | What changed |
+|---|---|
+| *"Better if the top half is contained in a box itself and it plays more as a video of things you visually digest as opposed to a bunch of text you read"* | **The animation now has its own bordered box** inside the dialog, its own ground, and a fixed height |
+| *"Those news headline snippets don't appear anywhere. I think you failed to add them in but I see where you intended to"* | **He was right.** They were blank white bars streaking past as texture. **They are now four real cards that pop in one at a time**, each an outlet mark and a verified headline, and each links to its article |
+| *"I hate Aug 2nd being so big. Really weird... not logical to make an emphasis on Aug 2nd because the date doesn't really matter"* | **Reversed.** The date is a 12px label; "AI models watermark the text they write." is the display type, and **"Invisibly." is rust and underlined** |
+| *"That industrial revolution thing shows us or teaches us nothing and just adds to the complexity of what is digested"* | **The Claude chat card and its essay are gone from scene 1.** The snippets take that space |
+| *"A mark does not mean Claude wrote it... that's too much nuance. We don't need that"* | **Cut.** It is a good sentence and it is not this dialog's job |
+| *"The orange highlights overlap, and they don't actually place against the words"* | **Fixed at the cause.** §2b |
+| *"The whole nudge thing is right"* | Kept, and **the sentence it works on went from 25 words to 11**, because the complaint underneath all of this is that there is too much to read |
+
+## THE THREE SCENES NOW
+
+| Scene | From | To | What it shows |
+|---|---|---|---|
+| **1** | 0ms | 3,800 | `Since 2 August 2026` as a small label, then **`AI models watermark the text they write.`** with **`Invisibly.`** in rust and underlined, then **four news snippets popping in** at 420ms apart |
+| **2** | 3,800 | 6,800 | **`The model is nudged at every pick.`** and one short sentence with three words swapping between alternatives that read just as well, landing at 6,400ms |
+| **3** | 6,800 | 9,600 | **`The watermark is the words.`** A rust rule travels across the sentence, each pick takes a filled highlight as it passes, and a pill counts to `11 signals`. **Held.** |
+
+**Still 9,600ms against the 10,000ms ceiling, still asserted in the file.**
+
+## ★ 2b. THE HIGHLIGHT DEFECT, AND WHY IT WAS A REAL BUG RATHER THAN A NUDGE
+
+Jon: *"the orange highlights overlap, and they don't actually place against the
+words."*
+
+**The cause: an `inline-block` inherits the LINE's height.** So a highlight box
+was exactly as tall as the line pitch, and two boxes on consecutive lines met
+edge to edge with no gap at all, at any parent line-height. Raising the
+line-height did nothing, because it raised the box height by the same amount.
+Measured before the fix:
+
+```
+striking  y 278  h 47      held  y 278  h 47      trial  y 325  h 47
+gap between stacked boxes: 0px
+```
+
+**The fix is one class: the box carries its own `leading-[1.25]`**, so it is as
+tall as its own text plus its padding, and the parent's line-height becomes real
+space between boxes. After:
+
+```
+striking  y 288  h 31      held  y 288  h 31      trial  y 331  h 31
+gap between stacked boxes: 12px      collisions: 0      overflows the box: false
+```
+
+## THE TEXT UNDER THE VIDEO
+
+**Jon's own wording, 7 September:**
+
+> **A watermark detector already exists**
+> Anthropic has publicly released a watermark detector. **Soon universities,
+> companies and individuals will have access to it.**
+
+**★ IT IS TRUE, AND ONE THING ABOUT IT NEEDS WATCHING.** Anthropic *has*
+publicly released a watermark detector: `claude.com/check-content`, free, no
+account. And its text detector exists too, in private preview, with "educational
+organizations" named among those who can request access.
+
+**But those are two different detectors.** The public one reads C2PA credentials
+in files and cannot see text at all; the one this dialog is about is the text
+detector, which is not public yet. **"Soon universities, companies and
+individuals will have access to it" is the clause that keeps the sentence
+honest**, because it puts general access in the future. **It must not be moved
+to the present tense.**
+
+`Marks don't expire` is untouched. Jon: *"that's good."*
+
+---
+
 # 3. WHAT WAS BUILT, SCENE BY SCENE
 
 **A stage of fixed height with four scenes stacked in it. One is in the layout

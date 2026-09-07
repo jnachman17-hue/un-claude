@@ -127,90 +127,134 @@ function markSeen(): void {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * ★ THE SEQUENCE IS A REBUILD OF JON'S CLAUDE DESIGN VIDEO, WATCHED FRAME BY
- *   FRAME. IT IS NOT A LAYOUT THAT FADES IN.
+ * ★ THE VIDEO. THREE SCENES, IN A BOX, MEANT TO BE WATCHED RATHER THAN READ.
  *
- * The first attempt at this was built from a written description of the video
- * instead of the video, and it was wrong in the one way that mattered: it put
- * everything on screen at once and faded the pieces up. **The video is a
- * sequence of full scenes that REPLACE each other**, each built around a single
- * piece of display type, with a Claude chat card as the recurring object.
+ * Jon, 7 September, on the version before this one: *"I almost think it's
+ * better if the top half is contained in a box itself and it plays more as a
+ * video of things you visually digest as opposed to a bunch of text you read...
+ * it's so much to read, and it looks unprofessional."*
  *
- * The frame by frame inventory is in
- * `docs/session-notes/briefing-top-half-animated.md` section 1. Read it before
- * changing any of this, because the video is a rendered file with no code to
- * lift and re-watching it means driving a cross-origin player by hand.
+ * So the rules this is built to, and each one came from a specific complaint:
  *
- * WHAT THE VIDEO DOES IN 27 SECONDS AND THIS DOES IN 9.6:
+ *   1. **It sits in its own bordered box** inside the dialog. It reads as a
+ *      thing that is playing rather than as more of the page.
+ *   2. **As few words per scene as the idea allows.** Every scene is one
+ *      statement and one picture.
+ *   3. **The news snippets are the picture in scene 1**, not decoration. They
+ *      used to be blank white bars streaking past, which is why Jon said they
+ *      "don't appear anywhere. I think you failed to add them in but I see
+ *      where you intended to."
+ *   4. **The date is not the point.** "Since 2 August 2026" was set enormous
+ *      and the sentence that matters was set small. Jon: *"I hate Aug 2nd being
+ *      so big. Really weird... not logical to make an emphasis on Aug 2nd
+ *      because the date doesn't really matter here."* Reversed.
+ *   5. **No Claude chat card and no essay in scene 1.** Jon: *"that industrial
+ *      revolution thing shows us or teaches us nothing and just adds to the
+ *      complexity of what is digested."* The snippets take its place.
+ *   6. **"A mark does not mean Claude wrote it" is gone.** Jon: *"that's too
+ *      much nuance. We don't need that."* It is a good sentence and it is not
+ *      this dialog's job.
  *
- *   video 0:00  "Since August 2nd," + the Claude card typing an essay   -> SCENE A
- *   video 0:06  cards streaking past diagonally at speed                -> the transition
- *   video 0:15  "The model is nudged at every pick." + rust words
- *               swapping in running prose                               -> SCENE B
- *   video 0:11  the scan line, the rust highlights, "14 signals",
- *               "The watermark is the words."                           -> SCENE C
- *   video 0:18  a single line held over the marked card                 -> SCENE D
+ * WHAT THE THREE SCENES ARE:
  *
- * Cut, and why, in the note: "No.", "Your essay sounds Fine/Normal/Human"
- * (a second word-cycling scene when there is already one), and the closing
- * "Your writing already carries it." scene, because this modal has a permanent
- * CTA pinned to its own footer and does not need to build to one.
+ *   1  AI models watermark the text they write. INVISIBLY.  + snippets popping
+ *   2  The model is nudged at every pick.                   + words swapping
+ *   3  The watermark is the words.                          + the scan, held
+ *
+ * The Claude Design artifact remains the directional reference and NOT a thing
+ * to copy wholesale. Jon: *"it was to take inspiration from, pull directly from
+ * in some instances, but you really just copied this and sort of changed the
+ * formatting, and that's exactly what I didn't want."*
  * ════════════════════════════════════════════════════════════════════════════
  */
 
-/** Jon's essay sample, from the video's own Claude card. */
-const PROMPT = 'Write my final essay on the Industrial Revolution';
+/**
+ * ★ THE SNIPPETS. REAL OUTLETS, REAL HEADLINES, READ OFF THE LIVE PAGES.
+ *
+ * `CLAUDE.md` section 4: a fabricated headline is the one thing this project
+ * must never ship. `coverage-marquee.tsx` holds the verified outlets and their
+ * URLs but stores no headline text, so each of these was read from the
+ * article's own `<h1>` on 6 September 2026 and is stored verbatim, including
+ * punctuation the site's own style rules would forbid in our own voice.
+ *
+ * Wired is on the verified list and is deliberately unused: its headline is
+ * "Coders Say They Already Found Workarounds to Claude's Invisible Watermarks",
+ * which is real, fair, and the one headline that tells a visitor they might not
+ * need to pay for anything.
+ */
+type Snippet = {
+  outlet: string;
+  headline: string;
+  href: string;
+  logo: { src: string; plate?: boolean; mono?: boolean };
+};
 
-const ESSAY =
-  'The Industrial Revolution fundamentally transformed the rhythm of everyday life. Cities expanded as workers pursued new opportunities, and the pace of innovation accelerated across every sector of society.';
+const SNIPPETS: Snippet[] = [
+  {
+    outlet: 'Forbes',
+    headline: 'Claude Is Now Putting Invisible Watermarks In AI-Generated Text',
+    href: 'https://www.forbes.com/sites/anishasircar/2026/08/13/claude-will-now-leave-a-watermark-on-everything-it-writes-what-does-that-mean/',
+    logo: { src: '/images/outlets/forbes.svg', plate: true },
+  },
+  {
+    outlet: 'Fortune',
+    headline:
+      'Anthropic to start embedding invisible watermarks in Claude’s AI-generated text',
+    href: 'https://fortune.com/2026/08/11/anthropic-claude-watermark-ai-text-police-ai-slop/',
+    logo: { src: '/images/outlets/fortune.svg', mono: true },
+  },
+  {
+    outlet: 'The Guardian',
+    headline: 'Claude to start watermarking AI-generated text',
+    href: 'https://www.theguardian.com/technology/2026/aug/17/claude-watermark-ai-text-quality-worse',
+    logo: { src: '/images/outlets/guardian.svg', mono: true },
+  },
+  {
+    outlet: 'CNET',
+    headline:
+      'What to Know About Anthropic’s New Claude Watermarking on AI-Generated Text',
+    href: 'https://www.cnet.com/tech/services-and-software/anthropics-claude-will-add-watermarks-to-ai-generated-text-and-files/',
+    logo: { src: '/images/outlets/cnet.png', mono: true },
+  },
+];
 
 /**
- * The running prose of scenes B and C, which is the same sentence as the essay
- * above, set larger and out of the card. Six words carry alternatives that
- * would have read just as well; the video swaps them in place, rust for the
- * word showing.
+ * The sentence scenes 2 and 3 work on. **Short on purpose.** The version before
+ * this used a 25 word paragraph out of a Claude chat card, and the complaint
+ * was that it is a wall to read rather than something to watch.
  *
- * `sector` and `part` are the pair the video was caught mid-swap on.
+ * Three words carry alternatives that would have read just as well. Rust for
+ * the one showing, and they land on what was written.
  */
 const PROSE = [
-  { text: 'The Industrial Revolution' },
-  { text: 'fundamentally', alts: ['profoundly', 'utterly'] },
-  { text: 'transformed', alts: ['reshaped', 'changed'] },
-  { text: 'daily life. Cities' },
-  { text: 'expanded', alts: ['grew', 'swelled'] },
-  { text: 'as workers' },
-  { text: 'pursued', alts: ['chased', 'sought'] },
-  { text: 'new opportunities, and innovation' },
-  { text: 'accelerated', alts: ['quickened', 'sped up'] },
+  { text: 'The results were' },
+  { text: 'striking', alts: ['notable', 'marked'] },
+  { text: 'and the effect' },
+  { text: 'held', alts: ['lasted', 'stuck'] },
   { text: 'across every' },
-  { text: 'sector', alts: ['part', 'corner'] },
-  { text: 'of society.' },
+  { text: 'trial', alts: ['test', 'run'] },
 ] as const;
 
-/** How many words the scan lights, which is what the badge counts up to. */
-const SIGNALS = 14;
+/** How many picks the scan lights, which is what the badge counts to. */
+const SIGNALS = 11;
 
 /**
  * ★ THE TEN SECOND CEILING IS JON'S NUMBER AND THIS TABLE IS HOW IT IS KEPT.
- *
- * The sequence is driven by one counter that ticks in fixed steps, so every
- * moment below is an arithmetic offset rather than an estimate and the note can
- * state the total as a fact. **The ceiling is asserted, so a future session that
- * stretches a beat gets a build error instead of a briefing people close.**
+ * The sequence runs off one counter ticking in fixed steps, so every moment is
+ * arithmetic. The ceiling is asserted rather than remembered.
  */
 const STEP = 100;
 
 const T = {
-  TYPE_FROM: 400,
-  TYPE_TO: 2200,
-  STREAK_FROM: 2100,
-  STREAK_TO: 3000,
-  B_FROM: 2900,
-  SWAP_EVERY: 260,
-  B_LANDS: 5900,
-  SCAN_FROM: 6100,
-  SCAN_TO: 7700,
-  D_FROM: 8000,
+  LINE_TWO: 700,
+  INVISIBLY: 1300,
+  SNIPPET_FIRST: 1900,
+  SNIPPET_GAP: 420,
+  TWO_FROM: 3800,
+  SWAP_EVERY: 300,
+  TWO_LANDS: 6400,
+  SCAN_FROM: 6800,
+  SCAN_TO: 8600,
   TOTAL: 9600,
 } as const;
 
@@ -221,64 +265,42 @@ const ANTHROPIC_ANNOUNCEMENT =
   'https://www.anthropic.com/news/claude-text-watermark';
 
 /**
- * THE BOTTOM HALF, AND IT IS THE POINT OF THE BRIEFING.
+ * THE TEXT UNDER THE VIDEO. Two blocks, and they carry the argument.
  *
- * ★ THE FIRST BLOCK CHANGED FROM A FORECAST TO A FACT, AND THE FACT IS WORSE.
+ * ★ THE FIRST BLOCK IS JON'S OWN WORDING, 7 September 2026, and it is stronger
+ * than what it replaced. One thing about it is worth writing down so nobody
+ * "corrects" it later, and one thing is worth watching.
  *
- * It used to read "Anthropic has committed to releasing a public watermark
- * detector imminently. Universities, corporations, and individuals will be able
- * to use this." True, and a promise about the future.
+ * **It is true.** Anthropic HAS publicly released a watermark detector:
+ * `claude.com/check-content`, free, no account. And its text detector exists
+ * too, running in private preview, with "educational organizations" named among
+ * those who can request access and a stated plan to widen that access.
  *
- * **Detection is not a promise any more.** Verified 6 September 2026 against
- * Anthropic's own two pages:
+ * **The thing to watch: those are TWO DIFFERENT DETECTORS.** The public one
+ * reads C2PA credentials in FILES and cannot see text at all. The one this
+ * dialog is about is the text detector, which is not public yet. **"Soon
+ * universities, companies and individuals will have access to it" is what keeps
+ * the sentence honest**, because it puts general access in the future where it
+ * belongs. Do not change that clause to the present tense.
  *
- *   - "Watermark detection is currently in private preview"
- *   - eligible today: "regulators, law enforcement, media, fact-checkers,
- *     independent researchers, educational organizations, and EU civil society
- *     groups"
- *   - "We plan to expand access to the detection API over time."
- *
- * **"educational organizations" is quoted rather than paraphrased, in
- * Anthropic's own spelling, because it is the single most alarming word in this
- * dialog and it is theirs, not ours.**
- *
- * ★ WHY JON'S OWN PHRASE COULD NOT COME WITH IT. "Universities, corporations,
- * and individuals will be able to use this" was true as a forecast. Moved into
- * the present tense it becomes false: corporations and individuals are not on
- * the eligibility list. So the block is present tense for what is running and
- * future tense for the widening.
- *
- * ★ AND THE PRECISION GUARD. There are TWO detectors. The public one,
- * `claude.com/check-content`, reads C2PA credentials in FILES and **cannot see
- * text at all**. The one this dialog is about is the TEXT detector, in private
- * preview. Nothing here may imply the file checker can verify a rewrite.
+ * Sourced from Anthropic's own announcement, linked under the blocks.
  */
 const BEATS = [
   {
     icon: ClockIcon,
-    head: 'Detection is already running',
+    head: 'A watermark detector already exists',
     body: (
       <>
-        The text detector is in{' '}
-        <span className={'text-foreground font-medium'}>private preview</span>{' '}
-        now, not a promise for later. Anthropic names{' '}
-        <span
-          className={
-            'text-mark-strong bg-mark/[0.13] rounded-[4px] px-1 font-semibold'
-          }
-        >
-          &ldquo;educational organizations&rdquo;
-        </span>{' '}
-        among those who can request access, and says it plans to widen that
-        access over time.
+        Anthropic has publicly released a watermark detector.{' '}
+        <span className={'text-foreground font-medium'}>
+          Soon universities, companies and individuals will have access to it.
+        </span>
       </>
     ),
   },
   {
     icon: InfinityIcon,
-    /* Jon: "that's good." The head is his and stays. The body moved off "the
-       day the detector opens", which was written when the detector had not
-       opened for anybody. It has, for some. */
+    /* Jon: "Marks don't expire is good." Untouched. */
     head: 'Marks don’t expire',
     body: (
       <>
@@ -445,37 +467,29 @@ export function WatermarkBriefing() {
 
   if (!open) return null;
 
-  /* ── Everything the stage draws, derived from the one counter. ────────── */
+  /* ── Everything the video draws, derived from the one counter. ────────── */
 
   const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-  /** Scene A: the essay types itself into the Claude card, word by word. */
-  const essayWords = ESSAY.split(' ');
-  const typed = Math.round(
-    clamp01((ms - T.TYPE_FROM) / (T.TYPE_TO - T.TYPE_FROM)) * essayWords.length,
+  const scene1 = ms < T.TWO_FROM;
+  const scene3 = ms >= T.SCAN_FROM;
+  const scene2 = !scene1 && !scene3;
+
+  /** Scene 1 arrives a line at a time, then the snippets pop in one by one. */
+  const showsLineTwo = ms >= T.LINE_TWO;
+  const showsInvisibly = ms >= T.INVISIBLY;
+  const snippetsIn = Math.max(
+    0,
+    Math.floor((ms - T.SNIPPET_FIRST) / T.SNIPPET_GAP) + 1,
   );
 
-  /** The cards that streak past between scene A and scene B. */
-  const streaking = ms >= T.STREAK_FROM && ms < T.STREAK_TO;
+  /** Scene 2: which alternative each open word is showing. */
+  const swap = Math.floor((ms - T.TWO_FROM) / T.SWAP_EVERY);
+  const landed = ms >= T.TWO_LANDS;
 
-  const sceneA = ms < T.B_FROM;
-  const sceneD = ms >= T.D_FROM;
-  const sceneBC = !sceneA && !sceneD;
-
-  /** Scene B: which alternative each open word is showing right now. */
-  const swap = Math.floor((ms - T.B_FROM) / T.SWAP_EVERY);
-  /** They stop cycling and settle on what was actually written. */
-  const landed = ms >= T.B_LANDS;
-
-  /** Scene C: the scan line's progress down the prose, 0 to 1. */
+  /** Scene 3: the scan's progress across the sentence, and what it has found. */
   const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
-  const scanning = ms >= T.SCAN_FROM;
   const found = Math.round(scan * SIGNALS);
-
-  /** The headline over the prose swaps once, the way the video's does. */
-  const headline = scanning
-    ? 'The watermark is the words.'
-    : 'The model is nudged at every pick.';
 
   return (
     <div
@@ -528,266 +542,236 @@ export function WatermarkBriefing() {
           className={'flex-1 overflow-y-auto px-6 pt-6 pb-4 sm:px-9 sm:pt-7'}
         >
           {/*
-            ★ THE STAGE. Fixed height, scenes stacked on top of one another, so
-            nothing below it ever moves. A modal that grows re-centres itself
-            and throws the line a reader is in the middle of.
-
-            ★ THE SCENES CUT. THEY DO NOT CROSS-FADE, and that was a real defect
-            rather than a preference. Two absolutely positioned scenes fading
-            through each other draw both blocks of text at once: "The model is
-            nudged at every pick." was rendering straight over "August 2nd,"
-            and its Claude card. It reads as a rendering fault, and it is what
-            Jon saw. **The video cuts between scenes, so this cuts.** Only one
-            scene is ever in the layout; motion lives INSIDE a scene, never
-            between two.
+            ★ THE VIDEO BOX. Jon asked for the animation to be contained and to
+            read as something playing rather than as more of the page, so it has
+            its own border, its own ground and a fixed height. Nothing below it
+            moves while it plays: the scenes are stacked and only one is ever in
+            the layout, because two scenes fading through each other draw both
+            blocks of text at once and that reads as a rendering fault.
           */}
-          <div className={'relative h-[300px] sm:h-[316px]'}>
-            {/* ── SCENE A. "Since August 2nd," over a Claude card typing. ── */}
-            <div className={['absolute inset-0'].join(' ')} hidden={!sceneA}>
-              <p className={'text-muted-foreground text-[14px] font-medium'}>
-                Since
-              </p>
-              <h2
-                className={
-                  'text-foreground text-[34px] leading-[1.02] font-semibold tracking-[-0.03em] sm:text-[38px]'
-                }
-              >
-                August 2nd,
-              </h2>
+          <div
+            className={
+              'border-border/70 bg-foreground/[0.022] relative h-[304px] overflow-hidden rounded-[14px] border sm:h-[276px]'
+            }
+          >
+            {/* ── 1. What happened, and the news that carried it. ─────────── */}
+            <div className={'absolute inset-0 p-5 sm:p-6'} hidden={!scene1}>
               <p
                 className={
-                  'text-foreground mt-1.5 text-[15.5px] leading-[1.35] font-medium'
+                  'text-muted-foreground text-[12px] font-medium tracking-wide'
                 }
               >
-                AI models watermark the text they write.{' '}
-                <span className={'text-mark-strong'}>Invisibly.</span>
+                Since 2 August 2026
               </p>
 
-              {/* The Claude card, with the prompt and the essay typing in. */}
-              <div
-                className={
-                  'border-border/70 bg-card mt-3.5 rounded-[12px] border p-3 shadow-sm'
-                }
+              {/*
+                ★ THE EMPHASIS IS ON THE SENTENCE, NOT THE DATE. The date used
+                to be set at 38px and the thing that matters at 15px, which Jon
+                called weird and was right about: nobody is frightened by a
+                date. It is now a label, and the claim is the display type.
+              */}
+              <p
+                className={[
+                  'text-foreground mt-1.5 text-[19.5px] leading-[1.15] font-semibold tracking-[-0.022em] text-balance transition-opacity duration-300 motion-reduce:opacity-100 sm:text-[23px]',
+                  showsLineTwo ? 'opacity-100' : 'opacity-0',
+                ].join(' ')}
               >
-                <p
-                  className={
-                    'text-muted-foreground text-[10.5px] font-semibold tracking-wide'
-                  }
+                AI models watermark the text they write.{' '}
+                <span
+                  className={[
+                    'text-mark-strong decoration-mark-strong/40 underline decoration-2 underline-offset-4 transition-opacity duration-300 motion-reduce:opacity-100',
+                    showsInvisibly ? 'opacity-100' : 'opacity-0',
+                  ].join(' ')}
                 >
-                  Claude
-                </p>
-                <p
-                  className={
-                    'bg-mark/[0.09] text-foreground/80 mt-1.5 ml-auto w-fit max-w-[80%] rounded-[9px] px-2.5 py-1.5 text-[11.5px] leading-snug'
-                  }
-                >
-                  {PROMPT}
-                </p>
-                <p
-                  className={
-                    'text-foreground/70 mt-2 min-h-[52px] text-[11.5px] leading-[1.5]'
-                  }
-                >
-                  {essayWords.slice(0, typed).join(' ')}
-                  <span className={'motion-reduce:hidden'}>
-                    {typed < essayWords.length ? ' |' : ''}
-                  </span>
-                </p>
-              </div>
+                  Invisibly.
+                </span>
+              </p>
+
+              {/*
+                ★ THE NEWS SNIPPETS, WHICH IS WHAT SCENE 1 SHOWS RATHER THAN
+                TELLS. They replace the Claude chat card that used to sit here:
+                Jon's note is that the essay "shows us or teaches us nothing and
+                just adds to the complexity of what is digested".
+
+                They POP IN one at a time rather than streaking past as blurred
+                bars, which is the version he could not find on screen at all.
+              */}
+              <ul className={'mt-3.5 space-y-1.5'}>
+                {SNIPPETS.map((item, index) => (
+                  <li key={item.outlet}>
+                    <a
+                      href={item.href}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                      title={`${item.outlet}: ${item.headline}`}
+                      className={[
+                        'border-border/70 bg-card hover:border-border flex items-center gap-2.5 rounded-[8px] border px-2.5 py-1.5 shadow-sm',
+                        'transition-all duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100',
+                        snippetsIn > index
+                          ? 'translate-y-0 opacity-100'
+                          : 'translate-y-2 opacity-0',
+                      ].join(' ')}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.logo.src}
+                        alt={item.outlet}
+                        loading={'lazy'}
+                        decoding={'async'}
+                        className={[
+                          'h-[11px] w-[52px] shrink-0 object-contain',
+                          item.logo.plate ? 'rounded-[2px]' : '',
+                          item.logo.mono ? 'dark:invert' : '',
+                        ].join(' ')}
+                      />
+                      <span
+                        className={
+                          'text-foreground/75 line-clamp-1 text-[11px] leading-[1.3]'
+                        }
+                      >
+                        {item.headline}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/*
-              ── THE TRANSITION. Cards streaking past from both sides.
-              In the video this is about fourteen white cards motion blurred
-              into diagonal lines, and it is texture rather than something to
-              read: it says "this is everywhere" and then it clears.
-            */}
+            {/* ── 2. How it gets in. ──────────────────────────────────────── */}
             <div
-              hidden={!streaking}
               className={
-                'pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden'
+                'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
+              hidden={!scene2}
             >
-              {Array.from({ length: 12 }).map((_, index) => {
-                const fromLeft = index % 2 === 0;
-                const top = 6 + index * 8;
-                return (
-                  <span
-                    key={index}
-                    className={[
-                      'bg-card ring-border/70 absolute h-[16px] w-[150px] rounded-[5px] shadow-sm ring-1 transition-transform duration-500 ease-out',
-                      streaking
-                        ? 'translate-x-0'
-                        : fromLeft
-                          ? '-translate-x-[420px]'
-                          : 'translate-x-[420px]',
-                    ].join(' ')}
-                    style={{
-                      top: `${top}%`,
-                      left: fromLeft ? '2%' : 'auto',
-                      right: fromLeft ? 'auto' : '2%',
-                      transitionDelay: `${index * 35}ms`,
-                      rotate: fromLeft ? '-2deg' : '2deg',
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* ── SCENES B AND C. One prose block, two headlines. ────────── */}
-            <div className={['absolute inset-0'].join(' ')} hidden={!sceneBC}>
               <h3
                 className={
-                  'text-foreground text-[23px] leading-[1.08] font-semibold tracking-[-0.024em] text-balance sm:text-[25px]'
+                  'text-foreground text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
                 }
               >
-                {headline}
+                The model is nudged at every pick.
               </h3>
 
-              <div className={'relative mt-3.5'}>
-                <p className={'text-[16px] leading-[1.62] sm:text-[16.5px]'}>
-                  {PROSE.map((token, index) => {
-                    if (!('alts' in token)) {
-                      return (
-                        <span key={index} className={'text-foreground/80'}>
-                          {index === 0 ? '' : ' '}
-                          {token.text}
-                        </span>
-                      );
-                    }
-
-                    /*
-                     * ★ NO WIDTH IS RESERVED AND THAT IS DELIBERATE. Holding
-                     * each open word at the width of its longest alternative
-                     * stops the line reflowing, and it leaves a ragged hole
-                     * beside every short word: "Revolution utterly<gap>
-                     * transformed". It read as broken text rather than as a
-                     * word being chosen. **The video lets the prose reflow**,
-                     * so this does too.
-                     */
-                    const pool = [token.text, ...token.alts];
-                    const shown = landed
-                      ? token.text
-                      : pool[Math.abs(swap + index) % pool.length]!;
-                    /* The scan lights the marked words as it passes them. */
-                    const lit = scanning && scan > (index + 1) / PROSE.length;
-
+              <p
+                className={
+                  'mt-4 text-[19px] leading-[1.75] font-medium sm:text-[20px]'
+                }
+              >
+                {PROSE.map((token, index) => {
+                  if (!('alts' in token)) {
                     return (
-                      <span key={index}>
-                        {' '}
-                        <span
-                          className={[
-                            'inline-block text-left transition-colors duration-200 motion-reduce:transition-none',
-                            lit
-                              ? 'bg-mark-strong rounded-[3px] px-1 font-medium text-white'
-                              : 'text-mark-strong font-medium',
-                          ].join(' ')}
-                        >
-                          {shown}
-                        </span>
+                      <span key={index} className={'text-foreground/75'}>
+                        {index === 0 ? '' : ' '}
+                        {token.text}
                       </span>
                     );
-                  })}
-                </p>
+                  }
 
-                {/* The scan line itself, a single rust rule travelling down. */}
+                  const pool = [token.text, ...token.alts];
+                  const shown = landed
+                    ? token.text
+                    : pool[Math.abs(swap + index) % pool.length]!;
+
+                  return (
+                    <span key={index}>
+                      {' '}
+                      <span
+                        className={
+                          'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
+                        }
+                      >
+                        {shown}
+                      </span>
+                    </span>
+                  );
+                })}
+              </p>
+
+              <p className={'text-muted-foreground mt-4 text-[12.5px]'}>
+                Every pick reads perfectly well. A key chooses which one.
+              </p>
+            </div>
+
+            {/* ── 3. What that adds up to. ────────────────────────────────── */}
+            <div
+              className={
+                'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
+              }
+              hidden={!scene3}
+            >
+              <h3
+                className={
+                  'text-foreground text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
+                }
+              >
+                The watermark{' '}
+                <span className={'text-mark-strong'}>is the words.</span>
+              </h3>
+
+              {/*
+                ★ THE HIGHLIGHTS SIT ON THE WORDS AND DO NOT COLLIDE, WHICH IS A
+                FIX RATHER THAN A STYLE. Jon: "the orange highlights overlap,
+                and they don't actually place against the words."
+
+                Three things cause that and all three are handled here. The
+                boxes are `inline-block` so a background cannot bleed across a
+                line break. The line-height is 1.9 so two boxes on consecutive
+                lines cannot touch. And the padding is vertical as well as
+                horizontal, so the box is centred on the glyphs instead of
+                hugging them.
+              */}
+              <p
+                className={
+                  'relative mt-4 text-[19px] leading-[2.15] font-medium sm:text-[20px]'
+                }
+              >
+                {PROSE.map((token, index) => {
+                  const open = 'alts' in token;
+                  /* The scan lights each pick as it passes it. */
+                  const lit = open && scan > (index + 0.5) / PROSE.length;
+
+                  return (
+                    <span key={index} className={'text-foreground/75'}>
+                      {index === 0 ? '' : ' '}
+                      {open ? (
+                        <span
+                          className={[
+                            'inline-block rounded-[4px] px-1.5 py-[3px] leading-[1.25] transition-colors duration-200 motion-reduce:transition-none',
+                            lit
+                              ? 'bg-mark-strong text-white'
+                              : 'text-mark-strong',
+                          ].join(' ')}
+                        >
+                          {token.text}
+                        </span>
+                      ) : (
+                        token.text
+                      )}
+                    </span>
+                  );
+                })}
+
+                {/* The scan itself: a single rust rule travelling across. */}
                 <span
                   className={[
-                    'bg-mark-strong pointer-events-none absolute inset-x-0 h-[2px] motion-reduce:hidden',
-                    scanning && scan < 1 ? 'opacity-90' : 'opacity-0',
+                    'bg-mark-strong pointer-events-none absolute inset-y-0 w-[2px] motion-reduce:hidden',
+                    scan > 0 && scan < 1 ? 'opacity-90' : 'opacity-0',
                   ].join(' ')}
-                  style={{ top: `${scan * 100}%` }}
+                  style={{ left: `${scan * 100}%` }}
                   aria-hidden
                 />
-              </div>
+              </p>
 
-              <div className={'mt-3 flex items-center gap-2.5'}>
+              <div className={'mt-4 flex items-center gap-2.5'}>
                 <span
-                  className={[
-                    'bg-foreground text-background rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity duration-300',
-                    scanning ? 'opacity-100' : 'opacity-0',
-                  ].join(' ')}
+                  className={
+                    'bg-foreground text-background rounded-full px-2.5 py-1 text-[11.5px] font-semibold tabular-nums'
+                  }
                 >
                   {found} signals
                 </span>
-                <p
-                  className={'text-muted-foreground text-[12.5px] leading-snug'}
-                >
+                <p className={'text-muted-foreground text-[12.5px]'}>
                   Enough picks make a pattern a detector can test.
-                </p>
-              </div>
-            </div>
-
-            {/*
-              ── SCENE D. The sentence that does the work, held.
-
-              The brief is explicit that this is the most persuasive line in the
-              briefing, because it turns the audience from people who cheated
-              into anyone who has ever used Claude at all. It is also the thing
-              most easily lost to motion, so it arrives last, alone, and nothing
-              moves again after it. The marked card underneath is the video's
-              own ending shape: one statement over the evidence.
-            */}
-            <div
-              className={['absolute inset-0 flex flex-col justify-center'].join(
-                ' ',
-              )}
-              hidden={!sceneD}
-            >
-              <p
-                className={
-                  'text-foreground text-[20px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance sm:text-[22px]'
-                }
-              >
-                A mark does not mean Claude wrote it.{' '}
-                <span className={'text-mark-strong'}>
-                  It means Claude touched it.
-                </span>
-              </p>
-              <p
-                className={
-                  'text-muted-foreground mt-2.5 text-[14.5px] leading-[1.45]'
-                }
-              >
-                Ask it to tidy a paragraph you wrote yourself, and the mark goes
-                in with the tidy.
-              </p>
-
-              <div
-                className={
-                  'border-border/70 bg-card mt-4 rounded-[12px] border p-3 shadow-sm'
-                }
-              >
-                <div className={'flex items-center justify-between'}>
-                  <p
-                    className={
-                      'text-muted-foreground text-[10.5px] font-semibold tracking-wide'
-                    }
-                  >
-                    Claude
-                  </p>
-                  <span
-                    className={
-                      'bg-foreground text-background rounded-full px-2 py-[3px] text-[10px] font-semibold'
-                    }
-                  >
-                    {SIGNALS} signals
-                  </span>
-                </div>
-                <p className={'mt-2 text-[11.5px] leading-[1.55]'}>
-                  {PROSE.map((token, index) => (
-                    <span
-                      key={index}
-                      className={
-                        'alts' in token
-                          ? 'bg-mark-strong rounded-[2px] px-[3px] font-medium text-white'
-                          : 'text-foreground/70'
-                      }
-                    >
-                      {index === 0 ? '' : ' '}
-                      {token.text}
-                    </span>
-                  ))}
                 </p>
               </div>
             </div>
