@@ -62,6 +62,35 @@ import { isSearchReferrer } from './search-referrer';
  * purpose rather than by accident.
  */
 
+/**
+ * ★ THE REVIEW SWITCH: `?briefing=loop`.
+ *
+ * Added 7 September 2026 because reviewing this thing was close to impossible.
+ * It plays once, then never again on that device, so Jon got one pass at a 9.6
+ * second sequence and then had to clear site data to see it a second time. That
+ * is correct product behaviour and wrong review behaviour.
+ *
+ * With the parameter on: the once-per-visitor check is skipped, nothing is
+ * written to storage, and the sequence restarts after holding its final frame.
+ * **Everything else is the real component in its real place**, which is the
+ * point: a separate demo page would be a different thing from the one shipping.
+ *
+ * ★ IT CANNOT AFFECT PRERENDERING, AND THAT IS NOT AN ACCIDENT. It is read from
+ * `window.location.search` inside an effect, never with `useSearchParams`.
+ * Reading search params during render is exactly the shape of the `Date.now()`
+ * that cost this site its Google indexing (`04` entry 71): it would pull the
+ * homepage out of its static prerender. This runs after mount, in the browser,
+ * in a component that already renders nothing on the server.
+ *
+ * It ships. A visitor would have to guess the string, it changes nothing for
+ * anybody who does not, and a review tool that only exists on a branch is a
+ * review tool nobody has when they need it.
+ */
+const REVIEW_PARAM = 'briefing=loop';
+
+/** How long the final frame is held before a looping review run starts over. */
+const LOOP_HOLD = 2000;
+
 /** Bumping this shows the briefing again to everyone who has already seen it. */
 const SEEN_KEY = 'unclaude.briefing.v1';
 
@@ -292,7 +321,9 @@ export function WatermarkBriefing() {
     (via: 'cta' | 'close' | 'backdrop' | 'escape') => {
       clearTimers();
       setOpen(false);
-      markSeen();
+
+      // A review run leaves no trace, so the page can just be reloaded.
+      if (!window.location.search.includes(REVIEW_PARAM)) markSeen();
       briefingDismissed({
         via,
         seconds: (Date.now() - openedAt.current) / 1000,
@@ -316,7 +347,9 @@ export function WatermarkBriefing() {
 
   // Decide whether to appear at all. Runs once, after mount, in the browser.
   useEffect(() => {
-    if (alreadySeen() || cameFromSearch()) return;
+    const review = window.location.search.includes(REVIEW_PARAM);
+
+    if (!review && (alreadySeen() || cameFromSearch())) return;
 
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -340,11 +373,16 @@ export function WatermarkBriefing() {
 
       const tick = window.setInterval(() => {
         setMs((at) => {
-          if (at >= T.TOTAL) {
+          if (at < T.TOTAL) return at + STEP;
+
+          // Normally the sequence stops on its final frame and stays there.
+          if (!review) {
             window.clearInterval(tick);
             return at;
           }
-          return at + STEP;
+
+          // Under review it holds that frame, then runs again.
+          return at >= T.TOTAL + LOOP_HOLD ? 0 : at + STEP;
         });
       }, STEP);
 

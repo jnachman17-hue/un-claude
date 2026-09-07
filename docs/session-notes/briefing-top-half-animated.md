@@ -256,6 +256,46 @@ apart.**
 
 ---
 
+# 6a. ★ `?briefing=loop`, BECAUSE REVIEWING THIS WAS NEARLY IMPOSSIBLE
+
+**Jon, 7 September: "have it loop so I can actually look at it deeply and watch
+it, instead of one time where it doesn't loop and then cookies remember it's
+there and I can't see it again."**
+
+Both of those are correct product behaviour and both make review impossible: the
+sequence plays once and stops, and it never shows again on that device.
+
+**`http://localhost:3001/?briefing=loop`** skips the once-per-visitor check,
+writes nothing to storage, and restarts the sequence after holding its final
+frame for two seconds. **Everything else is the real component in its real
+place**, which is the point. A separate demo page would be a different thing
+from the one that ships.
+
+**★ IT CANNOT TOUCH PRERENDERING.** The parameter is read from
+`window.location.search` **inside an effect**, never with `useSearchParams`.
+Reading search params during render is the same shape as the `Date.now()` that
+cost this site its indexing: it would pull the homepage out of its static
+prerender. This runs after mount, in a component that already renders nothing on
+the server.
+
+**Proved by running it**, scene by scene, in a throttled tab so the wall clock is
+stretched about tenfold:
+
+```
+LOOPED: true
+  32s  scene 0  A August 2nd
+  37s  scene 1  streak
+  38s  scene 2  B/C nudged + scan
+  88s  scene 3  D touched it
+ 125s  scene 0  A August 2nd      <- it came back round
+```
+
+**It ships.** A visitor would have to guess the string, it changes nothing for
+anybody who does not, and a review tool that only exists on a branch is one
+nobody has when they need it.
+
+---
+
 # 7. WHAT I COULD NOT PROVE
 
 **1. ★ THE WALL-CLOCK TIMING. The 9.6 seconds is arithmetic, not a stopwatch.**
