@@ -209,49 +209,49 @@ const PRESS_SHOTS: PressShot[] = [
   {
     src: '/images/press-shots/IMG_3580.jpg',
     alt: 'Forbes: Claude Is Now Putting Invisible Watermarks In AI-Generated Text',
-    left: 1,
-    top: 4,
-    width: 36,
+    left: -8,
+    top: -14,
+    width: 48,
     rotate: -6,
   },
   {
     src: '/images/press-shots/IMG_3578.jpg',
     alt: 'Anthropic: How Claude’s text watermark works',
-    left: 33,
-    top: -8,
-    width: 35,
+    left: 30,
+    top: -18,
+    width: 46,
     rotate: 4,
   },
   {
     src: '/images/press-shots/IMG_3583.jpg',
     alt: 'New Atlas: Claude will now watermark all content generated using its tools',
-    left: 66,
-    top: 2,
-    width: 34,
-    rotate: 6,
+    left: 64,
+    top: -10,
+    width: 48,
+    rotate: 7,
   },
   {
     src: '/images/press-shots/IMG_3585.jpg',
     alt: 'The Guardian: Claude to start watermarking AI-generated text, but will it make quality worse?',
-    left: 4,
-    top: 48,
-    width: 35,
+    left: -10,
+    top: 30,
+    width: 48,
     rotate: 5,
   },
   {
     src: '/images/press-shots/IMG_3577.jpg',
     alt: 'Business Insider: Why Anthropic’s AI watermark is going further than its rivals',
-    left: 63,
-    top: 52,
-    width: 35,
+    left: 60,
+    top: 34,
+    width: 48,
     rotate: -5,
   },
   {
     src: '/images/press-shots/IMG_3581.jpg',
     alt: 'Mashable: What Claude’s AI text watermark actually does',
-    left: 34,
-    top: 58,
-    width: 33,
+    left: 26,
+    top: 46,
+    width: 46,
     rotate: 3,
   },
 ];
@@ -269,31 +269,46 @@ const HERO_SHOT = {
 };
 
 /**
- * The sentence scenes 2 and 3 work on. **Short on purpose.** The version before
- * this used a 25 word paragraph out of a Claude chat card, and the complaint
- * was that it is a wall to read rather than something to watch.
- *
- * Three words carry alternatives that would have read just as well. Rust for
- * the one showing, and they land on what was written.
- */
-const PROSE = [
-  { text: 'The results were' },
-  { text: 'striking', alts: ['notable', 'marked'] },
-  { text: 'and the effect' },
-  { text: 'held', alts: ['lasted', 'stuck'] },
-  { text: 'across every' },
-  { text: 'trial', alts: ['test', 'run'] },
-] as const;
-
-/**
- * The prompt above Claude's answer, so scene 3 reads as a thing Claude wrote
- * rather than as a sentence on a page. It is the handoff's own prompt, shortened
- * to fit a 490px box.
+ * The prompt above Claude's answer, so the window reads as a thing Claude wrote
+ * rather than as a sentence on a page. The handoff's own prompt, shortened to
+ * fit a box a fifth of its frame's width.
  */
 const PROMPT = 'Write my final essay';
 
-/** How many picks the scan lights, which is what the badge counts to. */
-const SIGNALS = 11;
+/**
+ * The sentence Claude "wrote", used by every scene after the news.
+ *
+ * `mark` is a pick the watermark could sit on. `alts` are the words that would
+ * have read just as well, and only some picks carry them, because the nudge
+ * scene only needs a few words moving to make its point.
+ *
+ * ★ THE SIGNAL COUNT IS DERIVED FROM THIS ARRAY AND NEVER TYPED. Jon: "I don't
+ * know why there's eleven signals when you highlight three words." He was
+ * right: `SIGNALS` was a hand-written 11 sitting next to three highlighted
+ * words. **Counting the marks means the badge and the highlights cannot
+ * disagree again, whatever anybody does to this sentence.**
+ */
+const PROSE = [
+  { text: 'The' },
+  { text: 'results', mark: true },
+  { text: 'were', mark: true },
+  { text: 'striking', mark: true, alts: ['notable', 'marked'] },
+  { text: 'and the' },
+  { text: 'effect', mark: true },
+  { text: 'held', mark: true, alts: ['lasted', 'stuck'] },
+  { text: 'across', mark: true },
+  { text: 'every' },
+  { text: 'trial', mark: true, alts: ['test', 'run'] },
+  { text: 'that' },
+  { text: 'followed', mark: true },
+  { text: '.', glue: true },
+] as const;
+
+/** Counted, never typed. See above. */
+const SIGNALS = PROSE.filter((t) => 'mark' in t).length;
+
+/** The few picks that visibly move in the nudge scene. */
+const SWAPPERS = PROSE.filter((t) => 'alts' in t).length;
 
 /**
  * ★ THE TEN SECOND CEILING IS JON'S NUMBER AND THIS TABLE IS HOW IT IS KEPT.
@@ -303,17 +318,20 @@ const SIGNALS = 11;
 const STEP = 100;
 
 const T = {
-  LINE_TWO: 500,
-  INVISIBLY: 1100,
-  SHOTS_FROM: 2200,
-  SHOT_GAP: 170,
-  HERO_AT: 3600,
-  NUDGE_FROM: 4800,
-  SWAP_EVERY: 250,
-  NUDGE_LANDS: 6700,
-  SCAN_FROM: 7000,
-  SCAN_TO: 8600,
-  END_FROM: 8900,
+  LINE_TWO: 450,
+  INVISIBLY: 1000,
+  /* The shots land ON the hook rather than after it, and they land fast. */
+  SHOTS_FROM: 1500,
+  SHOT_GAP: 120,
+  HERO_AT: 2450,
+  /* Jon: this screen "feels too compressed and too quick". It gets 3 seconds. */
+  NUDGE_FROM: 3100,
+  SWAP_EVERY: 260,
+  NUDGE_LANDS: 5800,
+  SCAN_FROM: 6100,
+  SCAN_TO: 7700,
+  FIX_FROM: 8000,
+  END_FROM: 9100,
   TOTAL: 9900,
 } as const;
 
@@ -385,6 +403,64 @@ const BEATS = [
     ),
   },
 ] as const;
+
+/**
+ * ★ CLAUDE'S OWN WINDOW, SHARED BY THE THREE SCENES THAT NEED IT.
+ *
+ * Jon: "can that look like it's in the Claude chat textbox UI, like Claude
+ * wrote it and nudged it." It is also what the handoff does: the essay lives in
+ * a Claude window for the whole video, so the picks read as Claude's own rather
+ * than as a sentence sitting on a page.
+ *
+ * One component rather than three copies, because the nudge, the scan and the
+ * rewrite are the SAME artefact at three moments, and three hand-built windows
+ * would drift apart by the second edit.
+ *
+ * The chrome is the handoff's, scaled down from a 1080px frame: hairline
+ * border, soft shadow, a header carrying the Claude mark and the word Claude,
+ * and a right-aligned prompt bubble. The mark is Anthropic's, used to depict
+ * Claude's own interface, and was supplied by Jon in the handoff bundle.
+ */
+function ClaudeWindow({
+  children,
+  badge,
+}: React.PropsWithChildren<{ badge?: React.ReactNode }>) {
+  return (
+    <div
+      className={
+        'border-border/70 bg-card mt-3 rounded-[12px] border p-3 shadow-[0_10px_28px_rgba(33,31,28,0.10)]'
+      }
+    >
+      <div className={'flex items-center gap-1.5'}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={'/images/briefing/claude-mark.svg'}
+          alt={''}
+          aria-hidden
+          className={'size-[13px] dark:invert'}
+        />
+        <span
+          className={
+            'text-foreground/70 text-[11px] font-semibold tracking-wide'
+          }
+        >
+          Claude
+        </span>
+        {badge ? <span className={'ml-auto'}>{badge}</span> : null}
+      </div>
+
+      <p
+        className={
+          'bg-mark/[0.10] text-foreground/75 mt-2 ml-auto w-fit rounded-[9px] px-2.5 py-1 text-[11.5px]'
+        }
+      >
+        {PROMPT}
+      </p>
+
+      {children}
+    </div>
+  );
+}
 
 export function WatermarkBriefing() {
   /*
@@ -546,25 +622,30 @@ export function WatermarkBriefing() {
 
   const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-  const scene1 = ms < T.SHOTS_FROM;
-  const scene2 = !scene1 && ms < T.NUDGE_FROM;
+  /*
+   * ★ THE NEWS NO LONGER GETS ITS OWN SCENE. Jon: "I'd rather just have the
+   * news blobs just cover that text. It literally stays on frame one, and then
+   * that text becomes obscured by the news articles popping up." So scene 1 is
+   * the hook AND the cover: the words stay where they are and the screenshots
+   * land on top of them, fast.
+   */
+  const scene1 = ms < T.NUDGE_FROM;
   const scene5 = ms >= T.END_FROM;
-  const scene4 = !scene5 && ms >= T.SCAN_FROM;
-  const scene3 = !scene1 && !scene2 && !scene4 && !scene5;
+  const scene4 = !scene5 && ms >= T.FIX_FROM;
+  const scene3 = !scene4 && !scene5 && ms >= T.SCAN_FROM;
+  const scene2 = !scene1 && !scene3 && !scene4 && !scene5;
 
-  /** Scene 1 arrives a line at a time. */
+  /** Scene 1 arrives a line at a time, then is buried. */
   const showsLineTwo = ms >= T.LINE_TWO;
   const showsInvisibly = ms >= T.INVISIBLY;
-
-  /** Scene 2: the shots pop in one after another, then the hero lands on top. */
   const shotsIn = Math.max(0, Math.floor((ms - T.SHOTS_FROM) / T.SHOT_GAP) + 1);
   const heroIn = ms >= T.HERO_AT;
 
-  /** Scene 3: which alternative each open word is showing. */
+  /** Scene 2: which alternative each moving pick is showing. */
   const swap = Math.floor((ms - T.NUDGE_FROM) / T.SWAP_EVERY);
   const landed = ms >= T.NUDGE_LANDS;
 
-  /** Scene 4: the scan's progress, and what it has found so far. */
+  /** Scene 3: the scan's progress, and how many picks it has lit so far. */
   const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
   const found = Math.round(scan * SIGNALS);
 
@@ -619,78 +700,62 @@ export function WatermarkBriefing() {
           className={'flex-1 overflow-y-auto px-6 pt-6 pb-4 sm:px-9 sm:pt-7'}
         >
           {/*
-            ★ THE VIDEO BOX. Jon asked for the animation to be contained and to
-            read as something playing rather than as more of the page, so it has
-            its own border, its own ground and a fixed height. Nothing below it
-            moves while it plays: the scenes are stacked and only one is ever in
-            the layout, because two scenes fading through each other draw both
-            blocks of text at once and that reads as a rendering fault.
+            ★ THE VIDEO BOX. Its own border and ground, a fixed height, and one
+            scene in the layout at a time. Scenes CUT; two of them fading
+            through each other draws both blocks of text at once.
           */}
           <div
             className={
-              'border-border/70 bg-foreground/[0.022] relative h-[304px] overflow-hidden rounded-[14px] border sm:h-[276px]'
+              'border-border/70 bg-foreground/[0.022] relative h-[304px] overflow-hidden rounded-[14px] border sm:h-[286px]'
             }
           >
-            {/* ── 1. What happened, and the news that carried it. ─────────── */}
-            <div className={'absolute inset-0 p-5 sm:p-6'} hidden={!scene1}>
-              <p
-                className={
-                  'text-muted-foreground text-[12px] font-medium tracking-wide'
-                }
-              >
-                Since 2 August 2026
-              </p>
-
-              {/*
-                ★ THE EMPHASIS IS ON THE SENTENCE, NOT THE DATE. The date used
-                to be set at 38px and the thing that matters at 15px, which Jon
-                called weird and was right about: nobody is frightened by a
-                date. It is now a label, and the claim is the display type.
-              */}
-              <p
-                className={[
-                  'text-foreground mt-1.5 text-[19.5px] leading-[1.15] font-semibold tracking-[-0.022em] text-balance transition-opacity duration-300 motion-reduce:opacity-100 sm:text-[23px]',
-                  showsLineTwo ? 'opacity-100' : 'opacity-0',
-                ].join(' ')}
-              >
-                AI models watermark the text they write.{' '}
-                <span
+            {/* ── 1. THE HOOK, AND THE NEWS BURYING IT. ──────────────────── */}
+            <div className={'absolute inset-0'} hidden={!scene1}>
+              <div className={'p-5 sm:p-6'}>
+                <p
+                  className={
+                    'text-muted-foreground text-[12px] font-medium tracking-wide'
+                  }
+                >
+                  Since 2 August 2026
+                </p>
+                <p
                   className={[
-                    'text-mark-strong decoration-mark-strong/40 underline decoration-2 underline-offset-4 transition-opacity duration-300 motion-reduce:opacity-100',
-                    showsInvisibly ? 'opacity-100' : 'opacity-0',
+                    'text-foreground mt-1.5 text-[19.5px] leading-[1.15] font-semibold tracking-[-0.022em] text-balance transition-opacity duration-300 motion-reduce:opacity-100 sm:text-[23px]',
+                    showsLineTwo ? 'opacity-100' : 'opacity-0',
                   ].join(' ')}
                 >
-                  Invisibly.
-                </span>
-              </p>
-            </div>
+                  AI models watermark the text they write.{' '}
+                  <span
+                    className={[
+                      'text-mark-strong decoration-mark-strong/40 underline decoration-2 underline-offset-4 transition-opacity duration-300 motion-reduce:opacity-100',
+                      showsInvisibly ? 'opacity-100' : 'opacity-0',
+                    ].join(' ')}
+                  >
+                    Invisibly.
+                  </span>
+                </p>
+              </div>
 
-            {/*
-              ── 2. THE NEWS. Real screenshots, popping in scattered, the hero
-                 landing on top last.
-
-              Straight from the handoff's headline scene: "pop in one-by-one,
-              0.22s apart, each rotated -8 to +7 degrees, drop shadows,
-              scattered to fill the frame", then "the hero card lands with a
-              pop". Positions are percentages rather than the handoff's pixels
-              because that frame is 1080 wide and portrait and this box is 520
-              and landscape, so the scatter is re-laid rather than copied.
-            */}
-            <div className={'absolute inset-0'} hidden={!scene2}>
+              {/*
+                The screenshots land ON the words, fast, until they have
+                covered the frame. 120ms apart rather than 170, because Jon
+                asked for them to "cover the screen super quickly".
+              */}
               {PRESS_SHOTS.map((shot, index) => (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   key={shot.src}
                   src={shot.src}
                   alt={shot.alt}
-                  loading={'lazy'}
+                  loading={'eager'}
                   decoding={'async'}
                   className={[
-                    'ring-border/70 absolute rounded-[7px] object-cover shadow-[0_10px_26px_rgba(33,31,28,0.20)] ring-1',
-                    'transition-all duration-300 ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
+                    'ring-border/70 absolute rounded-[7px] object-cover shadow-[0_12px_30px_rgba(33,31,28,0.22)] ring-1',
+                    'transition-all duration-[260ms] ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
                     shotsIn > index
                       ? 'scale-100 opacity-100'
-                      : 'scale-[0.82] opacity-0',
+                      : 'scale-[0.86] opacity-0',
                   ].join(' ')}
                   style={{
                     left: `${shot.left}%`,
@@ -705,38 +770,23 @@ export function WatermarkBriefing() {
               <img
                 src={HERO_SHOT.src}
                 alt={HERO_SHOT.alt}
-                loading={'lazy'}
+                loading={'eager'}
                 decoding={'async'}
                 className={[
-                  'ring-border/70 absolute top-1/2 left-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2 rounded-[8px] object-cover shadow-[0_18px_40px_rgba(33,31,28,0.30)] ring-1',
-                  'transition-all duration-300 ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
-                  heroIn ? 'scale-100 opacity-100' : 'scale-[0.7] opacity-0',
+                  'ring-border/70 absolute top-1/2 left-1/2 w-[56%] -translate-x-1/2 -translate-y-1/2 rounded-[8px] object-cover shadow-[0_20px_44px_rgba(33,31,28,0.34)] ring-1',
+                  'transition-all duration-[260ms] ease-out motion-reduce:scale-100 motion-reduce:opacity-100',
+                  heroIn ? 'scale-100 opacity-100' : 'scale-[0.72] opacity-0',
                 ].join(' ')}
                 style={{ rotate: '-2deg' }}
               />
             </div>
 
-            {/*
-              ── 3. HOW IT GETS IN, INSIDE THE CLAUDE WINDOW.
-
-              Jon: "can that look like it's in the Claude chat textbox UI, like
-              Claude wrote it and nudged it." **That is the right instinct and it
-              is what the handoff does**: the essay lives in a Claude window for
-              the whole video, so the swapping words are visibly Claude's own
-              choices rather than a sentence sitting on a page.
-
-              The chrome is the handoff's: white card, hairline border, soft
-              shadow, a header with the Claude mark and the word "Claude", and a
-              right-aligned prompt bubble. Scaled down from a 1080px frame.
-
-              The Claude mark is Anthropic's, used here to depict Claude's own
-              interface. Supplied by Jon in the handoff bundle.
-            */}
+            {/* ── 2. HOW IT GETS IN, INSIDE CLAUDE'S OWN WINDOW. ─────────── */}
             <div
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene3}
+              hidden={!scene2}
             >
               <h3
                 className={
@@ -746,189 +796,193 @@ export function WatermarkBriefing() {
                 The model is nudged at every pick.
               </h3>
 
-              <div
-                className={
-                  'border-border/70 bg-card mt-3 rounded-[12px] border p-3 shadow-[0_10px_28px_rgba(33,31,28,0.10)]'
-                }
-              >
-                <div className={'flex items-center gap-1.5'}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={'/images/briefing/claude-mark.svg'}
-                    alt={''}
-                    aria-hidden
-                    className={'size-[13px] dark:invert'}
-                  />
-                  <span
-                    className={
-                      'text-foreground/70 text-[11px] font-semibold tracking-wide'
-                    }
-                  >
-                    Claude
-                  </span>
-                </div>
-
+              <ClaudeWindow>
                 <p
-                  className={
-                    'bg-mark/[0.10] text-foreground/75 mt-2 ml-auto w-fit rounded-[9px] px-2.5 py-1 text-[11.5px]'
-                  }
-                >
-                  {PROMPT}
-                </p>
-
-                <p
-                  className={
-                    'mt-2.5 text-[16px] leading-[1.7] font-medium sm:text-[17px]'
-                  }
+                  className={'mt-2.5 text-[15.5px] leading-[1.75] font-medium'}
                 >
                   {PROSE.map((token, index) => {
-                    if (!('alts' in token)) {
-                      return (
-                        <span key={index} className={'text-foreground/75'}>
-                          {index === 0 ? '' : ' '}
-                          {token.text}
-                        </span>
-                      );
-                    }
-
-                    const pool = [token.text, ...token.alts];
-                    const shown = landed
-                      ? token.text
-                      : pool[Math.abs(swap + index) % pool.length]!;
+                    const moving = 'alts' in token;
+                    const pool = moving ? [token.text, ...token.alts] : null;
+                    const shown =
+                      pool && !landed
+                        ? pool[Math.abs(swap + index) % pool.length]!
+                        : token.text;
 
                     return (
-                      <span key={index}>
-                        {' '}
-                        <span
-                          className={
-                            'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
-                          }
-                        >
-                          {shown}
-                        </span>
+                      <span
+                        key={index}
+                        className={
+                          moving
+                            ? 'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
+                            : 'text-foreground/75'
+                        }
+                      >
+                        {index === 0 || 'glue' in token ? '' : ' '}
+                        {shown}
                       </span>
                     );
                   })}
                 </p>
-              </div>
+              </ClaudeWindow>
 
               <p className={'text-muted-foreground mt-2.5 text-[12px]'}>
-                Every pick reads perfectly well. A key chooses which one.
+                {SWAPPERS === 3 ? 'Three' : SWAPPERS} of these words could have
+                been others. A key chose which.
               </p>
             </div>
 
-            {/* ── 4. What that adds up to. ────────────────────────────────── */}
+            {/*
+              ── 3. WHAT THAT ADDS UP TO.
+
+              ★ RELAID AFTER JON'S NOTE: "this screen looks really bad... the
+              title is sort of in the same area and the text and the size as
+              what's being scanned." It was two blocks of the same weight
+              fighting each other.
+
+              Now there is a clear hierarchy: the ruling is the display type at
+              the top, and the thing being scanned is a small artefact
+              underneath it with the counter on its own corner, which is where
+              the handoff puts it.
+            */}
             <div
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene4}
+              hidden={!scene3}
             >
-              {/*
-                ★ THE TWO RULE-OUTS ARE FROM THE HANDOFF AND THEY EARN THEIR
-                LINE. Its scan scene asks "Is it hidden code?" then "Is it
-                metadata?" and answers "No." to both before the reveal.
-
-                They cost about a dozen words and they do the hardest teaching
-                job this site has: a visitor cannot tell the three layers apart,
-                and this dialog is about the one that is NEITHER of the two they
-                would guess. `CLAUDE.md` section 7.
-              */}
               <p
                 className={
-                  'text-muted-foreground text-[13px] leading-[1.5] font-medium'
+                  'text-muted-foreground text-[12.5px] leading-[1.4] font-medium'
                 }
               >
                 Not hidden code. Not metadata.
               </p>
-
               <h3
                 className={
-                  'text-foreground mt-1 text-[21px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[23px]'
+                  'text-foreground mt-1 text-[21px] leading-[1.1] font-semibold tracking-[-0.024em] text-balance sm:text-[24px]'
                 }
               >
                 The watermark{' '}
                 <span className={'text-mark-strong'}>is the words.</span>
               </h3>
 
-              {/*
-                ★ THE HIGHLIGHTS SIT ON THE WORDS AND DO NOT COLLIDE, WHICH IS A
-                FIX RATHER THAN A STYLE. Jon: "the orange highlights overlap,
-                and they don't actually place against the words."
-
-                Three things cause that and all three are handled here. The
-                boxes are `inline-block` so a background cannot bleed across a
-                line break. The line-height is 1.9 so two boxes on consecutive
-                lines cannot touch. And the padding is vertical as well as
-                horizontal, so the box is centred on the glyphs instead of
-                hugging them.
-              */}
-              <p
-                className={
-                  'relative mt-4 text-[19px] leading-[2.15] font-medium sm:text-[20px]'
+              <ClaudeWindow
+                badge={
+                  <span
+                    className={
+                      'bg-foreground text-background rounded-full px-2 py-[3px] text-[10.5px] font-semibold tabular-nums'
+                    }
+                  >
+                    {found} signals
+                  </span>
                 }
               >
-                {PROSE.map((token, index) => {
-                  const open = 'alts' in token;
-                  /* The scan lights each pick as it passes it. */
-                  const lit = open && scan > (index + 0.5) / PROSE.length;
+                <p className={'relative mt-2 text-[13px] leading-[2]'}>
+                  {PROSE.map((token, index) => {
+                    const marked = 'mark' in token;
+                    const lit = marked && scan > (index + 0.5) / PROSE.length;
 
-                  return (
-                    <span key={index} className={'text-foreground/75'}>
-                      {index === 0 ? '' : ' '}
-                      {open ? (
-                        <span
-                          className={[
-                            'inline-block rounded-[4px] px-1.5 py-[3px] leading-[1.25] transition-colors duration-200 motion-reduce:transition-none',
-                            lit
-                              ? 'bg-mark-strong text-white'
-                              : 'text-mark-strong',
-                          ].join(' ')}
-                        >
-                          {token.text}
-                        </span>
-                      ) : (
-                        token.text
-                      )}
-                    </span>
-                  );
-                })}
+                    return (
+                      <span key={index} className={'text-foreground/70'}>
+                        {index === 0 || 'glue' in token ? '' : ' '}
+                        {marked && lit ? (
+                          /*
+                           * ★ THE CHIP ONLY EXISTS ONCE THE SCAN HAS LIT IT.
+                           * Carrying `inline-block` and padding on every marked
+                           * word before it lights put a visible gap around each
+                           * one and left the full stop floating away from
+                           * "followed". Unlit, a pick is just a word.
+                           */
+                          <span
+                            className={
+                              'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white'
+                            }
+                          >
+                            {token.text}
+                          </span>
+                        ) : (
+                          token.text
+                        )}
+                      </span>
+                    );
+                  })}
 
-                {/* The scan itself: a single rust rule travelling across. */}
-                <span
-                  className={[
-                    'bg-mark-strong pointer-events-none absolute inset-y-0 w-[2px] motion-reduce:hidden',
-                    scan > 0 && scan < 1 ? 'opacity-90' : 'opacity-0',
-                  ].join(' ')}
-                  style={{ left: `${scan * 100}%` }}
-                  aria-hidden
-                />
+                  <span
+                    className={[
+                      'bg-mark-strong pointer-events-none absolute inset-y-0 w-[2px] motion-reduce:hidden',
+                      scan > 0 && scan < 1 ? 'opacity-90' : 'opacity-0',
+                    ].join(' ')}
+                    style={{ left: `${scan * 100}%` }}
+                    aria-hidden
+                  />
+                </p>
+              </ClaudeWindow>
+            </div>
+
+            {/*
+              ── 4. THE FIX, WHICH THE BRIEFING DID NOT HAVE.
+
+              Jon: "you need to make them know... you fix this by an engineered
+              structural rewrite to break the watermarks." Everything before
+              this beat is the problem, and a dialog that only states a problem
+              has not earned its button.
+
+              ★ IT DESCRIBES THE ENGINEERING AND STOPS THERE. The claims file
+              is explicit: confident about the engineering, stop short of
+              proving the outcome. So the highlights clear and the wording
+              visibly changes, and **there is no counter falling to zero**,
+              because a verified removal is the one thing this product may
+              never show.
+            */}
+            <div
+              className={
+                'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
+              }
+              hidden={!scene4}
+            >
+              <h3
+                className={
+                  'text-foreground text-[21px] leading-[1.1] font-semibold tracking-[-0.024em] text-balance sm:text-[24px]'
+                }
+              >
+                So we{' '}
+                <span className={'text-mark-strong'}>rebuild the wording.</span>
+              </h3>
+              <p
+                className={
+                  'text-muted-foreground mt-1.5 text-[12.5px] leading-[1.45]'
+                }
+              >
+                An engineered rewrite breaks up the runs the mark travels in.
               </p>
 
-              <div className={'mt-4 flex items-center gap-2.5'}>
-                <span
-                  className={
-                    'bg-foreground text-background rounded-full px-2.5 py-1 text-[11.5px] font-semibold tabular-nums'
-                  }
-                >
-                  {found} signals
-                </span>
-                <p className={'text-muted-foreground text-[12.5px]'}>
-                  Enough picks make a pattern a detector can test.
+              <ClaudeWindow>
+                <p className={'mt-2 text-[13px] leading-[2]'}>
+                  {PROSE.map((token, index) => (
+                    <span
+                      key={index}
+                      className={
+                        'alts' in token
+                          ? 'text-foreground/70 underline decoration-mark-strong/50 decoration-2 underline-offset-4'
+                          : 'text-foreground/70'
+                      }
+                    >
+                      {index === 0 || 'glue' in token ? '' : ' '}
+                      {'alts' in token ? token.alts[0] : token.text}
+                    </span>
+                  ))}
                 </p>
-              </div>
+              </ClaudeWindow>
             </div>
 
             {/*
               ── 5. THE END CARD, AND IT HOLDS.
 
               Jon: "at end of visual finish with an Un-Claude screen and have it
-              pause there." It is the handoff's own closing frame, minus its
-              button and sub-line, because this dialog already has a permanent
-              CTA pinned to its own footer and does not need two.
-
-              Nothing moves after this. It is also where a reduced-motion
-              visitor lands, and where the loop rests before starting over.
+              pause there." The handoff's closing frame minus its button and
+              sub-line, because this dialog has a permanent CTA in its footer.
+              Also where a reduced-motion visitor lands and where the review
+              loop rests.
             */}
             <div
               className={

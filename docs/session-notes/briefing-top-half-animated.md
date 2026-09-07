@@ -79,6 +79,72 @@ the video: texture that says "this is everywhere", not something to read.
 
 ---
 
+# ★ 0. THE CURRENT BUILD. FIVE SCENES, 9,900ms. Everything below is history.
+
+**7 September 2026, fourth round of Jon's notes.**
+
+| Scene | From | To | What it shows |
+|---|---|---|---|
+| **1** | 0ms | 3,100 | `Since 2 August 2026`, then **`AI models watermark the text they write.`** with **`Invisibly.`** in rust. **From 1,500ms the news screenshots land ON the words**, 120ms apart, until they have buried the frame, the "Sorry, students" hero last |
+| **2** | 3,100 | 6,100 | **`The model is nudged at every pick.`** over a **Claude window**, three picks visibly moving inside Claude's own answer |
+| **3** | 6,100 | 8,000 | `Not hidden code. Not metadata.` then **`The watermark is the words.`** The same window, scanned, **8 picks lighting and a badge counting to 8** |
+| **4** | 8,000 | 9,100 | **`So we rebuild the wording.`** The same window with the wording changed and the highlights gone |
+| **5** | 9,100 | 9,900 | **The Un-Claude end card.** Held |
+
+## The four notes, and what each changed
+
+**1. *"It looks a little more sped up now, particularly the model is nudged at
+every pick. That screen feels too compressed and too quick."*** **That scene went
+from 2.2s to 3.0s**, the longest in the sequence, paid for by merging the first
+two scenes.
+
+**2. *"I'd rather just have the news blobs just cover that text... it literally
+stays on frame one, and then that text becomes obscured by the news articles
+popping up."*** **The news no longer gets its own scene.** The hook stays exactly
+where it is and the screenshots land on top of it, **120ms apart rather than
+170**, because he also asked for them to "cover the screen super quickly". They
+are sized and placed to tile the box rather than to sit in it.
+
+**3. *"This screen looks really bad... the title is sort of in the same area and
+the text and the size as what's being scanned."*** **He was describing an absence
+of hierarchy and he was right.** The ruling is now the display type at the top
+and the scanned artefact is a small window under it, with the counter on the
+window's own corner, which is where the handoff puts it.
+
+**★ 4. *"I don't know why there's eleven signals when you highlight three
+words."*** **A real bug, and the honest answer is that `SIGNALS` was a
+hand-written `11` sitting next to three highlighted words.** It is now
+`PROSE.filter(t => 'mark' in t).length`. **The badge and the highlights cannot
+disagree again, whatever anybody does to that sentence.** Verified on screen:
+eight picks lit, badge reads eight.
+
+## ★ THE FIX BEAT, WHICH THE BRIEFING NEVER HAD
+
+Jon: *"you need to make them know... you fix this by an engineered structural
+rewrite to break the watermarks."* **Everything before scene 4 was the problem,
+and a dialog that only states a problem has not earned its button.**
+
+> **So we rebuild the wording.**
+> An engineered rewrite breaks up the runs the mark travels in.
+
+**★ IT DESCRIBES THE ENGINEERING AND STOPS THERE.** The highlights clear and the
+wording visibly changes, and **there is deliberately no counter falling to
+zero**, because a verified removal is the one thing this product may never show.
+The claims file: confident about the engineering, stop short of proving the
+outcome.
+
+## Measured
+
+```
+PASS. Five scenes in order, nudge now 3.0s, total under the ceiling.
+TOTAL 9900ms   CEILING 10000ms
+marked picks: 8   badge counts to: 8 (derived)   words that visibly move: 3
+```
+
+**No scene clipped, panel does not scroll, CTA visible.** `tsc --noEmit` exit 0.
+
+---
+
 # ★ 0a. THE CURRENT BUILD. FIVE SCENES, 9,900ms.
 
 **7 September 2026, after three of Jon's notes.** Everything below this section
