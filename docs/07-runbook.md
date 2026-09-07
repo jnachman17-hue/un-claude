@@ -2860,3 +2860,11 @@ r.slice(1).map((x, i) => x.top - r[i].bottom);   // negative = overlapping
 
 **Check at 375px as well as desktop.** The phone width wrapped the same phrase
 into three fragments rather than two, so it has one more seam to get wrong.
+
+**One more trap from the same afternoon: a long-hidden tab does not just clamp
+repeating timers, it delays one-shot ones by up to a minute.** Chrome applies
+"intensive throttling" once a tab has been hidden for several minutes. The
+briefing waits 550ms before opening, and on production it took **well over 20
+seconds** to appear. **I nearly filed that as a broken deploy.** If something
+that should appear after a short delay does not, check `document.visibilityState`
+before you check the code, and poll for longer than feels reasonable.
