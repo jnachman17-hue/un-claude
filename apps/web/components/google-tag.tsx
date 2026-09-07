@@ -1,8 +1,4 @@
-'use client';
-
-import Script from 'next/script';
-
-import { CONSENT_KEY, GRANTED, DENIED } from '~/components/cookie-consent';
+import { CONSENT_KEY, DENIED, GRANTED } from '~/components/cookie-consent';
 
 /**
  * The Google Ads tag, and the consent state it obeys.
@@ -32,6 +28,21 @@ import { CONSENT_KEY, GRANTED, DENIED } from '~/components/cookie-consent';
  *
  * `url_passthrough` keeps `gclid` travelling in the URL as well as in a cookie,
  * so an ad click stays identifiable in PostHog even for somebody who declines.
+ *
+ * ★ PLAIN `<script>` TAGS, NOT `next/script`, AND THAT IS THE WHOLE OF A DEFECT
+ * CAUGHT ON PRODUCTION MINUTES AFTER THE FIRST DEPLOY. With `next/script` and
+ * `afterInteractive`, the loader tag was rendered into the served HTML and the
+ * inline consent block was NOT: it was being injected later by Next's own
+ * client runtime. Measured by fetching the live page: `AW-18434780777` and the
+ * gtag.js src were both present, and the string "consent" appeared zero times.
+ *
+ * That ordering is the difference between the cookie policy being true and
+ * being false. gtag.js could initialise, find an empty dataLayer, and write a
+ * cookie before anybody had been asked anything.
+ *
+ * Two ordinary tags in the server-rendered HTML cannot do that. The browser
+ * executes the inline one as it parses, before the async loader has run, so the
+ * consent default is always in the queue first.
  */
 
 /**
@@ -49,10 +60,7 @@ export function GoogleTag() {
     return null;
   }
 
-  return (
-    <>
-      <Script id={'google-tag'} strategy={'afterInteractive'}>
-        {`
+  const init = `
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('consent', 'default', {
@@ -74,12 +82,15 @@ export function GoogleTag() {
           gtag('set', 'url_passthrough', true);
           gtag('js', new Date());
           gtag('config', '${TAG_ID}');
-        `}
-      </Script>
+  `;
 
-      <Script
-        id={'google-tag-src'}
-        strategy={'afterInteractive'}
+  return (
+    <>
+      {/* Parsed and run before the async loader below it, every time. */}
+      <script dangerouslySetInnerHTML={{ __html: init }} />
+
+      <script
+        async
         src={`https://www.googletagmanager.com/gtag/js?id=${TAG_ID}`}
       />
     </>
