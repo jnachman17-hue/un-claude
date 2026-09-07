@@ -40,9 +40,17 @@ import { CONSENT_KEY, DENIED, GRANTED } from '~/components/cookie-consent';
  * being false. gtag.js could initialise, find an empty dataLayer, and write a
  * cookie before anybody had been asked anything.
  *
- * Two ordinary tags in the server-rendered HTML cannot do that. The browser
- * executes the inline one as it parses, before the async loader has run, so the
- * consent default is always in the queue first.
+ * ★ AND THE LOADER IS INJECTED BY THAT SAME BLOCK, which is the second half of
+ * the same defect. Rendering two sibling script tags was not enough: Next
+ * hoists the `async src` one, and the live page came back with the loader at
+ * character 2,981 and the consent default at 5,377. An inline script still wins
+ * that race in practice, because the external one has to be fetched first, but
+ * a cached gtag.js makes it a race rather than a guarantee, and this is a
+ * guarantee the cookie policy now makes in writing.
+ *
+ * So the consent default is queued and THEN the loader element is created, in
+ * one synchronous block. There is no ordering left to get wrong. This is the
+ * same shape as the PostHog snippet in `analytics-provider.tsx`.
  */
 
 /**
@@ -82,17 +90,19 @@ export function GoogleTag() {
           gtag('set', 'url_passthrough', true);
           gtag('js', new Date());
           gtag('config', '${TAG_ID}');
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=${TAG_ID}';
+          document.head.appendChild(s);
   `;
 
   return (
     <>
-      {/* Parsed and run before the async loader below it, every time. */}
+      {/*
+        One tag. It sets consent, then creates the loader itself, so nothing
+        else on the page can be ordered in front of the consent default.
+      */}
       <script dangerouslySetInnerHTML={{ __html: init }} />
-
-      <script
-        async
-        src={`https://www.googletagmanager.com/gtag/js?id=${TAG_ID}`}
-      />
     </>
   );
 }
