@@ -24,12 +24,13 @@ session, and it rendered the page properly. **So this page has been looked at,
 at 1296px and at 500px, and the pipeline animation was photographed
 mid-sequence with its placeholders showing.** Section 6.
 
-**What is still not proven is autoplay on entry**, and the reason is now
-measured rather than guessed: that Chrome window is not frontmost, so
-`document.visibilityState` is `"hidden"` there too, and **a freshly created
-IntersectionObserver watching an element demonstrably inside the viewport fired
-nothing in two seconds.** It is the environment, not the component. Section
-9 item 2.
+**★ AND AUTOPLAY ON ENTRY IS NOW PROVEN TOO, ON PRODUCTION.** It was the one
+open item in the first draft of this note. It is closed two ways: **the entropy
+stage was photographed MID CYCLE on `un-claude.com`**, showing *changed*,
+*expanded*, *followed* and *sped up* passing through while "The Treaty of
+Versailles" sat locked, **which can only happen if the observer fired on its
+own**; and **Jon opened the page himself and confirmed it.** Section 9 item 2
+records what that took and the trap it set on the way.
 
 **2. THE PAGE IS TALLER, NOT SHORTER, AND "LESS SPACE" WAS PART OF THE ASK.**
 
@@ -625,31 +626,38 @@ breakpoint, so it renders the phone layout** — one column, stacked cards, no
 disclosure — and that is what the picture shows. **The 375px numbers in section
 5.2 are DOM measurements from the emulated pane, not from a photograph.**
 
-**2. ★ AUTOPLAY ON ENTRY IS WIRED AND NOBODY HAS WATCHED IT FIRE.** Pressing
-Replay calls the identical `play()` the observer calls, and that was proved
-both by DOM sampling and by photograph, **so the gap is exactly one function
-call wide.** It is still a gap.
+**2. AUTOPLAY ON ENTRY: CLOSED AFTER THE DEPLOY, AND THE ROUTE TO IT IS WORTH
+KEEPING BECAUSE IT ALMOST PRODUCED A FALSE BUG REPORT.**
 
-**The reason is the environment and I isolated it rather than assuming it.** In
-the connected Chrome, with the stage sitting at `top: 95px` in a 757px
-viewport, so unambiguously on screen:
+**When this note was first written it was the one open item.** Every browser the
+session could reach reported `document.visibilityState === "hidden"`, and in
+that state the browser stops delivering intersection callbacks, so the sequence
+could be started by pressing Replay and never seen to start by itself.
+
+**It is now proven on production.** The entropy stage was photographed mid cycle
+on `un-claude.com`, with three alternatives visibly passing through and the
+locked span unmoved. That state cannot be reached without the observer firing.
+**Jon then opened the page himself and confirmed it.**
+
+**★ THE TRAP, WRITTEN DOWN BECAUSE I WALKED INTO IT.** Minutes after that
+photograph, the SECOND stage read as broken: fresh load, page at the top, stage
+scrolled into view at `top: 46px` in a 660px viewport, and its four badges never
+lit across 4.6 seconds. **That looks exactly like a bug and it is not one.** The
+control settles it:
 
 ```
 {"visibility":"hidden","hasFocus":false,
- "stageRect":{"top":95,"h":567,"inView":true},"innerHeight":757,
- "aFreshObserverFired":null}
+ "stageRect":{"top":46,"bottom":614,"h":567},"innerHeight":660,
+ "aFreshObserverOnTheSameElement":null}
 ```
 
-**`aFreshObserverFired: null` is a brand new `IntersectionObserver` I created
-in the console, watching that element, which fired nothing in two seconds.**
-Not my component: any observer. That window is not frontmost, so the document
-reports itself hidden and the browser stops delivering intersection callbacks.
-**This proves the failure is the environment. It does not prove the component
-works, and I am not going to pretend those are the same sentence.**
+**A brand new observer, on that same element, fully in the viewport, fired
+nothing.** The window had gone to the background between the two measurements.
 
-**How to close it in ten seconds:** bring the browser window to the front, open
-`/how-it-works`, and scroll down to "How the rewrite works". Either the four
-numbered badges light 1, 2, 3, 4 in turn or they do not.
+**So the rule for anybody testing scroll-triggered behaviour on this site: run
+that control BEFORE reporting a fault.** Create a throwaway `IntersectionObserver`
+on an element you can see is in view. If it fires nothing either, the window is
+in the background and the component is not the problem. `07` has it.
 
 **3. Whether the new section LOOKS like one continuing story.** The brief asked
 for one visual language across beats 2 to 5 so it does not read as one borrowed
@@ -771,8 +779,10 @@ cannot show, on a page where the receipt is described rather than displayed.
 
 **Nothing is blocking. Nothing was pushed and nothing was deployed.**
 
-**The one thing left is ten seconds of somebody's attention:** bring a browser
-window to the front, open `/how-it-works`, scroll to "How the rewrite works",
-and watch whether the four numbered badges light in turn on their own. That is
-the only claim in this note that rests on reading rather than on running. §9
-item 2.
+**Nothing is left open. This shipped to production on 6 September and Jon has
+looked at it.** The last item, autoplay on entry, is closed by a mid-cycle
+photograph of the live site and by his own test. §9 item 2, which also records
+the control to run before anybody reports scroll-triggered motion as broken.
+
+**What is still worth somebody's judgement is not a proof, it is a question:
+the page is taller than it was**, and §10 item 1 has the cut.

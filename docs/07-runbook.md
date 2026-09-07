@@ -2337,6 +2337,23 @@ work.** Two of its own limits, both hit on 6 September:
   false.** So scroll-triggered behaviour cannot be verified from either browser
   unless somebody brings a window to the front.
 
-**Before concluding that a scroll-triggered component is broken, run that
-control:** create a throwaway `IntersectionObserver` on an element you can see
+**★ BEFORE CONCLUDING THAT A SCROLL-TRIGGERED COMPONENT IS BROKEN, RUN THAT
+CONTROL:** create a throwaway `IntersectionObserver` on an element you can see
 is in the viewport. If it fires nothing either, the environment is the fault.
+
+```js
+let fired = null;
+const io = new IntersectionObserver(es => { fired = es.map(e => e.isIntersecting); io.disconnect(); },
+                                    { threshold: 0.3 });
+io.observe(theElement);
+// wait ~2s, then read `fired`. null means NO callback arrived at all.
+({ visibility: document.visibilityState, hasFocus: document.hasFocus(), fired })
+```
+
+**This is not theoretical. It happened on 6 September, on production, minutes
+after the same page's other animation had been photographed running.** A fresh
+page load, the stage scrolled to `top: 46px` in a 660px viewport, and its four
+badges never lit across 4.6 seconds. **It looked exactly like a broken observer
+and it was a backgrounded window.** The control returned
+`visibility "hidden", hasFocus false, fired null` and settled it in one call.
+**Without it, a working feature gets "fixed".**

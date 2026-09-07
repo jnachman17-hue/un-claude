@@ -11,7 +11,7 @@ closed it should delete that half.
 
 ---
 
-## 6 SEPTEMBER, LATER: the arrival briefing. Committed locally. NOT pushed.
+## 6 SEPTEMBER, LATER: the arrival briefing. SHIPPED to production.
 
 **Ruling: `04` entry 161. The research it rests on: `06`, "Anthropic's checker
 is LIVE".**
@@ -53,7 +53,7 @@ is a backdrop tap under two seconds, the honest response is to delete it.
 
 ---
 
-## 6 SEPTEMBER: /how-it-works, split in two. Committed locally. NOT pushed.
+## 6 SEPTEMBER: /how-it-works, split in two. SHIPPED to production.
 
 **Full detail: `docs/session-notes/how-it-works-rethink.md`. The ruling is `04`
 entry 160. The open questions are in `06`.**
@@ -64,20 +64,18 @@ from CSS and React state with no new dependency. Panel 3 went from 1,189px to
 610px. The four ENGINE_RULES cards dissolved into the sequence and nothing in
 them was lost. The mobile "+" disclosure came off this page.
 
-**★ THE ONE THING LEFT IS TEN SECONDS OF ATTENTION.** Bring a browser window to
-the front, open `/how-it-works`, scroll to "How the rewrite works", and watch
-whether the four numbered badges light 1, 2, 3, 4 on their own. **Autoplay on
-entry is the only claim in this work that rests on reading rather than on
-running**, and the reason is proven to be the environment: every browser
-available to that session reported `document.visibilityState === "hidden"`, and
-in that state **a freshly created IntersectionObserver on an element sitting in
-the middle of the viewport fires nothing.** Pressing Replay runs the identical
-code path and was proved twice.
+**★ SHIPPED. Pushed to `origin/main` on 6 September and live on
+`un-claude.com`, at Jon's instruction, and he has looked at it.** Autoplay on
+entry, which was the one open item, is closed: the entropy stage was
+photographed mid cycle on the live site and Jon confirmed it himself.
 
-**The page itself has been looked at**, through the connected Chrome, at 1296px
-and at 500px, including the pipeline animation caught mid-sequence. The in-app
-Browser pane never drew anything; `07-runbook.md` now has that whole failure
-written up, including the workaround for measuring through it.
+**★ THE ONE THING TO READ BEFORE REPORTING SCROLL-TRIGGERED MOTION AS BROKEN.**
+Minutes after that photograph the second stage read as completely dead, on a
+fresh load, with the stage 46px from the top of a 660px viewport. **It was not
+broken.** The window had gone to the background, and a browser stops delivering
+intersection callbacks to a hidden document. **Create a throwaway
+`IntersectionObserver` on an element you can see is in view. If it fires nothing
+either, the environment is the fault.** `07`, and §9 of the session note.
 
 **★ THE SECOND THING, AND IT IS JON'S: THE PAGE IS TALLER.** 4,140px to 4,828px
 on desktop and 5,553px to 8,103px on a phone, against an explicit "in less

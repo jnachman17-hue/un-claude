@@ -6314,7 +6314,14 @@ Measured on a real build: **1,456 prerendered words against a 1,247 baseline,
 `<h1>` intact, route still `○`, and every word inside the animated components
 present in the static HTML.**
 
-**NOT PROVEN, AND IT IS ONE THING RATHER THAN THE WHOLE PAGE.** The in-app
+**PROVEN IN THE END, INCLUDING THE PART THAT WAS OPEN WHEN THIS WAS WRITTEN.
+Autoplay on entry was photographed mid cycle on the live site after the deploy,
+and Jon confirmed it himself. The account of how that was reached is left below
+because the trap in it is worth keeping: a stage that reads as completely dead
+is usually a background window, not a bug, and the control for telling those
+apart is in `07`.**
+
+**WHAT WAS OPEN AT THE TIME OF WRITING.** The in-app
 Browser pane in that session was hidden and would not draw anything, which is
 the same failure the 25 August session hit; `07` now has it written up. **The
 page was photographed in the end through the connected Chrome, at 1296px and at
