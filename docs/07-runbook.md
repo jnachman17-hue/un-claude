@@ -2703,3 +2703,80 @@ rendered `Ads: None` while the ad existed with 10 headlines, and it still says
 off and both boxes are unticked. **Trust the settings pages, not the summary.**
 The row that actually tells you AI Max is off is `Search term matching: Using
 only your keywords and match types`.
+
+---
+
+## "Tracking status: Inactive" on a conversion action does NOT mean the tag is broken
+
+**7 September 2026.** The Purchase conversion action shows **Inactive** in red on
+the Conversions page. It is the same colour Google uses for real faults, and it
+is not one.
+
+**Google's conversion statuses, in the order an account passes through them:**
+
+| Status | What it means |
+|---|---|
+| Unverified | The tag has never been seen. **This is the broken one** |
+| **Inactive** | The tag is installed and no conversion has been recorded in 7 days |
+| No recent conversions | It recorded some once, none lately |
+| Recording conversions | Working and receiving |
+
+**So "Inactive" and "the tag will never fire" look identical from this screen,
+and no amount of staring at Google Ads separates them.** The only thing that
+does is a real transaction. Until someone buys, this cell stays red and tells
+you nothing.
+
+**The check that actually resolves it is a $4.99 purchase made by us.** One
+known conversion is trivial to subtract from later reporting. Not knowing
+whether the money path reports at all, while spending on ads, is not.
+
+**Verify the tag separately from the conversion**, because they are two different
+things and only one of them is checkable without a sale:
+
+```bash
+curl -s https://un-claude.com/ | grep -o "googletagmanager.com/gtag/js?id=[A-Z0-9-]*"
+curl -s https://un-claude.com/ | grep -o "ad_storage[^,]*" | head -2
+```
+
+The first proves the tag loads. The second proves the consent default is queued
+ahead of it. Both passing plus "Inactive" means waiting, not debugging.
+
+**"Consent mode has issues: 0% consent rate detected" reads the same way.** It
+means nobody has clicked Accept, which is the correct reading of a banner that is
+one day old on a site with no ad traffic yet. Confirm the mechanism by reading
+`cookie-consent.tsx` for the `gtag('consent', 'update', ...)` call and
+`root-providers.tsx` for the mount, then leave it alone.
+
+---
+
+## Negative keywords do not match close variants, so "photo" does not block "photos"
+
+**7 September 2026, found while auditing the Generic test campaign.** This is the
+opposite of how positive keywords behave and it is the easiest money leak in a
+Google Ads account to miss, because the negative list looks complete.
+
+**Positive keywords match close variants automatically:** plurals, misspellings,
+stems, accents. Bid on `watermark remover` and you also get `watermark removers`.
+
+**Negative keywords do not.** Every variant you want blocked must be listed
+literally. So a list containing `photo`, `logo` and `video` still pays for
+`photos`, `logos` and `videos`, which is where a large share of the wrong traffic
+actually sits.
+
+**Match type is a separate axis and behaves backwards from the positive side:**
+
+- **Negative broad**: blocks a search containing **all** the words, any order.
+  `tiktok watermark` blocks "watermark remover tiktok".
+- **Negative phrase**: blocks only the exact run of words in order. `tiktok
+  watermark` does **not** block "watermark remover tiktok".
+
+**So negative broad is the stronger exclusion, and for single words the two are
+identical.** A brief that says "add these as phrase match negatives" is asking
+for the weaker option for no reason. Broad is the right default for exclusions.
+
+**The trap in the other direction: a negative can block a real customer.**
+`photo` was added to keep out stock-image watermark removal, and it also blocks
+"remove ai watermark from photo", who is exactly our buyer, because we do read
+image metadata. On a $150 test that trade is correct, since the wrong traffic
+massively outnumbers the right traffic on that word. **On a scaled campaign it is
+not, and this is the first thing to revisit.**
