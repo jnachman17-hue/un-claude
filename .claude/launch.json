@@ -26,6 +26,13 @@
       "port": 3003
     },
     {
+      "name": "web-prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "start"],
+      "env": { "PORT": "3100" },
+      "port": 3100
+    },
+    {
       "name": "engine",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["server.py", "--port", "8765"],
