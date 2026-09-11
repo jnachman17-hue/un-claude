@@ -6586,3 +6586,55 @@ the outcome.
 **The ceiling assertion stays, at 13,000ms.** The reason for having one has not
 changed: a briefing that outstays its welcome is a thing people close. **It
 should not be raised again without asking him.**
+
+---
+
+### 164. A Blotter-Claude webhook was found in the Un-Claude Stripe account and deleted. No customer was affected. Jon's action, 11 September.
+
+**The trigger.** Stripe's final warning email: a live-mode webhook endpoint had
+failed 11 times since 5 September 18:39:25 UTC and would be disabled on the
+14th. **The failing URL was a Vercel preview deployment of Blotter-Claude**
+(`blotter-claude-git-landing-rewrite-...vercel.app/api/billing/webhook`), a
+different project. un-claude has no `/api/billing/webhook`; its endpoint is
+`/api/stripe/webhook`.
+
+**The stakes, before anything was known.** The webhook is the only place money
+becomes credits (entry 112, and the route's own header). If the only working
+endpoint had been the broken one, every purchase since the 5th would have been
+paid for and never fulfilled, silently.
+
+**What the ledger proved, and it proved it to the second.** Every purchase since
+launch carries a Stripe event id and its credits were granted:
+
+```
+2026-09-05 18:39:24   +100   $24.99   evt_1UCOUqHwIcwEXjEP4JKZE6ky
+```
+
+**Stripe's first failure was 18:39:25, one second after that purchase was
+credited.** Stripe sends every event to every enabled endpoint. The un-claude
+endpoint received it and granted the credits; the Blotter endpoint failed. The
+three purchases after it (7th, 8th, 11th) were all credited the same way.
+**Nobody lost anything.**
+
+**The ruling: delete it.** Jon deleted the Blotter endpoint from the Un-Claude
+Stripe account on 11 September. Not "fix it", because it is the wrong project,
+and not "let Stripe disable it on the 14th", because until then every un-claude
+payment event, customer email included, was being posted to another project's
+server.
+
+**What this does not settle, and it is on the other side of the wall.** How a
+Blotter URL came to be registered in this Stripe account is unknown. The likely
+explanations are a wrong account open in the dashboard or a Stripe CLI signed
+into the wrong account while Blotter's `landing-rewrite` branch was being worked
+on. **If that branch is using un-claude's Stripe keys, its purchases would land
+in un-claude's revenue.** The eight ledger rows all look like genuine un-claude
+packs at un-claude prices, so there is no evidence of it, but this project
+cannot look at Blotter (`CLAUDE.md` section 3) and has not. **That check is
+Jon's, on that project.**
+
+**The verification that remains.** The deletion was done by hand in the
+dashboard. The one thing that cannot be proved from this side without the live
+key is that the correct endpoint survived it. The server answers correctly to an
+unsigned request (400 "missing signature", which also proves the secret is set
+in production), but whether Stripe still has it registered is a dashboard fact.
+**Next purchase in the ledger closes this.**

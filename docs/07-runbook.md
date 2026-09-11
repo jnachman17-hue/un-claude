@@ -2868,3 +2868,91 @@ briefing waits 550ms before opening, and on production it took **well over 20
 seconds** to appear. **I nearly filed that as a broken deploy.** If something
 that should appear after a short delay does not, check `document.visibilityState`
 before you check the code, and poll for longer than feels reasonable.
+
+## Creator and partner accounts: two scripts, do not confuse them
+
+**11 September 2026.** A shared login with credits pre-loaded, for a UGC creator
+or a fraternity chapter, is made by a script, never by hand in the Supabase
+dashboard, because the script is the only thing that refuses to run twice.
+
+| Who | Script | Address | Ledger reason | Locked on create |
+|---|---|---|---|---|
+| Fraternity chapter | `apps/web/scripts/make-chapter-account.mjs "Sigma Nu"` | `chapter-<slug>@un-claude.com` | `chapter_grant` | **Yes**, until `--activate` |
+| UGC creator | `apps/web/scripts/make-creator-account.mjs` | `ugc@un-claude.com` | `adjustment` | No |
+
+**Why the creator grant is `adjustment` and not `chapter_grant`.** The chapter
+reason exists so the fraternity campaign's cost can be queried cleanly. A
+creator grant in that bucket would corrupt that number. `adjustment` is the
+documented one-off bucket. **If creators become a programme, teach the ledger a
+`creator_grant` reason with a migration.** Do not keep filing a campaign under
+adjustment.
+
+**The balance reads 3 more than the grant.** Creating an email account fires
+`mint_signup_grant` (+3), and first use pays the 2-credit welcome. A 50-credit
+grant shows 53, then 55. Deliberate: clawing it back would mean a negative row.
+
+**No reset email exists for either address.** The site's password reset link
+will not work for them. Re-run the script with `--reset-password` instead.
+
+**Sign-in cannot be tested from a script.** Cloudflare Turnstile refuses any
+sign-in that is not from a browser (`captcha protection: request disallowed`).
+Verify the ledger and auth state from the admin client; the browser step is a
+human's.
+
+**First creator account:** `ugc@un-claude.com`, id
+`b757aae1-ea36-4a6e-8f50-423109ca3f63`, 50 credits granted 11 Sept 2026.
+
+---
+
+## A Stripe "webhook endpoint is failing" email: check the ledger before the code
+
+**Learned 11 September 2026.** Stripe warned that a live webhook endpoint had
+been failing for six days and would be disabled. The instinct is to open the
+route handler. **Open the ledger instead, because the ledger says whether anyone
+was hurt, and the email does not.**
+
+**Three checks, in order, none of which need the live Stripe key.**
+
+**1. Is the failing URL even ours?** un-claude's endpoint is exactly
+`https://un-claude.com/api/stripe/webhook`. Anything else, including any
+`*.vercel.app` preview URL, is not this project's production endpoint. In the
+September case it was another project's preview deployment entirely.
+
+**2. Were purchases fulfilled?** From `apps/web/scripts`:
+
+```bash
+node read-ledger.mjs 40
+```
+
+Every `purchase` row has a `stripe_event_id`. **Line the purchase timestamps up
+against the "first failure" time in the email.** Stripe sends each event to every
+enabled endpoint, so if a purchase was credited at the same second the other
+endpoint failed, the working endpoint is working and the failing one is a
+bystander. In September the gap was one second.
+
+**3. Is our endpoint alive and configured?** An unsigned POST is a legitimate
+probe and the three possible answers each mean something:
+
+```bash
+curl -s -w "  -> HTTP %{http_code}\n" -X POST -d '{}' https://un-claude.com/api/stripe/webhook
+```
+
+| Answer | Meaning |
+|---|---|
+| `400 missing signature` | Deployed, `STRIPE_WEBHOOK_SECRET` set. **Healthy** |
+| `503 webhook secret not configured` | The production secret is missing. **Every purchase is going unfulfilled** |
+| `503 stripe not configured` | `STRIPE_SECRET_KEY` missing in production |
+| anything else | The route is not deployed |
+
+**What the key would add, and why it was not used.** Listing the account's
+endpoints (`GET /v1/webhook_endpoints`) is the only way to see what Stripe has
+registered, and it needs the live secret key that `UC_DASHBOARD_STRIPE_KEY`
+holds. The auto-mode classifier refused an ad-hoc script using it, and that was
+the right refusal: using the live key is Jon's call each time, not a default.
+**Ask, do not route around it.** The dashboard (Developers → Webhooks, test mode
+OFF) shows the same list to a human in ten seconds.
+
+**After deleting a wrong endpoint, confirm the right one survived.** Deleting
+the wrong row in a list of two is the failure that would hurt, and it is silent:
+the site keeps taking money and grants nothing. The next `purchase` row in the
+ledger is the proof; until it arrives, the dashboard list is.
