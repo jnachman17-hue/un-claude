@@ -11,7 +11,7 @@ closed it should delete that half.
 
 ---
 
-## 21 SEPTEMBER: the signup grant is gone, and accounts exist only for buyers. BUILT, COMMITTED, NOT PUSHED.
+## 21 SEPTEMBER: the signup grant is gone, and accounts exist only for buyers. SHIPPED to production.
 
 **Rulings: `04` entries 165 and 166. The data: `session-notes/pricing-investigation-21-sept.md`.**
 
@@ -33,18 +33,29 @@ the terms and privacy sentences that named the numbers are corrected
 depends on a grant row. `tsc` exit 0, production build exit 0, every changed
 surface rendered at desktop and 375px.
 
-**★ TWO THINGS FOR JON, AND THE FIRST IS BLOCKING.**
+**★ SHIPPED, 21 September 18:22 UTC.** Jon ran the migration in the Supabase
+SQL Editor and instructed the push. Pushed `f71f8f3..9171968` (three commits,
+including the 11 September Stripe note that had never gone up). Live within a
+minute; the pricing page's title flipped from "5 credits free" to "2 credits
+free" at 18:22:43 UTC. **Verified on un-claude.com itself, not the local
+build:** the hero, the free section, the pack-step card, the new FAQ, the
+sign-up sentence, the sign-up page's sign-in link carrying `next=/pricing`,
+and the corrected terms sentence are all present; "three more", "five free",
+"5 credits free" and "Create a free account" are all gone.
 
-1. **The migration.** `apps/web/supabase/migrations/20260921120000_remove_signup_grant.sql`
-   must be pasted into the Supabase SQL Editor for the live project **with the
-   deploy**. Until it is, the database trigger still pays 3 credits to every
-   new account while the site says two. `07`, "The signup grant is removed in
-   code AND in a migration".
-2. **The push.** Committed locally. Publishing is Jon's call.
+**What is not proven, and the first one matters.**
 
-**What is not proven.** The email-confirmation return to /pricing was not
-exercised (it would create a real account). The Google return was confirmed
-from the kit's code, not by signing in. `07` has what a failure would look like.
+1. **That the trigger is actually dropped.** Jon says he ran the migration.
+   From this side the database's API cannot show it: PostgREST hides trigger
+   functions from its catalogue whether or not they exist, and no signup has
+   happened since the deploy (one ledger row since 18:00 UTC, a spend). **The
+   first new account's ledger is the proof.** `node scripts/read-ledger.mjs 20`
+   from `apps/web`: a `signup_grant +3` on an account created after 18:22 UTC
+   means the migration did not take. The most recent `signup_grant` row ever
+   is 15:12 UTC, before the migration, which is consistent with it working.
+2. The email-confirmation return to /pricing was not exercised (it would
+   create a real account). The Google return was confirmed from the kit's
+   code, not by signing in. `07` has what a failure would look like.
 
 **The read, two weeks after it ships.** Purchases per essay-sized first paste,
 against the 31% that essay signups converted at with the grant. Nobody has
