@@ -6638,3 +6638,8 @@ key is that the correct endpoint survived it. The server answers correctly to an
 unsigned request (400 "missing signature", which also proves the secret is set
 in production), but whether Stripe still has it registered is a dashboard fact.
 **Next purchase in the ledger closes this.**
+
+**Closed 21 September 2026.** Two purchases since, 17 and 21 September, both
+credited by the correct endpoint. The 17 September one is in Stripe and not in
+the ledger because the buyer then deleted their account and the ledger cascades
+(`07`). No purchase was lost.

@@ -2956,3 +2956,34 @@ OFF) shows the same list to a human in ten seconds.
 the wrong row in a list of two is the failure that would hurt, and it is silent:
 the site keeps taking money and grants nothing. The next `purchase` row in the
 ledger is the proof; until it arrives, the dashboard list is.
+
+## Deleting an account deletes its purchase rows, so the ledger under-counts revenue. Stripe is the record of money
+
+**21 September 2026.** A $24.99 purchase on 17 September is in Stripe and not in
+the ledger. The buyer deleted their account afterwards, and
+`credit_ledger.account_id` is `references accounts (id) on delete cascade`
+(`20260819180000_credit_ledger.sql`), so the deletion took every ledger row with
+it, purchase included. Verified:
+
+```
+account row exists: false
+ledger rows for it: 0
+ledger rows pointing at a missing account: 0
+```
+
+**Consequences, and what to do instead.**
+
+- **Never read revenue from the ledger.** The dashboard's "money in" figure is
+  the ledger's purchase rows and it is now $24.99 short. Read Stripe for money;
+  the ledger is the record of credits.
+- **The reconciliation is `stripe charges` against `credit_ledger` purchase
+  rows by `payment_intent`.** Any succeeded Stripe charge with no ledger row and
+  no accounts row is a deleted buyer, not a webhook failure. The script this
+  session used is in `session-notes/pricing-investigation-21-sept.md`.
+- **This is also a bookkeeping gap for the accountant entry 65 anticipated:** the
+  ledger cannot be the sales record for tax purposes. Stripe's own export can.
+
+**Not changed:** the cascade itself. Entry 120 added it deliberately so that
+deletion actually deletes, and the ledger refuses UPDATE and DELETE by design.
+Whether purchase rows should survive deletion (the way `grant_claims` does,
+entry 121) is a question for Jon, recorded in `06`.

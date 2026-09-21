@@ -1216,3 +1216,53 @@ make this project dishonest. Any build of this must gate on
 is a different and much larger feature, and somebody should be checking for it.
 **Applying for the preview is a Jon action and is probably the highest value
 item on this list.**
+
+---
+
+## Measured again 21 September 2026: the leak is that a whole essay fits in the free allowance. The cut is now Jon's to rule on
+
+**This is the revisit the 4 September section above set as its trigger.** Full
+data: `session-notes/pricing-investigation-21-sept.md`. Read-only.
+
+**Since the 4 September change: 7 paid in 17 days against 2 in the 15 days
+before**, with the same visitor count. Not attributable to that change alone:
+desktop share went from 51% to 82%, the briefing shipped, and Google Ads ran.
+
+**The finding that supersedes the 4 September working position.** The buyers
+are essay people (5 of 6 have jobs of 2,000 to 7,500 words; the site median is
+171). A first job of one credit converts at 4%; a first job of an essay
+converts at 31%. **When the essay did not fit in the free credits, 2 of 2
+bought. When it did fit, 9 of 11 cleaned it free and never ran another job.**
+After signup the allowance is 3 plus unspent guest credits, up to 5, which
+covers a 5,000 word essay. Entry 97's "first essay free, second paid" assumed a
+second essay; there is not one.
+
+**Working position: cut to guest 1, signup +1, so the ceiling after signup is 2
+and no 2,000 word document fits.** Cost: 116 guests a month who run a second
+free snippet (median 105 words, 3 minutes after the first) meet the signup wall
+instead; they buy at about 0.2%. Gain: 3 to 9 sales a month on current traffic,
+and n is too small to say which. **Run it for two weeks and read purchases per
+essay-sized first paste.**
+
+**Not recommended:** a $100 pack (251 of 305 credits sold are unspent; the two
+Pro buyers used 0 and 1 of 100; nobody has exhausted a pack); a subscription
+yet (1 of 7 buyers has repeated; entry 64's trigger is "a meaningful share");
+any change to the three packs or the checkout (10 of 11 real sessions paid).
+
+**Trigger for revisiting:** Jon's ruling. If he rules for the cut, the
+before/after read two weeks later. **If he rules against it, the next lever is
+not the allowance at all but the 40% failure rate on 4,000+ word jobs**, which
+hit the $24.99 buyer's only job.
+
+## Should purchase rows survive account deletion?
+
+**Open, 21 September 2026.** `credit_ledger` cascades on account deletion, so a
+buyer who deletes their account removes the record of the sale (`07`, "Deleting
+an account deletes its purchase rows"). Stripe still has it, so no money is
+lost, but the ledger cannot be the sales record. **Working position: leave the
+cascade and treat Stripe as the book of record**, because the ledger is
+append-only and the cascade is what makes deletion honest (entry 120). The
+alternative is a `purchase_claims` table shaped like `grant_claims` (entry 121),
+keyed to the Stripe payment intent rather than the account. **Trigger:** the
+accountant entry 65 anticipates, or the first refund request from a deleted
+account, which would need the row to exist.
