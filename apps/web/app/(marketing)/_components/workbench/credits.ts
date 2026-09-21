@@ -14,8 +14,12 @@ import { useSyncExternalStore } from 'react';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+/**
+ * The whole free tier, since 21 September 2026 (04 entry 166). There used to
+ * be a SIGNUP_CREDITS of 3 beside this; creating an account earns nothing now.
+ * Mirrors `lib/server/credits.ts` and `pricing/_components/pricing-data.ts`.
+ */
 export const WELCOME_CREDITS = 2;
-export const SIGNUP_CREDITS = 3;
 export const WORDS_PER_CREDIT = 1_000;
 
 /**

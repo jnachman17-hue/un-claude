@@ -17,11 +17,10 @@ import { CreditCoin } from '../_components/workbench/credit-chip';
 import { BuyButton } from './_components/buy-button';
 import { CreditCalculator } from './_components/credit-calculator';
 import {
+  CHEAPEST_PACK,
   FREE_CREDITS,
   PACKS,
-  SIGNUP_CREDITS,
   WELCOME_CREDITS,
-  WORDS_PER_CREDIT,
 } from './_components/pricing-data';
 
 import { shareTags } from '~/lib/share-tags';
@@ -43,9 +42,10 @@ import { shareTags } from '~/lib/share-tags';
  * stacked four full-width slabs on a phone, so the first price was 900px down.
  *
  * THE NUMBERS ARE THE RATIFIED ONES AND THEY LIVE IN `_components/pricing-data.ts`.
- * 04 entry 67 for the packs, entry 97 for the free split (2 welcome, 3 more on
- * signup, 5 in total), entry 71 for a file costing one flat credit, entry 98
- * for the coin that makes a credit a currency rather than a word.
+ * 04 entry 67 for the packs, entry 166 for the free tier (2 welcome credits
+ * and nothing on signup, since 21 September 2026; entry 97's 2 + 3 split is
+ * history), entry 71 for a file costing one flat credit, entry 98 for the coin
+ * that makes a credit a currency rather than a word.
  *
  * THE PAGE READS AS LIVE, AND THAT IS JON'S RULING RATHER THAN THIS
  * SESSION'S. The first build said out loud that checkout was not connected: a
@@ -106,7 +106,7 @@ import { shareTags } from '~/lib/share-tags';
  * not be able to drift apart.
  */
 const DESCRIPTION =
-  'Five credits free, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, up to 3.2 MB. Credits never expire.';
+  'Two credits free, no account needed, then packs from $4.99. One credit sanitises 1,000 words of text. A Word document or picture is one credit, up to 3.2 MB. Credits never expire.';
 
 /**
  * SAME DEFECT AS /how-it-works, SAME MEASUREMENT. 6 September 2026: **18
@@ -114,15 +114,16 @@ const DESCRIPTION =
  * a reason to click, and a searcher comparing results has nothing to weigh.
  *
  * The number does the work. Both figures are read off `pricing-data.ts` in
- * spirit and are true today: five free credits (2 welcome + 3 on signup) and a
- * Starter pack at $4.99. **If the packs change, this line changes with them.**
+ * spirit and are true today: two free credits (the welcome grant; the signup
+ * grant went on 21 September 2026, 04 entry 166) and a Starter pack at $4.99.
+ * **If the packs change, this line changes with them.**
  */
 export const metadata = {
-  title: 'Pricing: 5 credits free, packs from $4.99',
+  title: 'Pricing: 2 credits free, packs from $4.99',
   description: DESCRIPTION,
   alternates: { canonical: '/pricing' },
   ...shareTags({
-    title: 'Pricing: 5 credits free, packs from $4.99',
+    title: 'Pricing: 2 credits free, packs from $4.99',
     description: DESCRIPTION,
     path: '/pricing',
   }),
@@ -258,7 +259,19 @@ const FAQ = [
   },
   {
     q: 'Is the free allowance a trial that runs out?',
-    a: 'It is granted once rather than reset. Two credits the moment you use the tool, with no account and no card, and three more when you create a free account. Scanning is separate and never runs out.',
+    a: 'It is granted once rather than reset. Two credits the moment you use the tool, with no account and no card. Scanning is separate and never runs out.',
+  },
+  /*
+   * WHY AN ACCOUNT, ANSWERED IN THE VISITOR'S TERMS. 04 entries 165 and 166,
+   * 21 September 2026. An account used to come with three free credits and
+   * needed no explaining. It now comes with nothing, and a visitor who
+   * presses a pack and meets a sign-up form is owed the reason in one
+   * sentence. The reason is theirs, not ours: a browser cannot hold $24.99
+   * of credits safely, and an account can.
+   */
+  {
+    q: 'Why do I need an account to buy?',
+    a: 'So the credits have somewhere to live. Free credits sit on the browser that earned them; a pack you pay for is attached to your account instead, so it is there on your phone and your laptop, survives a cleared browser, and never expires. Creating the account takes a moment at checkout and nothing else asks for it.',
   },
   /*
    * THE REFUND'S SECOND HOME, AND IT IS LAST ON PURPOSE. 04 entry 115. Someone
@@ -686,7 +699,7 @@ function Pricing() {
               >
                 Scanning is free and unlimited with no account, so you can see
                 exactly what your document carries before you decide anything.
-                The five free credits are granted once rather than reset every
+                The two free credits are granted once rather than reset every
                 month, and nothing here asks for a card.
               </p>
 
@@ -748,6 +761,17 @@ function Pricing() {
                   </p>
                 </li>
 
+                {/*
+                  THE SECOND STEP IS THE PACK, NOT A SECOND FREE GRANT. Until
+                  21 September 2026 this card read "+3 credits, when you
+                  create a free account", and the pair added up to five.
+                  04 entry 166 removed the signup grant, so the honest ladder
+                  is now free, then paid, and this card keeps the first one's
+                  shape (a number, a when, a sentence) with the cheapest pack
+                  in it. It also does the one piece of teaching the account
+                  still needs: a pack lives on the account, not the browser.
+                  Every figure is read from `pricing-data.ts`.
+                */}
                 <li
                   className={
                     'bg-mark/[0.06] ring-mark/25 rounded-[18px] p-5 ring-1 sm:p-6'
@@ -767,7 +791,7 @@ function Pricing() {
                         'text-foreground text-[28px] leading-none font-semibold tracking-[-0.03em] tabular-nums'
                       }
                     >
-                      +{SIGNUP_CREDITS}
+                      {CHEAPEST_PACK.credits}
                     </span>
                     <span
                       className={
@@ -782,25 +806,16 @@ function Pricing() {
                       'text-foreground mt-3 text-[14.5px] font-semibold'
                     }
                   >
-                    When you create a free account
+                    From ${CHEAPEST_PACK.dollars}.{CHEAPEST_PACK.cents}, on your account
                   </p>
                   <p
                     className={
                       'text-muted-foreground mt-1.5 text-[13.5px] leading-[1.55]'
                     }
                   >
-                    {/*
-                      "Anything left over from step one comes with you" was
-                      removed 21 August 2026 on Jon's instruction, the same
-                      sentence he had struck from the paywall. It is true, and
-                      the guest merge in /api/credits still does exactly that,
-                      but he does not want it said. The arithmetic it was
-                      introducing stays, because 2 plus 3 needs a total beside
-                      it or the two cards read as alternatives.
-                    */}
-                    {FREE_CREDITS} credits in total, or{' '}
-                    {(FREE_CREDITS * WORDS_PER_CREDIT).toLocaleString('en-US')}{' '}
-                    words.
+                    A pack lives on your account rather than in a browser, so
+                    it is there on any device and never expires. You create
+                    the account at checkout.
                   </p>
                 </li>
               </ol>
@@ -953,7 +968,7 @@ function Pricing() {
           sub={
             'The scan is free, unlimited and needs no account. You only spend a credit once you decide to clean it.'
           }
-          secondary={{ href: '/auth/sign-up', label: 'Create a free account' }}
+          secondary={{ href: '#packs', label: 'See the packs' }}
         />
       </div>
     </div>

@@ -79,9 +79,16 @@ export const PACKS: Pack[] = [
   },
 ];
 
-/** 04 entry 97. Mirrors `_components/workbench/credits.ts`. */
+/**
+ * 04 entry 166, 21 September 2026. Mirrors `_components/workbench/credits.ts`.
+ * The free tier is the welcome grant and nothing else: creating an account
+ * earns nothing, so `FREE_CREDITS` and `WELCOME_CREDITS` are the same number
+ * and both names are kept only so a page can say which one it means.
+ */
 export const WELCOME_CREDITS = 2;
-export const SIGNUP_CREDITS = 3;
 export const WORDS_PER_CREDIT = 1_000;
 
-export const FREE_CREDITS = WELCOME_CREDITS + SIGNUP_CREDITS;
+export const FREE_CREDITS = WELCOME_CREDITS;
+
+/** The cheapest pack, for any line that names a starting price. */
+export const CHEAPEST_PACK = PACKS.reduce((low, pack) => (pack.price < low.price ? pack : low));

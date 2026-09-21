@@ -250,3 +250,63 @@ Under whichever heading covers deleting your account:
 
 The same privacy page section that already says what deleting an account
 removes. **One paragraph. Nothing else on the page becomes wrong.**
+
+---
+
+## 21 September 2026: the signup grant is gone, and two policy sentences named it
+
+**Status: APPLIED in the same change, 21 September 2026.** `04` entries 165 and
+166. Recorded here so the legal wording can be read in one place, as the 23
+August changes were. Jon has not separately reviewed these two sentences.
+
+**What changed in the product.** Creating an account no longer grants 3 free
+credits. The free allowance is 2 credits on the browser, once, with no account.
+An account is created at checkout and exists so purchased credits are not tied
+to a browser. The email list will not be used.
+
+### Terms of service, "Accounts, credits and free use", first paragraph
+
+**Was:**
+
+> Creating a real account earns 3 more, once, which is 5 in total.
+
+**Is:**
+
+> That is the whole free allowance: creating an account does not add to it. An
+> account is where the credits you buy are kept, so they are not tied to one
+> browser.
+
+The rest of the paragraph and the two after it (free credits as a promotion;
+guest credits living on the browser and moving across on sign-up) are unchanged
+and still true: the guest merge still runs.
+
+### Privacy policy, "Deleting your account", the fingerprint paragraph
+
+**Was:**
+
+> It is there for one reason: the free credits you get for signing up are meant
+> to be once per person, and without it anyone could delete their account and
+> collect them again and again.
+
+**Is:**
+
+> It is there for one reason: the free credits are meant to be once per person,
+> and without it anyone could delete their account and collect them again and
+> again.
+
+**Why the fingerprint stays at all.** A real account that signs up cold, with
+no guest session to carry credits from, still receives the 2-credit welcome
+grant on first use, keyed to the inbox through `claim_grant`. Without the
+fingerprint, delete-and-re-register would collect it again. The mechanism is
+unchanged; only the sentence claiming the credits were "for signing up" was
+wrong.
+
+### Not changed, checked
+
+- **Cookie policy.** Its two sentences about free credits describe the guest
+  account and the captcha, both still true.
+- **The "Who else is involved" tables.** No company added or removed.
+- **The privacy policy's marketing paragraph**, if any, was not touched: the
+  email list is retired by ruling, not by a change in what is collected. Whether
+  the policy should now say the address is used only to sign in is a question
+  for Jon; nothing in it is false today.

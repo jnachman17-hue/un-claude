@@ -411,9 +411,9 @@ async function PrivacyPolicyPage() {
         </P>
         <P>
           We keep a scrambled fingerprint of your email address, and not the
-          address itself. It is there for one reason: the free credits you get
-          for signing up are meant to be once per person, and without it anyone
-          could delete their account and collect them again and again. What we
+          address itself. It is there for one reason: the free credits are
+          meant to be once per person, and without it anyone could delete their
+          account and collect them again and again. What we
           keep is the fingerprint, the date it was first given, and which free
           credits it was. The fingerprint cannot be turned back into your
           address, although somebody who already holds it and a guess at your

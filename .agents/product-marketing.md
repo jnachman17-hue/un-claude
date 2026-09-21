@@ -34,6 +34,7 @@ nobody can yet say the watermark was removed. **Sanitise claims the work.**
 
 **Business model.** Credit packs. One credit buys 1,000 words, a file with no words
 is a flat credit. $4.99, $9.99 and $24.99 for 10, 25 and 100 credits. `04` entry 67.
+**The free tier is 2 credits, granted once, no account.** `04` entry 166.
 
 **The landing page is the product.** `04` entry 20. The tool sits above the fold
 and works without an account.
@@ -260,8 +261,12 @@ before Office documents are claimed.
 **Billing ships before the site goes live**, so write for a working checkout rather
 than around a missing one. Stripe is the remaining build, `CURRENT-HANDOFF.md`.
 
-**The ladder:** a free scan, the finding lands, sign in, the paywall after 3
-sanitises, the purchase.
+**The ladder, since 21 September 2026 (`04` entries 165 and 166):** a free
+scan, the finding lands, two free credits with no account, the wall the moment
+a job costs more than that (every essay does: 2,000 words is 3 credits), the
+purchase. **An account is created at checkout and exists only so the purchase
+has somewhere to live.** There is no signup grant and no email list; nothing on
+the site may offer free credits for creating an account.
 
 ---
 

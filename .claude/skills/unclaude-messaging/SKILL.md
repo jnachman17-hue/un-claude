@@ -195,7 +195,12 @@ his to write and it does not belong on the home page.**
 ## The goal
 
 **A credit purchase.** Billing ships before the site goes live, so write for a
-working checkout. The ladder: scan, the finding lands, sign in, paywall, purchase.
+working checkout. **The ladder, since 21 September 2026 (`04` entries 165 and
+166): scan, the finding lands, two free credits with no account, the wall,
+purchase.** The account is created at checkout and exists only so the purchase
+has somewhere to live. **There is no signup grant and no email list. Nothing a
+visitor reads may offer free credits for creating an account**, and the wall
+always carries the arithmetic and the starting price.
 
 ## The question that catches most defects
 

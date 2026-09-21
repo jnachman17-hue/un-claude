@@ -29,13 +29,14 @@ const BALANCES: Array<{ value: string | null; label: string; note: string }> = [
   {
     value: '0:guest',
     label: '0, guest',
-    note: 'The dead end. The sign-up offer appears on the panel',
+    note: 'The dead end. The panel names the cheapest pack',
   },
-  { value: '5:account', label: '5, account', note: 'Just signed up' },
+  { value: '2:account', label: '2, account', note: 'Signed up cold, nothing spent yet' },
+  { value: '104:account', label: '104, account', note: 'Bought the Pro pack' },
   {
     value: '0:account',
     label: '0, account',
-    note: 'Empty account. The panel offers the packs',
+    note: 'Empty account. The same panel, the same pack',
   },
 ];
 

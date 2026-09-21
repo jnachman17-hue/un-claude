@@ -9,10 +9,10 @@ import { withWelcome } from '../welcome';
 /**
  * Where the confirmation link in a sign-up email comes back to.
  *
- * For most new accounts this is the arrival that matters: it is the first
- * moment the signup grant exists and the first moment there is anything to
- * show them. The destination is the tool rather than the wallet since
- * 21 August 2026; see `afterAuth` in config/paths.config.ts.
+ * The destination is the tool rather than the wallet since 21 August 2026;
+ * see `afterAuth` in config/paths.config.ts. A `next` carried on the link
+ * (the buyer's return to /pricing, 04 entry 166) wins over it, and only the
+ * plain tool arrival is marked with the welcome flag.
  */
 export async function GET(request: NextRequest) {
   const service = createAuthCallbackService(getSupabaseServerClient());

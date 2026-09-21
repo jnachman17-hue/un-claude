@@ -5,9 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { SitePageHeader } from '~/(marketing)/_components/site-page-header';
 
 import {
-  FREE_CREDITS,
   PACKS,
-  SIGNUP_CREDITS,
   WELCOME_CREDITS,
 } from '~/(marketing)/pricing/_components/pricing-data';
 
@@ -262,8 +260,10 @@ async function TermsOfServicePage() {
           You can use the tool without an account. The first time you clean
           something we create a guest account for your browser and give it{' '}
           {WELCOME_CREDITS} free credits, so you can try the thing you came for
-          before deciding anything. Creating a real account earns {SIGNUP_CREDITS}{' '}
-          more, once, which is {FREE_CREDITS} in total. The same numbers are on the{' '}
+          before deciding anything. That is the whole free allowance: creating
+          an account does not add to it. An account is where the credits you
+          buy are kept, so they are not tied to one browser. The same numbers
+          are on the{' '}
           <Link
             href={'/pricing'}
             className={'text-foreground font-medium underline underline-offset-2'}

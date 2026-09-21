@@ -10,10 +10,20 @@ import { rateLimit } from './rate-limit';
  * THE MODEL, in one paragraph. A balance is never stored: it is the sum of
  * the ledger's deltas, computed by the database. Anyone who touches the tool
  * gets a browser-held anonymous account and a one-time welcome grant of
- * WELCOME_CREDITS. Creating a real account earns SIGNUP_CREDITS once, and any
- * credits left on the browser's guest account move over. Spending happens
- * through the database's `spend_credits`, which locks, checks and debits in
- * one statement, so two racing requests cannot both spend the last credit.
+ * WELCOME_CREDITS. Creating a real account earns NOTHING (04 entry 166, 21
+ * September 2026): any credits left on the browser's guest account move over,
+ * and an account that signs up cold gets the same welcome grant a guest would
+ * have. The account exists so that purchased credits have somewhere to live
+ * that a cleared cookie cannot reach. Spending happens through the database's
+ * `spend_credits`, which locks, checks and debits in one statement, so two
+ * racing requests cannot both spend the last credit.
+ *
+ * THERE USED TO BE A SIGNUP GRANT OF 3, and the reason it is gone is measured
+ * rather than felt: docs/session-notes/pricing-investigation-21-sept.md. After
+ * signup the allowance reached 5, which covered a 5,000 word essay, and the
+ * essay is the job that pays. 9 of 11 essay signups whose essay fit cleaned
+ * it free and never ran another job. The reason `signup_grant` survives below
+ * as a type is that 84 ledger rows carry it and the ledger is append-only.
  *
  * WHY EVERY WRITE HERE USES THE ADMIN CLIENT: the ledger's row level security
  * deliberately gives browsers read-only access to their own rows and nothing
@@ -40,7 +50,6 @@ import { rateLimit } from './rate-limit';
  * words, a file with no prose is one flat credit, every job rounds up.
  */
 export const WELCOME_CREDITS = 2;
-export const SIGNUP_CREDITS = 3;
 export const WORDS_PER_CREDIT = 1_000;
 
 /**
@@ -70,8 +79,8 @@ export const WORDS_PER_CREDIT = 1_000;
  *
  * WHAT HAPPENS AT THE CAP is the softest failure available: the account still
  * works, it simply does not receive free welcome credits. The free scan needs
- * no credits at all, and signing up earns credits on its own. Nobody is locked
- * out of the product; they are only declined a giveaway.
+ * no credits at all, and a pack can still be bought. Nobody is locked out of
+ * the product; they are only declined a giveaway.
  */
 export const ANON_GRANTS_PER_HOUR_PER_IP = 60;
 
@@ -299,7 +308,7 @@ async function hasGrant(
 export async function ensureGrants(user: {
   id: string;
   isAnonymous: boolean;
-  /** The account's email, used to key the signup grant to an inbox. */
+  /** The account's email, used to key the welcome grant to an inbox. */
   email?: string | null;
   /**
    * The caller's IP, used only to cap how many NEW anonymous welcome grants one
@@ -360,12 +369,14 @@ export async function ensureGrants(user: {
     }
   }
 
-  if (!user.isAnonymous) {
-    // Once per inbox, in a record that survives the account being deleted.
-    // This ALSO closes the plus-address vector (security-audit finding 1),
-    // because the hash is taken of the normalised address.
-    await claimGrant(user.id, user.email ?? null, 'signup_grant', SIGNUP_CREDITS);
-  }
+  /*
+   * NO SIGNUP GRANT. The block that claimed `signup_grant` for a real account
+   * was removed on 21 September 2026 (04 entry 166), together with the
+   * database trigger that minted it at confirmation
+   * (20260921120000_remove_signup_grant.sql). A real account's only free
+   * credits are the welcome grant above, once per inbox, and only if it did
+   * not already collect them as a guest.
+   */
 }
 
 /**

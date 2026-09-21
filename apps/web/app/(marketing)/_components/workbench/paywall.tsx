@@ -6,7 +6,7 @@ import { LockIcon } from 'lucide-react';
 
 import { paywallDismissed, paywallSignUpClicked } from '~/lib/analytics/events';
 
-import { CreditOfferBadge } from './credit-offer';
+import { CHEAPEST_PACK } from '../../pricing/_components/pricing-data';
 
 /**
  * What a visitor sees when the work cannot run. 04 entry 97.
@@ -17,60 +17,48 @@ import { CreditOfferBadge } from './credit-offer';
  * far harder than hiding both halves. The blur below is a locked state, not
  * a hidden answer: no rewrite is run to produce this screen.
  *
- * TWO VARIANTS NOW, because the ladder has two rungs and they ask for
- * different things:
+ * ONE VARIANT, SINCE 21 SEPTEMBER 2026 (04 entries 165 and 166). There used
+ * to be two: `account`, shown to a guest, which offered the 3-credit signup
+ * grant and read "Create a free account and they are yours, with the rewrite
+ * unlocked"; and `buy`, shown to a signed-in account, which carried the
+ * numbers and a price. The measurement in
+ * docs/session-notes/pricing-investigation-21-sept.md found that the first
+ * one was handing essays out free: a guest with a 2,500 word document met
+ * "needs 3, have 2", signed up, received 3 more, and cleaned it. 9 of 11
+ * essay signups whose essay fit did exactly that and never ran another job.
+ * The signup grant is gone, so there is nothing free to offer at the wall,
+ * and everybody sees the same arithmetic and the same price.
  *
- *   `account`  a guest hit the wall: the rewrite needs an account, or their
- *              welcome credits are spent. The ask is an email, and the offer
- *              is the signup grant. Nothing here says "buy".
- *   `buy`      a signed-in account cannot afford this job. The ask is a
- *              purchase, and the message carries the exact numbers, because
- *              "this needs 3 and you have 2" reads as arithmetic where
- *              "insufficient credits" reads as a wall.
+ * The message carries the exact numbers, because "this needs 3 and you have
+ * 2" reads as arithmetic where "insufficient credits" reads as a wall. And
+ * it carries the starting price, because a button reading "Get credits" asks
+ * a visitor to navigate to find out whether they can afford it (entry 159).
+ * The price is read from `pricing-data.ts` and never retyped here.
  *
- * "Get credits" and "Create a free account" ARE `Link`s AND MUST STAY SO. A
- * plain anchor reloads the page, and PostHog's in-memory visitor id dies
- * with it: the most important conversion step in the product would arrive at
- * sign-up as a stranger. Measured, not guessed. 06 row 67.
+ * "Get credits" IS A `Link` AND MUST STAY SO. A plain anchor reloads the
+ * page, and PostHog's in-memory visitor id dies with it: the most important
+ * conversion step in the product would arrive at /pricing as a stranger.
+ * Measured, not guessed. 06 row 67. A guest who presses a pack there is sent
+ * to create the account the purchase will live on, and comes back.
  *
- * THREE CHANGES 21 August 2026, session 10, all Jon's:
- *
- *   1a  The lock was touching the top edge of the box. The overlay is
- *       centred over a fixed-height blur, and the content column had grown
- *       taller than the blur behind it, so centring pushed the top of the
- *       column off the top of the box. The blur now carries a floor and the
- *       overlay has its own vertical padding, so the lock cannot reach the
- *       edge at any width.
- *   1b  The signup grant is now a badge rather than a clause. See
- *       `credit-offer.tsx` for the reasoning and the motion.
- *   1c  "Anything left here follows you" is gone, on Jon's instruction. It
- *       was true (the guest merge in /api/credits does exactly that) but he
- *       does not want it said.
+ * FIX 1a FROM 21 AUGUST 2026 SURVIVES: the lock was touching the top edge of
+ * the box, and the reason and the repair are in the comment inside.
  */
 export function Paywall({
-  variant,
   needed,
   have,
   onDismiss,
 }: {
-  variant: 'account' | 'buy';
   needed?: number;
   have?: number;
   onDismiss: () => void;
 }) {
-  const isAccount = variant === 'account';
+  const arithmetic =
+    typeof needed === 'number' && typeof have === 'number'
+      ? `This needs ${needed} ${needed === 1 ? 'credit' : 'credits'} and you have ${have === 0 ? 'none' : have}.`
+      : 'Sanitising needs credits.';
 
-  const heading = isAccount
-    ? have === 0
-      ? 'You have used your free credits'
-      : 'The rewrite needs a free account'
-    : 'Not enough credits for this one';
-
-  const body = isAccount
-    ? 'Create a free account and they are yours, with the rewrite unlocked.'
-    : typeof needed === 'number' && typeof have === 'number'
-      ? `This needs ${needed} ${needed === 1 ? 'credit' : 'credits'} and you have ${have}. Scanning stays free and unlimited.`
-      : 'Scanning stays free and unlimited. Sanitising needs credits.';
+  const body = `${arithmetic} Packs start at $${CHEAPEST_PACK.price} for ${CHEAPEST_PACK.credits} credits, and scanning stays free.`;
 
   return (
     <div className={'relative overflow-hidden rounded-[13px]'}>
@@ -127,15 +115,8 @@ export function Paywall({
               'text-foreground text-[15px] font-semibold tracking-[-0.015em]'
             }
           >
-            {heading}
+            Not enough credits for this one
           </h3>
-
-          {/*
-            THE OFFER, ON ITS OWN LINE. It used to be four words inside the
-            sentence below, which is exactly where an eye skips. Same words,
-            promoted to an object.
-          */}
-          {isAccount ? <CreditOfferBadge /> : null}
 
           <p className={'text-muted-foreground text-[13px] leading-snug'}>
             {body}
@@ -145,13 +126,13 @@ export function Paywall({
             className={'mt-1 flex flex-wrap items-center justify-center gap-2'}
           >
             <Link
-              href={isAccount ? '/auth/sign-up' : '/pricing'}
+              href={'/pricing'}
               onClick={paywallSignUpClicked}
               className={
                 'bg-mark text-mark-foreground hover:bg-mark-strong rounded-[9px] px-4 py-2 text-[13px] font-semibold transition-colors active:scale-[0.98]'
               }
             >
-              {isAccount ? 'Create a free account' : 'Get credits'}
+              Get credits
             </Link>
             <button
               type={'button'}

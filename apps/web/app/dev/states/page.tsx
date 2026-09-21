@@ -17,7 +17,6 @@
  */
 import { CreditChip, CreditCoin } from '~/(marketing)/_components/workbench/credit-chip';
 import {
-  CreditOfferBadge,
   OutOfCredits,
   SignedInWelcome,
 } from '~/(marketing)/_components/workbench/credit-offer';
@@ -76,50 +75,32 @@ export default function DevStates() {
         </div>
       </Case>
 
+      {/*
+        ONE STATE WHERE THERE USED TO BE FIVE. 04 entry 166, 21 September
+        2026: the offer badge, the guest panel offering the signup grant, and
+        the paywall's account variant are gone with the grant itself. A guest
+        and an account holder at nought now see one panel, and one wall.
+      */}
       <Case
-        title={'1b. The offer badge'}
-        note={'Lands with a bounce, a light passes over it three times.'}
+        title={'1d. Out of credits, anyone'}
+        note={'Shown the moment the balance reaches nought. No failed press required. Same panel for a guest and an account holder.'}
       >
-        <CreditOfferBadge />
-      </Case>
-
-      <Case
-        title={'1d. Out of credits, guest'}
-        note={'Shown the moment the balance reaches nought. No failed press required.'}
-      >
-        <OutOfCredits isGuest justRanOut />
-      </Case>
-
-      <Case
-        title={'1d. Out of credits, account holder'}
-        note={'Same slot, different rung of the ladder: packs, not the free grant.'}
-      >
-        <OutOfCredits isGuest={false} justRanOut />
+        <OutOfCredits justRanOut />
       </Case>
 
       <Case
-        title={'1f. Arriving back on the tool after signing up'}
+        title={'1f. Arriving back on the tool after signing up cold'}
+        note={'Two welcome credits, because a cold signup gets the same grant a guest would have. A buyer never sees this: they return to /pricing.'}
       >
-        <SignedInWelcome balance={5} onDismiss={() => undefined} />
+        <SignedInWelcome balance={2} onDismiss={() => undefined} />
       </Case>
 
-      <Case
-        title={'1a and 1b. The paywall, account variant, credits spent'}
-      >
-        <Paywall variant={'account'} have={0} onDismiss={() => undefined} />
+      <Case title={'The paywall, credits spent'}>
+        <Paywall needed={1} have={0} onDismiss={() => undefined} />
       </Case>
 
-      <Case title={'The paywall, account variant, rewrite needs an account'}>
-        <Paywall variant={'account'} have={2} onDismiss={() => undefined} />
-      </Case>
-
-      <Case title={'The paywall, buy variant'}>
-        <Paywall
-          variant={'buy'}
-          needed={3}
-          have={1}
-          onDismiss={() => undefined}
-        />
+      <Case title={'The paywall, an essay against two free credits'}>
+        <Paywall needed={3} have={2} onDismiss={() => undefined} />
       </Case>
     </main>
   );

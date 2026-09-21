@@ -2987,3 +2987,63 @@ ledger rows pointing at a missing account: 0
 deletion actually deletes, and the ledger refuses UPDATE and DELETE by design.
 Whether purchase rows should survive deletion (the way `grant_claims` does,
 entry 121) is a question for Jon, recorded in `06`.
+
+## The signup grant is removed in code AND in a migration, and the order matters
+
+**21 September 2026, 04 entry 166.** The 3 free credits on creating an account
+were paid in two places: `ensureGrants` in `lib/server/credits.ts`, and a
+database trigger, `mint_signup_grant`, that fired on `auth.users` at
+confirmation (`20260823120200`). The code half is gone in this commit. The
+trigger half is gone only when Jon pastes
+`apps/web/supabase/migrations/20260921120000_remove_signup_grant.sql` into the
+Supabase SQL Editor for the live project.
+
+**Until the migration is run, every new confirmed account still receives 3
+credits from the trigger** while the site says two and offers none. Generous
+rather than broken, but it undoes the experiment: an essay signup would still
+get 3 + guest remainder, which is the leak the change exists to close. **Run
+the migration with the deploy, not after.** It is idempotent; running it twice
+is harmless.
+
+**How to check it took, from `apps/web` with the service key in `.env.local`:**
+create nothing. Wait for the next real signup and read its ledger with
+`node scripts/read-ledger.mjs 20`. A `signup_grant +3` row on an account
+created after the deploy means the trigger is still there.
+
+**What the migration does not touch, deliberately:** `claim_grant`, the
+`signup_grant` reason in the ledger's check constraint, and the partial unique
+index. 84 historic rows carry the reason and the ledger refuses UPDATE and
+DELETE. `credit-history.tsx` still labels those rows "Account credits" for the
+same reason.
+
+**Two things that used to read the grant and now would be wrong:**
+
+- **The dashboard's "registered" count** was "accounts holding a
+  `signup_grant` row". Fixed in `scripts/dashboard/database.mjs` to "accounts
+  with an email", dated from their first ledger row. Verified live: registered
+  87, withEmail 87, the two now agree.
+- **`scripts/verify-grants-survive-deletion.mjs`** still writes a
+  `signup_grant` row through `claim_grant` to test idempotency. It tests the
+  database function, not the policy, and the function still exists, so it
+  still passes. It no longer describes what the site does.
+
+## A buyer sent to sign-up comes back to /pricing, through both doors
+
+**21 September 2026.** `buy-button.tsx` sends a guest or signed-out buyer to
+`/auth/sign-up?next=%2Fpricing`. The kit's sign-up container already reads
+`next` off the address for the email path; the page passes it to the Google
+button as `appHome`, and to the "already have an account" link, and the
+sign-in page does the same for its Google button. `safeNextPath` guards all
+of it. **The `?welcome=1` flag is only added for the plain tool arrival**
+(`withWelcome` checks the path), so a buyer lands on /pricing clean.
+
+**What was verified and what was not.** The sign-up page rendered with
+`?next=/pricing` and its sign-in link carried `next=%2Fpricing` (read off the
+DOM). The Google button's return address was confirmed from the kit's own code
+(`oauth-providers.tsx`: `redirectTo = origin + callback + ?next=<appHome>`),
+not by completing a Google sign-in, because that creates a real account in the
+production database. **The email confirmation path was not exercised for the
+same reason.** The first real buyer who signs up with email and lands on
+/pricing proves it; one who lands on the tool instead means the confirmation
+email's link is not carrying `next` and the Supabase email template is where
+to look.

@@ -136,12 +136,17 @@ export function Workbench() {
    * number is the ledger's. 04 entry 97.
    */
   const credits = useCredits();
-  /** Which paywall to show while phase is 'locked', and with what numbers. */
+  /**
+   * The numbers the paywall shows while phase is 'locked'. There used to be
+   * a `variant` here too, choosing between a guest wall that offered the
+   * signup grant and an account wall that named a price. One wall since 21
+   * September 2026, 04 entry 166: the grant is gone and everybody sees the
+   * arithmetic and the price.
+   */
   const [wall, setWall] = useState<{
-    variant: 'account' | 'buy';
     needed?: number;
     have?: number;
-  }>({ variant: 'account' });
+  }>({});
   /**
    * THE DEAD END, WATCHED FOR. 21 August 2026, Jon: "Most people will see 2
    * free scans, then give up because they see their token at zero and not
@@ -664,7 +669,6 @@ export function Workbench() {
        */
       if (credits.balance !== null && credits.balance < cost) {
         setWall({
-          variant: credits.isAnonymous ? 'account' : 'buy',
           needed: cost,
           have: credits.balance,
         });
@@ -734,7 +738,6 @@ export function Workbench() {
      */
     if (result?.code === 'insufficient_credits') {
       setWall({
-        variant: result.isAnonymous === false ? 'buy' : 'account',
         needed: result.needed,
         have: result.have,
       });
@@ -745,7 +748,7 @@ export function Workbench() {
     }
 
     if (result?.code === 'requires_account') {
-      setWall({ variant: 'account', have: credits.balance ?? undefined });
+      setWall({ have: credits.balance ?? undefined });
       setPhase('locked');
       track.paywallShown({ inputKind: kind, name: loaded.name });
       return;
@@ -1383,14 +1386,7 @@ export function Workbench() {
   const offerAtNought =
     credits.balance === 0 && phase !== 'locked' ? (
       <OutOfCredits
-        isGuest={credits.isAnonymous}
         justRanOut={justRanOut}
-        onSignUpClick={() =>
-          track.outOfCreditsClicked({
-            isGuest: credits.isAnonymous,
-            road: 'free',
-          })
-        }
         onBuyClick={() =>
           track.outOfCreditsClicked({
             isGuest: credits.isAnonymous,
@@ -1561,7 +1557,6 @@ export function Workbench() {
             />
           ) : phase === 'locked' ? (
             <Paywall
-              variant={wall.variant}
               needed={wall.needed}
               have={wall.have}
               onDismiss={() => setPhase('scanned')}
@@ -2256,6 +2251,11 @@ export function Workbench() {
           just read "0 left" lands on the answer in the same movement. Not
           shown while the paywall is up, because that screen is already
           making the identical offer inside the box above.
+
+          THE "3 FREE MORE" IN JON'S QUOTE IS HISTORY. 04 entry 166, 21
+          September 2026: there is no signup grant, so the panel at nought
+          names a price rather than a free account. The placement is
+          unchanged and so is the reason for it.
         */}
         {/*
           THE TESTING SWITCHES, SAID OUT LOUD. 21 August 2026.

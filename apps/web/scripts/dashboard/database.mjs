@@ -33,7 +33,17 @@
  *   anon_grant    2 credits, given once to ANY account including an anonymous
  *                 guest that never signed up. Counting these as customers would
  *                 inflate the account number roughly fivefold.
- *   signup_grant  3 credits, given once to a REAL registered account.
+ *   signup_grant  3 credits, given once to a REAL registered account, UNTIL 21
+ *                 SEPTEMBER 2026. 04 entry 166 removed the grant, so no account
+ *                 created after that date has this row. 84 historic rows keep
+ *                 the reason alive; nothing new is written with it.
+ *
+ * ★ "REGISTERED" IS THEREFORE NO LONGER "HAS A signup_grant ROW". It was, and
+ * that definition would have frozen the sign-up counts on 21 September for
+ * ever. A registered account is one with an email address, which is the same
+ * test `people` below already used, and it is dated from its first ledger row
+ * of any kind (a cold signup's welcome grant, or a converting guest's merge),
+ * because `accounts.created_at` is still empty on every row.
  *
  * WHY ACCOUNTS ARE DATED FROM THE LEDGER AND NOT FROM `accounts.created_at`:
  * that column is nullable, has no default, and is NULL on all 46 rows in the
@@ -202,8 +212,21 @@ export async function readDatabase(env) {
 
   // ---- Accounts -----------------------------------------------------------
   const firstGrants = ledger.filter((r) => r.reason === 'anon_grant' || r.reason === 'signup_grant');
-  const registered = ledger.filter((r) => r.reason === 'signup_grant');
-  const registeredIds = new Set(registered.map((r) => r.account_id));
+  // See the header: an email address, not a signup_grant row, since 21 September 2026.
+  const registeredIds = new Set(accountRows.filter((a) => a.email).map((a) => a.id));
+  // One row per registered account, carrying the date of its earliest ledger row,
+  // so the by-day and last-N-days counts below keep working without the grant.
+  const earliestRow = new Map();
+
+  for (const row of ledger) {
+    if (!registeredIds.has(row.account_id)) continue;
+
+    const seen = earliestRow.get(row.account_id);
+
+    if (!seen || row.created_at < seen.created_at) earliestRow.set(row.account_id, row);
+  }
+
+  const registered = [...earliestRow.values()];
   const guestOnly = new Set(
     firstGrants.filter((r) => r.reason === 'anon_grant' && !registeredIds.has(r.account_id)).map((r) => r.account_id),
   );

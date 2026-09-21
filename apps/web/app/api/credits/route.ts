@@ -7,10 +7,10 @@
  * sequence anything:
  *
  *   1. Grants. Whoever is asking gets whatever they are entitled to and do
- *      not yet hold: the welcome for anyone, the signup grant for a real
- *      account. Self-healing by design: however an account came to exist
- *      (password form, Google, a conversion), its first balance check makes
- *      it whole.
+ *      not yet hold, which since 21 September 2026 (04 entry 166) is the
+ *      welcome grant and nothing else: there is no signup grant any more.
+ *      Self-healing by design: however an account came to exist (password
+ *      form, Google, a conversion), its first balance check makes it whole.
  *   2. The guest merge. If a real account asks while the browser still holds
  *      the guest cookie from its signed-out life, the guest's remaining
  *      credits move over and the cookie is cleared. This is what makes

@@ -334,7 +334,14 @@ export function paywallDismissed(): void {
 }
 
 /**
- * They pressed "Get credits".
+ * They pressed "Get credits" on the wall.
+ *
+ * THE NAME IS OLDER THAN THE BUTTON. Until 21 September 2026 a guest's wall
+ * read "Create a free account" and led to sign-up, which is where the name
+ * comes from. 04 entry 166 removed the signup grant and with it that variant,
+ * so this now always means "Get credits" pressed on the paywall, leading to
+ * /pricing. The name is kept so the funnel reads continuously across the
+ * change in PostHog; the meaning is "left the wall towards money" either way.
  *
  * This is the conversion step the whole funnel exists to measure, and it only
  * joins to everything before it while that link stays a client-side one. A plain
@@ -370,14 +377,19 @@ export function outOfCreditsShown(properties: {
 /**
  * They took the offer from the empty balance rather than from the wall.
  *
- * `road` separates the two the panel now offers. Added 4 September 2026 with
- * entry 159: a guest used to be shown only the free grant, so there was one
- * road and nothing to distinguish. There are two now, and which one people
- * take is the whole question that override was made to answer.
+ * `road` was added 4 September 2026 with entry 159, when the guest panel
+ * gained a paid road beside its free one, and which road people took was the
+ * question. The answer, measured 21 September: 10 took the free road and 1
+ * the paid one, of 80 shown. The free road is gone with the signup grant.
  */
 export function outOfCreditsClicked(properties: {
   isGuest: boolean;
-  road: 'free' | 'buy';
+  /**
+   * Only ever `buy` since 21 September 2026 (04 entry 166). `free` was the
+   * signup grant road, which no longer exists. The property is kept so the
+   * before-and-after read can group the two periods on one field.
+   */
+  road: 'buy';
 }): void {
   send('out_of_credits_clicked', {
     is_guest: properties.isGuest,

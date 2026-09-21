@@ -11,6 +11,52 @@ closed it should delete that half.
 
 ---
 
+## 21 SEPTEMBER: the signup grant is gone, and accounts exist only for buyers. BUILT, COMMITTED, NOT PUSHED.
+
+**Rulings: `04` entries 165 and 166. The data: `session-notes/pricing-investigation-21-sept.md`.**
+
+**What Jon decided, in one line each.** The email list will not be used. The
+free tier is 2 guest credits and nothing on signup. Accounts exist so a
+purchase has somewhere to live, created at checkout. No $100 pack, no
+subscription yet, packs untouched.
+
+**What landed.** `ensureGrants` no longer claims a signup grant; the
+`SIGNUP_CREDITS` constant is gone from all three files that held it; the
+paywall has one variant with the arithmetic and the starting price; the panel
+at nought is one panel for guests and account holders, with the price and a
+button that is visible on a phone; the sign-up page lost its badge and gained
+one sentence about what the account is for; a buyer sent to sign-up comes back
+to /pricing through both doors; the pricing page says 2, its second free card
+became the pack step, and it has a new FAQ, "Why do I need an account to buy?";
+the terms and privacy sentences that named the numbers are corrected
+(`POLICY-CHANGES-PENDING.md`); the dashboard's "registered" count no longer
+depends on a grant row. `tsc` exit 0, production build exit 0, every changed
+surface rendered at desktop and 375px.
+
+**★ TWO THINGS FOR JON, AND THE FIRST IS BLOCKING.**
+
+1. **The migration.** `apps/web/supabase/migrations/20260921120000_remove_signup_grant.sql`
+   must be pasted into the Supabase SQL Editor for the live project **with the
+   deploy**. Until it is, the database trigger still pays 3 credits to every
+   new account while the site says two. `07`, "The signup grant is removed in
+   code AND in a migration".
+2. **The push.** Committed locally. Publishing is Jon's call.
+
+**What is not proven.** The email-confirmation return to /pricing was not
+exercised (it would create a real account). The Google return was confirmed
+from the kit's code, not by signing in. `07` has what a failure would look like.
+
+**The read, two weeks after it ships.** Purchases per essay-sized first paste,
+against the 31% that essay signups converted at with the grant. Nobody has
+observed a guest meeting a wall with no free step behind it; that is what this
+measures. If it falls well short, the wall is the problem and not the
+allowance, and entry 166 gets revisited.
+
+**Also open, and not pricing:** two of the five jobs over 4,000 words all time
+failed and refunded, one of them the $24.99 Pro buyer's only job. Engine side.
+
+---
+
 ## 6 SEPTEMBER, LATER: the arrival briefing. SHIPPED to production.
 
 **Ruling: `04` entry 161. The research it rests on: `06`, "Anthropic's checker

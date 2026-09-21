@@ -6643,3 +6643,76 @@ in production), but whether Stripe still has it registered is a dashboard fact.
 credited by the correct endpoint. The 17 September one is in Stripe and not in
 the ledger because the buyer then deleted their account and the ledger cascades
 (`07`). No purchase was lost.
+
+## 21 September 2026. The email list is retired, and with it the signup grant
+
+### 165. The email list will not be used. Jon's ruling, 21 September.
+
+**Jon's words:** "I have decided I will not be emailing any of them or using
+this email list for any reason." That overturns entry 97 point 5, where the
+signup step was defended on four grounds: the detector-day announcement to every
+signup, ordinary marketing, an identity purchases can attach to, and friction in
+front of the only layer that costs money.
+
+**What survives of those four.** The detector-day announcement and the marketing
+are gone by this ruling. The friction argument ended with entry 98, when guests
+were allowed to run the rewrite. **The identity argument stands and is the whole
+reason accounts still exist:** a guest is an anonymous session held in the
+browser, and purchased credits attached to it would vanish with a cleared
+cookie or a second device. Five of seven buyers hold unspent credits today. An
+account is the customer's receipt, not the business's mailing list.
+
+**Not changed by this entry:** the sign-up form, Google sign-in, the
+`checkout_account_required` step that sends a guest to sign-up when they press a
+pack button. Those exist for the buyer.
+
+### 166. The free tier is 2 guest credits and nothing else. The signup grant is removed. Jon's ruling, 21 September, on the data in `session-notes/pricing-investigation-21-sept.md`.
+
+**The ruling.** Anyone gets 2 credits without an account. Creating an account
+grants nothing. Accounts exist so that purchases have somewhere to live.
+Supersedes entry 97 point 1 (the 2 + 3 split) and entry 67's free allowance
+table; amends entry 159, whose guest panel loses its free road.
+
+**The measurement that decided it, in one paragraph.** Five of six visible
+buyers are essay people with jobs of 2,000 to 7,500 words against a site median
+of 171. A first job of one credit converts at 4%; a first job of an essay
+converts at 31%. When the essay did not fit in the free credits, 2 of 2 bought;
+when it fit, 9 of 11 cleaned it free, ran exactly one job, and never returned.
+After signup the allowance was 3 plus unspent guest credits, up to 5, which
+covers a 5,000 word essay. **Entry 97's "first essay free, second paid" assumed a
+second essay. The data says there is one essay, and the allowance decided
+whether it was free.**
+
+**Why 2 and not 1.** The second guest credit costs $0.0006, is used by 34% of
+guests a median of 3 minutes after the first (a second test paste, median 105
+words, never a second document), and cannot admit an essay because a 2,000 word
+document costs 3. Cutting it would wall 116 people a month who buy at 0.2%, for
+nothing. **The ceiling stays 2 even after unspent guest credits merge into a
+new account at checkout, because there is no grant to add to them.**
+
+**Why no signup grant at all rather than 1.** With the email retired (entry
+165), a signup credit makes a visitor create an account to get one more test
+paste. Friction for nothing. And it was the mechanism of the leak: "Create a free
+account and they are yours, with the rewrite unlocked" is the sentence that
+handed 9 essays out free.
+
+**What the wall becomes.** One wall for everyone. A guest with a 2,500 word
+essay sees the buy variant the site already has: "This needs 3 credits and you
+have 2. Get credits", with the price, and creates the account at checkout. The
+`account` variant of the paywall and the free road on the guest panel go.
+
+**What is not known, said plainly.** Nobody has yet observed a guest meeting a
+wall with no free step behind it. The read, two weeks after shipping, is
+purchases per essay-sized first paste, against the 31% that essay signups
+convert at today. If it falls well short of that, the wall is the problem and
+the allowance is not, and this entry gets revisited.
+
+**Ruled against at the same time:** a $100 pack (251 of 305 credits sold are
+unspent; the two Pro buyers used 0 and 1 of 100); a subscription yet (1 of 7
+buyers has repeated); any change to the three packs or the checkout.
+
+**What the change touches, so the next session knows the shape of it.** The
+grant is minted by a database trigger (`mint_signup_grant`,
+`20260823120200`), so this is a migration Jon runs, plus `SIGNUP_CREDITS` in
+code, the paywall, the credit offer panel, the sign-up page's promise, the
+pricing page and calculator, and the three legal pages, which name the numbers.

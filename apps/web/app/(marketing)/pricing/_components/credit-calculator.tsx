@@ -183,8 +183,8 @@ export function CreditCalculator() {
                 'text-foreground mt-5 text-[14.5px] leading-[1.6] font-medium'
               }
             >
-              Your five free credits already cover this. You do not need to buy
-              anything to run it.
+              Your {FREE_CREDITS === 2 ? 'two' : FREE_CREDITS} free credits already
+              cover this. You do not need to buy anything to run it.
             </p>
           ) : (
             <div className={'mt-5'}>

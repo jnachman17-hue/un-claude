@@ -129,12 +129,18 @@ export function BuyButton({
        * a visitor: they need an account before they can buy. The route decides
        * this, not the browser.
        *
-       * THE PACK THEY CHOSE IS LOST AT THIS POINT, and that is a known gap
-       * rather than an oversight. Carrying it through sign-up means a return
-       * path through `packages/features/auth`, which 04 entry 109 left alone as
-       * another session's file. The wallet's "Get credits" button brings them
-       * back to this page afterwards, so the loop closes — it just closes one
-       * click wider than it should.
+       * THEY COME BACK HERE. Until 21 September 2026 sign-up landed on the
+       * tool, and 04 entry 109 recorded that as closing the loop "one click
+       * wider than it should". Since entries 165 and 166 an account exists
+       * for exactly this moment and nothing else, so the sign-up page carries
+       * `next` back to the packs through both of its doors, without touching
+       * `packages/features/auth` (the kit already reads `next` off the
+       * address; the page only has to pass it to the Google return path).
+       *
+       * THE PACK THEY CHOSE IS STILL NOT CARRIED, deliberately. Landing back
+       * on this page with the cards in view is one press; landing on Stripe's
+       * payment page unasked, possibly days later from a confirmation email,
+       * is a surprise. One press is the right price for not surprising them.
        */
       if (response.status === 401 || response.status === 402) {
         // Not a failure. 401 is nobody signed in, 402 is the anonymous guest
@@ -145,7 +151,7 @@ export function BuyButton({
           state: response.status === 401 ? 'signed_out' : 'guest',
         });
 
-        router.push('/auth/sign-up');
+        router.push('/auth/sign-up?next=%2Fpricing');
 
         return;
       }
