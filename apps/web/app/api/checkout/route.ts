@@ -47,7 +47,7 @@
  */
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
-import { packById, packCents, packLineItem, stripe, stripeConfigured } from '~/lib/server/stripe';
+import { packById, packCents, packCheckoutLineItem, stripe, stripeConfigured } from '~/lib/server/stripe';
 import { rateLimit } from '~/lib/server/rate-limit';
 
 /**
@@ -125,7 +125,12 @@ export async function POST(request: Request) {
 
   const session = await stripe().checkout.sessions.create({
     mode: 'payment',
-    line_items: [packLineItem(pack)],
+    /*
+       A real Stripe Price when one exists, so the buyer sees a clean number in
+       their own currency; the old inline USD price when it does not. 04 entry
+       167 and `packCheckoutLineItem`.
+    */
+    line_items: [await packCheckoutLineItem(pack)],
 
     /*
      * CARD ONLY, AND THIS IS A CORRECTNESS DECISION BEFORE IT IS A PRODUCT ONE.

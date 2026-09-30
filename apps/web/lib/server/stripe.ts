@@ -2,7 +2,7 @@ import 'server-only';
 
 import Stripe from 'stripe';
 
-import { PACKS, type Pack } from '~/(marketing)/pricing/_components/pricing-data';
+import { LOCAL_PRICES, PACKS, type Pack } from '~/(marketing)/pricing/_components/pricing-data';
 
 /**
  * Everything that talks to Stripe, in one file. 04 entry 112.
@@ -133,11 +133,108 @@ export function packLineItem(pack: Pack): Stripe.Checkout.SessionCreateParams.Li
       currency: 'usd',
       unit_amount: packCents(pack),
       product_data: {
-        name: `Un-Claude ${pack.name} — ${pack.credits} credits`,
-        description:
-          `${pack.credits} credits for un-claude.com. One credit covers 1,000 ` +
-          `words of text or one file. Credits never expire.`,
+        name: packProductName(pack),
+        description: packProductDescription(pack),
       },
     },
   };
+}
+
+/** One name for this pack wherever it is created, so two paths cannot drift. */
+function packProductName(pack: Pack): string {
+  return `Un-Claude ${pack.name} — ${pack.credits} credits`;
+}
+
+function packProductDescription(pack: Pack): string {
+  return (
+    `${pack.credits} credits for un-claude.com. One credit covers 1,000 ` +
+    `words of text or one file. Credits never expire.`
+  );
+}
+
+/**
+ * ★ THE STABLE NAME A PACK'S STRIPE PRICE IS FOUND BY.
+ *
+ * A `lookup_key` is Stripe's own idempotency handle for a Price: unique per
+ * mode, searchable, and transferable between Prices. It carries a version
+ * suffix because **a Stripe Price is immutable.** Changing what a pack costs
+ * means creating a new Price, and without a version in the key the setup
+ * script would find the old one, decide there was nothing to do, and silently
+ * keep charging the old amount. Bump the suffix whenever an amount changes.
+ */
+export function packLookupKey(pack: Pack): string {
+  return `uc_${pack.id}_v1`;
+}
+
+/** The `currency_options` payload for a pack. 04 entry 167, and pricing-data.ts. */
+export function packCurrencyOptions(
+  pack: Pack,
+): Record<string, { unit_amount: number }> {
+  const options: Record<string, { unit_amount: number }> = {};
+
+  for (const [currency, amounts] of Object.entries(LOCAL_PRICES)) {
+    const amount = amounts[pack.id];
+
+    if (typeof amount === 'number') options[currency] = { unit_amount: amount };
+  }
+
+  return options;
+}
+
+/**
+ * ★ THE LINE ITEM CHECKOUT ACTUALLY USES, AND WHY IT IS NOT THE ONE ABOVE.
+ *
+ * Clean local prices live in a Price object's `currency_options`, and
+ * **`currency_options` cannot go inside an inline `price_data`.** Proved
+ * against Stripe rather than read in a document:
+ *
+ *     line_items[0][price_data][currency_options]
+ *       -> HTTP 400 "Received unknown parameter"
+ *
+ * So a pack that wants local prices has to be a real Price, referenced by id.
+ * This looks one up by `lookup_key` and uses it.
+ *
+ * ★ AND IT FALLS BACK TO THE INLINE PRICE RATHER THAN FAILING. That is the
+ * whole safety of this change. If the setup script has not been run in this
+ * mode, or Stripe cannot be reached, or the key was rotated, checkout carries
+ * on in USD exactly as it did before — which is a worse-looking page, not a
+ * lost sale. **A money path may degrade. It may never break.**
+ *
+ * The result is cached for the life of the server process because a Price id
+ * does not change and a lookup on every checkout is a network round trip in
+ * front of a buyer who has already pressed the button.
+ */
+const priceIdCache = new Map<string, string | null>();
+
+export async function packCheckoutLineItem(
+  pack: Pack,
+): Promise<Stripe.Checkout.SessionCreateParams.LineItem> {
+  const key = packLookupKey(pack);
+
+  if (!priceIdCache.has(key)) {
+    try {
+      /*
+       * LIST, NOT SEARCH. `prices.search` runs on an eventually consistent
+       * index, so a Price created minutes ago can still be invisible to it —
+       * which would silently drop a buyer back to the USD fallback right after
+       * the prices were set up. The list endpoint's `lookup_keys` filter reads
+       * the object directly and is consistent immediately.
+       */
+      const found = await stripe().prices.list({
+        lookup_keys: [key],
+        active: true,
+        limit: 1,
+      });
+
+      priceIdCache.set(key, found.data[0]?.id ?? null);
+    } catch (error) {
+      // Logged, not thrown. The fallback below is a working checkout.
+      console.warn(`stripe: could not look up price ${key}`, error);
+      priceIdCache.set(key, null);
+    }
+  }
+
+  const priceId = priceIdCache.get(key);
+
+  return priceId ? { quantity: 1, price: priceId } : packLineItem(pack);
 }

@@ -6790,3 +6790,79 @@ three slide headings now share one size (19px, 21px on desktop), which is more
 consistent anyway, and the "Longest run left" result moved into the chat
 window's corner badge, the same spot as "5 signals" and "Anthropic's key".
 Measured after: 18 pixels of room before the rewrite, 32 after.
+
+### 167. Clean local prices in EUR, GBP, AUD and CAD, over the top of Adaptive Pricing. Jon's ruling, 30 September 2026.
+
+**The ruling.** Hand-set prices in the four biggest non-US currencies, clean
+`.99` numbers, accepting the uplift against today's converted amounts.
+Everything else keeps Stripe's automatic conversion.
+
+| Pack | USD | EUR | GBP | AUD | CAD |
+|---|---|---|---|---|---|
+| Starter | 4.99 | 4.99 | 3.99 | 7.99 | 7.99 |
+| Plus | 9.99 | 9.99 | 7.99 | 14.99 | 14.99 |
+| Pro | 24.99 | 24.99 | 19.99 | 39.99 | 39.99 |
+
+**The premise this started from was wrong, and finding that out is most of the
+entry.** Jon asked whether Stripe could be made to show local currency. **It
+already was.** Adaptive Pricing has been enabled on the live account all along,
+and the live checkout sessions carry the proof in a `presentment_details` hash
+that nothing in this project was reading:
+
+```
+2026-09-28  settled USD 4.99   shown to the buyer  EUR  4.56
+2026-09-21  settled USD 24.99  shown to the buyer  CAD 36.39
+2026-09-11  settled USD 4.99   shown to the buyer  AUD  7.22
+2026-09-08  settled USD 9.99   shown to the buyer  ILS 31.30
+2026-09-07  settled USD 9.99   shown to the buyer  GBP  7.69
+```
+
+**So the question was never "can we show local currency", it was "can we stop
+it looking like that".** Every figure above is unrounded, because **Stripe has
+no rounding rule** — five real conversions, not one landing on a round number.
+
+**Jon's own question, and the answer that settles the design: why not just
+round up to .99 automatically?** Two reasons. Stripe does not offer it. And an
+automatically rounded price would **move with the exchange rate** — EUR 4.56
+rounds to 4.99 today and to 5.49 after a bad month — whereas a hand-set price
+never moves, and a price that is identical on every visit is most of what
+"looks professional" actually means.
+
+**Why these amounts.** Roughly +4% (GBP) to +10% (AUD/CAD Pro) on what buyers
+pay today. EUR matches the dollar ladder exactly because the two currencies sit
+close enough that a second ladder would be noise. AUD and CAD share one ladder
+because their rates are within a penny of each other, and two near-identical
+ladders are two places to make a mistake.
+
+**The trade, named rather than buried: we now carry the exchange-rate risk on
+these four currencies**, which is precisely the risk Adaptive Pricing exists to
+remove. On a product between five and twenty five dollars it is a rounding
+error, and it is the deliberate price of a tidy number.
+
+**Proved end to end in test mode before going near live**, by opening the real
+Stripe Checkout page rather than trusting an API field:
+
+- A German buyer sees **€9.99** on the Plus pack, with Bancontact, EPS and MB
+  WAY offered alongside cards.
+- A British buyer sees **£7.99**.
+
+**Two things that shaped the implementation and are worth knowing before
+touching it.**
+
+1. **`currency_options` cannot live in an inline `price_data`.** Stripe answers
+   `HTTP 400 "Received unknown parameter"`. Clean local prices require a real
+   Price object referenced by id, which is why `packCheckoutLineItem` exists.
+2. **A currency with no manual price is REFUSED, not converted.** Asking for
+   JPY against these prices returns *"The price specified only supports aud,
+   eur, cad, gbp, or usd"*. **Adaptive Pricing must therefore stay switched
+   on** to catch Brazil, India, Japan and everywhere else. Stripe's rule is
+   that a manual price overrides Adaptive Pricing for that currency only.
+
+**The fallback is the safety and it is deliberate.** If the Price is missing,
+Stripe is unreachable, or the key is rotated, checkout drops back to the old
+inline USD price. **A money path may degrade; it may never break.**
+
+**Not decided here, and still open in `06`: the terms still say United States
+only** while nine of thirteen sales are non-US cards. This entry makes the
+product better at selling to exactly the customers the terms disclaim. That
+contradiction is Jon's to resolve and this ruling does not touch it.
