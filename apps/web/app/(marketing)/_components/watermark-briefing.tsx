@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ClockIcon, InfinityIcon, XIcon } from 'lucide-react';
+import { ClockIcon, KeyRoundIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 
 import { briefingDismissed, briefingShown } from '~/lib/analytics/events';
 
@@ -158,9 +158,15 @@ function markSeen(): void {
  * WHAT THE THREE SCENES ARE:
  *
  *   1  AI models watermark the text they write. INVISIBLY.
- *   2  the real news screenshots, popping in scattered, hero landing last
- *   3  The model is nudged at every pick.                   + words swapping
- *   4  Not hidden code. Not metadata. The watermark is the words.  + the scan
+ *      the real news screenshots, popping in scattered, hero landing last
+ *   2  Not hidden code. Not metadata. The watermark is the words.  + the scan
+ *   3  The model is nudged at every pick.   + words swapping, Anthropic's key
+ *   4  So we rebuild the wording.                         + the runs breaking
+ *   5  Un-Claude, centred, with a replay button
+ *
+ * ★ 2 AND 3 SWAPPED PLACES, 30 September 2026, at Jon's instruction: WHAT the
+ * mark is comes before HOW it gets in. The key joined scene 3 the same day,
+ * because "a key chose which" named the key without ever showing it.
  *
  * The Claude Design artifact remains the directional reference and NOT a thing
  * to copy wholesale. Jon: *"it was to take inspiration from, pull directly from
@@ -424,19 +430,32 @@ const RUN_SEGMENTS = Array.from(
  */
 const STEP = 100;
 
+/*
+ * ★ 30 SEPTEMBER 2026, JON: "THE ENTIRE THING MOVES TOO QUICKLY." Four changes,
+ * each his:
+ *   - the hook holds 1.5s after "Invisibly." before the news lands on it;
+ *     he could not finish reading it before
+ *   - the California Post hero holds 1.7s instead of 0.65s
+ *   - the words scene now comes BEFORE the nudge scene, and each got longer:
+ *     the heading reads alone for 0.6s before the scan starts, and the nudge
+ *     holds 2.4s after the key turns so its caption can be read
+ *   - the rebuild beat keeps its exact pacing, just starts later
+ */
 const T = {
-  LINE_TWO: 450,
-  INVISIBLY: 1000,
-  /* The shots land ON the hook rather than after it, and they land fast. */
-  SHOTS_FROM: 1500,
+  LINE_TWO: 600,
+  INVISIBLY: 1300,
+  /* The shots land ON the hook, after it has had time to be read. */
+  SHOTS_FROM: 2800,
   SHOT_GAP: 120,
-  HERO_AT: 2450,
-  /* Jon: this screen "feels too compressed and too quick". It gets 3 seconds. */
-  NUDGE_FROM: 3100,
+  HERO_AT: 3750,
+  /* The words scene: heading alone first, then the scan sweeps. */
+  WORDS_FROM: 5450,
+  SCAN_FROM: 6050,
+  SCAN_TO: 8050,
+  /* The nudge scene: words swap, then the key turns and they lock. */
+  NUDGE_FROM: 8750,
   SWAP_EVERY: 260,
-  NUDGE_LANDS: 5800,
-  SCAN_FROM: 6100,
-  SCAN_TO: 7700,
+  NUDGE_LANDS: 11050,
   /* ── THE REBUILD, AND IT IS NOW THE LONGEST BEAT ON PURPOSE. ──────────
      Jon: "the we rebuild the wording sequence is so short and compressed...
      We can literally see nothing in that frame. You can add a few seconds."
@@ -447,26 +466,26 @@ const T = {
        RUNS_AT     the highlights clear and the unbroken run bar appears
        REBUILD_AT  the rewrite sweeps through and the bar breaks apart
        REBUILT_BY  settled, with the surviving run named */
-  FIX_FROM: 8000,
-  RUNS_AT: 8700,
-  REBUILD_AT: 9500,
-  REBUILT_BY: 10700,
-  END_FROM: 11400,
-  TOTAL: 12200,
+  FIX_FROM: 13450,
+  RUNS_AT: 14150,
+  REBUILD_AT: 14950,
+  REBUILT_BY: 16150,
+  END_FROM: 16850,
+  TOTAL: 17650,
 } as const;
 
 /*
- * ★ THE CEILING WAS 10 SECONDS AND JON LIFTED IT HIMSELF. "I told you we can
- * go slightly over if needed." Every one of the added 2.3 seconds went to the
- * rebuild beat; no earlier beat moved by a millisecond, because he has already
- * approved their pacing.
+ * ★ THE CEILING WAS 10 SECONDS AND JON HAS LIFTED IT TWICE HIMSELF. First to
+ * 13 for the rebuild beat ("I told you we can go slightly over if needed"),
+ * then on 30 September 2026 to 18, when he asked for the whole sequence to
+ * slow down so it could actually be read.
  *
  * The assertion stays, at the new number, because the reason for having one has
  * not changed: a briefing that outstays its welcome is a thing people close.
  * **Do not raise this again without asking him.**
  */
-if (T.TOTAL > 13_000)
-  throw new Error('The briefing must not exceed 13 seconds.');
+if (T.TOTAL > 18_000)
+  throw new Error('The briefing must not exceed 18 seconds.');
 
 const ANTHROPIC_ANNOUNCEMENT =
   'https://www.anthropic.com/news/claude-text-watermark';
@@ -534,17 +553,7 @@ const BEATS = [
       </>
     ),
   },
-  {
-    icon: InfinityIcon,
-    /* Jon: "Marks don't expire is good." Untouched. */
-    head: 'Marks don’t expire',
-    body: (
-      <>
-        What you have already handed in stays marked. It does not fade, and it
-        can be checked long after you handed it in.
-      </>
-    ),
-  },
+  /* "Marks don't expire" was the second block. Jon cut it, 30 September 2026. */
 ] as const;
 
 /**
@@ -619,6 +628,8 @@ export function WatermarkBriefing() {
    * slows the ticks down.
    */
   const [ms, setMs] = useState(0);
+  /** Set once on open. A visitor who asked for less motion gets no replay. */
+  const [reduced, setReduced] = useState(false);
 
   const openedAt = useRef(0);
   const timers = useRef<number[]>([]);
@@ -632,6 +643,45 @@ export function WatermarkBriefing() {
     timers.current = [];
     intervals.current = [];
   }, []);
+
+  /**
+   * Runs the counter from wherever `ms` is. One function, used by the first
+   * play AND by the replay button, so the two can never tick differently.
+   */
+  const startTicker = useCallback(() => {
+    for (const id of intervals.current) window.clearInterval(id);
+    intervals.current = [];
+
+    const review = window.location.search.includes(REVIEW_PARAM);
+
+    const tick = window.setInterval(() => {
+      setMs((at) => {
+        if (at < T.TOTAL) return at + STEP;
+
+        // Normally the sequence stops on its final frame and stays there.
+        if (!review) {
+          window.clearInterval(tick);
+          return at;
+        }
+
+        // Under review it holds that frame, then runs again.
+        return at >= T.TOTAL + LOOP_HOLD ? 0 : at + STEP;
+      });
+    }, STEP);
+
+    intervals.current.push(tick);
+  }, []);
+
+  /**
+   * ★ THE REPLAY BUTTON ON THE END CARD. Jon, 30 September 2026. Focus goes
+   * back to the panel because the button that had it disappears with the
+   * end card the moment the sequence restarts.
+   */
+  const replay = useCallback(() => {
+    setMs(0);
+    startTicker();
+    panel.current?.focus();
+  }, [startTicker]);
 
   const close = useCallback(
     (via: 'cta' | 'close' | 'backdrop' | 'escape') => {
@@ -683,26 +733,12 @@ export function WatermarkBriefing() {
       // which is scene D held: the sentence that does the work, over the marked
       // card. Never a blank stage and never a half-built one.
       if (reduced) {
+        setReduced(true);
         setMs(T.TOTAL);
         return;
       }
 
-      const tick = window.setInterval(() => {
-        setMs((at) => {
-          if (at < T.TOTAL) return at + STEP;
-
-          // Normally the sequence stops on its final frame and stays there.
-          if (!review) {
-            window.clearInterval(tick);
-            return at;
-          }
-
-          // Under review it holds that frame, then runs again.
-          return at >= T.TOTAL + LOOP_HOLD ? 0 : at + STEP;
-        });
-      }, STEP);
-
-      intervals.current.push(tick);
+      startTicker();
     }, 550);
 
     timers.current.push(id);
@@ -713,7 +749,7 @@ export function WatermarkBriefing() {
       timers.current = [];
       intervals.current = [];
     };
-  }, []);
+  }, [startTicker]);
 
   // Escape closes it, the page underneath does not scroll behind it, and Tab
   // stays inside. A wall a keyboard user cannot get out of is not "informational".
@@ -772,11 +808,11 @@ export function WatermarkBriefing() {
    * the hook AND the cover: the words stay where they are and the screenshots
    * land on top of them, fast.
    */
-  const scene1 = ms < T.NUDGE_FROM;
-  const scene5 = ms >= T.END_FROM;
-  const scene4 = !scene5 && ms >= T.FIX_FROM;
-  const scene3 = !scene4 && !scene5 && ms >= T.SCAN_FROM;
-  const scene2 = !scene1 && !scene3 && !scene4 && !scene5;
+  const sceneHook = ms < T.WORDS_FROM;
+  const sceneEnd = ms >= T.END_FROM;
+  const sceneFix = !sceneEnd && ms >= T.FIX_FROM;
+  const sceneNudge = !sceneFix && !sceneEnd && ms >= T.NUDGE_FROM;
+  const sceneWords = !sceneHook && !sceneNudge && !sceneFix && !sceneEnd;
 
   /** Scene 1 arrives a line at a time, then is buried. */
   const showsLineTwo = ms >= T.LINE_TWO;
@@ -784,11 +820,11 @@ export function WatermarkBriefing() {
   const shotsIn = Math.max(0, Math.floor((ms - T.SHOTS_FROM) / T.SHOT_GAP) + 1);
   const heroIn = ms >= T.HERO_AT;
 
-  /** Scene 2: which alternative each moving pick is showing. */
+  /** The nudge scene: which alternative each moving pick is showing. */
   const swap = Math.floor((ms - T.NUDGE_FROM) / T.SWAP_EVERY);
   const landed = ms >= T.NUDGE_LANDS;
 
-  /** Scene 3: the scan's progress, and how many picks it has lit so far. */
+  /** The words scene: the scan's progress, and how many picks it has lit. */
   const scan = clamp01((ms - T.SCAN_FROM) / (T.SCAN_TO - T.SCAN_FROM));
   const found = Math.round(scan * SIGNALS);
 
@@ -869,7 +905,7 @@ export function WatermarkBriefing() {
             }
           >
             {/* ── 1. THE HOOK, AND THE NEWS BURYING IT. ──────────────────── */}
-            <div className={'absolute inset-0'} hidden={!scene1}>
+            <div className={'absolute inset-0'} hidden={!sceneHook}>
               <div className={'p-5 sm:p-6'}>
                 <p
                   className={
@@ -940,58 +976,9 @@ export function WatermarkBriefing() {
               />
             </div>
 
-            {/* ── 2. HOW IT GETS IN, INSIDE CLAUDE'S OWN WINDOW. ─────────── */}
-            <div
-              className={
-                'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
-              }
-              hidden={!scene2}
-            >
-              <h3
-                className={
-                  'text-foreground text-[19px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[21px]'
-                }
-              >
-                The model is nudged at every pick.
-              </h3>
-
-              <ClaudeWindow>
-                <p
-                  className={'mt-2.5 text-[15.5px] leading-[1.75] font-medium'}
-                >
-                  {PROSE.map((token, index) => {
-                    const moving = 'alts' in token;
-                    const pool = moving ? [token.text, ...token.alts] : null;
-                    const shown =
-                      pool && !landed
-                        ? pool[Math.abs(swap + index) % pool.length]!
-                        : token.text;
-
-                    return (
-                      <span
-                        key={index}
-                        className={
-                          moving
-                            ? 'text-mark-strong transition-colors duration-200 motion-reduce:transition-none'
-                            : 'text-foreground/75'
-                        }
-                      >
-                        {index === 0 || 'glue' in token ? '' : ' '}
-                        {shown}
-                      </span>
-                    );
-                  })}
-                </p>
-              </ClaudeWindow>
-
-              <p className={'text-muted-foreground mt-2.5 text-[12px]'}>
-                {SWAPPERS === 3 ? 'Three' : SWAPPERS} of these words could have
-                been others. A key chose which.
-              </p>
-            </div>
-
             {/*
-              ── 3. WHAT THAT ADDS UP TO.
+              ── 2. WHAT THE MARK IS. Second since 30 September 2026; it used
+              to follow the nudge scene. Jon: what the mark is comes first.
 
               ★ RELAID AFTER JON'S NOTE: "this screen looks really bad... the
               title is sort of in the same area and the text and the size as
@@ -1007,7 +994,7 @@ export function WatermarkBriefing() {
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene3}
+              hidden={!sceneWords}
             >
               <p
                 className={
@@ -1079,6 +1066,115 @@ export function WatermarkBriefing() {
             </div>
 
             {/*
+              ── 3. HOW IT GETS IN, AND WHO HOLDS THE KEY.
+
+              ★ THE KEY IS DRAWN, NOT JUST NAMED. Jon, 30 September 2026:
+              explain Anthropic holding the key, and how it decides the word.
+              The old caption said "A key chose which" and showed nothing.
+
+              Now the key sits in Claude's own window header, grey while the
+              three picks cycle through their alternatives. When they land, the
+              key turns in its lock, goes rust, and the three words it chose
+              lock in with the same rust behind them. Key turns, words lock:
+              the cause is on screen next to the effect.
+
+              ★ THE CLAIM IS THE HOW IT WORKS PAGE'S, NOT A NEW ONE. That page
+              says a watermarking model "hands that pick to a secret key" and
+              "whoever holds the key can test any text for it". This says the
+              same, and nothing about US targeting the key, which the messaging
+              skill forbids (`04` entry 78 ruling 2).
+            */}
+            <div
+              className={
+                'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
+              }
+              hidden={!sceneNudge}
+            >
+              <h3
+                className={
+                  'text-foreground text-[19px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[21px]'
+                }
+              >
+                The model is nudged at every pick.
+              </h3>
+
+              <ClaudeWindow
+                badge={
+                  <span
+                    className={[
+                      'inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10.5px] font-semibold transition-colors duration-300',
+                      landed
+                        ? 'bg-mark-strong text-white'
+                        : 'bg-foreground/[0.07] text-foreground/60',
+                    ].join(' ')}
+                  >
+                    <KeyRoundIcon
+                      className={[
+                        'size-[11px] transition-transform duration-500 motion-reduce:transition-none',
+                        landed ? 'rotate-90' : 'rotate-0',
+                      ].join(' ')}
+                      strokeWidth={2.4}
+                      aria-hidden
+                    />
+                    Anthropic&rsquo;s key
+                  </span>
+                }
+              >
+                <p
+                  className={'mt-2.5 text-[15.5px] leading-[1.75] font-medium'}
+                >
+                  {PROSE.map((token, index) => {
+                    const moving = 'alts' in token;
+                    const pool = moving ? [token.text, ...token.alts] : null;
+                    const shown =
+                      pool && !landed
+                        ? pool[Math.abs(swap + index) % pool.length]!
+                        : token.text;
+
+                    return (
+                      <span key={index}>
+                        {index === 0 || 'glue' in token ? '' : ' '}
+                        {/* The locked background has no padding, so the
+                            sentence does not shift when the key turns. */}
+                        <span
+                          className={[
+                            'rounded-[3px] transition-colors duration-300 motion-reduce:transition-none',
+                            moving ? 'text-mark-strong' : 'text-foreground/75',
+                            moving && landed ? 'bg-mark-strong/[0.14]' : '',
+                          ].join(' ')}
+                        >
+                          {shown}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </p>
+              </ClaudeWindow>
+
+              <p
+                className={
+                  'text-muted-foreground mt-2.5 text-[12px] leading-[1.45]'
+                }
+              >
+                {landed ? (
+                  <>
+                    Anthropic&rsquo;s{' '}
+                    <span className={'text-foreground font-medium'}>
+                      secret key
+                    </span>{' '}
+                    chose which, and whoever holds the key can test any text for
+                    its picks.
+                  </>
+                ) : (
+                  <>
+                    {SWAPPERS === 3 ? 'Three' : SWAPPERS} of these words could
+                    have been others.
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/*
               ── 4. THE FIX, AND IT IS THE ONLY BEAT THAT SHOWS THE PRODUCT.
 
               Jon: "you need to make them know... you fix this by an engineered
@@ -1114,7 +1210,7 @@ export function WatermarkBriefing() {
               className={
                 'absolute inset-0 flex flex-col justify-center p-5 sm:p-6'
               }
-              hidden={!scene4}
+              hidden={!sceneFix}
             >
               <h3
                 className={
@@ -1147,9 +1243,10 @@ export function WatermarkBriefing() {
                       <span key={index}>
                         {index === 0 ? '' : ' '}
                         {mark && !showsRuns ? (
-                          /* Carried over from the scan, chip and all, so the
-                             cut into this scene changes the words above the
-                             sentence and nothing else. */
+                          /* The scan's chips, back for a moment. Since the
+                             30 September reorder the scan is two scenes
+                             earlier, so this reminds the reader which words
+                             carry the mark before the runs replace them. */
                           <span
                             className={
                               'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white'
@@ -1232,12 +1329,19 @@ export function WatermarkBriefing() {
               sub-line, because this dialog has a permanent CTA in its footer.
               Also where a reduced-motion visitor lands and where the review
               loop rests.
+
+              ★ JUST THE NAME, DEAD CENTRE, AND A WAY TO WATCH AGAIN. Jon, 30
+              September 2026: the line under the logo ("Your writing already
+              carries it.") is gone, and the replay button is pinned to the
+              bottom of the box rather than stacked under the logo, so the logo
+              stays exactly centred. No replay for reduced motion: that visitor
+              was never shown the motion in the first place.
             */}
             <div
               className={
-                'absolute inset-0 flex flex-col items-center justify-center gap-4 p-5 sm:p-6'
+                'absolute inset-0 flex items-center justify-center p-5 sm:p-6'
               }
-              hidden={!scene5}
+              hidden={!sceneEnd}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -1245,13 +1349,23 @@ export function WatermarkBriefing() {
                 alt={'Un-Claude'}
                 className={'h-auto w-[224px] max-w-[64%] dark:invert'}
               />
-              <p
-                className={
-                  'text-foreground text-center text-[19px] leading-[1.25] font-semibold tracking-[-0.02em] text-balance sm:text-[21px]'
-                }
-              >
-                Your writing already carries it.
-              </p>
+
+              {reduced ? null : (
+                <button
+                  type={'button'}
+                  onClick={replay}
+                  className={
+                    'border-border/70 bg-card text-foreground/75 hover:text-foreground hover:bg-foreground/[0.04] absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-colors'
+                  }
+                >
+                  <RotateCcwIcon
+                    className={'size-[13px]'}
+                    strokeWidth={2.2}
+                    aria-hidden
+                  />
+                  Replay
+                </button>
+              )}
             </div>
           </div>
 
@@ -1298,7 +1412,7 @@ export function WatermarkBriefing() {
             ))}
 
             <p className={'text-muted-foreground/80 pt-0.5 text-[11.5px]'}>
-              Both from{' '}
+              From{' '}
               <a
                 href={ANTHROPIC_ANNOUNCEMENT}
                 target={'_blank'}

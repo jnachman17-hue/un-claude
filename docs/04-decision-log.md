@@ -6716,3 +6716,37 @@ grant is minted by a database trigger (`mint_signup_grant`,
 `20260823120200`), so this is a migration Jon runs, plus `SIGNUP_CREDITS` in
 code, the paywall, the credit offer panel, the sign-up page's promise, the
 pricing page and calculator, and the three legal pages, which name the numbers.
+
+### 167. The arrival briefing slows down, reorders, and shows the key. Jon's instructions, 30 September.
+
+**All in `apps/web/app/(marketing)/_components/watermark-briefing.tsx`.** His
+complaint: "The entire thing moves too quickly."
+
+1. **The opening line holds longer.** "AI models watermark the text they
+   write. Invisibly." now has 1.5 seconds on screen before the news
+   screenshots land on it. He could not finish reading it before.
+2. **The California Post screenshot holds 1.7 seconds**, up from 0.65, so it
+   can be read.
+3. **"The watermark is the words" now comes before "The model is nudged at
+   every pick"**, and both are longer. His reasoning: what the mark is makes
+   more sense before how it gets in.
+4. **The key is drawn, not just named.** He asked for a way to show Anthropic
+   holding the key that decides the word choice, built into an existing slide.
+   The nudge slide's Claude window now carries an "Anthropic's key" badge.
+   When the swapping words settle, the key turns, and the three words it chose
+   lock in behind a rust highlight. The caption reads "Anthropic's secret key
+   chose which, and whoever holds the key can test any text for its picks."
+   **That claim is the How it works page's own**, and it says nothing about us
+   targeting the key (entry 78 ruling 2).
+5. **The end card is the Un-Claude logo, centred, and nothing else**, plus a
+   Replay button. "Your writing already carries it." is gone. There is no
+   replay for visitors who asked their device for reduced motion, because they
+   were never shown the motion.
+6. **Under the video, "Marks don't expire" is cut.** "A watermark detector
+   already exists" stays with its body, and the source line reads "From
+   Anthropic's own announcement" instead of "Both from".
+
+**The length ceiling moved from 13 to 18 seconds**, as a direct consequence of
+point 1 to 3. The end card now arrives at about 16.9 seconds, up from 11.4. The
+rebuild beat kept its pacing exactly; it only starts later. The ceiling's
+assertion stays in the code so it cannot creep further without asking him.
