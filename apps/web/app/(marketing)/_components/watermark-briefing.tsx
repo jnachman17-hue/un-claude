@@ -284,37 +284,61 @@ const PROMPT = 'Write my final essay';
 /**
  * The sentence Claude "wrote", used by every scene after the news.
  *
- * `mark` is a pick the watermark could sit on. `alts` are the words that would
- * have read just as well, and only some picks carry them, because the nudge
- * scene only needs a few words moving to make its point.
+ * A token with `alts` is a PICK: a place where other words would have read just
+ * as well, which is the only place a key can nudge. `alts` are those words.
+ *
+ * ★ ONE SET OF PICKS, AND ALL THREE SCENES SHOW EXACTLY THAT SET. Jon, 30
+ * September 2026: "I want to use the same sentence, same highlighted words,
+ * across all three sequences." Before this, the scan lit eight words, the
+ * nudge moved three of them, and the rebuild lit eight again, so a visitor
+ * watched three different answers to "which words are the mark". Now:
+ *
+ *   words scene    the scan lights these five
+ *   nudge scene    these same five cycle, the key turns, they lock
+ *   rebuild scene  these same five start lit and the rewrite replaces them
+ *
+ * **The only definition of a pick is `alts` being present**, so there is no
+ * second flag that could drift from it.
  *
  * ★ THE SIGNAL COUNT IS DERIVED FROM THIS ARRAY AND NEVER TYPED. Jon: "I don't
  * know why there's eleven signals when you highlight three words." He was
  * right: `SIGNALS` was a hand-written 11 sitting next to three highlighted
- * words. **Counting the marks means the badge and the highlights cannot
+ * words. **Counting the picks means the badge and the highlights cannot
  * disagree again, whatever anybody does to this sentence.**
  */
 const PROSE = [
   { text: 'The' },
-  { text: 'results', mark: true },
-  { text: 'were', mark: true },
-  { text: 'striking', mark: true, alts: ['notable', 'marked'] },
+  { text: 'results', alts: ['findings', 'outcomes'] },
+  { text: 'were' },
+  { text: 'striking', alts: ['notable', 'marked'] },
   { text: 'and the' },
-  { text: 'effect', mark: true },
-  { text: 'held', mark: true, alts: ['lasted', 'stuck'] },
-  { text: 'across', mark: true },
-  { text: 'every' },
-  { text: 'trial', mark: true, alts: ['test', 'run'] },
-  { text: 'that' },
-  { text: 'followed', mark: true },
+  { text: 'effect', alts: ['impact', 'change'] },
+  { text: 'held', alts: ['lasted', 'stuck'] },
+  { text: 'across every' },
+  { text: 'trial', alts: ['test', 'study'] },
+  { text: 'that followed' },
   { text: '.', glue: true },
 ] as const;
 
 /** Counted, never typed. See above. */
-const SIGNALS = PROSE.filter((t) => 'mark' in t).length;
+const SIGNALS = PROSE.filter((t) => 'alts' in t).length;
 
-/** The few picks that visibly move in the nudge scene. */
-const SWAPPERS = PROSE.filter((t) => 'alts' in t).length;
+/** For the nudge caption, which says the count in words. */
+const COUNT_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+const SIGNALS_IN_WORDS = COUNT_WORDS[SIGNALS] ?? String(SIGNALS);
+
+/**
+ * ★ ONE CHIP, USED BY ALL THREE SCENES, so a pick looks the same wherever it
+ * appears. `CHIP_SOFT` is the same shape in a lighter tone, for the moment in
+ * the nudge scene before the key has locked the pick in.
+ */
+const CHIP =
+  'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white';
+const CHIP_SOFT =
+  'bg-mark-strong/[0.14] text-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2]';
+
+/** And one type setting for the sentence, for the same reason. */
+const SENTENCE = 'relative mt-2 text-[14px] leading-[2]';
 
 /**
  * ★ THE SENTENCE FLATTENED TO WORDS, CARRYING WHETHER EACH ONE IS A PICK.
@@ -326,7 +350,7 @@ const SWAPPERS = PROSE.filter((t) => 'alts' in t).length;
  * two can never drift, which is the same discipline `SIGNALS` is under.
  */
 const ORIGINAL = PROSE.filter((t) => !('glue' in t)).flatMap((t) =>
-  t.text.split(' ').map((word) => ({ word, mark: 'mark' in t })),
+  t.text.split(' ').map((word) => ({ word, mark: 'alts' in t })),
 );
 
 const ORIGINAL_WORDS = ORIGINAL.map((o) => o.word);
@@ -341,12 +365,13 @@ const ORIGINAL_WORDS = ORIGINAL.map((o) => o.word);
  * the failure mode on screen and label it the product.
  *
  * So the sentence is genuinely rebuilt: the clauses change places, the verbs
- * change, and the picks the scan just lit are no longer sitting in the order it
- * found them.
+ * change, and **every one of the five picks is replaced**, because since 30
+ * September the rebuild opens with exactly those five lit and a lit word that
+ * survived the rewrite would contradict the heading above it.
  *
  *   before  The results were striking and the effect held across every trial
  *           that followed.
- *   after   Across every trial, the effect stayed and the results were hard to
+ *   after   Each later test showed the impact lasting, and the findings hard to
  *           miss.
  *
  * **Thirteen words in and thirteen words out**, which is what lets the beat
@@ -354,16 +379,16 @@ const ORIGINAL_WORDS = ORIGINAL.map((o) => o.word);
  * real engine: length holds to within about a tenth.
  */
 const REWRITTEN_WORDS = [
-  'Across',
-  'every',
-  'trial,',
+  'Each',
+  'later',
+  'test',
+  'showed',
   'the',
-  'effect',
-  'stayed',
+  'impact',
+  'lasting,',
   'and',
   'the',
-  'results',
-  'were',
+  'findings',
   'hard',
   'to',
   'miss',
@@ -405,7 +430,7 @@ function longestSharedRun(a: readonly string[], b: readonly string[]): number {
   return best;
 }
 
-/** 3, and it is "The results were". Proved in the session note. */
+/** 2, and it is "and the". Measured by the function above, never typed. */
 const LONGEST_RUN = longestSharedRun(ORIGINAL_WORDS, [...REWRITTEN_WORDS]);
 
 /**
@@ -1005,7 +1030,7 @@ export function WatermarkBriefing() {
               </p>
               <h3
                 className={
-                  'text-foreground mt-1 text-[21px] leading-[1.1] font-semibold tracking-[-0.024em] text-balance sm:text-[24px]'
+                  'text-foreground mt-1 text-[19px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[21px]'
                 }
               >
                 The watermark{' '}
@@ -1023,9 +1048,9 @@ export function WatermarkBriefing() {
                   </span>
                 }
               >
-                <p className={'relative mt-2 text-[13px] leading-[2]'}>
+                <p className={SENTENCE}>
                   {PROSE.map((token, index) => {
-                    const marked = 'mark' in token;
+                    const marked = 'alts' in token;
                     const lit = marked && scan > (index + 0.5) / PROSE.length;
 
                     return (
@@ -1039,13 +1064,7 @@ export function WatermarkBriefing() {
                            * one and left the full stop floating away from
                            * "followed". Unlit, a pick is just a word.
                            */
-                          <span
-                            className={
-                              'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white'
-                            }
-                          >
-                            {token.text}
-                          </span>
+                          <span className={CHIP}>{token.text}</span>
                         ) : (
                           token.text
                         )}
@@ -1073,10 +1092,14 @@ export function WatermarkBriefing() {
               The old caption said "A key chose which" and showed nothing.
 
               Now the key sits in Claude's own window header, grey while the
-              three picks cycle through their alternatives. When they land, the
-              key turns in its lock, goes rust, and the three words it chose
-              lock in with the same rust behind them. Key turns, words lock:
-              the cause is on screen next to the effect.
+              picks cycle through their alternatives in a pale chip. When they
+              land, the key turns in its lock, goes rust, and the words it
+              chose lock into the solid chip the scan used one scene earlier.
+              Key turns, words lock: the cause is on screen next to the effect.
+
+              ★ THE SAME FIVE PICKS AS THE SCAN AND THE REBUILD, in the same
+              chip. Jon, 30 September: one sentence, one set of highlighted
+              words, across all three. See `PROSE`.
 
               ★ THE CLAIM IS THE HOW IT WORKS PAGE'S, NOT A NEW ONE. That page
               says a watermarking model "hands that pick to a secret key" and
@@ -1120,31 +1143,30 @@ export function WatermarkBriefing() {
                   </span>
                 }
               >
-                <p
-                  className={'mt-2.5 text-[15.5px] leading-[1.75] font-medium'}
-                >
+                <p className={SENTENCE}>
                   {PROSE.map((token, index) => {
-                    const moving = 'alts' in token;
-                    const pool = moving ? [token.text, ...token.alts] : null;
+                    const pool =
+                      'alts' in token ? [token.text, ...token.alts] : null;
                     const shown =
                       pool && !landed
                         ? pool[Math.abs(swap + index) % pool.length]!
                         : token.text;
 
                     return (
-                      <span key={index}>
+                      <span key={index} className={'text-foreground/70'}>
                         {index === 0 || 'glue' in token ? '' : ' '}
-                        {/* The locked background has no padding, so the
-                            sentence does not shift when the key turns. */}
-                        <span
-                          className={[
-                            'rounded-[3px] transition-colors duration-300 motion-reduce:transition-none',
-                            moving ? 'text-mark-strong' : 'text-foreground/75',
-                            moving && landed ? 'bg-mark-strong/[0.14]' : '',
-                          ].join(' ')}
-                        >
-                          {shown}
-                        </span>
+                        {pool ? (
+                          <span
+                            className={[
+                              landed ? CHIP : CHIP_SOFT,
+                              'transition-colors duration-300 motion-reduce:transition-none',
+                            ].join(' ')}
+                          >
+                            {shown}
+                          </span>
+                        ) : (
+                          shown
+                        )}
                       </span>
                     );
                   })}
@@ -1167,8 +1189,7 @@ export function WatermarkBriefing() {
                   </>
                 ) : (
                   <>
-                    {SWAPPERS === 3 ? 'Three' : SWAPPERS} of these words could
-                    have been others.
+                    {SIGNALS_IN_WORDS} of these words could have been others.
                   </>
                 )}
               </p>
@@ -1191,12 +1212,21 @@ export function WatermarkBriefing() {
               So the beat now demonstrates the actual mechanism, in three moves
               a phone reader can follow:
 
-                1. the sentence the scan just lit, still lit, so it is plainly
-                   the same artefact and not a new screen
-                2. the highlights clear and a single unbroken bar appears under
-                   it, which is the run the mark rides in
-                3. the rewrite sweeps through the sentence left to right and the
-                   bar breaks into fragments as it goes
+                1. the sentence the key just locked, with the same five picks
+                   still lit, so it is plainly the same artefact
+                2. a single unbroken bar appears under it, which is the run of
+                   original wording the picks sit in
+                3. the rewrite sweeps through left to right: each lit pick is
+                   replaced as the sweep reaches it, and the bar breaks into
+                   fragments as it goes
+
+              ★ THE HEADING SAYS "TEXT", NOT "WORDS", AND THAT IS A RULING.
+              Jon, 30 September, offered "we re-engineer the watermarked words"
+              and asked for something better. `04` entry 78 ruling 2: we may
+              not claim to target the specific words that carry the mark,
+              because nobody outside Anthropic can tell which they are. "The
+              watermarked text" is true, because the engine rebuilds all of
+              it, and on screen the five picks go with everything else.
 
               ★ IT DESCRIBES THE ENGINEERING AND STOPS THERE. The claims file is
               explicit: confident about the engineering, stop short of proving
@@ -1204,7 +1234,7 @@ export function WatermarkBriefing() {
               verdict**, because a verified layer B removal is the one thing
               this product may never show. What it does show is countable and
               true of the two sentences on screen: the longest run of words that
-              survives is three.
+              survives, measured by `longestSharedRun`, never typed.
             */}
             <div
               className={
@@ -1214,50 +1244,61 @@ export function WatermarkBriefing() {
             >
               <h3
                 className={
-                  'text-foreground text-[21px] leading-[1.1] font-semibold tracking-[-0.024em] text-balance sm:text-[24px]'
+                  'text-foreground text-[19px] leading-[1.12] font-semibold tracking-[-0.022em] text-balance sm:text-[21px]'
                 }
               >
                 So we{' '}
-                <span className={'text-mark-strong'}>rebuild the wording.</span>
+                <span className={'text-mark-strong'}>re-engineer</span> the
+                watermarked text.
               </h3>
 
               {/* One line, and it changes once, at the moment the sweep starts.
-                  Before: what the bar the reader is about to see MEANS. After:
-                  what they are watching happen to it. */}
+                  Before: what the lit words are. After: what just happened to
+                  them. Short enough to stay one line on a phone, which is
+                  measured: two lines pushed this scene out of its box. */}
               <p
                 className={
                   'text-muted-foreground mt-1.5 text-[12.5px] leading-[1.45]'
                 }
               >
                 {rebuilt > 0
-                  ? 'Not a few swapped words. The sentence is rebuilt.'
-                  : 'The mark only survives in long runs of consecutive words.'}
+                  ? 'New picks, in a new order.'
+                  : 'The mark rides on these picks.'}
               </p>
 
-              <ClaudeWindow>
-                <p className={'relative mt-2 text-[13px] leading-[2]'}>
+              {/* ★ THE MEASURED RESULT IS A BADGE, in the same corner where
+                  the scan shows its signal count and the nudge shows the key,
+                  so all three windows read the same way. It used to be a line
+                  under the bar, and at phone width that line pushed the scene
+                  out of its box. */}
+              <ClaudeWindow
+                badge={
+                  <span
+                    className={[
+                      'bg-foreground text-background rounded-full px-2 py-[3px] text-[10.5px] font-semibold tabular-nums transition-opacity duration-300',
+                      settled ? 'opacity-100' : 'opacity-0',
+                    ].join(' ')}
+                  >
+                    Longest run left: {LONGEST_RUN} words
+                  </span>
+                }
+              >
+                <p className={SENTENCE}>
                   {ORIGINAL.map(({ word, mark }, index) => {
                     const done = index < rebuiltWords;
 
                     return (
                       <span key={index}>
                         {index === 0 ? '' : ' '}
-                        {mark && !showsRuns ? (
-                          /* The scan's chips, back for a moment. Since the
-                             30 September reorder the scan is two scenes
-                             earlier, so this reminds the reader which words
-                             carry the mark before the runs replace them. */
-                          <span
-                            className={
-                              'bg-mark-strong inline-block rounded-[3px] px-1 py-[2px] leading-[1.2] text-white'
-                            }
-                          >
-                            {word}
-                          </span>
+                        {mark && !done ? (
+                          /* The picks the key locked one scene earlier, in the
+                             same chip, and they stay lit until the sweep
+                             reaches them and replaces them. */
+                          <span className={CHIP}>{word}</span>
                         ) : (
                           <span
                             className={
-                              done ? 'text-foreground' : 'text-foreground/55'
+                              done ? 'text-foreground' : 'text-foreground/70'
                             }
                           >
                             {done ? REWRITTEN_WORDS[index] : word}
@@ -1309,15 +1350,6 @@ export function WatermarkBriefing() {
                     />
                   ))}
                 </div>
-
-                <p
-                  className={[
-                    'text-muted-foreground mt-1.5 text-[10.5px] tabular-nums transition-opacity duration-300',
-                    settled ? 'opacity-100' : 'opacity-0',
-                  ].join(' ')}
-                >
-                  Longest run left standing: {LONGEST_RUN} words
-                </p>
               </ClaudeWindow>
             </div>
 

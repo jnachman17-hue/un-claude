@@ -6750,3 +6750,43 @@ complaint: "The entire thing moves too quickly."
 point 1 to 3. The end card now arrives at about 16.9 seconds, up from 11.4. The
 rebuild beat kept its pacing exactly; it only starts later. The ceiling's
 assertion stays in the code so it cannot creep further without asking him.
+
+### 168. One sentence, one set of highlighted words, across all three briefing slides. Jon's instruction, 30 September.
+
+**His words:** "I want to use the same sentence, same highlighted words, across
+all three sequences and for Anthropic's key it's those highlighted, then we
+rebuild from there. So there's consistent messaging for how it works."
+
+**Before:** the scan lit eight words, the key slide moved three of them, and
+the rebuild lit eight again. A visitor saw three different answers to "which
+words are the mark".
+
+**Now there are five picks, `results`, `striking`, `effect`, `held` and `trial`,
+and every slide shows exactly those five, in the same solid rust chip, at the
+same type size.** The scan lights them ("5 signals"). On the key slide they
+cycle through alternatives in a pale chip, and when the key turns they lock into
+the solid one. The rebuild slide opens with the same five lit, and each is
+replaced as the sweep reaches it. In the code, a pick is defined in one place
+only (a word with alternatives), so the slides cannot drift apart again.
+
+**The rewrite changed so it replaces all five.** The old rewrite kept
+"results", "effect" and "trial", which would have shown lit words surviving
+the step that claims to rebuild them. New: "Each later test showed the impact
+lasting, and the findings hard to miss." 13 words in, 13 out. Measured: none
+of the five picks survive and the longest shared run is 2 words ("and the"),
+down from 3.
+
+**The rebuild heading is "So we re-engineer the watermarked text."** Jon
+offered "we re-engineer the watermarked words" and asked for better. **"Text",
+not "words", because of entry 78 ruling 2:** we may not claim to target the
+specific words that carry the mark, since nobody outside Anthropic can tell
+which they are. The whole text is rebuilt, so the sentence is true. The line
+under it reads "The mark rides on these picks." before the sweep and "New
+picks, in a new order." after.
+
+**Two layout changes followed from measuring at phone width.** The longer
+heading pushed the rebuild slide out of its box, leaving 1 pixel of room. So all
+three slide headings now share one size (19px, 21px on desktop), which is more
+consistent anyway, and the "Longest run left" result moved into the chat
+window's corner badge, the same spot as "5 signals" and "Anthropic's key".
+Measured after: 18 pixels of room before the rewrite, 32 after.
