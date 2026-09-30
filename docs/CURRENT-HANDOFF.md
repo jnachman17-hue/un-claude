@@ -11,6 +11,56 @@ closed it should delete that half.
 
 ---
 
+## 30 SEPTEMBER: dashboard rebuilt, clean local prices shipped, and one decision waiting on Jon
+
+**Rulings: `04` entry 167. Data: `session-notes/free-credit-change-read-30-sept.md`.**
+
+**SHIPPED AND PUSHED.** Dashboard rebuilt around a six-step funnel with one
+denominator; four headline tiles; traffic sources panel; recent-payments list
+and the money-out and jobs-run tiles removed; AI cost moved to the bottom.
+Clean local prices live in Stripe: EUR 4.99/9.99/24.99, GBP 3.99/7.99/19.99,
+AUD and CAD 7.99/14.99/39.99.
+
+**★ THE ONE THING STILL OPEN, AND IT IS JON'S: the terms say United States
+only and nine of thirteen sales are not.** The live Radar
+`card_country_blocklist` is EMPTY — the block `04` entry 115 relies on was only
+ever populated in test mode. GB, IT and DE cards have all bought. Two thirds of
+traffic is non-US. `06` has the two coherent positions (enforce the term, or
+change it) and neither is a technical call. **Entry 167 makes the product
+better at selling to exactly the customers the terms disclaim, which raises the
+stakes rather than settling them.**
+
+**★ WHAT IS NOT PROVEN ABOUT THE PRICES, stated plainly.** The mechanism was
+proved end to end in TEST mode by opening the real Stripe Checkout page: a
+German buyer sees EUR 9.99 with Bancontact and EPS, a British buyer sees GBP
+7.99. **The same could not be proved in LIVE**, because Stripe's
+`+location_XX` email simulation is a test-mode feature; in live mode it reads
+the visitor's real IP, and a live session opened from here correctly showed USD
+9.99. What IS confirmed live is the price object itself, read back from Stripe
+with all five currencies on it. **The first real EU, UK, AU or CA purchase
+closes this** — check `presentment_details` on it: a clean 4.99/9.99/24.99
+means it worked, an unrounded figure means the price is not being found and
+checkout fell back to inline USD.
+
+**A verification checkout session exists in the live account**, metadata
+`purpose=price-verification-30-sept-never-paid`, expiring 30 minutes after
+creation. It was never paid. Exclude it from any abandoned-checkout analysis.
+
+**Found and fixed on the way:** the dashboard had been reading 1,000 of 1,745
+ledger rows (Supabase caps a page at 1,000 whatever `limit` says), so every
+all-time figure was ~40% short. `07`.
+
+**Traffic:** 72% arrives with no referrer at all, desktop-heavy and
+international. Jon's hypothesis is TikTok, where he promotes the domain
+verbally so there can be no referrer. Unrefuted, unconfirmed. **A vanity path
+in the video (`un-claude.com/tt`) would make it countable** and is the cheapest
+next step if it matters.
+
+**Next: Google Ads**, which were auto-deactivated for "enabling dishonest
+behaviour" after serving 9 clicks on 6-7 September.
+
+---
+
 ## 21 SEPTEMBER: the signup grant is gone, and accounts exist only for buyers. SHIPPED to production.
 
 **Rulings: `04` entries 165 and 166. The data: `session-notes/pricing-investigation-21-sept.md`.**
