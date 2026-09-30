@@ -173,6 +173,16 @@ export async function readStripe(env, mode, key) {
       failed: failed.length,
       refunds: refunds ? refunds.length : null,
       disputes: disputes ? disputes.length : null,
+      /*
+       * COUNTS, NOT AMOUNTS, IN THE SAME 30 DAY WINDOW THE BEHAVIOUR PANEL USES.
+       * Added 30 September 2026 so the funnel's last step can be a real number
+       * from Stripe rather than PostHog's `purchase_completed`, which is known
+       * broken: its persistence is `memory`, so the visitor id that started
+       * checkout does not survive the round trip through Stripe's own domain
+       * and the event arrives as an orphan.
+       */
+      paid30: paid.filter((c) => c.created * 1000 >= now - 30 * DAY).length,
+      paid7: paid.filter((c) => c.created * 1000 >= now - 7 * DAY).length,
     },
 
     money: {

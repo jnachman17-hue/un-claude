@@ -1320,3 +1320,88 @@ for answering this question properly, and it is one line.**
 **Trigger for revisiting:** once `needed`/`have` ship, read *of people refused
 an essay-sized job, what share buy?* That population is small enough to read
 one row at a time and it is the population the change was aimed at.
+
+---
+
+## THE TERMS SAY UNITED STATES ONLY. NINE OF THIRTEEN SALES ARE NOT. Jon's decision, and it is urgent
+
+**Found 30 September 2026 while answering a question about currency display.**
+Read-only; nothing was changed.
+
+**What `04` entry 115 and the code believe.** Credits are sold to US customers
+only (Jon's ruling, 22 August 2026). `app/api/checkout/route.ts` states in its
+header that "UK, EU and EEA cards are refused by a Radar block on the built-in
+`card_country_blocklist`, populated by `scripts/block-eu-cards.mjs` and proven
+in test mode."
+
+**What the live Stripe account actually holds:**
+
+```
+card_country_blocklist      (country)  ->  0 entries
+client_ip_country_blocklist (country)  ->  0 entries
+   ...every other Radar value list also empty
+```
+
+**"Proven in test mode" is the whole defect.** Radar value lists are per-mode.
+The list was populated in the sandbox and **never in live**, so the block has
+never existed in production.
+
+**What has therefore happened, from the charges themselves:**
+
+```
+succeeded charges by card country:
+  US 4  ·  AU 3  ·  CA 2  ·  IT 1  ·  GB 1  ·  IL 1  ·  DE 1
+```
+
+**Nine of thirteen sales are non-US cards, including GB, IT and DE** — exactly
+the jurisdictions entry 115 set out to avoid, for exactly the reasons it named:
+the 14 day right of withdrawal, and EU VAT on digital sales to consumers, which
+has no minimum threshold.
+
+**And the traffic says this is not an accident of a few buyers.** Since 1
+September, by country: United States 395, **United Kingdom 161, Germany 98**,
+Australia 86, **Netherlands 43**, India 38, South Africa 36, Canada 26, Brazil
+26, **Italy 24, France 18, Switzerland 17**. Roughly two thirds of visitors are
+outside the United States.
+
+**So there are two coherent positions and they are opposites.**
+
+1. **Enforce the term.** Populate `card_country_blocklist` in LIVE mode. This
+   makes the terms true and removes the VAT and withdrawal exposure. **It also
+   refuses about 69% of the revenue taken so far.**
+2. **Change the term to match reality.** Sell internationally on purpose, and
+   take on what that means: EU/UK VAT registration or a merchant of record
+   (Paddle was considered and rejected in entry 65 on acceptable-use grounds,
+   and that judgement predates the product having actual EU customers), plus a
+   14 day withdrawal right in the terms.
+
+**Working position: neither, until Jon rules.** This is a legal and commercial
+decision, not a technical one, and nobody in this project is qualified to
+advise on tax. **What is NOT acceptable is the current state**, where the terms
+say one thing, the enforcement says nothing, and the money says another.
+
+**Trigger: immediate.** Every day this sits, more EU sales accumulate under
+terms that disclaim them.
+
+## Stripe shows every price in USD, and Adaptive Pricing would change that for free
+
+**Confirmed 30 September 2026, from Stripe's own documentation and the live
+account.** Every charge ever taken is `usd`; `lib/server/stripe.ts` hardcodes
+`currency: 'usd'` in `packLineItem`.
+
+**Adaptive Pricing** lets Stripe present the buyer's local currency in Checkout.
+Confirmed from the docs: it is a **Dashboard toggle**, not an API change
+(`dashboard.stripe.com/settings/adaptive-pricing`); it **works with inline
+`price_data`**, which is what this site uses; it covers every country that has
+bought here (GB, DE, IT, AU, CA, IL, NL, FR, CH); and **Stripe charges us 0% —
+the buyer pays a 2–4% conversion fee**, or opts to pay in USD.
+
+**What it would NOT do is make the price look tidy.** Adaptive Pricing converts
+$4.99 at the day's rate, so a German buyer sees something like €4.27, not
+€4.99. **Clean local prices are a different feature**, `currency_options` on
+the line item, which is a code change, makes Jon set each price by hand, and at
+€4.99 would be a real price rise for EU buyers rather than a cosmetic change.
+
+**Working position: do not enable either until the question above is ruled on.**
+Presenting a polished local-currency price to EU buyers while the terms say we
+do not sell to them makes the contradiction worse, not better.

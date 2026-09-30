@@ -205,17 +205,6 @@ function stripePanel(s) {
   const cur = s.currency;
   const modeBanner = `<div class="banner live"><strong>Live mode. This is real money.</strong></div>`;
 
-  const recent = s.recent.length
-    ? `<table class="table"><thead><tr><th>When</th><th>Amount</th><th></th></tr></thead><tbody>${s.recent
-        .map(
-          (r) =>
-            `<tr><td>${e(when(r.when))}</td><td class="numeric">${e(money(r.amount, r.currency))}</td><td>${
-              r.disputed ? '<span class="tag bad">disputed</span>' : r.refunded ? '<span class="tag warn">refunded</span>' : ''
-            }</td></tr>`,
-        )
-        .join('')}</tbody></table>`
-    : '<p class="none">No successful payments in this mode.</p>';
-
   return panel(
     'Payments',
     'Stripe, live mode',
@@ -237,8 +226,13 @@ function stripePanel(s) {
          'a customer told their bank they did not authorise it',
        ],
      ])}
-     <h3>The most recent payments</h3>
-     ${recent}
+     ${/*
+        THE RECENT-PAYMENTS TABLE CAME OFF, 30 September 2026, on Jon's
+        instruction ("Don't need list of most recent payments"). It was six
+        rows of when-and-how-much that the Stripe dashboard shows better, it
+        named no customer so it could not be acted on, and it pushed the
+        totals above it off a phone screen.
+     */ ''}
      ${s.missing.length ? `<p class="footnote">Could not read: ${e(s.missing.join(', '))}. Those figures show as —.</p>` : ''}`,
   );
 }
@@ -677,7 +671,72 @@ function posthogPanel(p) {
 // The whole document
 // ---------------------------------------------------------------------------
 
-export function renderPage({ generatedAt, alerts, headline, stripe, gateway, database, posthog, live, token }) {
+/**
+ * ★ THE FUNNEL. Jon's instruction, 30 September 2026: the page should be
+ * something he can look at and glean a real insight from, and this is the part
+ * that carries that weight.
+ *
+ * ONE DENOMINATOR, NAMED ONCE. Every bar is a share of unique visitors, so the
+ * bars are comparable to each other rather than each being a share of the step
+ * above. A step-over-step funnel hides the thing that actually matters here,
+ * which is how few people get out the far end of a very wide top.
+ *
+ * THE SOURCE IS PRINTED ON EVERY ROW because the three do not deserve equal
+ * trust: PostHog is a sample of browsers with ad blockers missing from it,
+ * Stripe is money and is exact, the database is exact. A page that mixed them
+ * silently would be inviting a wrong conclusion.
+ */
+function funnelPanel(steps, posthog) {
+  if (!steps.length) return '';
+
+  const top = steps[0]?.people || 0;
+  const width = (n) => (top && n ? Math.max(0.6, (100 * n) / top) : 0);
+
+  const body = steps
+    .map((st) => {
+      const known = st.people !== null && st.people !== undefined;
+      const pct = st.pct === null || st.pct === undefined ? null : st.pct;
+      // Under one percent needs two decimals or every late step reads "0%".
+      const pctText = pct === null ? '—' : pct >= 10 ? `${pct.toFixed(0)}%` : pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(2)}%`;
+
+      return `<div class="fstep">
+        <div class="fname">${e(st.label)}<small>${e(st.note)} · ${e(st.source)}</small></div>
+        <div class="ftrack"><div class="ffill${pct !== null && pct < 5 ? ' thin' : ''}" style="width:${width(st.people).toFixed(2)}%"></div></div>
+        <div class="fnums"><b>${known ? num(st.people) : '—'}</b><span>${pctText}</span></div>
+      </div>`;
+    })
+    .join('');
+
+  const sources = posthog.ok && posthog.sources?.length
+    ? (() => {
+        const most = posthog.sources[0].people || 1;
+        return `<h3>Where they arrived from</h3>
+          <p class="explain">Returns from Google sign-in, from Stripe checkout and from the site's own
+          pages are excluded, because those are the same visitor coming back rather than a new one.</p>
+          <div class="srcs">${posthog.sources
+            .map(
+              (r) => `<div class="src">
+                <div>${e(r.src)}</div>
+                <div class="t"><div class="f" style="width:${((100 * r.people) / most).toFixed(1)}%"></div></div>
+                <div class="n">${num(r.people)}</div>
+              </div>`,
+            )
+            .join('')}</div>`;
+      })()
+    : '';
+
+  return panel(
+    'The funnel',
+    'PostHog, Stripe and our database · last 30 days',
+    `<p class="explain">Every bar is a share of <strong>unique visitors</strong>, not of the step above it.
+     The steps do not nest perfectly and are not meant to: somebody can hit a paid moment without
+     sanitising anything, by arriving on a balance they emptied last week.</p>
+     <div class="funnel">${body}</div>
+     ${sources}`,
+  );
+}
+
+export function renderPage({ generatedAt, alerts, headline, funnelSteps = [], stripe, gateway, database, posthog, live, token }) {
   const people = database.ok ? database.accounts.withEmail : 0;
 
   /*
@@ -763,11 +822,10 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
   .alert.good { background: var(--green-bg); border-color: #b4e5c1; }
   .alert.good .alert-dot { background: var(--green); }
 
-  /* Six numbers, laid out so they never leave one card stranded on its own row:
-     three and three on a desktop, two by three on a phone. An auto-fit grid was
-     doing five-and-one at typical widths, which reads as a mistake. */
-  .bigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
-  @media (max-width: 700px) { .bigs { grid-template-columns: repeat(2, 1fr); } }
+  /* Four numbers since 30 September 2026 (was six). Four across on a desktop,
+     two by two on a phone, so no card is ever stranded alone on a row. */
+  .bigs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px; }
+  @media (max-width: 900px) { .bigs { grid-template-columns: repeat(2, 1fr); } }
   .big { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: var(--panel); }
   .big-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); font-weight: 600; }
   .big-value { font-size: clamp(24px, 6vw, 32px); font-weight: 650; letter-spacing: -0.02em; margin: 6px 0 2px; }
@@ -858,6 +916,30 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
   .footnote { font-size: 13px; color: var(--dim); margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef1f4; }
   .footnote.warnish { background: var(--amber-bg); border: 1px solid #f0e2a3; border-radius: 8px; padding: 10px 12px; color: var(--ink); }
 
+  /* THE FUNNEL. A number, a bar and a percentage on one line, so the shape is
+     readable at a glance and the exact figures are still there to be read. */
+  .funnel { display: grid; gap: 2px; margin: 4px 0 0; }
+  .fstep { display: grid; grid-template-columns: 190px 1fr 86px; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .fstep:last-child { border-bottom: 0; }
+  .fname { font-weight: 600; font-size: 14.5px; }
+  .fname small { display: block; font-weight: 400; color: var(--faint); font-size: 12px; line-height: 1.35; margin-top: 1px; }
+  .ftrack { background: var(--panel); border-radius: 4px; height: 22px; position: relative; overflow: hidden; border: 1px solid var(--line); }
+  .ffill { position: absolute; inset: 0 auto 0 0; background: var(--blue); opacity: 0.82; border-radius: 3px; min-width: 2px; }
+  .ffill.thin { background: var(--green); }
+  .fnums { text-align: right; font-variant-numeric: tabular-nums; }
+  .fnums b { font-size: 17px; }
+  .fnums span { display: block; color: var(--dim); font-size: 12.5px; }
+  @media (max-width: 620px) {
+    .fstep { grid-template-columns: 1fr 78px; }
+    .ftrack { grid-column: 1 / -1; order: 3; height: 14px; }
+  }
+  .srcs { display: grid; gap: 1px; }
+  .src { display: grid; grid-template-columns: 1fr 120px 60px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .src:last-child { border-bottom: 0; }
+  .src .t { background: var(--panel); height: 10px; border-radius: 3px; position: relative; overflow: hidden; border: 1px solid var(--line); }
+  .src .f { position: absolute; inset: 0 auto 0 0; background: var(--dim); border-radius: 2px; }
+  .src .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--dim); }
+
   footer { color: var(--faint); font-size: 13px; margin-top: 28px; text-align: center; }
 
   @media (max-width: 520px) {
@@ -887,10 +969,20 @@ export function renderPage({ generatedAt, alerts, headline, stripe, gateway, dat
 
   <div class="bigs">${headline.map(headlineCard).join('')}</div>
 
+  ${/*
+     ORDER CHANGED 30 SEPTEMBER 2026, and the order IS the argument. It used to
+     run Stripe, gateway, database, PostHog — which is the order the four
+     sources were built in, not the order anybody reads them in. Now it runs
+     from the question Jon actually opens this page with ("is it working and
+     where does it leak?") down to the one he checks monthly ("what does the AI
+     cost?"). The gateway panel is last because it is a cost, and a cost of
+     under two dollars all time has no business above the funnel.
+  */ ''}
+  ${funnelPanel(funnelSteps, posthog)}
   ${stripePanel(stripe)}
-  ${gatewayPanel(gateway)}
   ${databasePanel(database)}
   ${posthogPanel(posthog)}
+  ${gatewayPanel(gateway)}
 
   <footer>Generated on this machine and never uploaded. Contains no keys or passwords.</footer>
 </div>

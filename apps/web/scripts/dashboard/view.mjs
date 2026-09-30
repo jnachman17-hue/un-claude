@@ -169,55 +169,129 @@ export function buildView({ env, mode, keySource, stripe, gateway, database, pos
   const loadedTone =
     !gateway.ok || gateway.loaded === null ? 'plain' : gateway.loaded < 5 ? 'bad' : gateway.loaded < 20 ? 'warn' : 'good';
 
+  /*
+   * ★ FOUR NUMBERS, AND THE TWO THAT CAME OFF. Jon's instruction, 30 September
+   * 2026: "We should have a Gross money in, net money in, credit loaded and
+   * working tab up top and maybe failed jobs. I don't need a money out or jobs
+   * run banner."
+   *
+   * WHAT WENT: "Money out" (what we have spent at the AI gateway, all time) and
+   * "Jobs run". Both are real and neither is a decision. Money out is $1.87
+   * against $164 of revenue and has never once been the thing to act on; jobs
+   * run is a vanity total that moves with traffic and tells you nothing you
+   * cannot read off the funnel. Cost has not been deleted, it has moved to the
+   * bottom of the page where a number you check monthly belongs.
+   *
+   * WHAT ARRIVED: gross and net split apart, because they answer different
+   * questions — gross is whether the product sells, net is what is left after
+   * refunds — and a single "Money in" tile was quietly reporting net while
+   * being read as gross. "Credit loaded" and "AI service" merged into one
+   * tile, because the amount only matters together with whether it is serving.
+   */
+  const grossCents = stripe.ok && mode === 'live' ? stripe.money.grossAll : database.ok ? database.money.purchaseCents : null;
+  const netCents = moneyIn.cents;
+
   const headline = [
     {
-      label: 'Money in',
-      value: dollarsFromCents(moneyIn.cents),
-      sub: moneyIn.from ? `all time, after refunds · ${moneyIn.from}` : 'no source could be read',
-      tone: moneyIn.cents ? 'good' : 'plain',
+      label: 'Gross money in',
+      value: dollarsFromCents(grossCents),
+      sub: moneyIn.from ? `all time, before refunds · ${moneyIn.from}` : 'no source could be read',
+      tone: grossCents ? 'good' : 'plain',
     },
     {
-      label: 'Money out',
-      value: gateway.ok && gateway.totalUsed !== null ? money(gateway.totalUsed) : '—',
-      sub: 'spent on AI since the account opened',
-      tone: 'plain',
+      label: 'Net money in',
+      value: dollarsFromCents(netCents),
+      sub:
+        grossCents !== null && netCents !== null && grossCents !== netCents
+          ? `after ${dollarsFromCents(grossCents - netCents)} of refunds`
+          : 'after refunds · nothing has been refunded',
+      tone: netCents ? 'good' : 'plain',
     },
     {
-      label: 'Credit loaded',
+      /*
+       * THE ONE TILE THAT IS ABOUT SOMETHING BREAKING. If this reaches zero the
+       * paid rewrite stops for everybody, so the amount and the live serving
+       * check belong in the same place rather than two tiles apart.
+       */
+      label: 'AI credit loaded',
       value: gateway.ok && gateway.loaded !== null ? money(gateway.loaded) : '—',
       sub:
-        gateway.ok && gateway.burn?.perDay > 0
-          ? `about ${Math.floor(gateway.loaded / gateway.burn.perDay)} days left at the recent rate`
-          : 'money sitting on the AI account · at zero, the rewrite stops',
-      tone: loadedTone,
-    },
-    {
-      label: 'AI service',
-      value: servingWord,
-      sub:
-        gateway.ok && gateway.serving.state === 'serving'
-          ? `checked just now on ${gateway.serving.model}`
-          : 'the paid rewrite depends on this',
-      tone: servingWord === 'Working' ? 'good' : servingWord === 'REFUSED' ? 'bad' : 'warn',
-    },
-    {
-      label: 'Jobs run',
-      value: database.ok ? database.runs.total.toLocaleString() : '—',
-      sub: database.ok ? `${database.runs.today} today · ${database.runs.last7} in the last 7 days` : 'the database could not be read',
-      tone: 'plain',
+        !gateway.ok
+          ? 'the gateway could not be read'
+          : servingWord === 'Working'
+            ? gateway.burn?.perDay > 0
+              ? `working · about ${Math.floor(gateway.loaded / gateway.burn.perDay)} days left`
+              : `working · checked just now on ${gateway.serving.model}`
+            : servingWord === 'REFUSED'
+              ? 'REFUSING requests · the paid rewrite is down'
+              : 'serving state unclear',
+      tone: servingWord === 'REFUSED' ? 'bad' : loadedTone === 'bad' ? 'bad' : loadedTone === 'warn' ? 'warn' : servingWord === 'Working' ? 'good' : 'warn',
     },
     {
       label: 'Failed jobs',
       value: database.ok ? database.runs.refunded.toLocaleString() : '—',
-      sub: database.ok ? `${database.runs.refundedToday} today · credits were returned each time` : 'the database could not be read',
+      sub: database.ok
+        ? `${database.runs.refundedToday} today · of ${num(database.runs.total)} ever · credits returned each time`
+        : 'the database could not be read',
       tone: database.ok && database.runs.refundedToday > 0 ? 'warn' : 'plain',
     },
   ];
+
+  /*
+   * ★ THE FUNNEL, IN PEOPLE, WITH EVERY STEP AS A SHARE OF VISITORS.
+   *
+   * Jon's instruction: "I want true unique visitors, sanitised something, hit a
+   * paid moment, started checkout, purchased, gave an email with percentages
+   * all laid out." Six steps, one denominator, three sources — and the sources
+   * are named on the page because they are not equally trustworthy.
+   *
+   * WHY PURCHASES COME FROM STRIPE AND NOT POSTHOG. `purchase_completed` is
+   * broken by design: PostHog's persistence here is `memory`, so the visitor id
+   * that fired `checkout_started` does not survive the round trip to Stripe's
+   * domain and back. Stripe's own count is the only honest last step.
+   *
+   * WHY "GAVE AN EMAIL" COMES FROM THE DATABASE. PostHog has `signup_started`,
+   * which is somebody beginning the form. An account row with an address on it
+   * is somebody who finished. Since 04 entry 166 an account is only made at
+   * checkout or by choice, so this is now a much smaller and more meaningful
+   * number than it was.
+   *
+   * THE STEPS DO NOT NEST AND THE PAGE SAYS SO. Somebody can hit a paid moment
+   * without having sanitised anything (they arrive on an empty balance from a
+   * previous visit), and the last two steps are counted over a different window
+   * than the first four. Presenting this as a strictly narrowing funnel would
+   * be a lie about how people actually move.
+   */
+  const events = posthog.ok ? new Map(posthog.allEvents.map((x) => [x.event, x.people])) : new Map();
+  const visitors = posthog.ok ? posthog.traffic.realVisitors : null;
+  const share = (n) => (visitors && n !== null && n !== undefined ? (100 * n) / visitors : null);
+
+  const funnelSteps = posthog.ok
+    ? [
+        { label: 'Unique visitors', people: visitors, source: 'PostHog', note: 'real people, 30 days, our own traffic excluded' },
+        { label: 'Sanitised something', people: events.get('sanitise_completed') || 0, source: 'PostHog', note: 'a finished job, not just a scan' },
+        { label: 'Hit a paid moment', people: posthog.paidMomentPeople || 0, source: 'PostHog', note: 'saw the paywall or ran out of credits · counted once each' },
+        { label: 'Started checkout', people: events.get('checkout_started') || 0, source: 'PostHog', note: 'pressed a pack button' },
+        {
+          label: 'Purchased',
+          people: stripe.ok && mode === 'live' ? stripe.counts.paid30 : null,
+          source: 'Stripe',
+          note: 'paid for real · Stripe, because PostHog cannot see the return trip',
+        },
+        {
+          label: 'Gave an email',
+          people: database.ok ? database.accounts.registered30 : null,
+          source: 'Database',
+          note: 'finished making an account · since entry 166 that mostly means a buyer',
+        },
+      ].map((step) => ({ ...step, pct: share(step.people) }))
+    : [];
 
   return {
     generatedAt: new Date().toISOString(),
     alerts,
     headline,
+    funnelSteps,
     moneyIn,
     mode,
     keySource,
@@ -236,4 +310,9 @@ function money(value) {
 
 function dollarsFromCents(cents) {
   return cents === null || cents === undefined ? '—' : `$${(cents / 100).toFixed(2)}`;
+}
+
+/** A readable integer, or an em dash when there is nothing to show. */
+function num(value) {
+  return value === null || value === undefined ? '—' : Number(value).toLocaleString();
 }

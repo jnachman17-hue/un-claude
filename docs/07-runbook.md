@@ -3088,3 +3088,58 @@ explicit small limit and are unaffected; the backup script already paginated.
 **Reconciliation that now works and is the check to repeat:** ledger purchase
 rows plus buyers who deleted their accounts should equal succeeded Stripe
 charges. On 30 September: 12 + 1 = 13. ✓
+
+## Stripe's own Payments widget is a day behind, so it will disagree with the ledger for a reason that is not a bug
+
+**30 September 2026.** Jon asked why the dashboard said 11 purchases / $134.89
+when Stripe's home page showed 13 payments and $164.87 gross. **Both were
+right. They answer different questions, and one of them was stale.**
+
+The reconciliation, run against live Stripe and the live ledger:
+
+```
+Stripe succeeded, gross              : $164.87 (13 charges)
+minus Jon's own test purchase        : -$4.99  = $159.88 (12 charges)
+minus buyers who DELETED their acct  : -$24.99 = $134.89 (11 charges)
+ledger says                          : $134.89 (11 rows)   MATCH: exactly
+```
+
+**Three things make the two numbers differ and all three are correct:**
+
+1. **Stripe counts Jon's own test purchase.** The dashboard excludes internal
+   accounts by design (`internalMatcher`), which is why "customer revenue" is
+   the number worth reading.
+2. **Stripe keeps a charge after the buyer deletes their account. The ledger
+   cannot** — rows cascade away with the account. See the entry above.
+3. **★ THE TRAP: the "Payments" widget on Stripe's home page is updated
+   nightly.** It said "Succeeded $134.89" while "Gross volume" beside it said
+   $164.87 and was four seconds old. The widget's own caption reads *"Updated
+   yesterday"*.
+
+**And there is a coincidence in this that will mislead somebody eventually:
+Stripe's stale widget and our ledger both read $134.89, by different
+arithmetic.** Stripe was $164.87 minus the day's $24.99 sale it had not counted
+yet, minus the $4.99 refund. Ours was $164.87 minus Jon's $4.99 test, minus a
+deleted buyer's $24.99. **Two different subtractions landing on the same
+figure.** Matching numbers are not evidence of agreement; check what each one
+is counting.
+
+**The check to repeat:** ledger purchase rows + deleted buyers' charges +
+internal test charges should equal Stripe's succeeded count. On 30 September:
+11 + 1 + 1 = 13. ✓
+
+## Supabase caps an API page at 1,000 rows, and raising it is the wrong fix
+
+**30 September 2026.** Follow-up to the dashboard truncation above. The cap is
+a project setting — **Supabase Dashboard → Project Settings → API → "Max rows"**,
+default 1000 — and it can be raised.
+
+**Do not raise it as the fix.** It moves the cliff rather than removing it: the
+ledger grows, and a page set to 10,000 fails silently again the day the table
+passes it, in exactly the same way and with exactly the same plausible-looking
+numbers. Supabase's own guidance is to keep it low, because it is the ceiling
+on the payload an accidental or hostile request can pull.
+
+**Pagination is the fix and it is already in.** `database.mjs` and
+`backup-credit-ledger.mjs` both loop until a short page comes back.
+**Anything new that reads this database must do the same.**

@@ -246,7 +246,7 @@ export async function readPostHog(env) {
      * together the panel costs about as long as its slowest single query.
      * They are still separate queries so each stays readable on its own.
      */
-    const [steps, pages, checkoutFailures, scans, totals] = await Promise.all([
+    const [steps, pages, checkoutFailures, scans, totals, paidMoment, sources] = await Promise.all([
       hogql(
         env,
         project.id,
@@ -293,6 +293,46 @@ export async function readPostHog(env) {
         project.id,
         `SELECT countIf(event = '$pageview'), count(DISTINCT distinct_id) FROM events WHERE ${whereAll}`,
       ),
+      /*
+       * ★ "HIT A PAID MOMENT" HAS TO BE ONE DEDUPED NUMBER, NOT A SUM.
+       *
+       * A visitor can meet the limit two ways: the paywall, when a job costs
+       * more than they hold, and the empty-balance panel, when they reach
+       * nought. Plenty of people see both, so adding the two event counts
+       * double-counts exactly the people who matter most. `count(DISTINCT
+       * distinct_id)` over both events at once is the only honest version and
+       * it cannot be derived from the per-event counts above.
+       */
+      hogql(
+        env,
+        project.id,
+        `SELECT count(DISTINCT distinct_id) FROM events
+         WHERE ${where} AND event IN ('paywall_shown', 'out_of_credits_shown')`,
+      ),
+      /*
+       * WHERE THE TRAFFIC COMES FROM. Added 30 September 2026 after Jon asked
+       * and the answer took a one-off script to get. It belongs on the page.
+       *
+       * THE THREE ROUND TRIPS ARE EXCLUDED BY NAME. `accounts.google.com` is
+       * somebody coming back from Google sign-in, `checkout.stripe.com` is
+       * somebody coming back from paying, and the site's own domain is
+       * ordinary navigation. All three are the visitor returning, not arriving,
+       * and counted as sources they crowd out the real ones.
+       */
+      hogql(
+        env,
+        project.id,
+        `SELECT multiIf(properties.$referring_domain IS NULL, 'typed in or no referrer',
+                        properties.$referring_domain = '', 'typed in or no referrer',
+                        properties.$referring_domain = '$direct', 'typed in or no referrer',
+                        properties.$referring_domain) AS src,
+                count(DISTINCT distinct_id) AS people
+         FROM events
+         WHERE ${where} AND event = '$pageview'
+           AND coalesce(properties.$referring_domain, '') NOT IN
+               ('accounts.google.com', 'checkout.stripe.com', 'un-claude.com', 'www.un-claude.com')
+         GROUP BY src ORDER BY people DESC LIMIT 10`,
+      ),
     ]);
 
     const [[allPageviews, allVisitors] = [0, 0]] = totals;
@@ -336,6 +376,10 @@ export async function readPostHog(env) {
       windowDays: 30,
       funnel,
       scanSplit,
+      /** Deduped: one person who saw both the wall and the empty panel counts once. */
+      paidMomentPeople: paidMoment?.[0]?.[0] || 0,
+      /** Arrivals only. Sign-in, checkout and internal returns are filtered out above. */
+      sources: (sources || []).map(([src, people]) => ({ src: src || '(direct)', people })),
       traffic: {
         realPageviews: counts.get('$pageview')?.total || 0,
         realVisitors: counts.get('$pageview')?.people || 0,
