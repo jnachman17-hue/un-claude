@@ -1423,3 +1423,48 @@ the line item, which is a code change, makes Jon set each price by hand, and at
 **Working position: do not enable either until the question above is ruled on.**
 Presenting a polished local-currency price to EU buyers while the terms say we
 do not sell to them makes the contradiction worse, not better.
+
+
+---
+
+## Google Ads is disapproved under "Enabling dishonest behavior", and row 98's reading of that policy was too narrow
+
+**30 September 2026.** Full record: `session-notes/google-ads-disapproval-30-sept.md`.
+
+**Row 98 says Google Ads bans "essay or thesis generators" and treats Un-Claude
+as outside it. The policy text is broader than that example.** The prohibited
+category is *"Services or products that enable academic dishonesty, like essay
+or thesis generators"* — generators are an instance, introduced by "like". The
+campaign was disapproved minutes after starting, on 6 September, after 9 clicks
+and no checkouts.
+
+**Row 98's main conclusion is unaffected and still good:** no enforcement action
+in this space has ever reached a post-processing tool. That is about regulators.
+**An ad platform applying its own rule to its own inventory needs no regulator
+and has already happened.** The two should not be conflated again.
+
+**Working position: do not pursue Google Ads by reworking copy.** The
+disapproval attaches to the product and the landing page, Google re-reviews the
+destination on save, and copy vague enough to pass would meet the separate
+Misrepresentation policy. **This project will not write copy whose purpose is
+to clear that disapproval; that is recorded as a boundary, in the session note.**
+
+**The honest route to this channel, if it is wanted, is a genuinely separate
+file-privacy product with its own landing page** — EXIF, GPS and C2PA
+stripping, which the product really does and which carries no dishonesty angle.
+Real work, smaller market, no reviewer needs to miss anything.
+
+**But the arithmetic says the channel is not worth it at present.** Break-even
+CPC is **$0.111** (revenue per visitor, measured, before Stripe's fees) against
+realistic CPCs of $1–3. **Paid search needs the funnel to be ~18× better before
+it can work at any plausible price**, and that work helps every channel.
+
+**Two live exposures in the current ad assets, separate from the disapproval
+and worth fixing regardless:** the headline "Official AI Watermark Remover"
+asserts an endorsement that does not exist and is its own Misrepresentation
+risk; and "Claude Watermark Remover" (pinned, so present in every impression)
+plus "ChatGPT Watermark Remover" put third-party trademarks in ad text, which a
+rights holder can have restricted on complaint.
+
+**Trigger for revisiting:** revenue per visitor above roughly $1, which is the
+point paid search stops being structurally unprofitable.
