@@ -3143,3 +3143,67 @@ on the payload an accidental or hostile request can pull.
 **Pagination is the fix and it is already in.** `database.mjs` and
 `backup-credit-ledger.mjs` both loop until a short page comes back.
 **Anything new that reads this database must do the same.**
+
+## Adaptive Pricing is ALREADY ON in live mode. Customers have been seeing local currency all along, at unrounded amounts
+
+**30 September 2026, and it corrects what `06` said earlier the same day.** The
+question was whether Stripe shows local currency. **It already does, and has
+been.** Every live paid checkout session carries `adaptive_pricing:
+{"enabled": true}` and the converted figure sits in `presentment_details`:
+
+```
+date        settled   presented to the buyer
+2026-09-28  USD 4.99  EUR  4.56
+2026-09-21  USD 24.99 CAD 36.39
+2026-09-11  USD 4.99  AUD  7.22
+2026-09-08  USD 9.99  ILS 31.30
+2026-09-07  USD 9.99  GBP  7.69
+```
+
+**Why every earlier read said "usd" and missed this.** The charge, the
+PaymentIntent and the session all keep `currency: usd`, because that is the
+settlement currency — which is correct, and is why `scripts/dashboard/stripe.mjs`
+reports USD and should keep doing so. The buyer's own currency lives in a
+separate `presentment_details` hash that nothing here was reading. **A figure
+being consistent across four places is not proof it is the only figure.**
+
+**So the ugly numbers Jon feared are already shipping:** €4.56, A$7.22, £7.69.
+
+### Clean local prices are `currency_options`, and they need a Price object
+
+Proved against Stripe in **test mode**, not from the documentation:
+
+```
+currency_options inside inline price_data  ->  HTTP 400
+    "Received unknown parameter: line_items[0][price_data][currency_options]"
+
+currency_options on a real Price object    ->  HTTP 200, stored exactly:
+    usd 4.99 · eur 4.99 · gbp 3.99 · aud 7.99 · cad 6.99
+
+a Checkout Session against that price:
+    currency=usd -> USD 4.99      currency=eur -> EUR 4.99
+    currency=gbp -> GBP 3.99      currency=aud -> AUD 7.99
+    currency=cad -> CAD 6.99
+    currency=jpy -> REJECTED: "The price specified only supports
+                    aud, eur, cad, gbp, or usd"
+```
+
+**Three consequences that decide the implementation.**
+
+1. **`lib/server/stripe.ts` builds prices inline with `price_data` and that
+   cannot carry `currency_options`.** Clean local prices require creating Price
+   objects in Stripe once and passing `line_items[0][price]` instead. That is a
+   real change to the money path, not a config toggle.
+2. **A currency with no option set is REFUSED, not converted.** So either every
+   currency is listed by hand, or Adaptive Pricing stays on to cover the tail.
+   Stripe's own rule: *"Manually defined multi-currency prices override Adaptive
+   Pricing for those currencies, even if it's enabled."* The two combine, and
+   that combination is the only sane shape: clean numbers for the handful of
+   currencies that matter, automatic conversion for the rest.
+3. **Manual prices move the FX risk onto us.** Stripe's guidance is explicit
+   that Adaptive Pricing exists to avoid exactly that. €4.99 is whatever €4.99
+   is worth on the day, and it is currently MORE than $4.99.
+
+**Testing either of these costs nothing:** pass `customer_email` as
+`anything+location_DE@example.com` and the session presents as it would to a
+German buyer. The probe price created for this was deactivated afterwards.

@@ -1383,6 +1383,24 @@ say one thing, the enforcement says nothing, and the money says another.
 **Trigger: immediate.** Every day this sits, more EU sales accumulate under
 terms that disclaim them.
 
+## ~~Stripe shows every price in USD~~ CORRECTED SAME DAY: it already shows local currency. See `07`
+
+**The section below was written before the live sessions were read and its
+premise is wrong.** Adaptive Pricing is already enabled in live mode and buyers
+in Germany, Canada, Australia, Israel and the UK have been seeing their own
+currency at unrounded amounts (EUR 4.56, CAD 36.39, AUD 7.22, ILS 31.30, GBP
+7.69). The charge stays USD because that is the settlement currency; the
+presented figure lives in `presentment_details`, which nothing here was
+reading. **Kept rather than deleted because the reasoning about `currency_options`
+below is still correct and is now the actual open question.** `07` has the
+proof and the implementation consequences.
+
+**THE OPEN DECISION, AND IT IS A PRICING ONE, SO IT IS JON'S:** what the clean
+local prices should be. $4.99 converts to about €4.56 today; setting €4.99 is a
+9% price rise for EU buyers, €4.49 a small cut. Nobody should pick those
+numbers but him. Until he does, nothing changes and buyers keep seeing the
+converted amounts.
+
 ## Stripe shows every price in USD, and Adaptive Pricing would change that for free
 
 **Confirmed 30 September 2026, from Stripe's own documentation and the live
