@@ -3047,3 +3047,44 @@ same reason.** The first real buyer who signs up with email and lands on
 /pricing proves it; one who lands on the tool instead means the confirmation
 email's link is not carrying `next` and the Supabase email template is where
 to look.
+
+## The dashboard was reading 57% of the ledger, because Supabase caps a page at 1,000 rows
+
+**30 September 2026.** `scripts/dashboard/database.mjs` made one request per
+table carrying `limit=5000`. **Supabase caps a PostgREST response at 1,000 rows
+whatever the limit says**, so once `credit_ledger` passed a thousand rows every
+all-time figure on the operator dashboard silently became a figure about the
+most recent thousand. The read is ordered `id.desc`, so it was the **oldest**
+history that disappeared.
+
+```
+dashboard-style request, limit=5000  ->  1000 rows
+content-range header                 ->  0-999/1745
+true total by paginating             ->  1745 rows
+```
+
+**What it was showing, against the truth:** 535 jobs against 932; 5 customer
+purchases totalling $69.95 against 11 totalling $134.89; 5 buyers against 9.
+
+**Two lessons, and the second is the general one.**
+
+1. **`Prefer: count=exact` was already being sent and the answer was already
+   coming back**, in `content-range`, and the code threw it away. The truth was
+   in hand the whole time.
+2. **It was wrong in the plausible direction, which is why it survived weeks of
+   use.** Every number looked reasonable. A figure that is quietly 57% of
+   itself does not announce itself; the only defence is to make the read
+   structurally incapable of truncating.
+
+**Fixed** by paginating in 1,000-row pages until a short page comes back — the
+same loop `backup-credit-ledger.mjs` has always used — with a `MAX_PAGES` guard
+that **throws rather than returning a partial total.**
+
+**The rule for anything new that reads this database: never trust a single
+request to return everything.** Paginate, or check `content-range` against what
+you got. Both `read-ledger.mjs` and `read-refund-shortfalls.mjs` take an
+explicit small limit and are unaffected; the backup script already paginated.
+
+**Reconciliation that now works and is the check to repeat:** ledger purchase
+rows plus buyers who deleted their accounts should equal succeeded Stripe
+charges. On 30 September: 12 + 1 = 13. ✓

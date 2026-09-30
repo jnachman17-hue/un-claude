@@ -1266,3 +1266,57 @@ alternative is a `purchase_claims` table shaped like `grant_claims` (entry 121),
 keyed to the Stripe payment intent rather than the account. **Trigger:** the
 accountant entry 65 anticipates, or the first refund request from a deleted
 account, which would need the row to exist.
+
+
+---
+
+## The signup-grant removal, read at nine days: the mechanism is proven, the conversion gain is not and cannot be
+
+**30 September 2026.** Full data: `session-notes/free-credit-change-read-30-sept.md`.
+This is the revisit the 21 September section set as its trigger.
+
+**Matched 8.98-day windows either side of the 21 September deploy.**
+
+| | Before | After | p |
+|---|---|---|---|
+| Unique visitors | 334 | 361 | |
+| Reached a paid moment | 18.6% | **27.1%** | **0.009** |
+| Purchased (Stripe) | 2 (0.60%) | 3 (0.83%) | 1.00 |
+| Gave an email | 9.9% | **2.8%** | **<0.001** |
+| Revenue per visitor | $0.150 | **$0.111** | |
+| Clicked the offer at the wall | 58.3% | **13.3%** | **0.001** |
+
+**THE FINDING THAT DECIDES HOW TO TALK ABOUT THIS: the conversion question is
+not answerable at this traffic.** Detecting 0.60% -> 0.83% at 80% power needs
+**~21,000 visitors per arm, over 500 days each.** Waiting will not settle it.
+**Every statistical question here is blocked on volume, not on time.**
+
+**What IS established, and it is mechanism rather than statistics:** two of the
+three buyers since the change bought **before running any free job**, then
+immediately ran essays costing 4 and 3 credits. **Both would have fitted inside
+the old 5-credit allowance and both essays would have been free.** That is the
+predicted mechanism, observed in individual ledger rows.
+
+**Working position: keep the change, and stop describing it as a conversion
+win.** Nothing argues for reverting. The one solid negative (offer click rate
+58% -> 13%) compares a free giveaway against a price and was explicitly
+predicted on 4 September.
+
+**The open risk, and it is the one to watch:** revenue per visitor is **down
+26%**, average order $24.99 -> $13.32. There is a mechanism that would make
+that real rather than noise — the old free tier only let heavy users reach a
+price, and heavy users buy big packs — but with 2 sales against 3 it is
+unreadable. **Track revenue per visitor, not conversion rate**, because
+conversion rate treats a $4.99 and a $24.99 sale as the same event and this
+change appears to move the mix.
+
+**BLOCKING THE NEXT READ: `paywall_shown` does not record how big the refused
+job was.** It carries `input_kind` and `file_type` only, so "how many people
+were refused an essay" cannot be counted and had to be inferred from three
+buyers' ledger rows. `workbench.tsx` already holds `needed` and `have` at the
+moment it fires the event. **Adding those two properties is the prerequisite
+for answering this question properly, and it is one line.**
+
+**Trigger for revisiting:** once `needed`/`have` ship, read *of people refused
+an essay-sized job, what share buy?* That population is small enough to read
+one row at a time and it is the population the change was aimed at.

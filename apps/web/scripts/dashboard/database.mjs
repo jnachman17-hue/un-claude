@@ -58,21 +58,66 @@ import { request } from './http.mjs';
  * `Prefer: count=exact` asks PostgREST to report the true total in the
  * `content-range` header, so a count does not require downloading every row.
  */
-async function read(env, table, { select = '*', extra = '', limit = 5000 } = {}) {
+/*
+ * ★ IT PAGINATES, AND THE REASON IS A BUG THIS PANEL SHIPPED WITH.
+ *
+ * Found 30 September 2026. This function used to make ONE request carrying
+ * `limit=5000` and return whatever came back. Supabase caps a PostgREST
+ * response at 1,000 rows whatever the limit says, so once the ledger passed a
+ * thousand rows every all-time figure on this page quietly became a figure
+ * about the most recent thousand — and because the read is ordered
+ * `id.desc`, it was the OLDEST history that vanished. Measured that day:
+ *
+ *     dashboard-style request, limit=5000  ->  1000 rows
+ *     content-range header                 ->  0-999/1745
+ *     true total by paginating             ->  1745 rows
+ *
+ * So the page reported 535 jobs against a real 667, and 5 purchases totalling
+ * $69.95 against a real 8 in the ledger. **It was wrong in the safe-looking
+ * direction, which is what made it survive: every number was plausible.**
+ * `CLAUDE.md` section 4 — a figure nobody can check is not evidence, and this
+ * one was checkable all along, in a header the code was already receiving and
+ * throwing away.
+ *
+ * The loop is the same shape `backup-credit-ledger.mjs` has always used: ask
+ * for a page, stop when a short one comes back. `PAGE` is Supabase's own cap,
+ * so a full page means there is probably more and a short page means there is
+ * not. `MAX_PAGES` is a guard against an endless loop, and it is deliberately
+ * high enough that hitting it means something is genuinely wrong.
+ */
+const PAGE = 1000;
+const MAX_PAGES = 100;
+
+async function read(env, table, { select = '*', extra = '' } = {}) {
   const base = env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, '');
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
-  const url = `${base}/rest/v1/${table}?select=${encodeURIComponent(select)}&limit=${limit}${extra}`;
+  const rows = [];
 
-  const response = await request(url, {
-    method: 'GET',
-    headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: 'count=exact' },
-  });
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const url = `${base}/rest/v1/${table}?select=${encodeURIComponent(select)}&limit=${PAGE}&offset=${page * PAGE}${extra}`;
 
-  if (!response.ok) {
-    throw new Error(`${table}: ${response.error || response.body?.message || `HTTP ${response.status}`}`);
+    const response = await request(url, {
+      method: 'GET',
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+
+    if (!response.ok) {
+      throw new Error(`${table}: ${response.error || response.body?.message || `HTTP ${response.status}`}`);
+    }
+
+    const batch = Array.isArray(response.body) ? response.body : [];
+
+    rows.push(...batch);
+
+    if (batch.length < PAGE) return rows;
   }
 
-  return Array.isArray(response.body) ? response.body : [];
+  /*
+   * A hundred full pages is 100,000 rows. Reaching this means the ordering is
+   * unstable or the offset is not advancing, and returning a silently partial
+   * answer is the one thing this whole comment exists to prevent.
+   */
+  throw new Error(`${table}: still returning full pages after ${MAX_PAGES} of them; refusing to report a partial total`);
 }
 
 
